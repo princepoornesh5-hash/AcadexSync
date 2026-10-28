@@ -7,7 +7,7 @@ class ApiAssessmentRepository {
   final ApiClient _apiClient;
 
   ApiAssessmentRepository({ApiClient? apiClient})
-      : _apiClient = apiClient ?? apiClientInstance;
+    : _apiClient = apiClient ?? apiClientInstance;
 
   static ApiClient get apiClientInstance => apiClient;
 
@@ -27,7 +27,8 @@ class ApiAssessmentRepository {
           if (subjectId != null) 'subjectId': subjectId,
           if (academicYearId != null) 'academicYearId': academicYearId,
           if (assessmentId != null) 'assessmentId': assessmentId,
-          if (facultyAssignmentId != null) 'facultyAssignmentId': facultyAssignmentId,
+          if (facultyAssignmentId != null)
+            'facultyAssignmentId': facultyAssignmentId,
         },
       );
 
@@ -42,7 +43,10 @@ class ApiAssessmentRepository {
         userMessage: 'Unable to load assessment context. Please try again.',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load assessment context');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load assessment context',
+      );
     }
   }
 
@@ -361,7 +365,10 @@ class ApiAssessmentRepository {
         userMessage: 'Unable to load subject summary. Please try again.',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load subject summary');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load subject summary',
+      );
     }
   }
 
@@ -373,10 +380,7 @@ class ApiAssessmentRepository {
     try {
       final response = await _apiClient.dio.post(
         '/assessments/sync-lab',
-        data: {
-          'sectionId': sectionId,
-          'subjectId': subjectId,
-        },
+        data: {'sectionId': sectionId, 'subjectId': subjectId},
       );
 
       return response.data != null && response.data['data'] != null
@@ -388,24 +392,34 @@ class ApiAssessmentRepository {
   }
 
   /// Retrieves all published marks for the student.
-  Future<List<StudentPublishedMarksItem>> getStudentMarks({String? semesterId}) async {
+  Future<List<StudentPublishedMarksItem>> getStudentMarks({
+    String? semesterId,
+  }) async {
     try {
       final response = await _apiClient.dio.get(
         '/assessments/student/my-marks',
         queryParameters: {
-          if (semesterId != null && semesterId.isNotEmpty) 'semesterId': semesterId,
+          if (semesterId != null && semesterId.isNotEmpty)
+            'semesterId': semesterId,
         },
       );
 
       if (response.data != null && response.data['data'] != null) {
         final items = response.data['data']['items'] as List? ?? [];
         return items
-            .map((item) => StudentPublishedMarksItem.fromJson(Map<String, dynamic>.from(item as Map)))
+            .map(
+              (item) => StudentPublishedMarksItem.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
             .toList();
       }
       return [];
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load your internal marks');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load your internal marks',
+      );
     }
   }
 
@@ -423,7 +437,8 @@ class ApiAssessmentRepository {
       final response = await _apiClient.dio.get(
         '/assessments',
         queryParameters: {
-          if (facultyAssignmentId != null) 'facultyAssignmentId': facultyAssignmentId,
+          if (facultyAssignmentId != null)
+            'facultyAssignmentId': facultyAssignmentId,
           if (sectionId != null) 'sectionId': sectionId,
           if (subjectId != null) 'subjectId': subjectId,
           if (semesterId != null) 'semesterId': semesterId,
@@ -436,7 +451,11 @@ class ApiAssessmentRepository {
       if (response.data != null && response.data['data'] != null) {
         final items = response.data['data'] as List? ?? [];
         return items
-            .map((item) => InternalAssessmentModel.fromJson(Map<String, dynamic>.from(item as Map)))
+            .map(
+              (item) => InternalAssessmentModel.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
             .toList();
       }
       return [];
@@ -458,7 +477,10 @@ class ApiAssessmentRepository {
         userMessage: 'The selected assessment could not be found.',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load assessment details');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load assessment details',
+      );
     }
   }
 
@@ -491,7 +513,8 @@ class ApiAssessmentRepository {
           'title': title,
           'maximumMarks': maximumMarks,
           if (description != null) 'description': description,
-          if (facultyAssignmentId != null) 'facultyAssignmentId': facultyAssignmentId,
+          if (facultyAssignmentId != null)
+            'facultyAssignmentId': facultyAssignmentId,
           if (sectionId != null) 'sectionId': sectionId,
           if (subjectId != null) 'subjectId': subjectId,
           if (semesterId != null) 'semesterId': semesterId,
@@ -499,11 +522,14 @@ class ApiAssessmentRepository {
           if (departmentId != null) 'departmentId': departmentId,
           if (academicYearId != null) 'academicYearId': academicYearId,
           if (assessmentType != null) 'assessmentType': assessmentType,
-          if (assessmentDate != null) 'assessmentDate': assessmentDate.toIso8601String(),
+          if (assessmentDate != null)
+            'assessmentDate': assessmentDate.toIso8601String(),
           if (passMarks != null) 'passMarks': passMarks,
           if (weightage != null) 'weightage': weightage,
-          if (components != null) 'components': components.map((c) => c.toJson()).toList(),
-          if (academicScopes != null) 'academicScopes': academicScopes.map((s) => s.toJson()).toList(),
+          if (components != null)
+            'components': components.map((c) => c.toJson()).toList(),
+          if (academicScopes != null)
+            'academicScopes': academicScopes.map((s) => s.toJson()).toList(),
           if (isCommonExam != null) 'isCommonExam': isCommonExam,
           if (sourceType != null) 'sourceType': sourceType,
           if (isHistorical != null) 'isHistorical': isHistorical,
@@ -536,7 +562,8 @@ class ApiAssessmentRepository {
     String? instructions,
   }) async {
     try {
-      final dateStr = '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      final dateStr =
+          '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
       final response = await _apiClient.dio.post(
         '/assessments/$assessmentId/schedule',
         data: {
@@ -544,7 +571,8 @@ class ApiAssessmentRepository {
           'startTime': startTime,
           'endTime': endTime,
           if (roomId != null) 'roomId': roomId,
-          if (invigilatorFacultyId != null) 'invigilatorFacultyId': invigilatorFacultyId,
+          if (invigilatorFacultyId != null)
+            'invigilatorFacultyId': invigilatorFacultyId,
           if (instructions != null) 'instructions': instructions,
         },
       );
@@ -585,19 +613,28 @@ class ApiAssessmentRepository {
       if (response.data != null && response.data['data'] != null) {
         final items = response.data['data'] as List? ?? [];
         return items
-            .map((item) => AssessmentScheduleModel.fromJson(Map<String, dynamic>.from(item as Map)))
+            .map(
+              (item) => AssessmentScheduleModel.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
             .toList();
       }
       return [];
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load exam timetable');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load exam timetable',
+      );
     }
   }
 
   /// Retrieves the authoritative marks roster for an assessment.
   Future<MarksRosterResponseModel> getMarksRoster(String assessmentId) async {
     try {
-      final response = await _apiClient.dio.get('/assessments/$assessmentId/roster');
+      final response = await _apiClient.dio.get(
+        '/assessments/$assessmentId/roster',
+      );
       if (response.data != null && response.data['data'] != null) {
         return MarksRosterResponseModel.fromJson(
           Map<String, dynamic>.from(response.data['data'] as Map),
@@ -614,9 +651,13 @@ class ApiAssessmentRepository {
   }
 
   /// Explicitly completes an assessment when the scheduled exam finishes.
-  Future<InternalAssessmentModel> completeAssessment(String assessmentId) async {
+  Future<InternalAssessmentModel> completeAssessment(
+    String assessmentId,
+  ) async {
     try {
-      final response = await _apiClient.dio.post('/assessments/$assessmentId/complete');
+      final response = await _apiClient.dio.post(
+        '/assessments/$assessmentId/complete',
+      );
       if (response.data != null && response.data['data'] != null) {
         return InternalAssessmentModel.fromJson(
           Map<String, dynamic>.from(response.data['data'] as Map),
@@ -628,7 +669,10 @@ class ApiAssessmentRepository {
         userMessage: 'Unable to mark exam as completed. Please try again.',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to complete assessment');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to complete assessment',
+      );
     }
   }
 
@@ -641,12 +685,15 @@ class ApiAssessmentRepository {
       final response = await _apiClient.dio.post(
         '/assessments/$assessmentId/submit',
         data: {
-          if (entries != null) 'entries': entries.map((e) => e.toJson()).toList(),
+          if (entries != null)
+            'entries': entries.map((e) => e.toJson()).toList(),
         },
       );
       if (response.data != null && response.data['data'] != null) {
         final data = response.data['data'];
-        final assessmentMap = data is Map && data['assessment'] != null ? data['assessment'] : data;
+        final assessmentMap = data is Map && data['assessment'] != null
+            ? data['assessment']
+            : data;
         return InternalAssessmentModel.fromJson(
           Map<String, dynamic>.from(assessmentMap as Map),
         );
@@ -664,7 +711,9 @@ class ApiAssessmentRepository {
   /// Locks an assessment and all underlying marks against direct edits.
   Future<InternalAssessmentModel> lockAssessment(String assessmentId) async {
     try {
-      final response = await _apiClient.dio.post('/assessments/$assessmentId/lock');
+      final response = await _apiClient.dio.post(
+        '/assessments/$assessmentId/lock',
+      );
       if (response.data != null && response.data['data'] != null) {
         return InternalAssessmentModel.fromJson(
           Map<String, dynamic>.from(response.data['data'] as Map),
@@ -683,13 +732,18 @@ class ApiAssessmentRepository {
   /// Retrieves summary submission and lock state of an assessment.
   Future<Map<String, dynamic>> getSubmissionState(String assessmentId) async {
     try {
-      final response = await _apiClient.dio.get('/assessments/$assessmentId/submission-state');
+      final response = await _apiClient.dio.get(
+        '/assessments/$assessmentId/submission-state',
+      );
       if (response.data != null && response.data['data'] != null) {
         return Map<String, dynamic>.from(response.data['data'] as Map);
       }
       return {};
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load submission state');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load submission state',
+      );
     }
   }
 
@@ -716,7 +770,10 @@ class ApiAssessmentRepository {
       }
       return {};
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to request mark correction');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to request mark correction',
+      );
     }
   }
 
@@ -729,17 +786,17 @@ class ApiAssessmentRepository {
     try {
       final response = await _apiClient.dio.post(
         '/assessments/corrections/$requestId/respond',
-        data: {
-          'action': action,
-          if (message != null) 'message': message,
-        },
+        data: {'action': action, if (message != null) 'message': message},
       );
       if (response.data != null && response.data['data'] != null) {
         return Map<String, dynamic>.from(response.data['data'] as Map);
       }
       return {};
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to respond to mark correction');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to respond to mark correction',
+      );
     }
   }
 
@@ -789,9 +846,11 @@ class ApiAssessmentRepository {
           'startTime': startTime,
           'endTime': endTime,
           if (roomId != null) 'roomId': roomId,
-          if (invigilatorFacultyId != null) 'invigilatorFacultyId': invigilatorFacultyId,
+          if (invigilatorFacultyId != null)
+            'invigilatorFacultyId': invigilatorFacultyId,
           if (targetSectionIds != null) 'targetSectionIds': targetSectionIds,
-          if (excludeAssessmentId != null) 'excludeAssessmentId': excludeAssessmentId,
+          if (excludeAssessmentId != null)
+            'excludeAssessmentId': excludeAssessmentId,
         },
       );
       if (response.data != null && response.data['data'] != null) {
@@ -801,12 +860,17 @@ class ApiAssessmentRepository {
       }
       return const ScheduleConflictReportModel(hasConflict: false);
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to check schedule conflicts');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to check schedule conflicts',
+      );
     }
   }
 
   /// Publishes a confirmed exam schedule to enrolled students and emits notifications.
-  Future<InternalAssessmentModel> publishAssessmentExam(String assessmentId) async {
+  Future<InternalAssessmentModel> publishAssessmentExam(
+    String assessmentId,
+  ) async {
     try {
       final response = await _apiClient.dio.post(
         '/assessments/$assessmentId/publish-exam',
@@ -822,7 +886,10 @@ class ApiAssessmentRepository {
         userMessage: 'Exam published but failed to load response.',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to publish assessment exam');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to publish assessment exam',
+      );
     }
   }
 }

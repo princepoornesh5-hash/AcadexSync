@@ -30,12 +30,15 @@ class AcadexSnackBar {
     VoidCallback? onAction,
   }) {
     final sanitizedMessage = AcadexException.sanitizedMessage(error);
-    final displayMessage = (fallbackMessage != null &&
+    final displayMessage =
+        (fallbackMessage != null &&
             (sanitizedMessage.isEmpty ||
                 sanitizedMessage.startsWith('An unexpected') ||
                 sanitizedMessage.startsWith('Something went wrong')))
         ? fallbackMessage
-        : (sanitizedMessage.isNotEmpty ? sanitizedMessage : (fallbackMessage ?? 'An error occurred'));
+        : (sanitizedMessage.isNotEmpty
+              ? sanitizedMessage
+              : (fallbackMessage ?? 'An error occurred'));
     _show(
       context,
       message: displayMessage,

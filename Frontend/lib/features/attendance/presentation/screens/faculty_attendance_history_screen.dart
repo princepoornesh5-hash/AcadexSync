@@ -14,10 +14,12 @@ class FacultyAttendanceHistoryScreen extends ConsumerStatefulWidget {
   const FacultyAttendanceHistoryScreen({super.key});
 
   @override
-  ConsumerState<FacultyAttendanceHistoryScreen> createState() => _FacultyAttendanceHistoryScreenState();
+  ConsumerState<FacultyAttendanceHistoryScreen> createState() =>
+      _FacultyAttendanceHistoryScreenState();
 }
 
-class _FacultyAttendanceHistoryScreenState extends ConsumerState<FacultyAttendanceHistoryScreen> {
+class _FacultyAttendanceHistoryScreenState
+    extends ConsumerState<FacultyAttendanceHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final historyAsync = ref.watch(filteredFacultyHistoryProvider);
@@ -56,10 +58,14 @@ class _FacultyAttendanceHistoryScreenState extends ConsumerState<FacultyAttendan
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+              color: isDark
+                  ? AcadexColors.darkSurfaceCard
+                  : AcadexColors.surface,
               borderRadius: AcadexRadius.borderRadiusLg,
               border: Border.all(
-                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
               ),
               boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
             ),
@@ -81,7 +87,8 @@ class _FacultyAttendanceHistoryScreenState extends ConsumerState<FacultyAttendan
                         label: "All Records",
                         isSelected: statusFilter == null,
                         onSelected: (_) {
-                          ref.read(historyStatusFilterProvider.notifier).state = null;
+                          ref.read(historyStatusFilterProvider.notifier).state =
+                              null;
                         },
                       ),
                       const SizedBox(width: 8),
@@ -89,7 +96,8 @@ class _FacultyAttendanceHistoryScreenState extends ConsumerState<FacultyAttendan
                         label: "Open",
                         isSelected: statusFilter == 'open',
                         onSelected: (_) {
-                          ref.read(historyStatusFilterProvider.notifier).state = 'open';
+                          ref.read(historyStatusFilterProvider.notifier).state =
+                              'open';
                         },
                       ),
                       const SizedBox(width: 8),
@@ -97,7 +105,8 @@ class _FacultyAttendanceHistoryScreenState extends ConsumerState<FacultyAttendan
                         label: "Locked",
                         isSelected: statusFilter == 'locked',
                         onSelected: (_) {
-                          ref.read(historyStatusFilterProvider.notifier).state = 'locked';
+                          ref.read(historyStatusFilterProvider.notifier).state =
+                              'locked';
                         },
                       ),
                       const SizedBox(width: 8),
@@ -105,7 +114,8 @@ class _FacultyAttendanceHistoryScreenState extends ConsumerState<FacultyAttendan
                         label: "Closed",
                         isSelected: statusFilter == 'closed',
                         onSelected: (_) {
-                          ref.read(historyStatusFilterProvider.notifier).state = 'closed';
+                          ref.read(historyStatusFilterProvider.notifier).state =
+                              'closed';
                         },
                       ),
                       const SizedBox(width: 8),
@@ -113,7 +123,8 @@ class _FacultyAttendanceHistoryScreenState extends ConsumerState<FacultyAttendan
                         label: "Cancelled",
                         isSelected: statusFilter == 'cancelled',
                         onSelected: (_) {
-                          ref.read(historyStatusFilterProvider.notifier).state = 'cancelled';
+                          ref.read(historyStatusFilterProvider.notifier).state =
+                              'cancelled';
                         },
                       ),
                     ],
@@ -129,7 +140,9 @@ class _FacultyAttendanceHistoryScreenState extends ConsumerState<FacultyAttendan
           Expanded(
             child: historyAsync.when(
               loading: () => const Center(
-                child: AcadexLoadingState(message: "Loading past attendance sessions..."),
+                child: AcadexLoadingState(
+                  message: "Loading past attendance sessions...",
+                ),
               ),
               error: (err, stack) => Center(
                 child: AcadexErrorState(
@@ -142,7 +155,8 @@ class _FacultyAttendanceHistoryScreenState extends ConsumerState<FacultyAttendan
                   return const Center(
                     child: AcadexEmptyState(
                       title: "No Attendance Sessions Found",
-                      subtitle: "No historical sessions match your search query or filter selection.",
+                      subtitle:
+                          "No historical sessions match your search query or filter selection.",
                       icon: LucideIcons.calendarOff,
                     ),
                   );
@@ -159,7 +173,8 @@ class _FacultyAttendanceHistoryScreenState extends ConsumerState<FacultyAttendan
                         return AttendanceRecordCard(
                           session: session,
                           onTap: () {
-                            ref.read(activeSessionIdProvider.notifier).state = session.id;
+                            ref.read(activeSessionIdProvider.notifier).state =
+                                session.id;
                             context.push('/attendance/faculty/detail');
                           },
                         );

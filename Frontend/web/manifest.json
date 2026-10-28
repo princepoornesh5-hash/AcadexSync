@@ -1,6 +1,6 @@
 {
-    "name": "campus_management",
-    "short_name": "campus_management",
+    "name": "ACADEXSYNC Campus Management",
+    "short_name": "ACADEXSYNC",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

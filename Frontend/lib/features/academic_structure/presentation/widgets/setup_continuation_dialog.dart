@@ -115,7 +115,9 @@ class SetupContinuationDialog extends StatelessWidget {
                       Text(
                         title,
                         style: AcadexTypography.heading3(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       if (entityName != null && entityName!.isNotEmpty) ...[
@@ -123,7 +125,9 @@ class SetupContinuationDialog extends StatelessWidget {
                         Text(
                           entityName!,
                           style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                            color: isDark
+                                ? AcadexColors.darkInkSecondary
+                                : AcadexColors.inkSecondary,
                           ).copyWith(fontWeight: FontWeight.w600),
                         ),
                       ],
@@ -144,20 +148,30 @@ class SetupContinuationDialog extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
+                  color: isDark
+                      ? AcadexColors.warningDarkContainer
+                      : AcadexColors.warningLight,
                   borderRadius: AcadexRadius.borderRadiusMd,
-                  border: Border.all(color: AcadexColors.warning.withValues(alpha: 0.4)),
+                  border: Border.all(
+                    color: AcadexColors.warning.withValues(alpha: 0.4),
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(LucideIcons.clock, size: 16, color: AcadexColors.warning),
+                    const Icon(
+                      LucideIcons.clock,
+                      size: 16,
+                      color: AcadexColors.warning,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         waitingNotice!,
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.warning : AcadexColors.warningDark,
+                          color: isDark
+                              ? AcadexColors.warning
+                              : AcadexColors.warningDark,
                         ).copyWith(fontWeight: FontWeight.w500),
                       ),
                     ),

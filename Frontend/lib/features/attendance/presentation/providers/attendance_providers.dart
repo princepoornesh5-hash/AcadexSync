@@ -18,7 +18,7 @@ final firebaseAttendanceRepoProvider = Provider<AttendanceRepository>((ref) {
   final currentUser = ref.watch(currentUserProvider);
   final notificationService = ref.watch(notificationServiceProvider);
   return FirebaseAttendanceRepository(
-    firestoreService, 
+    firestoreService,
     currentUser,
     notificationService: notificationService,
   );
@@ -37,15 +37,17 @@ final attendanceRepoProvider = Provider<AttendanceRepository>((ref) {
 // ---------------------------------------------------------
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
 
-final assignedClassesProvider = FutureProvider<List<AssignedClass>>((ref) async {
+final assignedClassesProvider = FutureProvider<List<AssignedClass>>((
+  ref,
+) async {
   final date = ref.watch(selectedDateProvider);
   final repo = ref.watch(attendanceRepoProvider);
   final currentUser = ref.watch(currentUserProvider);
-  
+
   if (currentUser == null || currentUser.id.isEmpty) {
     return [];
   }
-  
+
   return repo.getAssignedClasses(currentUser.id, date);
 });
 
@@ -54,10 +56,12 @@ final assignedClassesProvider = FutureProvider<List<AssignedClass>>((ref) async 
 // ---------------------------------------------------------
 final activeClassProvider = StateProvider<AssignedClass?>((ref) => null);
 
-final activeStudentListProvider = FutureProvider<List<AttendanceRecord>>((ref) async {
+final activeStudentListProvider = FutureProvider<List<AttendanceRecord>>((
+  ref,
+) async {
   final activeClass = ref.watch(activeClassProvider);
   if (activeClass == null) return [];
-  
+
   final repo = ref.watch(attendanceRepoProvider);
   return repo.getStudentsForSection(
     activeClass.sectionId,
@@ -80,14 +84,14 @@ class MarkingSessionNotifier extends StateNotifier<List<AttendanceRecord>> {
         if (rec.studentId == studentId)
           rec.copyWith(status: status, lastModified: DateTime.now())
         else
-          rec
+          rec,
     ];
   }
 
   void markAll(AttendanceStatus status) {
     state = [
       for (final rec in state)
-        rec.copyWith(status: status, lastModified: DateTime.now())
+        rec.copyWith(status: status, lastModified: DateTime.now()),
     ];
   }
 
@@ -97,7 +101,7 @@ class MarkingSessionNotifier extends StateNotifier<List<AttendanceRecord>> {
         if (rec.status == null)
           rec.copyWith(status: status, lastModified: DateTime.now())
         else
-          rec
+          rec,
     ];
   }
 
@@ -113,14 +117,14 @@ class MarkingSessionNotifier extends StateNotifier<List<AttendanceRecord>> {
           status: null,
           lastModified: null,
           modifiedBy: null,
-        )
+        ),
     ];
   }
 
   bool get isComplete => state.every((r) => r.status != null);
-  
+
   int get remainingCount => state.where((r) => r.status == null).length;
-  
+
   Map<AttendanceStatus, int> get summary {
     final map = <AttendanceStatus, int>{};
     for (var status in AttendanceStatus.values) {
@@ -130,18 +134,24 @@ class MarkingSessionNotifier extends StateNotifier<List<AttendanceRecord>> {
   }
 }
 
-final markingSessionProvider = StateNotifierProvider<MarkingSessionNotifier, List<AttendanceRecord>>((ref) {
-  final asyncList = ref.watch(activeStudentListProvider);
-  return MarkingSessionNotifier(asyncList.valueOrNull ?? []);
-});
+final markingSessionProvider =
+    StateNotifierProvider<MarkingSessionNotifier, List<AttendanceRecord>>((
+      ref,
+    ) {
+      final asyncList = ref.watch(activeStudentListProvider);
+      return MarkingSessionNotifier(asyncList.valueOrNull ?? []);
+    });
 
 // ---------------------------------------------------------
 // Save Action
 // ---------------------------------------------------------
-final saveSessionProvider = FutureProvider.family<bool, String>((ref, activeClassId) async {
+final saveSessionProvider = FutureProvider.family<bool, String>((
+  ref,
+  activeClassId,
+) async {
   final activeClass = ref.read(activeClassProvider);
   if (activeClass == null) return false;
-  
+
   final records = ref.read(markingSessionProvider);
   final repo = ref.read(attendanceRepoProvider);
   final currentUser = ref.read(currentUserProvider);
@@ -156,7 +166,8 @@ final saveSessionProvider = FutureProvider.family<bool, String>((ref, activeClas
     throw StateError("Cannot save attendance: Incomplete user profile.");
   }
 
-  final dateKey = '${activeClass.date.year}${activeClass.date.month.toString().padLeft(2, '0')}${activeClass.date.day.toString().padLeft(2, '0')}';
+  final dateKey =
+      '${activeClass.date.year}${activeClass.date.month.toString().padLeft(2, '0')}${activeClass.date.day.toString().padLeft(2, '0')}';
   final slotKey = activeClass.effectiveTimetableEntryId.replaceAll('pub_', '');
   final sessionId = slotKey.isNotEmpty
       ? '${activeClass.sectionId}_${activeClass.subjectId}_${dateKey}_$slotKey'
@@ -184,7 +195,7 @@ final saveSessionProvider = FutureProvider.family<bool, String>((ref, activeClas
     substitutionId: activeClass.substitutionId,
     substitutionReason: activeClass.substitutionReason,
   );
-  
+
   final success = await repo.saveSession(session);
   if (success) {
     // Invalidate assigned classes, sessions, dashboard stats, and reports in real time
@@ -206,7 +217,9 @@ final saveSessionProvider = FutureProvider.family<bool, String>((ref, activeClas
 // ---------------------------------------------------------
 // Faculty Sessions (History)
 // ---------------------------------------------------------
-final facultySessionsProvider = FutureProvider<List<AttendanceSession>>((ref) async {
+final facultySessionsProvider = FutureProvider<List<AttendanceSession>>((
+  ref,
+) async {
   final repo = ref.watch(attendanceRepoProvider);
   final currentUser = ref.watch(currentUserProvider);
   if (currentUser == null || currentUser.id.isEmpty) return [];
@@ -216,7 +229,10 @@ final facultySessionsProvider = FutureProvider<List<AttendanceSession>>((ref) as
 // ---------------------------------------------------------
 // Single Session Detail
 // ---------------------------------------------------------
-final sessionDetailProvider = FutureProvider.family<AttendanceSession, String>((ref, sessionId) async {
+final sessionDetailProvider = FutureProvider.family<AttendanceSession, String>((
+  ref,
+  sessionId,
+) async {
   final repo = ref.watch(attendanceRepoProvider);
   return repo.getSessionById(sessionId);
 });
@@ -224,7 +240,10 @@ final sessionDetailProvider = FutureProvider.family<AttendanceSession, String>((
 // ---------------------------------------------------------
 // Session Lifecycle Actions
 // ---------------------------------------------------------
-final lockSessionProvider = FutureProvider.family<AttendanceSession, String>((ref, sessionId) async {
+final lockSessionProvider = FutureProvider.family<AttendanceSession, String>((
+  ref,
+  sessionId,
+) async {
   final repo = ref.read(attendanceRepoProvider);
   final session = await repo.lockSession(sessionId);
   ref.invalidate(sessionDetailProvider(sessionId));
@@ -233,7 +252,10 @@ final lockSessionProvider = FutureProvider.family<AttendanceSession, String>((re
   return session;
 });
 
-final closeSessionProvider = FutureProvider.family<AttendanceSession, String>((ref, sessionId) async {
+final closeSessionProvider = FutureProvider.family<AttendanceSession, String>((
+  ref,
+  sessionId,
+) async {
   final repo = ref.read(attendanceRepoProvider);
   final session = await repo.closeSession(sessionId);
   ref.invalidate(sessionDetailProvider(sessionId));
@@ -241,7 +263,10 @@ final closeSessionProvider = FutureProvider.family<AttendanceSession, String>((r
   return session;
 });
 
-final cancelSessionProvider = FutureProvider.family<AttendanceSession, String>((ref, sessionId) async {
+final cancelSessionProvider = FutureProvider.family<AttendanceSession, String>((
+  ref,
+  sessionId,
+) async {
   final repo = ref.read(attendanceRepoProvider);
   final session = await repo.cancelSession(sessionId);
   ref.invalidate(sessionDetailProvider(sessionId));
@@ -252,16 +277,25 @@ final cancelSessionProvider = FutureProvider.family<AttendanceSession, String>((
 // ---------------------------------------------------------
 // HOD & Admin Record Correction Action
 // ---------------------------------------------------------
-final correctRecordProvider = FutureProvider.family<AttendanceRecord, ({String recordId, AttendanceStatus newStatus, String reason, String? sessionId})>((ref, args) async {
-  final repo = ref.read(attendanceRepoProvider);
-  final record = await repo.correctRecord(
-    args.recordId,
-    newStatus: args.newStatus,
-    reason: args.reason,
-  );
-  if (args.sessionId != null) {
-    ref.invalidate(sessionDetailProvider(args.sessionId!));
-  }
-  ref.invalidate(facultySessionsProvider);
-  return record;
-});
+final correctRecordProvider =
+    FutureProvider.family<
+      AttendanceRecord,
+      ({
+        String recordId,
+        AttendanceStatus newStatus,
+        String reason,
+        String? sessionId,
+      })
+    >((ref, args) async {
+      final repo = ref.read(attendanceRepoProvider);
+      final record = await repo.correctRecord(
+        args.recordId,
+        newStatus: args.newStatus,
+        reason: args.reason,
+      );
+      if (args.sessionId != null) {
+        ref.invalidate(sessionDetailProvider(args.sessionId!));
+      }
+      ref.invalidate(facultySessionsProvider);
+      return record;
+    });

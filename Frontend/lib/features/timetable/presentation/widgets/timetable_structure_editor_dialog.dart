@@ -12,16 +12,15 @@ import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 class TimetableStructureEditorDialog extends ConsumerStatefulWidget {
   final String timetableId;
 
-  const TimetableStructureEditorDialog({
-    super.key,
-    required this.timetableId,
-  });
+  const TimetableStructureEditorDialog({super.key, required this.timetableId});
 
   @override
-  ConsumerState<TimetableStructureEditorDialog> createState() => _TimetableStructureEditorDialogState();
+  ConsumerState<TimetableStructureEditorDialog> createState() =>
+      _TimetableStructureEditorDialogState();
 }
 
-class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStructureEditorDialog>
+class _TimetableStructureEditorDialogState
+    extends ConsumerState<TimetableStructureEditorDialog>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   TimetableDay _selectedDayForTiming = TimetableDay.monday;
@@ -43,22 +42,29 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = MediaQuery.of(context).size.width < 700;
 
-    final authoringState = ref.watch(timetableAuthoringProvider(widget.timetableId));
+    final authoringState = ref.watch(
+      timetableAuthoringProvider(widget.timetableId),
+    );
     final container = authoringState.container;
-    final timingMode = container?.timingMode ?? TimetableTimingMode.sameEveryDay;
-    final activeDays = container?.activeDays ?? [
-      TimetableDay.monday,
-      TimetableDay.tuesday,
-      TimetableDay.wednesday,
-      TimetableDay.thursday,
-      TimetableDay.friday,
-    ];
+    final timingMode =
+        container?.timingMode ?? TimetableTimingMode.sameEveryDay;
+    final activeDays =
+        container?.activeDays ??
+        [
+          TimetableDay.monday,
+          TimetableDay.tuesday,
+          TimetableDay.wednesday,
+          TimetableDay.thursday,
+          TimetableDay.friday,
+        ];
 
     if (!activeDays.contains(_selectedDayForTiming) && activeDays.isNotEmpty) {
       _selectedDayForTiming = activeDays.first;
     }
 
-    final permissions = ref.watch(timetableAuthoringPermissionsProvider(container));
+    final permissions = ref.watch(
+      timetableAuthoringPermissionsProvider(container),
+    );
 
     return Dialog(
       backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
@@ -82,10 +88,16 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                      color: isDark
+                          ? AcadexColors.primary.withValues(alpha: 0.2)
+                          : AcadexColors.primaryLight,
                       borderRadius: AcadexRadius.borderRadiusMd,
                     ),
-                    child: const Icon(LucideIcons.calendarClock, size: 22, color: AcadexColors.primary),
+                    child: const Icon(
+                      LucideIcons.calendarClock,
+                      size: 22,
+                      color: AcadexColors.primary,
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -95,14 +107,18 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                         Text(
                           'Timetable Structure & Timing',
                           style: AcadexTypography.heading2(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'Configure period slots, timings, and common/day-specific breaks',
                           style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                         ),
                       ],
@@ -112,7 +128,9 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                     icon: Icon(
                       LucideIcons.x,
                       size: 20,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
@@ -126,9 +144,15 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
               // =============================================================
               Container(
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                  color: isDark
+                      ? AcadexColors.darkCanvasSoft
+                      : AcadexColors.canvasSoft,
                   borderRadius: AcadexRadius.borderRadiusSm,
-                  border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                  border: Border.all(
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
+                  ),
                 ),
                 child: TabBar(
                   controller: _tabController,
@@ -138,7 +162,9 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                     borderRadius: AcadexRadius.borderRadiusSm,
                   ),
                   labelColor: Colors.white,
-                  unselectedLabelColor: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  unselectedLabelColor: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                   tabs: [
                     Tab(
                       icon: Row(
@@ -146,7 +172,9 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                         children: [
                           const Icon(LucideIcons.clock, size: 16),
                           const SizedBox(width: 8),
-                          Text('Periods & Timing (${authoringState.periods.length})'),
+                          Text(
+                            'Periods & Timing (${authoringState.periods.length})',
+                          ),
                         ],
                       ),
                     ),
@@ -198,7 +226,12 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
               ),
 
               const SizedBox(height: 16),
-              Divider(height: 1, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+              Divider(
+                height: 1,
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
+              ),
               const SizedBox(height: 12),
 
               // =============================================================
@@ -208,19 +241,36 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    authoringState.isDirty ? 'Unsaved changes in draft' : 'All changes saved in draft',
+                    authoringState.isDirty
+                        ? 'Unsaved changes in draft'
+                        : 'All changes saved in draft',
                     style: AcadexTypography.caption(
-                      color: authoringState.isDirty ? AcadexColors.warning : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                      color: authoringState.isDirty
+                          ? AcadexColors.warning
+                          : (isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted),
                     ),
                   ),
                   ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AcadexColors.primary,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusSm),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AcadexRadius.borderRadiusSm,
+                      ),
                     ),
-                    child: const Text('Done', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                    child: const Text(
+                      'Done',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -243,9 +293,15 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
     required List<TimetableDay> activeDays,
     required bool canEdit,
   }) {
-    final notifier = ref.read(timetableAuthoringProvider(widget.timetableId).notifier);
-    final targetDay = timingMode == TimetableTimingMode.differentPerDay ? _selectedDayForTiming : null;
-    final currentPeriods = authoringState.getPeriodsForDay(_selectedDayForTiming);
+    final notifier = ref.read(
+      timetableAuthoringProvider(widget.timetableId).notifier,
+    );
+    final targetDay = timingMode == TimetableTimingMode.differentPerDay
+        ? _selectedDayForTiming
+        : null;
+    final currentPeriods = authoringState.getPeriodsForDay(
+      _selectedDayForTiming,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -274,7 +330,10 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                   selected: timingMode == TimetableTimingMode.sameEveryDay,
                   onSelected: canEdit
                       ? (selected) {
-                          if (selected) notifier.changeTimingMode(TimetableTimingMode.sameEveryDay);
+                          if (selected)
+                            notifier.changeTimingMode(
+                              TimetableTimingMode.sameEveryDay,
+                            );
                         }
                       : null,
                 ),
@@ -283,7 +342,10 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                   selected: timingMode == TimetableTimingMode.differentPerDay,
                   onSelected: canEdit
                       ? (selected) {
-                          if (selected) notifier.changeTimingMode(TimetableTimingMode.differentPerDay);
+                          if (selected)
+                            notifier.changeTimingMode(
+                              TimetableTimingMode.differentPerDay,
+                            );
                         }
                       : null,
                 ),
@@ -299,12 +361,27 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                   dayOfWeek: targetDay,
                   existingPeriods: currentPeriods,
                 ),
-                icon: const Icon(LucideIcons.plus, size: 16, color: Colors.white),
-                label: const Text('Add Period', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                icon: const Icon(
+                  LucideIcons.plus,
+                  size: 16,
+                  color: Colors.white,
+                ),
+                label: const Text(
+                  'Add Period',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AcadexColors.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusSm),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AcadexRadius.borderRadiusSm,
+                  ),
                 ),
               ),
           ],
@@ -348,11 +425,21 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(LucideIcons.clock, size: 40, color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint),
+                      Icon(
+                        LucideIcons.clock,
+                        size: 40,
+                        color: isDark
+                            ? AcadexColors.darkInkFaint
+                            : AcadexColors.inkFaint,
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         'No periods configured for ${timingMode == TimetableTimingMode.differentPerDay ? _selectedDayForTiming.displayName : 'this timetable'}',
-                        style: AcadexTypography.bodySmall(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                        style: AcadexTypography.bodySmall(
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
+                        ),
                       ),
                     ],
                   ),
@@ -365,11 +452,20 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                     final isUsed = authoringState.isPeriodUsed(period);
 
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
-                        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                        color: isDark
+                            ? AcadexColors.darkSurfaceCard
+                            : AcadexColors.surface,
                         borderRadius: AcadexRadius.borderRadiusSm,
-                        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                        border: Border.all(
+                          color: isDark
+                              ? AcadexColors.darkHairline
+                              : AcadexColors.hairline,
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -379,12 +475,16 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                             height: 32,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                              color: isDark
+                                  ? AcadexColors.primary.withValues(alpha: 0.2)
+                                  : AcadexColors.primaryLight,
                               borderRadius: AcadexRadius.borderRadiusSm,
                             ),
                             child: Text(
                               'P${period.index}',
-                              style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(fontWeight: FontWeight.w700),
+                              style: AcadexTypography.caption(
+                                color: AcadexColors.primary,
+                              ).copyWith(fontWeight: FontWeight.w700),
                             ),
                           ),
                           const SizedBox(width: 14),
@@ -397,14 +497,18 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                                 Text(
                                   period.name,
                                   style: AcadexTypography.bodyMedium(
-                                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                    color: isDark
+                                        ? AcadexColors.darkInk
+                                        : AcadexColors.ink,
                                   ).copyWith(fontWeight: FontWeight.w600),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   '${period.startTime} – ${period.endTime} (${period.durationInMinutes} mins)${period.dayOfWeek != null ? ' • ${period.dayOfWeek!.displayName}' : ''}',
                                   style: AcadexTypography.caption(
-                                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
                                   ),
                                 ),
                               ],
@@ -417,7 +521,10 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                               icon: const Icon(LucideIcons.arrowUp, size: 16),
                               onPressed: index > 0
                                   ? () {
-                                      final reordered = List<TimetablePeriodModel>.from(currentPeriods);
+                                      final reordered =
+                                          List<TimetablePeriodModel>.from(
+                                            currentPeriods,
+                                          );
                                       final item = reordered.removeAt(index);
                                       reordered.insert(index - 1, item);
                                       notifier.reorderPeriods(reordered);
@@ -429,7 +536,10 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                               icon: const Icon(LucideIcons.arrowDown, size: 16),
                               onPressed: index < currentPeriods.length - 1
                                   ? () {
-                                      final reordered = List<TimetablePeriodModel>.from(currentPeriods);
+                                      final reordered =
+                                          List<TimetablePeriodModel>.from(
+                                            currentPeriods,
+                                          );
                                       final item = reordered.removeAt(index);
                                       reordered.insert(index + 1, item);
                                       notifier.reorderPeriods(reordered);
@@ -438,7 +548,11 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                               tooltip: 'Move Down',
                             ),
                             IconButton(
-                              icon: const Icon(LucideIcons.pencil, size: 16, color: AcadexColors.primary),
+                              icon: const Icon(
+                                LucideIcons.pencil,
+                                size: 16,
+                                color: AcadexColors.primary,
+                              ),
                               onPressed: () => _showAddEditPeriodDialog(
                                 context,
                                 isDark: isDark,
@@ -452,7 +566,11 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                               icon: Icon(
                                 LucideIcons.trash2,
                                 size: 16,
-                                color: isUsed ? (isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint) : AcadexColors.error,
+                                color: isUsed
+                                    ? (isDark
+                                          ? AcadexColors.darkInkFaint
+                                          : AcadexColors.inkFaint)
+                                    : AcadexColors.error,
                               ),
                               onPressed: isUsed
                                   ? () {
@@ -462,7 +580,9 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                                       );
                                     }
                                   : () => notifier.deletePeriod(period.id),
-                              tooltip: isUsed ? 'Occupied by class' : 'Delete Period',
+                              tooltip: isUsed
+                                  ? 'Occupied by class'
+                                  : 'Delete Period',
                             ),
                           ],
                         ],
@@ -486,7 +606,9 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
     required List<TimetableDay> activeDays,
     required bool canEdit,
   }) {
-    final notifier = ref.read(timetableAuthoringProvider(widget.timetableId).notifier);
+    final notifier = ref.read(
+      timetableAuthoringProvider(widget.timetableId).notifier,
+    );
     final breaks = authoringState.breaks;
 
     return Column(
@@ -510,12 +632,27 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                   activeDays: activeDays,
                   authoringState: authoringState,
                 ),
-                icon: const Icon(LucideIcons.plus, size: 16, color: Colors.white),
-                label: const Text('Add Break', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                icon: const Icon(
+                  LucideIcons.plus,
+                  size: 16,
+                  color: Colors.white,
+                ),
+                label: const Text(
+                  'Add Break',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AcadexColors.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusSm),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AcadexRadius.borderRadiusSm,
+                  ),
                 ),
               ),
           ],
@@ -530,11 +667,21 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(LucideIcons.coffee, size: 40, color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint),
+                      Icon(
+                        LucideIcons.coffee,
+                        size: 40,
+                        color: isDark
+                            ? AcadexColors.darkInkFaint
+                            : AcadexColors.inkFaint,
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         'No breaks configured yet (e.g. Lunch Break, Tea Break)',
-                        style: AcadexTypography.bodySmall(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                        style: AcadexTypography.bodySmall(
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
+                        ),
                       ),
                     ],
                   ),
@@ -544,7 +691,8 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                   separatorBuilder: (ctx, i) => const SizedBox(height: 8),
                   itemBuilder: (ctx, index) {
                     final breakItem = breaks[index];
-                    final isCommon = breakItem.appliesToDays.length >= activeDays.length;
+                    final isCommon =
+                        breakItem.appliesToDays.length >= activeDays.length;
 
                     IconData breakIcon;
                     switch (breakItem.breakType) {
@@ -563,11 +711,20 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                     }
 
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
-                        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                        color: isDark
+                            ? AcadexColors.darkSurfaceCard
+                            : AcadexColors.surface,
                         borderRadius: AcadexRadius.borderRadiusSm,
-                        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                        border: Border.all(
+                          color: isDark
+                              ? AcadexColors.darkHairline
+                              : AcadexColors.hairline,
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -576,10 +733,16 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                             height: 36,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
+                              color: isDark
+                                  ? AcadexColors.warningDarkContainer
+                                  : AcadexColors.warningLight,
                               borderRadius: AcadexRadius.borderRadiusSm,
                             ),
-                            child: Icon(breakIcon, size: 18, color: AcadexColors.warningDark),
+                            child: Icon(
+                              breakIcon,
+                              size: 18,
+                              color: AcadexColors.warningDark,
+                            ),
                           ),
                           const SizedBox(width: 14),
 
@@ -595,34 +758,60 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                                     Text(
                                       breakItem.name,
                                       style: AcadexTypography.bodyMedium(
-                                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                        color: isDark
+                                            ? AcadexColors.darkInk
+                                            : AcadexColors.ink,
                                       ).copyWith(fontWeight: FontWeight.w600),
                                     ),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: isCommon
-                                            ? (isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight)
-                                            : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
-                                        borderRadius: AcadexRadius.borderRadiusXs,
+                                            ? (isDark
+                                                  ? AcadexColors.primary
+                                                        .withValues(alpha: 0.2)
+                                                  : AcadexColors.primaryLight)
+                                            : (isDark
+                                                  ? AcadexColors.darkCanvasSoft
+                                                  : AcadexColors.canvasSoft),
+                                        borderRadius:
+                                            AcadexRadius.borderRadiusXs,
                                       ),
                                       child: Text(
-                                        isCommon ? 'Common Break' : 'Day-Specific',
+                                        isCommon
+                                            ? 'Common Break'
+                                            : 'Day-Specific',
                                         style: AcadexTypography.caption(
-                                          color: isCommon ? AcadexColors.primary : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                          color: isCommon
+                                              ? AcadexColors.primary
+                                              : (isDark
+                                                    ? AcadexColors.darkInkMuted
+                                                    : AcadexColors.inkMuted),
                                         ).copyWith(fontSize: 10),
                                       ),
                                     ),
                                     if (breakItem.isVerticalSpan)
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
-                                          borderRadius: AcadexRadius.borderRadiusXs,
+                                          color: isDark
+                                              ? AcadexColors
+                                                    .warningDarkContainer
+                                              : AcadexColors.warningLight,
+                                          borderRadius:
+                                              AcadexRadius.borderRadiusXs,
                                         ),
                                         child: Text(
                                           'Vertical Span',
-                                          style: AcadexTypography.caption(color: AcadexColors.warningDark).copyWith(fontSize: 10),
+                                          style: AcadexTypography.caption(
+                                            color: AcadexColors.warningDark,
+                                          ).copyWith(fontSize: 10),
                                         ),
                                       ),
                                   ],
@@ -631,7 +820,9 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                                 Text(
                                   '${breakItem.startTime} – ${breakItem.endTime} (${breakItem.durationInMinutes} mins) • ${breakItem.appliesToDays.map((d) => d.displayName.substring(0, 3)).join(', ')}',
                                   style: AcadexTypography.caption(
-                                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
                                   ),
                                 ),
                               ],
@@ -640,7 +831,11 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
 
                           if (canEdit) ...[
                             IconButton(
-                              icon: const Icon(LucideIcons.pencil, size: 16, color: AcadexColors.primary),
+                              icon: const Icon(
+                                LucideIcons.pencil,
+                                size: 16,
+                                color: AcadexColors.primary,
+                              ),
                               onPressed: () => _showAddEditBreakDialog(
                                 context,
                                 isDark: isDark,
@@ -651,8 +846,13 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                               tooltip: 'Edit Break',
                             ),
                             IconButton(
-                              icon: const Icon(LucideIcons.trash2, size: 16, color: AcadexColors.error),
-                              onPressed: () => notifier.deleteBreak(breakItem.id),
+                              icon: const Icon(
+                                LucideIcons.trash2,
+                                size: 16,
+                                color: AcadexColors.error,
+                              ),
+                              onPressed: () =>
+                                  notifier.deleteBreak(breakItem.id),
                               tooltip: 'Delete Break',
                             ),
                           ],
@@ -677,9 +877,13 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
     required List<TimetablePeriodModel> existingPeriods,
   }) {
     final isEditing = existingPeriod != null;
-    final nameCtrl = TextEditingController(text: existingPeriod?.name ?? 'Period ${existingPeriods.length + 1}');
+    final nameCtrl = TextEditingController(
+      text: existingPeriod?.name ?? 'Period ${existingPeriods.length + 1}',
+    );
     final startCtrl = TextEditingController(
-      text: existingPeriod?.startTime ?? (existingPeriods.isNotEmpty ? existingPeriods.last.endTime : '09:00'),
+      text:
+          existingPeriod?.startTime ??
+          (existingPeriods.isNotEmpty ? existingPeriods.last.endTime : '09:00'),
     );
     final endCtrl = TextEditingController(
       text: existingPeriod?.endTime ?? '10:00',
@@ -696,7 +900,10 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
 
             if (nameCtrl.text.trim().isEmpty) {
               errorMsg = 'Period name cannot be empty';
-            } else if (sTime.length != 5 || !sTime.contains(':') || eTime.length != 5 || !eTime.contains(':')) {
+            } else if (sTime.length != 5 ||
+                !sTime.contains(':') ||
+                eTime.length != 5 ||
+                !eTime.contains(':')) {
               errorMsg = 'Time must be in HH:mm format (e.g. 09:00)';
             } else if (sTime.compareTo(eTime) >= 0) {
               errorMsg = 'Start time must be strictly before end time';
@@ -704,18 +911,24 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
               // Check overlaps with other periods
               for (final other in existingPeriods) {
                 if (other.id == existingPeriod?.id) continue;
-                if (sTime.compareTo(other.endTime) < 0 && eTime.compareTo(other.startTime) > 0) {
-                  errorMsg = 'Overlaps with "${other.name}" (${other.startTime}-${other.endTime})';
+                if (sTime.compareTo(other.endTime) < 0 &&
+                    eTime.compareTo(other.startTime) > 0) {
+                  errorMsg =
+                      'Overlaps with "${other.name}" (${other.startTime}-${other.endTime})';
                   break;
                 }
               }
             }
 
             return AlertDialog(
-              backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+              backgroundColor: isDark
+                  ? AcadexColors.darkSurface
+                  : AcadexColors.surface,
               title: Text(
                 isEditing ? 'Edit Period' : 'Add Period',
-                style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                style: AcadexTypography.heading3(
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ),
               ),
               content: SizedBox(
                 width: 380,
@@ -724,7 +937,9 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                   children: [
                     TextField(
                       controller: nameCtrl,
-                      decoration: const InputDecoration(labelText: 'Period Name *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Period Name *',
+                      ),
                       onChanged: (_) => setDialogState(() {}),
                     ),
                     const SizedBox(height: 12),
@@ -733,7 +948,9 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                         Expanded(
                           child: TextField(
                             controller: startCtrl,
-                            decoration: const InputDecoration(labelText: 'Start Time (HH:mm) *'),
+                            decoration: const InputDecoration(
+                              labelText: 'Start Time (HH:mm) *',
+                            ),
                             onChanged: (_) => setDialogState(() {}),
                           ),
                         ),
@@ -741,7 +958,9 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                         Expanded(
                           child: TextField(
                             controller: endCtrl,
-                            decoration: const InputDecoration(labelText: 'End Time (HH:mm) *'),
+                            decoration: const InputDecoration(
+                              labelText: 'End Time (HH:mm) *',
+                            ),
                             onChanged: (_) => setDialogState(() {}),
                           ),
                         ),
@@ -751,10 +970,20 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          const Icon(LucideIcons.alertCircle, size: 14, color: AcadexColors.error),
+                          const Icon(
+                            LucideIcons.alertCircle,
+                            size: 14,
+                            color: AcadexColors.error,
+                          ),
                           const SizedBox(width: 6),
                           Expanded(
-                            child: Text(errorMsg, style: const TextStyle(color: AcadexColors.error, fontSize: 12)),
+                            child: Text(
+                              errorMsg,
+                              style: const TextStyle(
+                                color: AcadexColors.error,
+                                fontSize: 12,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -770,7 +999,11 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                 ElevatedButton(
                   onPressed: errorMsg == null
                       ? () {
-                          final notifier = ref.read(timetableAuthoringProvider(widget.timetableId).notifier);
+                          final notifier = ref.read(
+                            timetableAuthoringProvider(
+                              widget.timetableId,
+                            ).notifier,
+                          );
                           if (isEditing) {
                             final updated = existingPeriod.copyWith(
                               name: nameCtrl.text.trim(),
@@ -792,8 +1025,13 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                           Navigator.of(ctx).pop();
                         }
                       : null,
-                  style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
-                  child: Text(isEditing ? 'Save' : 'Add', style: const TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AcadexColors.primary,
+                  ),
+                  child: Text(
+                    isEditing ? 'Save' : 'Add',
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
             );
@@ -814,12 +1052,20 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
     required TimetableAuthoringState authoringState,
   }) {
     final isEditing = existingBreak != null;
-    final nameCtrl = TextEditingController(text: existingBreak?.name ?? 'Lunch Break');
-    final startCtrl = TextEditingController(text: existingBreak?.startTime ?? '13:00');
-    final endCtrl = TextEditingController(text: existingBreak?.endTime ?? '14:00');
+    final nameCtrl = TextEditingController(
+      text: existingBreak?.name ?? 'Lunch Break',
+    );
+    final startCtrl = TextEditingController(
+      text: existingBreak?.startTime ?? '13:00',
+    );
+    final endCtrl = TextEditingController(
+      text: existingBreak?.endTime ?? '14:00',
+    );
     var breakType = existingBreak?.breakType ?? TimetableBreakType.lunch;
     var isVerticalSpan = existingBreak?.isVerticalSpan ?? true;
-    var selectedDays = List<TimetableDay>.from(existingBreak?.appliesToDays ?? activeDays);
+    var selectedDays = List<TimetableDay>.from(
+      existingBreak?.appliesToDays ?? activeDays,
+    );
 
     showDialog<void>(
       context: context,
@@ -834,7 +1080,10 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
               errorMsg = 'Break name cannot be empty';
             } else if (selectedDays.isEmpty) {
               errorMsg = 'Break must apply to at least one active day';
-            } else if (sTime.length != 5 || !sTime.contains(':') || eTime.length != 5 || !eTime.contains(':')) {
+            } else if (sTime.length != 5 ||
+                !sTime.contains(':') ||
+                eTime.length != 5 ||
+                !eTime.contains(':')) {
               errorMsg = 'Time must be in HH:mm format (e.g. 13:00)';
             } else if (sTime.compareTo(eTime) >= 0) {
               errorMsg = 'Start time must be strictly before end time';
@@ -842,8 +1091,10 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
               // Check class conflicts
               for (final entry in authoringState.entries) {
                 if (selectedDays.contains(entry.dayOfWeek)) {
-                  if (sTime.compareTo(entry.endTime) < 0 && eTime.compareTo(entry.startTime) > 0) {
-                    errorMsg = 'Conflicts with class on ${entry.dayOfWeek.displayName} (${entry.startTime}-${entry.endTime})';
+                  if (sTime.compareTo(entry.endTime) < 0 &&
+                      eTime.compareTo(entry.startTime) > 0) {
+                    errorMsg =
+                        'Conflicts with class on ${entry.dayOfWeek.displayName} (${entry.startTime}-${entry.endTime})';
                     break;
                   }
                 }
@@ -851,10 +1102,14 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
             }
 
             return AlertDialog(
-              backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+              backgroundColor: isDark
+                  ? AcadexColors.darkSurface
+                  : AcadexColors.surface,
               title: Text(
                 isEditing ? 'Edit Break' : 'Add Break',
-                style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                style: AcadexTypography.heading3(
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ),
               ),
               content: SizedBox(
                 width: 440,
@@ -865,21 +1120,29 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                     children: [
                       TextField(
                         controller: nameCtrl,
-                        decoration: const InputDecoration(labelText: 'Break Name *'),
+                        decoration: const InputDecoration(
+                          labelText: 'Break Name *',
+                        ),
                         onChanged: (_) => setDialogState(() {}),
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<TimetableBreakType>(
                         value: breakType,
-                        decoration: const InputDecoration(labelText: 'Break Type'),
+                        decoration: const InputDecoration(
+                          labelText: 'Break Type',
+                        ),
                         items: TimetableBreakType.values.map((t) {
-                          return DropdownMenuItem(value: t, child: Text(t.displayName));
+                          return DropdownMenuItem(
+                            value: t,
+                            child: Text(t.displayName),
+                          );
                         }).toList(),
                         onChanged: (val) {
                           if (val != null) {
                             setDialogState(() {
                               breakType = val;
-                              if (nameCtrl.text.isEmpty || nameCtrl.text.endsWith('Break')) {
+                              if (nameCtrl.text.isEmpty ||
+                                  nameCtrl.text.endsWith('Break')) {
                                 nameCtrl.text = val.displayName;
                               }
                             });
@@ -892,7 +1155,9 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                           Expanded(
                             child: TextField(
                               controller: startCtrl,
-                              decoration: const InputDecoration(labelText: 'Start Time (HH:mm) *'),
+                              decoration: const InputDecoration(
+                                labelText: 'Start Time (HH:mm) *',
+                              ),
                               onChanged: (_) => setDialogState(() {}),
                             ),
                           ),
@@ -900,14 +1165,23 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                           Expanded(
                             child: TextField(
                               controller: endCtrl,
-                              decoration: const InputDecoration(labelText: 'End Time (HH:mm) *'),
+                              decoration: const InputDecoration(
+                                labelText: 'End Time (HH:mm) *',
+                              ),
                               onChanged: (_) => setDialogState(() {}),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      Text('Applicable Days *', style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600)),
+                      Text(
+                        'Applicable Days *',
+                        style: AcadexTypography.caption(
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
+                        ).copyWith(fontWeight: FontWeight.w600),
+                      ),
                       const SizedBox(height: 6),
                       Wrap(
                         spacing: 6,
@@ -932,19 +1206,36 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                       const SizedBox(height: 12),
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: const Text('Vertical Span in Grid', style: TextStyle(fontSize: 14)),
-                        subtitle: const Text('Render as a continuous vertical block across columns', style: TextStyle(fontSize: 11)),
+                        title: const Text(
+                          'Vertical Span in Grid',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        subtitle: const Text(
+                          'Render as a continuous vertical block across columns',
+                          style: TextStyle(fontSize: 11),
+                        ),
                         value: isVerticalSpan,
-                        onChanged: (val) => setDialogState(() => isVerticalSpan = val),
+                        onChanged: (val) =>
+                            setDialogState(() => isVerticalSpan = val),
                       ),
                       if (errorMsg != null) ...[
                         const SizedBox(height: 12),
                         Row(
                           children: [
-                            const Icon(LucideIcons.alertCircle, size: 14, color: AcadexColors.error),
+                            const Icon(
+                              LucideIcons.alertCircle,
+                              size: 14,
+                              color: AcadexColors.error,
+                            ),
                             const SizedBox(width: 6),
                             Expanded(
-                              child: Text(errorMsg, style: const TextStyle(color: AcadexColors.error, fontSize: 12)),
+                              child: Text(
+                                errorMsg,
+                                style: const TextStyle(
+                                  color: AcadexColors.error,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -961,7 +1252,11 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                 ElevatedButton(
                   onPressed: errorMsg == null
                       ? () {
-                          final notifier = ref.read(timetableAuthoringProvider(widget.timetableId).notifier);
+                          final notifier = ref.read(
+                            timetableAuthoringProvider(
+                              widget.timetableId,
+                            ).notifier,
+                          );
                           if (isEditing) {
                             final updated = existingBreak.copyWith(
                               name: nameCtrl.text.trim(),
@@ -987,8 +1282,13 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                           Navigator.of(ctx).pop();
                         }
                       : null,
-                  style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
-                  child: Text(isEditing ? 'Save' : 'Add', style: const TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AcadexColors.primary,
+                  ),
+                  child: Text(
+                    isEditing ? 'Save' : 'Add',
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
             );

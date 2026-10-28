@@ -6,10 +6,7 @@ import '../../../../app/theme/app_theme.dart';
 class SearchEmptyState extends StatelessWidget {
   final String query;
 
-  const SearchEmptyState({
-    super.key,
-    required this.query,
-  });
+  const SearchEmptyState({super.key, required this.query});
 
   @override
   Widget build(BuildContext context) {
@@ -42,10 +39,7 @@ class SearchEmptyState extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             "Try checking the spelling or use a different keyword.",
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: AppColors.textMuted,
-            ),
+            style: GoogleFonts.inter(fontSize: 14, color: AppColors.textMuted),
             textAlign: TextAlign.center,
           ),
         ],

@@ -34,20 +34,27 @@ class AcadexListTile extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final defaultBg = isSelected
-        ? (isDark ? AcadexColors.primaryHover.withValues(alpha: 0.2) : AcadexColors.primaryLight)
+        ? (isDark
+              ? AcadexColors.primaryHover.withValues(alpha: 0.2)
+              : AcadexColors.primaryLight)
         : Colors.transparent;
 
     final defaultBorder = isSelected
         ? Border.all(
-            color: isDark ? AcadexColors.primaryMuted.withValues(alpha: 0.5) : AcadexColors.primary.withValues(alpha: 0.3),
+            color: isDark
+                ? AcadexColors.primaryMuted.withValues(alpha: 0.5)
+                : AcadexColors.primary.withValues(alpha: 0.3),
             width: 1,
           )
         : Border.all(color: Colors.transparent, width: 1);
 
     Widget? leadingWidget = leading;
     if (leadingWidget == null && leadingIcon != null) {
-      final iconColor = leadingIconColor ?? (isDark ? AcadexColors.primaryMuted : AcadexColors.primary);
-      final iconBg = leadingBackgroundColor ??
+      final iconColor =
+          leadingIconColor ??
+          (isDark ? AcadexColors.primaryMuted : AcadexColors.primary);
+      final iconBg =
+          leadingBackgroundColor ??
           (isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft);
 
       leadingWidget = Container(
@@ -76,55 +83,68 @@ class AcadexListTile extends StatelessWidget {
           borderRadius: AcadexRadius.borderRadiusMd,
           child: InkWell(
             onTap: onTap,
-          borderRadius: AcadexRadius.borderRadiusMd,
-          child: Padding(
-            padding: contentPadding ?? const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
-              children: [
-                if (leadingWidget != null) ...[
-                  leadingWidget,
-                  const SizedBox(width: 14),
-                ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        title,
-                        style: AcadexTypography.bodyMedium(
-                          color: isSelected
-                              ? (isDark ? AcadexColors.primaryMuted : AcadexColors.primary)
-                              : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
-                        ).copyWith(
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                        ),
-                      ),
-                      if (subtitle != null) ...[
-                        const SizedBox(height: 2),
+            borderRadius: AcadexRadius.borderRadiusMd,
+            child: Padding(
+              padding:
+                  contentPadding ??
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  if (leadingWidget != null) ...[
+                    leadingWidget,
+                    const SizedBox(width: 14),
+                  ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                         Text(
-                          subtitle!,
-                          style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                          ),
+                          title,
+                          style:
+                              AcadexTypography.bodyMedium(
+                                color: isSelected
+                                    ? (isDark
+                                          ? AcadexColors.primaryMuted
+                                          : AcadexColors.primary)
+                                    : (isDark
+                                          ? AcadexColors.darkInk
+                                          : AcadexColors.ink),
+                              ).copyWith(
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w500,
+                              ),
                         ),
+                        if (subtitle != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            subtitle!,
+                            style: AcadexTypography.caption(
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-                if (trailing != null) ...[
-                  const SizedBox(width: 12),
-                  trailing!,
-                ] else if (onTap != null) ...[
-                  const SizedBox(width: 8),
-                  Icon(
-                    LucideIcons.chevronRight,
-                    size: 16,
-                    color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
-                  ),
+                  if (trailing != null) ...[
+                    const SizedBox(width: 12),
+                    trailing!,
+                  ] else if (onTap != null) ...[
+                    const SizedBox(width: 8),
+                    Icon(
+                      LucideIcons.chevronRight,
+                      size: 16,
+                      color: isDark
+                          ? AcadexColors.darkInkFaint
+                          : AcadexColors.inkFaint,
+                    ),
+                  ],
                 ],
-              ],
-            ),
+              ),
             ),
           ),
         ),

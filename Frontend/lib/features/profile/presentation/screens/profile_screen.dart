@@ -10,6 +10,8 @@ import '../../../../core/presentation/widgets/acadex_avatar.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_sliver_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_sliver_page_header.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../../domain/models/profile_models.dart';
@@ -39,7 +41,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final file = result.files.first;
       if (file.bytes == null) {
         if (mounted) {
-          AcadexSnackBar.showWarning(context, 'Unable to read the selected file.');
+          AcadexSnackBar.showWarning(
+            context,
+            'Unable to read the selected file.',
+          );
         }
         return;
       }
@@ -47,7 +52,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (!ProfileRepository.isImageExtensionSupported(file.name)) {
         if (mounted) {
           AcadexSnackBar.showWarning(
-              context, 'Unsupported image format. Allowed: JPG, PNG, WebP.');
+            context,
+            'Unsupported image format. Allowed: JPG, PNG, WebP.',
+          );
         }
         return;
       }
@@ -55,7 +62,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (file.size > ProfileRepository.maxProfileImageSizeBytes) {
         if (mounted) {
           AcadexSnackBar.showWarning(
-              context, 'Image size exceeds maximum limit of 5MB.');
+            context,
+            'Image size exceeds maximum limit of 5MB.',
+          );
         }
         return;
       }
@@ -64,14 +73,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         AcadexSnackBar.showInfo(context, 'Uploading profile picture...');
       }
 
-      await ref.read(profileImageUploadProvider.notifier).uploadProfileImage(
+      await ref
+          .read(profileImageUploadProvider.notifier)
+          .uploadProfileImage(
             fileName: file.name,
             bytes: file.bytes!,
             targetUserId: userId,
           );
 
       if (mounted) {
-        AcadexSnackBar.showSuccess(context, 'Profile picture updated successfully!');
+        AcadexSnackBar.showSuccess(
+          context,
+          'Profile picture updated successfully!',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -88,81 +102,107 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider);
     final uploadState = ref.watch(profileImageUploadProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      color: DashboardColors.background,
-      child: profileAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: DashboardColors.primary),
-        ),
-        error: (err, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AcadexSpacing.lg),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(LucideIcons.circleAlert,
-                    size: 48, color: DashboardColors.error),
-                const SizedBox(height: AcadexSpacing.md),
-                const Text(
-                  'Failed to load profile',
-                  style: TextStyle(
+    return AcadexSliverPageContainer(
+      onRefresh: () async => ref.invalidate(profileProvider),
+      header: AcadexSliverPageHeader(
+        title: 'My Profile',
+        subtitle:
+            'Personal identity, credentials, and institutional affiliation',
+        actions: [
+          AcadexButton(
+            label: 'Edit Profile',
+            icon: LucideIcons.pencil,
+            size: AcadexButtonSize.sm,
+            variant: AcadexButtonVariant.secondary,
+            onPressed: () => context.go('/profile/edit'),
+          ),
+        ],
+      ),
+      slivers: [
+        SliverToBoxAdapter(
+          child: profileAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 48),
+              child: Center(
+                child: CircularProgressIndicator(color: AcadexColors.primary),
+              ),
+            ),
+            error: (err, _) => Padding(
+              padding: const EdgeInsets.all(AcadexSpacing.lg),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    LucideIcons.circleAlert,
+                    size: 48,
+                    color: AcadexColors.error,
+                  ),
+                  const SizedBox(height: AcadexSpacing.md),
+                  Text(
+                    'Failed to load profile',
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: DashboardColors.textPrimary),
-                ),
-                const SizedBox(height: AcadexSpacing.xs),
-                Text(
-                  err.toString(),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontSize: 13, color: DashboardColors.textSecondary),
-                ),
-                const SizedBox(height: AcadexSpacing.lg),
-                AcadexButton(
-                  label: 'Retry',
-                  icon: LucideIcons.refreshCw,
-                  onPressed: () => ref.invalidate(profileProvider),
-                ),
-              ],
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ),
+                  ),
+                  const SizedBox(height: AcadexSpacing.xs),
+                  Text(
+                    err.toString(),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark
+                          ? AcadexColors.darkInkSecondary
+                          : AcadexColors.inkSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AcadexSpacing.lg),
+                  AcadexButton(
+                    label: 'Retry',
+                    icon: LucideIcons.refreshCw,
+                    onPressed: () => ref.invalidate(profileProvider),
+                  ),
+                ],
+              ),
             ),
+            data: (profile) {
+              final user = profile.user;
+              final role = user.role;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. Header Card (Avatar, Identity, Role Badge, Completion)
+                  _buildHeaderCard(profile, uploadState),
+                  const SizedBox(height: AcadexSpacing.md),
+
+                  // 2. Contact & Identity Information
+                  _buildContactCard(user),
+                  const SizedBox(height: AcadexSpacing.md),
+
+                  // 3. Role-Aware Dynamic Context Card
+                  _buildRoleContextCard(profile),
+                  const SizedBox(height: AcadexSpacing.md),
+
+                  // 4. Role-Specific Quick Navigation Actions
+                  _buildQuickActions(role),
+                  const SizedBox(height: AcadexSpacing.xl),
+                ],
+              );
+            },
           ),
         ),
-        data: (profile) {
-          final user = profile.user;
-          final role = user.role;
-
-          return SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(AcadexSpacing.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 1. Header Card (Avatar, Identity, Role Badge, Completion)
-                _buildHeaderCard(profile, uploadState),
-                const SizedBox(height: AcadexSpacing.md),
-
-                // 2. Contact & Identity Information
-                _buildContactCard(user),
-                const SizedBox(height: AcadexSpacing.md),
-
-                // 3. Role-Aware Dynamic Context Card
-                _buildRoleContextCard(profile),
-                const SizedBox(height: AcadexSpacing.md),
-
-                // 4. Role-Specific Quick Navigation Actions
-                _buildQuickActions(role),
-                const SizedBox(height: AcadexSpacing.xl),
-              ],
-            ),
-          );
-        },
-      ),
+      ],
     );
   }
 
   Widget _buildHeaderCard(
-      ComposedProfileModel profile, ProfileImageUploadState uploadState) {
+    ComposedProfileModel profile,
+    ProfileImageUploadState uploadState,
+  ) {
     final user = profile.user;
     final completion = profile.completion;
 
@@ -205,8 +245,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           shape: BoxShape.circle,
                           color: DashboardColors.primary,
                         ),
-                        child: const Icon(LucideIcons.camera,
-                            size: 14, color: Colors.white),
+                        child: const Icon(
+                          LucideIcons.camera,
+                          size: 14,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -229,7 +272,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      user.instituteId.isNotEmpty ? user.instituteId : user.email,
+                      user.instituteId.isNotEmpty
+                          ? user.instituteId
+                          : user.email,
                       style: const TextStyle(
                         fontSize: 13,
                         color: DashboardColors.textSecondary,
@@ -240,13 +285,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: DashboardColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                            color:
-                                DashboardColors.primary.withValues(alpha: 0.2)),
+                          color: DashboardColors.primary.withValues(alpha: 0.2),
+                        ),
                       ),
                       child: Text(
                         user.role.displayName.toUpperCase(),
@@ -308,7 +355,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         value: completion.percentage / 100.0,
                         backgroundColor: DashboardColors.border,
                         valueColor: const AlwaysStoppedAnimation<Color>(
-                            DashboardColors.primary),
+                          DashboardColors.primary,
+                        ),
                         minHeight: 6,
                       ),
                     ),
@@ -404,9 +452,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Widget _buildStudentContext(StudentRoleProfileModel? student) {
     if (student == null) {
-      return const AcadexCard(
-        child: Text('Student profile data not linked.'),
-      );
+      return const AcadexCard(child: Text('Student profile data not linked.'));
     }
 
     final enrollment = student.currentEnrollment;
@@ -417,8 +463,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         children: [
           const Row(
             children: [
-              Icon(LucideIcons.graduationCap,
-                  size: 18, color: DashboardColors.primary),
+              Icon(
+                LucideIcons.graduationCap,
+                size: 18,
+                color: DashboardColors.primary,
+              ),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -476,7 +525,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               _buildInfoRow(
                 icon: LucideIcons.award,
                 label: 'Stage / Cohort',
-                value: '${enrollment.academicStage} (${enrollment.cohort ?? "—"})',
+                value:
+                    '${enrollment.academicStage} (${enrollment.cohort ?? "—"})',
                 isReadOnly: true,
               ),
             ],
@@ -487,12 +537,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 color: DashboardColors.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                    color: DashboardColors.warning.withValues(alpha: 0.3)),
+                  color: DashboardColors.warning.withValues(alpha: 0.3),
+                ),
               ),
               child: const Row(
                 children: [
-                  Icon(LucideIcons.info,
-                      size: 20, color: DashboardColors.warning),
+                  Icon(
+                    LucideIcons.info,
+                    size: 20,
+                    color: DashboardColors.warning,
+                  ),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -526,8 +580,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         children: [
           const Row(
             children: [
-              Icon(LucideIcons.briefcase,
-                  size: 18, color: DashboardColors.primary),
+              Icon(
+                LucideIcons.briefcase,
+                size: 18,
+                color: DashboardColors.primary,
+              ),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -586,15 +643,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: 6),
           if (assignments.isEmpty)
-            const Text('No active teaching assignments currently scheduled.',
-                style: TextStyle(
-                    fontSize: 12, color: DashboardColors.textMuted))
+            const Text(
+              'No active teaching assignments currently scheduled.',
+              style: TextStyle(fontSize: 12, color: DashboardColors.textMuted),
+            )
           else
             ...assignments.map(
               (a) => Container(
                 margin: const EdgeInsets.only(bottom: 6),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: DashboardColors.surface,
                   borderRadius: BorderRadius.circular(6),
@@ -602,8 +662,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.bookMarked,
-                        size: 16, color: DashboardColors.primary),
+                    const Icon(
+                      LucideIcons.bookMarked,
+                      size: 16,
+                      color: DashboardColors.primary,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -637,8 +700,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         children: [
           const Row(
             children: [
-              Icon(LucideIcons.shieldCheck,
-                  size: 18, color: DashboardColors.primary),
+              Icon(
+                LucideIcons.shieldCheck,
+                size: 18,
+                color: DashboardColors.primary,
+              ),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -703,8 +769,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         children: [
           const Row(
             children: [
-              Icon(LucideIcons.building2,
-                  size: 18, color: DashboardColors.primary),
+              Icon(
+                LucideIcons.building2,
+                size: 18,
+                color: DashboardColors.primary,
+              ),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -801,7 +870,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       decoration: BoxDecoration(
         color: DashboardColors.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: DashboardColors.primary.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: DashboardColors.primary.withValues(alpha: 0.1),
+        ),
       ),
       child: Column(
         children: [
@@ -870,8 +941,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   padding: const EdgeInsets.only(left: 4),
                   child: Tooltip(
                     message: tooltip ?? 'Institutional managed field',
-                    child: const Icon(LucideIcons.lock,
-                        size: 12, color: DashboardColors.textMuted),
+                    child: const Icon(
+                      LucideIcons.lock,
+                      size: 12,
+                      color: DashboardColors.textMuted,
+                    ),
                   ),
                 ),
             ],
@@ -886,38 +960,122 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     if (role == AppRole.student) {
       actions.addAll([
-        {'label': 'Academic Records', 'icon': LucideIcons.bookOpen, 'route': '/academic-records'},
-        {'label': 'Attendance', 'icon': LucideIcons.checkSquare, 'route': '/attendance'},
-        {'label': 'Assignments', 'icon': LucideIcons.fileSpreadsheet, 'route': '/assignments'},
-        {'label': 'Practicals', 'icon': LucideIcons.flaskConical, 'route': '/practicals'},
-        {'label': 'Assessments', 'icon': LucideIcons.penTool, 'route': '/assessments'},
-        {'label': 'Official Results', 'icon': LucideIcons.award, 'route': '/academic-results'},
-        {'label': 'Calendar', 'icon': LucideIcons.calendarDays, 'route': '/calendar'},
+        {
+          'label': 'Academic Records',
+          'icon': LucideIcons.bookOpen,
+          'route': '/academic-records',
+        },
+        {
+          'label': 'Attendance',
+          'icon': LucideIcons.checkSquare,
+          'route': '/attendance',
+        },
+        {
+          'label': 'Assignments',
+          'icon': LucideIcons.fileSpreadsheet,
+          'route': '/assignments',
+        },
+        {
+          'label': 'Practicals',
+          'icon': LucideIcons.flaskConical,
+          'route': '/practicals',
+        },
+        {
+          'label': 'Assessments',
+          'icon': LucideIcons.penTool,
+          'route': '/assessments',
+        },
+        {
+          'label': 'Official Results',
+          'icon': LucideIcons.award,
+          'route': '/academic-results',
+        },
+        {
+          'label': 'Calendar',
+          'icon': LucideIcons.calendarDays,
+          'route': '/calendar',
+        },
         {'label': 'Requests', 'icon': LucideIcons.inbox, 'route': '/requests'},
       ]);
     } else if (role == AppRole.faculty) {
       actions.addAll([
-        {'label': 'Teaching Assignments', 'icon': LucideIcons.fileSpreadsheet, 'route': '/assignments'},
-        {'label': 'Attendance Session', 'icon': LucideIcons.checkSquare, 'route': '/attendance'},
-        {'label': 'Practicals', 'icon': LucideIcons.flaskConical, 'route': '/practicals'},
-        {'label': 'Assessments', 'icon': LucideIcons.penTool, 'route': '/assessments'},
-        {'label': 'Calendar', 'icon': LucideIcons.calendarDays, 'route': '/calendar'},
+        {
+          'label': 'Teaching Assignments',
+          'icon': LucideIcons.fileSpreadsheet,
+          'route': '/assignments',
+        },
+        {
+          'label': 'Attendance Session',
+          'icon': LucideIcons.checkSquare,
+          'route': '/attendance',
+        },
+        {
+          'label': 'Practicals',
+          'icon': LucideIcons.flaskConical,
+          'route': '/practicals',
+        },
+        {
+          'label': 'Assessments',
+          'icon': LucideIcons.penTool,
+          'route': '/assessments',
+        },
+        {
+          'label': 'Calendar',
+          'icon': LucideIcons.calendarDays,
+          'route': '/calendar',
+        },
         {'label': 'Requests', 'icon': LucideIcons.inbox, 'route': '/requests'},
       ]);
     } else if (role == AppRole.hod) {
       actions.addAll([
-        {'label': 'Department Timetable', 'icon': LucideIcons.calendar, 'route': '/timetable'},
-        {'label': 'Attendance Oversight', 'icon': LucideIcons.checkSquare, 'route': '/attendance'},
-        {'label': 'Academic Calendar', 'icon': LucideIcons.calendarDays, 'route': '/calendar'},
-        {'label': 'Incoming Requests', 'icon': LucideIcons.inbox, 'route': '/requests'},
-        {'label': 'Announcements', 'icon': LucideIcons.megaphone, 'route': '/announcements'},
+        {
+          'label': 'Department Timetable',
+          'icon': LucideIcons.calendar,
+          'route': '/timetable',
+        },
+        {
+          'label': 'Attendance Oversight',
+          'icon': LucideIcons.checkSquare,
+          'route': '/attendance',
+        },
+        {
+          'label': 'Academic Calendar',
+          'icon': LucideIcons.calendarDays,
+          'route': '/calendar',
+        },
+        {
+          'label': 'Incoming Requests',
+          'icon': LucideIcons.inbox,
+          'route': '/requests',
+        },
+        {
+          'label': 'Announcements',
+          'icon': LucideIcons.megaphone,
+          'route': '/announcements',
+        },
       ]);
     } else if (role == AppRole.collegeAdmin) {
       actions.addAll([
-        {'label': 'Institution Config', 'icon': LucideIcons.settings2, 'route': '/institution-config'},
-        {'label': 'Academic Calendar', 'icon': LucideIcons.calendarDays, 'route': '/calendar'},
-        {'label': 'Announcements', 'icon': LucideIcons.megaphone, 'route': '/announcements'},
-        {'label': 'Requests Center', 'icon': LucideIcons.inbox, 'route': '/requests'},
+        {
+          'label': 'Institution Config',
+          'icon': LucideIcons.settings2,
+          'route': '/institution-config',
+        },
+        {
+          'label': 'Academic Calendar',
+          'icon': LucideIcons.calendarDays,
+          'route': '/calendar',
+        },
+        {
+          'label': 'Announcements',
+          'icon': LucideIcons.megaphone,
+          'route': '/announcements',
+        },
+        {
+          'label': 'Requests Center',
+          'icon': LucideIcons.inbox,
+          'route': '/requests',
+        },
       ]);
     }
 
@@ -944,8 +1102,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 onTap: () => context.push(act['route'] as String),
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: DashboardColors.surface,
                     borderRadius: BorderRadius.circular(8),
@@ -954,8 +1114,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(act['icon'] as IconData,
-                          size: 15, color: DashboardColors.primary),
+                      Icon(
+                        act['icon'] as IconData,
+                        size: 15,
+                        color: DashboardColors.primary,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         act['label'] as String,

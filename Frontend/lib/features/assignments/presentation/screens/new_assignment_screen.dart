@@ -16,20 +16,19 @@ import '../providers/assignments_providers.dart';
 class NewAssignmentScreen extends ConsumerStatefulWidget {
   final String? initialFacultyAssignmentId;
 
-  const NewAssignmentScreen({
-    super.key,
-    this.initialFacultyAssignmentId,
-  });
+  const NewAssignmentScreen({super.key, this.initialFacultyAssignmentId});
 
   @override
-  ConsumerState<NewAssignmentScreen> createState() => _NewAssignmentScreenState();
+  ConsumerState<NewAssignmentScreen> createState() =>
+      _NewAssignmentScreenState();
 }
 
 class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
   final _formKey = GlobalKey<FormState>();
 
   // Scope Selection State
-  String _selectedScopeType = 'SECTION'; // COLLEGE, DEPARTMENT, SEMESTER, SECTION, SUBJECT
+  String _selectedScopeType =
+      'SECTION'; // COLLEGE, DEPARTMENT, SEMESTER, SECTION, SUBJECT
   String? _selectedFacultyAssignmentId;
   String? _selectedDepartmentId;
   String? _selectedCourseId;
@@ -117,7 +116,10 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
     final role = authState.user.role;
 
     if (role == AppRole.student) {
-      AcadexSnackBar.showError(context, 'Students are not authorized to create assignments.');
+      AcadexSnackBar.showError(
+        context,
+        'Students are not authorized to create assignments.',
+      );
       return;
     }
 
@@ -125,8 +127,12 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
 
     // Validate scope selections
     if (isFaculty) {
-      if (_selectedFacultyAssignmentId == null || _selectedFacultyAssignmentId!.isEmpty) {
-        AcadexSnackBar.showError(context, 'Please select an authorized teaching context.');
+      if (_selectedFacultyAssignmentId == null ||
+          _selectedFacultyAssignmentId!.isEmpty) {
+        AcadexSnackBar.showError(
+          context,
+          'Please select an authorized teaching context.',
+        );
         return;
       }
     } else {
@@ -142,7 +148,10 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
           break;
         case 'SEMESTER':
           if (_selectedSemesterId == null || _selectedSemesterId!.isEmpty) {
-            AcadexSnackBar.showError(context, 'Please select a course and semester.');
+            AcadexSnackBar.showError(
+              context,
+              'Please select a course and semester.',
+            );
             return;
           }
           break;
@@ -163,7 +172,10 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
 
     final maxMarks = int.tryParse(_maxMarksController.text.trim()) ?? 10;
     if (maxMarks <= 0) {
-      AcadexSnackBar.showError(context, 'Maximum marks must be greater than 0.');
+      AcadexSnackBar.showError(
+        context,
+        'Maximum marks must be greater than 0.',
+      );
       return;
     }
 
@@ -177,10 +189,12 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
     List<AssignmentAttachmentModel> attachments = [];
     if (_attachmentNameController.text.trim().isNotEmpty &&
         _attachmentUrlController.text.trim().isNotEmpty) {
-      attachments.add(AssignmentAttachmentModel(
-        name: _attachmentNameController.text.trim(),
-        url: _attachmentUrlController.text.trim(),
-      ));
+      attachments.add(
+        AssignmentAttachmentModel(
+          name: _attachmentNameController.text.trim(),
+          url: _attachmentUrlController.text.trim(),
+        ),
+      );
     }
 
     final dueDateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
@@ -225,7 +239,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
       if (result != null) {
         AcadexSnackBar.showSuccess(
           context,
-          publish ? 'Assignment published successfully.' : 'Assignment draft saved.',
+          publish
+              ? 'Assignment published successfully.'
+              : 'Assignment draft saved.',
         );
         context.safePop(fallbackRoute: '/assignments');
       } else {
@@ -243,9 +259,7 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
     final authState = ref.watch(authProvider);
 
     if (authState is! AuthAuthenticated) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final user = authState.user;
@@ -254,16 +268,18 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
     if (role == AppRole.student) {
       return Scaffold(
         backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-        appBar: AppBar(
-          title: const Text('Create Assignment'),
-        ),
+        appBar: AppBar(title: const Text('Create Assignment')),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(LucideIcons.shieldAlert, size: 56, color: Color(0xFFEF4444)),
+                const Icon(
+                  LucideIcons.shieldAlert,
+                  size: 56,
+                  color: Color(0xFFEF4444),
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'Access Restricted',
@@ -277,14 +293,17 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                 ),
                 const SizedBox(height: 20),
                 AcadexButton(
                   label: 'Back to Assignments',
                   icon: LucideIcons.arrowLeft,
-                  onPressed: () => context.safePop(fallbackRoute: '/assignments'),
+                  onPressed: () =>
+                      context.safePop(fallbackRoute: '/assignments'),
                 ),
               ],
             ),
@@ -295,8 +314,7 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
 
     final isFaculty = role == AppRole.faculty;
     final isHod = role == AppRole.hod;
-    final isAdmin = role == AppRole.collegeAdmin ||
-        role == AppRole.superAdmin;
+    final isAdmin = role == AppRole.collegeAdmin || role == AppRole.superAdmin;
 
     // Academic Structure Watchers
     final departments = ref.watch(departmentsProvider).valueOrNull ?? [];
@@ -312,7 +330,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
     final myAssignments = ref.watch(myFacultyAssignmentsProvider);
 
     // Initial setup for HOD: lock department
-    if (isHod && user.departmentId != null && _selectedDepartmentId != user.departmentId) {
+    if (isHod &&
+        user.departmentId != null &&
+        _selectedDepartmentId != user.departmentId) {
       _selectedDepartmentId = user.departmentId;
       if (_selectedScopeType == 'COLLEGE') {
         _selectedScopeType = 'DEPARTMENT';
@@ -320,7 +340,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
     }
 
     // Auto-select first faculty assignment for faculty if none selected
-    if (isFaculty && _selectedFacultyAssignmentId == null && myAssignments.isNotEmpty) {
+    if (isFaculty &&
+        _selectedFacultyAssignmentId == null &&
+        myAssignments.isNotEmpty) {
       final first = myAssignments.first;
       _selectedFacultyAssignmentId = first.id;
       _selectedDepartmentId = first.departmentId;
@@ -332,7 +354,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
     }
 
     // Filter dependent dropdowns
-    final effectiveDeptId = isHod ? (user.departmentId ?? _selectedDepartmentId) : _selectedDepartmentId;
+    final effectiveDeptId = isHod
+        ? (user.departmentId ?? _selectedDepartmentId)
+        : _selectedDepartmentId;
 
     final filteredCourses = courses.where((c) {
       if (effectiveDeptId == null || effectiveDeptId.isEmpty) return true;
@@ -361,7 +385,8 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
 
     final filteredSubjects = subjects.where((sub) {
       if (_selectedSemesterId != null && _selectedSemesterId!.isNotEmpty) {
-        return sub.semesterId == _selectedSemesterId || sub.courseId == _selectedCourseId;
+        return sub.semesterId == _selectedSemesterId ||
+            sub.courseId == _selectedCourseId;
       }
       if (_selectedCourseId != null && _selectedCourseId!.isNotEmpty) {
         return sub.courseId == _selectedCourseId;
@@ -377,9 +402,14 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/assignments'),
         ),
         title: Text(
@@ -402,7 +432,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
               Text(
                 isFaculty ? 'TEACHING CONTEXT' : 'ACADEMIC AUDIENCE & SCOPE',
                 style: AcadexTypography.eyebrow(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
               const SizedBox(height: 6),
@@ -421,14 +453,20 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                     ),
                     child: Row(
                       children: [
-                        Icon(LucideIcons.alertTriangle, size: 18, color: Colors.amber.shade800),
+                        Icon(
+                          LucideIcons.alertTriangle,
+                          size: 18,
+                          color: Colors.amber.shade800,
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             'No active teaching assignments found for your account. You cannot publish assignments until classes are assigned.',
                             style: TextStyle(
                               fontSize: 13,
-                              color: isDark ? Colors.amber.shade200 : Colors.amber.shade900,
+                              color: isDark
+                                  ? Colors.amber.shade200
+                                  : Colors.amber.shade900,
                             ),
                           ),
                         ),
@@ -440,15 +478,22 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                     value: _selectedFacultyAssignmentId,
                     isExpanded: true,
                     decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: AcadexRadius.borderRadiusMd,
                         borderSide: BorderSide(
-                          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                          color: isDark
+                              ? AcadexColors.darkHairline
+                              : AcadexColors.hairline,
                         ),
                       ),
                     ),
-                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                    dropdownColor: isDark
+                        ? AcadexColors.darkSurfaceCard
+                        : Colors.white,
                     items: myAssignments.map((fa) {
                       final subj = subjectMap[fa.subjectId]?.name ?? 'Subject';
                       final sec = sectionMap[fa.sectionId]?.name;
@@ -459,7 +504,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                           label,
                           style: TextStyle(
                             fontSize: 13.5,
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -475,10 +522,14 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                         _selectedSemesterId = fa.semesterId;
                         _selectedSectionId = fa.sectionId;
                         _selectedSubjectId = fa.subjectId;
-                        _selectedScopeType = fa.sectionId != null ? 'SECTION' : 'SEMESTER';
+                        _selectedScopeType = fa.sectionId != null
+                            ? 'SECTION'
+                            : 'SEMESTER';
                       });
                     },
-                    validator: (val) => val == null ? 'Please select an authorized teaching context.' : null,
+                    validator: (val) => val == null
+                        ? 'Please select an authorized teaching context.'
+                        : null,
                   ),
               ] else ...[
                 // HOD & College Admin: Role-based scope selector
@@ -486,22 +537,44 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                   value: _selectedScopeType,
                   decoration: InputDecoration(
                     labelText: 'Scope Level *',
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: AcadexRadius.borderRadiusMd,
                       borderSide: BorderSide(
-                        color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                        color: isDark
+                            ? AcadexColors.darkHairline
+                            : AcadexColors.hairline,
                       ),
                     ),
                   ),
-                  dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                  dropdownColor: isDark
+                      ? AcadexColors.darkSurfaceCard
+                      : Colors.white,
                   items: [
                     if (isAdmin)
-                      const DropdownMenuItem(value: 'COLLEGE', child: Text('Entire College')),
-                    const DropdownMenuItem(value: 'DEPARTMENT', child: Text('Department Wide')),
-                    const DropdownMenuItem(value: 'SEMESTER', child: Text('Semester / Class')),
-                    const DropdownMenuItem(value: 'SECTION', child: Text('Specific Section')),
-                    const DropdownMenuItem(value: 'SUBJECT', child: Text('Specific Subject')),
+                      const DropdownMenuItem(
+                        value: 'COLLEGE',
+                        child: Text('Entire College'),
+                      ),
+                    const DropdownMenuItem(
+                      value: 'DEPARTMENT',
+                      child: Text('Department Wide'),
+                    ),
+                    const DropdownMenuItem(
+                      value: 'SEMESTER',
+                      child: Text('Semester / Class'),
+                    ),
+                    const DropdownMenuItem(
+                      value: 'SECTION',
+                      child: Text('Specific Section'),
+                    ),
+                    const DropdownMenuItem(
+                      value: 'SUBJECT',
+                      child: Text('Specific Subject'),
+                    ),
                   ],
                   onChanged: (val) {
                     if (val == null) return;
@@ -534,15 +607,28 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                   if (isHod)
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
-                        color: isDark ? AcadexColors.darkSurfaceCard : const Color(0xFFF1F5F9),
+                        color: isDark
+                            ? AcadexColors.darkSurfaceCard
+                            : const Color(0xFFF1F5F9),
                         borderRadius: AcadexRadius.borderRadiusMd,
-                        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                        border: Border.all(
+                          color: isDark
+                              ? AcadexColors.darkHairline
+                              : AcadexColors.hairline,
+                        ),
                       ),
                       child: Row(
                         children: [
-                          Icon(LucideIcons.building, size: 16, color: AcadexColors.primary),
+                          Icon(
+                            LucideIcons.building,
+                            size: 16,
+                            color: AcadexColors.primary,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -550,7 +636,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
                               ),
                             ),
                           ),
@@ -563,16 +651,24 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                       isExpanded: true,
                       decoration: InputDecoration(
                         labelText: 'Department / Branch *',
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
                         ),
                       ),
-                      dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                      dropdownColor: isDark
+                          ? AcadexColors.darkSurfaceCard
+                          : Colors.white,
                       items: departments.map((d) {
                         return DropdownMenuItem(
                           value: d.id,
-                          child: Text('${d.name} (${d.code})', overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            '${d.name} (${d.code})',
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         );
                       }).toList(),
                       onChanged: (val) {
@@ -585,7 +681,8 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                         });
                       },
                       validator: (val) {
-                        if (_selectedScopeType != 'COLLEGE' && (val == null || val.isEmpty)) {
+                        if (_selectedScopeType != 'COLLEGE' &&
+                            (val == null || val.isEmpty)) {
                           return 'Please select a department.';
                         }
                         return null;
@@ -603,16 +700,24 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                     isExpanded: true,
                     decoration: InputDecoration(
                       labelText: 'Program / Course *',
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: AcadexRadius.borderRadiusMd,
                       ),
                     ),
-                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                    dropdownColor: isDark
+                        ? AcadexColors.darkSurfaceCard
+                        : Colors.white,
                     items: filteredCourses.map((c) {
                       return DropdownMenuItem(
                         value: c.id,
-                        child: Text('${c.name} (${c.code})', overflow: TextOverflow.ellipsis),
+                        child: Text(
+                          '${c.name} (${c.code})',
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       );
                     }).toList(),
                     onChanged: (val) {
@@ -623,7 +728,8 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                         _selectedSubjectId = null;
                       });
                     },
-                    validator: (val) => val == null ? 'Please select a course/program.' : null,
+                    validator: (val) =>
+                        val == null ? 'Please select a course/program.' : null,
                   ),
                   const SizedBox(height: 12),
 
@@ -633,12 +739,17 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                     isExpanded: true,
                     decoration: InputDecoration(
                       labelText: 'Semester / Class *',
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: AcadexRadius.borderRadiusMd,
                       ),
                     ),
-                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                    dropdownColor: isDark
+                        ? AcadexColors.darkSurfaceCard
+                        : Colors.white,
                     items: filteredSemesters.map((s) {
                       return DropdownMenuItem(
                         value: s.id,
@@ -652,31 +763,46 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                         _selectedSubjectId = null;
                       });
                     },
-                    validator: (val) => val == null ? 'Please select a semester.' : null,
+                    validator: (val) =>
+                        val == null ? 'Please select a semester.' : null,
                   ),
                   const SizedBox(height: 12),
                 ],
 
                 // Section Selection (for SECTION or SUBJECT)
-                if (_selectedScopeType == 'SECTION' || _selectedScopeType == 'SUBJECT') ...[
+                if (_selectedScopeType == 'SECTION' ||
+                    _selectedScopeType == 'SUBJECT') ...[
                   DropdownButtonFormField<String>(
                     value: _selectedSectionId,
                     isExpanded: true,
                     decoration: InputDecoration(
-                      labelText: _selectedScopeType == 'SECTION' ? 'Section *' : 'Section (Optional)',
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      labelText: _selectedScopeType == 'SECTION'
+                          ? 'Section *'
+                          : 'Section (Optional)',
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: AcadexRadius.borderRadiusMd,
                       ),
                     ),
-                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                    dropdownColor: isDark
+                        ? AcadexColors.darkSurfaceCard
+                        : Colors.white,
                     items: [
                       if (_selectedScopeType == 'SUBJECT')
-                        const DropdownMenuItem<String>(value: null, child: Text('All Sections')),
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: Text('All Sections'),
+                        ),
                       ...filteredSections.map((sec) {
                         return DropdownMenuItem(
                           value: sec.id,
-                          child: Text('Section ${sec.name}', overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            'Section ${sec.name}',
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         );
                       }),
                     ],
@@ -686,7 +812,8 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                       });
                     },
                     validator: (val) {
-                      if (_selectedScopeType == 'SECTION' && (val == null || val.isEmpty)) {
+                      if (_selectedScopeType == 'SECTION' &&
+                          (val == null || val.isEmpty)) {
                         return 'Please select a section.';
                       }
                       return null;
@@ -702,16 +829,24 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                     isExpanded: true,
                     decoration: InputDecoration(
                       labelText: 'Subject *',
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: AcadexRadius.borderRadiusMd,
                       ),
                     ),
-                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                    dropdownColor: isDark
+                        ? AcadexColors.darkSurfaceCard
+                        : Colors.white,
                     items: filteredSubjects.map((sub) {
                       return DropdownMenuItem(
                         value: sub.id,
-                        child: Text('${sub.name} (${sub.code})', overflow: TextOverflow.ellipsis),
+                        child: Text(
+                          '${sub.name} (${sub.code})',
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       );
                     }).toList(),
                     onChanged: (val) {
@@ -720,7 +855,8 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                       });
                     },
                     validator: (val) {
-                      if (_selectedScopeType == 'SUBJECT' && (val == null || val.isEmpty)) {
+                      if (_selectedScopeType == 'SUBJECT' &&
+                          (val == null || val.isEmpty)) {
                         return 'Please select a subject.';
                       }
                       return null;
@@ -740,7 +876,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
               Text(
                 'ASSIGNMENT TITLE',
                 style: AcadexTypography.eyebrow(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
               const SizedBox(height: 6),
@@ -748,11 +886,16 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                 controller: _titleController,
                 decoration: InputDecoration(
                   hintText: 'e.g. Linked List Problems',
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: AcadexRadius.borderRadiusMd,
                     borderSide: BorderSide(
-                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                      color: isDark
+                          ? AcadexColors.darkHairline
+                          : AcadexColors.hairline,
                     ),
                   ),
                 ),
@@ -769,7 +912,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
               Text(
                 'DESCRIPTION',
                 style: AcadexTypography.eyebrow(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
               const SizedBox(height: 6),
@@ -777,12 +922,18 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                 controller: _descriptionController,
                 maxLines: 4,
                 decoration: InputDecoration(
-                  hintText: 'Provide instructions or context for this assignment...',
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  hintText:
+                      'Provide instructions or context for this assignment...',
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: AcadexRadius.borderRadiusMd,
                     borderSide: BorderSide(
-                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                      color: isDark
+                          ? AcadexColors.darkHairline
+                          : AcadexColors.hairline,
                     ),
                   ),
                 ),
@@ -808,7 +959,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                         Text(
                           'ASSIGNMENT TYPE',
                           style: AcadexTypography.eyebrow(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -816,15 +969,22 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                           value: _selectedType,
                           isExpanded: true,
                           decoration: InputDecoration(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 10,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: AcadexRadius.borderRadiusMd,
                               borderSide: BorderSide(
-                                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                color: isDark
+                                    ? AcadexColors.darkHairline
+                                    : AcadexColors.hairline,
                               ),
                             ),
                           ),
-                          dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                          dropdownColor: isDark
+                              ? AcadexColors.darkSurfaceCard
+                              : Colors.white,
                           items: AssignmentType.values.map((t) {
                             return DropdownMenuItem(
                               value: t,
@@ -835,7 +995,8 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                             );
                           }).toList(),
                           onChanged: (val) {
-                            if (val != null) setState(() => _selectedType = val);
+                            if (val != null)
+                              setState(() => _selectedType = val);
                           },
                         ),
                       ],
@@ -849,7 +1010,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                         Text(
                           'MAXIMUM MARKS',
                           style: AcadexTypography.eyebrow(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -858,11 +1021,16 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
                             hintText: '10',
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: AcadexRadius.borderRadiusMd,
                               borderSide: BorderSide(
-                                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                color: isDark
+                                    ? AcadexColors.darkHairline
+                                    : AcadexColors.hairline,
                               ),
                             ),
                           ),
@@ -894,7 +1062,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                         Text(
                           'DUE DATE',
                           style: AcadexTypography.eyebrow(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -902,16 +1072,25 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                           onTap: _pickDate,
                           borderRadius: AcadexRadius.borderRadiusMd,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 12,
+                            ),
                             decoration: BoxDecoration(
                               border: Border.all(
-                                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                color: isDark
+                                    ? AcadexColors.darkHairline
+                                    : AcadexColors.hairline,
                               ),
                               borderRadius: AcadexRadius.borderRadiusMd,
                             ),
                             child: Row(
                               children: [
-                                const Icon(LucideIcons.calendar, size: 15, color: AcadexColors.primary),
+                                const Icon(
+                                  LucideIcons.calendar,
+                                  size: 15,
+                                  color: AcadexColors.primary,
+                                ),
                                 const SizedBox(width: 6),
                                 Flexible(
                                   child: Text(
@@ -920,7 +1099,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                      color: isDark
+                                          ? AcadexColors.darkInk
+                                          : AcadexColors.ink,
                                     ),
                                   ),
                                 ),
@@ -939,7 +1120,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                         Text(
                           'DUE TIME',
                           style: AcadexTypography.eyebrow(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -947,16 +1130,25 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                           onTap: _pickTime,
                           borderRadius: AcadexRadius.borderRadiusMd,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 12,
+                            ),
                             decoration: BoxDecoration(
                               border: Border.all(
-                                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                color: isDark
+                                    ? AcadexColors.darkHairline
+                                    : AcadexColors.hairline,
                               ),
                               borderRadius: AcadexRadius.borderRadiusMd,
                             ),
                             child: Row(
                               children: [
-                                const Icon(LucideIcons.clock, size: 15, color: AcadexColors.primary),
+                                const Icon(
+                                  LucideIcons.clock,
+                                  size: 15,
+                                  color: AcadexColors.primary,
+                                ),
                                 const SizedBox(width: 6),
                                 Flexible(
                                   child: Text(
@@ -965,7 +1157,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                      color: isDark
+                                          ? AcadexColors.darkInk
+                                          : AcadexColors.ink,
                                     ),
                                   ),
                                 ),
@@ -993,18 +1187,27 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AcadexTypography.eyebrow(
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                     ),
                   ),
                   TextButton.icon(
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 4,
+                      ),
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     onPressed: _addQuestion,
-                    icon: const Icon(LucideIcons.plus, size: 14, color: AcadexColors.primary),
+                    icon: const Icon(
+                      LucideIcons.plus,
+                      size: 14,
+                      color: AcadexColors.primary,
+                    ),
                     label: const Text(
                       'Add Question',
                       style: TextStyle(
@@ -1037,18 +1240,27 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                             controller: _questionControllers[index],
                             decoration: InputDecoration(
                               hintText: 'Enter question text...',
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: AcadexRadius.borderRadiusMd,
                                 borderSide: BorderSide(
-                                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                  color: isDark
+                                      ? AcadexColors.darkHairline
+                                      : AcadexColors.hairline,
                                 ),
                               ),
                             ),
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(LucideIcons.trash2, size: 16, color: Color(0xFFDC2626)),
+                          icon: const Icon(
+                            LucideIcons.trash2,
+                            size: 16,
+                            color: Color(0xFFDC2626),
+                          ),
                           onPressed: () => _removeQuestion(index),
                         ),
                       ],
@@ -1064,7 +1276,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
               Text(
                 'ATTACHMENT (OPTIONAL)',
                 style: AcadexTypography.eyebrow(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
               const SizedBox(height: 6),
@@ -1076,11 +1290,16 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                       controller: _attachmentNameController,
                       decoration: InputDecoration(
                         hintText: 'File name (e.g. assignment.pdf)',
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
                           borderSide: BorderSide(
-                            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                            color: isDark
+                                ? AcadexColors.darkHairline
+                                : AcadexColors.hairline,
                           ),
                         ),
                       ),
@@ -1093,11 +1312,16 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                       controller: _attachmentUrlController,
                       decoration: InputDecoration(
                         hintText: 'Attachment URL or key',
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
                           borderSide: BorderSide(
-                            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                            color: isDark
+                                ? AcadexColors.darkHairline
+                                : AcadexColors.hairline,
                           ),
                         ),
                       ),
@@ -1117,7 +1341,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                 child: AcadexButton(
                   label: _isSubmitting ? 'Publishing...' : 'Publish Assignment',
                   icon: LucideIcons.send,
-                  onPressed: _isSubmitting ? null : () => _handleSubmit(publish: true),
+                  onPressed: _isSubmitting
+                      ? null
+                      : () => _handleSubmit(publish: true),
                 ),
               ),
 
@@ -1127,7 +1353,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                 width: double.infinity,
                 height: 44,
                 child: OutlinedButton(
-                  onPressed: _isSubmitting ? null : () => _handleSubmit(publish: false),
+                  onPressed: _isSubmitting
+                      ? null
+                      : () => _handleSubmit(publish: false),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: AcadexColors.primary),
                     shape: RoundedRectangleBorder(

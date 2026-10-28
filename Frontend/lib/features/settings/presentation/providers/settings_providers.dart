@@ -15,8 +15,8 @@ final settingsRepoProvider = Provider<SettingsRepository>((ref) {
   final firestoreService = ref.watch(firestoreServiceProvider);
   final authState = ref.watch(authProvider);
   return FirebaseSettingsRepository(
-    firestoreService, 
-    authState is AuthAuthenticated ? authState.user : null
+    firestoreService,
+    authState is AuthAuthenticated ? authState.user : null,
   );
 });
 
@@ -35,11 +35,13 @@ class AppSettingsNotifier extends AsyncNotifier<AppSettings> {
   }
 }
 
-final appSettingsProvider = AsyncNotifierProvider<AppSettingsNotifier, AppSettings>(() {
-  return AppSettingsNotifier();
-});
+final appSettingsProvider =
+    AsyncNotifierProvider<AppSettingsNotifier, AppSettings>(() {
+      return AppSettingsNotifier();
+    });
 
-class NotificationPreferencesNotifier extends AsyncNotifier<NotificationPreferences> {
+class NotificationPreferencesNotifier
+    extends AsyncNotifier<NotificationPreferences> {
   @override
   Future<NotificationPreferences> build() async {
     return ref.watch(settingsRepoProvider).getNotificationPreferences();
@@ -48,12 +50,18 @@ class NotificationPreferencesNotifier extends AsyncNotifier<NotificationPreferen
   Future<void> updatePreferences(NotificationPreferences newPrefs) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      await ref.read(settingsRepoProvider).updateNotificationPreferences(newPrefs);
+      await ref
+          .read(settingsRepoProvider)
+          .updateNotificationPreferences(newPrefs);
       return ref.read(settingsRepoProvider).getNotificationPreferences();
     });
   }
 }
 
-final notificationPreferencesProvider = AsyncNotifierProvider<NotificationPreferencesNotifier, NotificationPreferences>(() {
-  return NotificationPreferencesNotifier();
-});
+final notificationPreferencesProvider =
+    AsyncNotifierProvider<
+      NotificationPreferencesNotifier,
+      NotificationPreferences
+    >(() {
+      return NotificationPreferencesNotifier();
+    });

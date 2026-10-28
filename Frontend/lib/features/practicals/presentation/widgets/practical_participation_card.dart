@@ -83,7 +83,9 @@ class PracticalParticipationCard extends StatelessWidget {
                 Text(
                   '(${participation.rollNumber})',
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                 ),
               ],
@@ -99,7 +101,10 @@ class PracticalParticipationCard extends StatelessWidget {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2.5,
+                  ),
                   decoration: BoxDecoration(
                     color: _getStatusBg(),
                     borderRadius: BorderRadius.circular(4),
@@ -113,16 +118,25 @@ class PracticalParticipationCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (participation.notes != null && participation.notes!.isNotEmpty) ...[
+                if (participation.notes != null &&
+                    participation.notes!.isNotEmpty) ...[
                   const SizedBox(width: 8),
-                  Icon(LucideIcons.fileText, size: 12, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                  Icon(
+                    LucideIcons.fileText,
+                    size: 12,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
+                  ),
                   const SizedBox(width: 3),
                   Text(
                     participation.notes!,
                     style: TextStyle(
                       fontSize: 10,
                       fontStyle: FontStyle.italic,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
                 ],
@@ -132,24 +146,35 @@ class PracticalParticipationCard extends StatelessWidget {
                   _buildQuickAction(
                     label: 'In Progress',
                     color: AcadexColors.primary,
-                    isSelected: participation.status == PracticalParticipationStatus.inProgress,
-                    onTap: () => onStatusChanged!(PracticalParticipationStatus.inProgress),
+                    isSelected:
+                        participation.status ==
+                        PracticalParticipationStatus.inProgress,
+                    onTap: () => onStatusChanged!(
+                      PracticalParticipationStatus.inProgress,
+                    ),
                     isDark: isDark,
                   ),
                   const SizedBox(width: 6),
                   _buildQuickAction(
                     label: 'Completed',
                     color: const Color(0xFF15803D),
-                    isSelected: participation.status == PracticalParticipationStatus.completed,
-                    onTap: () => onStatusChanged!(PracticalParticipationStatus.completed),
+                    isSelected:
+                        participation.status ==
+                        PracticalParticipationStatus.completed,
+                    onTap: () => onStatusChanged!(
+                      PracticalParticipationStatus.completed,
+                    ),
                     isDark: isDark,
                   ),
                   const SizedBox(width: 6),
                   _buildQuickAction(
                     label: 'Absent',
                     color: const Color(0xFFDC2626),
-                    isSelected: participation.status == PracticalParticipationStatus.absent,
-                    onTap: () => onStatusChanged!(PracticalParticipationStatus.absent),
+                    isSelected:
+                        participation.status ==
+                        PracticalParticipationStatus.absent,
+                    onTap: () =>
+                        onStatusChanged!(PracticalParticipationStatus.absent),
                     isDark: isDark,
                   ),
                 ],
@@ -163,7 +188,9 @@ class PracticalParticipationCard extends StatelessWidget {
                       child: Icon(
                         LucideIcons.edit2,
                         size: 13,
-                        color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                        color: isDark
+                            ? AcadexColors.darkInkSecondary
+                            : AcadexColors.inkSecondary,
                       ),
                     ),
                   ),
@@ -191,10 +218,14 @@ class PracticalParticipationCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? color.withOpacity(0.15)
-              : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
+              : (isDark
+                    ? AcadexColors.darkCanvasSoft
+                    : AcadexColors.canvasSoft),
           borderRadius: BorderRadius.circular(4),
           border: Border.all(
-            color: isSelected ? color : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+            color: isSelected
+                ? color
+                : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
             width: 0.8,
           ),
         ),
@@ -203,7 +234,9 @@ class PracticalParticipationCard extends StatelessWidget {
           style: TextStyle(
             fontSize: 9.5,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected ? color : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
+            color: isSelected
+                ? color
+                : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
           ),
         ),
       ),

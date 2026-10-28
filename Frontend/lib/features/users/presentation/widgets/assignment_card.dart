@@ -23,7 +23,11 @@ class AssignmentCard extends StatelessWidget {
           const SizedBox(width: 12),
           Text(
             title,
-            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: DashboardColors.textPrimary),
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: DashboardColors.textPrimary,
+            ),
           ),
         ],
       ),

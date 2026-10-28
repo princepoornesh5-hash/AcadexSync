@@ -24,14 +24,18 @@ class InstitutionSetupCard extends ConsumerWidget {
     final departments = departmentsAsync.valueOrNull ?? [];
     final hods = hodsAsync.valueOrNull ?? [];
 
-    final activeAy = academicYears.where((ay) => ay.isCurrent && ay.isActive).firstOrNull ??
-        academicYears.where((ay) => ay.status == 'active' && ay.isActive).firstOrNull;
+    final activeAy =
+        academicYears.where((ay) => ay.isCurrent && ay.isActive).firstOrNull ??
+        academicYears
+            .where((ay) => ay.status == 'active' && ay.isActive)
+            .firstOrNull;
 
     final hasActiveAy = activeAy != null;
     final hasDepartments = departments.isNotEmpty;
     final hasHods = hods.isNotEmpty;
 
-    final completedCount = (hasActiveAy ? 1 : 0) + (hasDepartments ? 1 : 0) + (hasHods ? 1 : 0);
+    final completedCount =
+        (hasActiveAy ? 1 : 0) + (hasDepartments ? 1 : 0) + (hasHods ? 1 : 0);
 
     return AcadexCard(
       backgroundColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
@@ -48,7 +52,11 @@ class InstitutionSetupCard extends ConsumerWidget {
                   color: AcadexColors.primary.withValues(alpha: 0.1),
                   borderRadius: AcadexRadius.borderRadiusMd,
                 ),
-                child: const Icon(LucideIcons.building2, size: 20, color: AcadexColors.primary),
+                child: const Icon(
+                  LucideIcons.building2,
+                  size: 20,
+                  color: AcadexColors.primary,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -64,7 +72,9 @@ class InstitutionSetupCard extends ConsumerWidget {
                     Text(
                       'Foundational institution configuration: Academic Year, Departments, and HOD Leadership.',
                       style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                     ),
                   ],
@@ -72,7 +82,9 @@ class InstitutionSetupCard extends ConsumerWidget {
               ),
               AcadexBadge(
                 label: '$completedCount / 3 COMPLETE',
-                variant: completedCount == 3 ? AcadexBadgeVariant.success : AcadexBadgeVariant.neutral,
+                variant: completedCount == 3
+                    ? AcadexBadgeVariant.success
+                    : AcadexBadgeVariant.neutral,
               ),
             ],
           ),
@@ -81,9 +93,13 @@ class InstitutionSetupCard extends ConsumerWidget {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: completedCount / 3.0,
-              backgroundColor: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+              backgroundColor: isDark
+                  ? AcadexColors.darkHairline
+                  : AcadexColors.hairline,
               valueColor: AlwaysStoppedAnimation<Color>(
-                completedCount == 3 ? AcadexColors.success : AcadexColors.primary,
+                completedCount == 3
+                    ? AcadexColors.success
+                    : AcadexColors.primary,
               ),
               minHeight: 6,
             ),
@@ -136,17 +152,27 @@ class InstitutionSetupCard extends ConsumerWidget {
             decoration: BoxDecoration(
               color: isDark ? AcadexColors.darkCanvas : AcadexColors.canvasSoft,
               borderRadius: AcadexRadius.borderRadiusSm,
-              border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+              border: Border.all(
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
+              ),
             ),
             child: Row(
               children: [
-                const Icon(LucideIcons.info, size: 14, color: AcadexColors.primary),
+                const Icon(
+                  LucideIcons.info,
+                  size: 14,
+                  color: AcadexColors.primary,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'After HODs are assigned, they own and manage their department\'s courses, faculty assignments, student enrollments, and timetables directly.',
                     style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                      color: isDark
+                          ? AcadexColors.darkInkSecondary
+                          : AcadexColors.inkSecondary,
                     ),
                   ),
                 ),
@@ -175,7 +201,9 @@ class InstitutionSetupCard extends ConsumerWidget {
           Icon(
             isComplete ? LucideIcons.checkCircle2 : LucideIcons.circle,
             size: 20,
-            color: isComplete ? AcadexColors.success : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+            color: isComplete
+                ? AcadexColors.success
+                : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -191,7 +219,9 @@ class InstitutionSetupCard extends ConsumerWidget {
                 Text(
                   subtitle,
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                 ),
               ],
@@ -203,7 +233,9 @@ class InstitutionSetupCard extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               minimumSize: const Size(0, 32),
               side: BorderSide(
-                color: isComplete ? AcadexColors.hairline : AcadexColors.primary,
+                color: isComplete
+                    ? AcadexColors.hairline
+                    : AcadexColors.primary,
               ),
             ),
             child: Text(
@@ -212,7 +244,9 @@ class InstitutionSetupCard extends ConsumerWidget {
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: isComplete
-                    ? (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary)
+                    ? (isDark
+                          ? AcadexColors.darkInkSecondary
+                          : AcadexColors.inkSecondary)
                     : AcadexColors.primary,
               ),
             ),

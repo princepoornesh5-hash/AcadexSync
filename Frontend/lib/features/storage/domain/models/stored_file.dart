@@ -74,15 +74,23 @@ class StoredFile {
       ownerUid: json['ownerUid'] as String? ?? '',
       collegeId: json['collegeId'] as String?,
       departmentId: json['departmentId'] as String?,
-      category: FileCategoryExtension.fromValue(json['category'] as String? ?? 'other'),
+      category: FileCategoryExtension.fromValue(
+        json['category'] as String? ?? 'other',
+      ),
       fileName: json['fileName'] as String? ?? '',
       storagePath: json['storagePath'] as String? ?? '',
       downloadUrl: json['downloadUrl'] as String? ?? '',
       contentType: json['contentType'] as String? ?? 'application/octet-stream',
       sizeBytes: json['sizeBytes'] as int? ?? 0,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt'] as String) : DateTime.now(),
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt'] as String) : DateTime.now(),
-      status: FileStatusExtension.fromValue(json['status'] as String? ?? 'active'),
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'] as String)
+          : DateTime.now(),
+      status: FileStatusExtension.fromValue(
+        json['status'] as String? ?? 'active',
+      ),
       metadata: json['metadata'] as Map<String, dynamic>? ?? {},
     );
   }

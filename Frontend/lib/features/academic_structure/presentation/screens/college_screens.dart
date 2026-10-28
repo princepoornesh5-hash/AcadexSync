@@ -52,7 +52,9 @@ class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
             onPressed: () async {
               Navigator.of(ctx).pop();
               try {
-                await ref.read(collegesProvider.notifier).deleteCollegePermanently(college.id);
+                await ref
+                    .read(collegesProvider.notifier)
+                    .deleteCollegePermanently(college.id);
                 if (context.mounted) {
                   AcadexSnackBar.showSuccess(
                     context,
@@ -80,7 +82,9 @@ class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
   Widget build(BuildContext context) {
     final collegesAsync = ref.watch(collegesProvider);
     final authState = ref.watch(authProvider);
-    final isSuperAdmin = authState is AuthAuthenticated && authState.user.role == AppRole.superAdmin;
+    final isSuperAdmin =
+        authState is AuthAuthenticated &&
+        authState.user.role == AppRole.superAdmin;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = AcadexBreakpoints.isMobile(context);
 
@@ -106,22 +110,38 @@ class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
             padding: EdgeInsets.zero,
             child: Row(
               children: [
-                for (final f in [('all', 'All'), ('active', 'Active'), ('inactive', 'Inactive')])
+                for (final f in [
+                  ('all', 'All'),
+                  ('active', 'Active'),
+                  ('inactive', 'Inactive'),
+                ])
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: FilterChip(
                       label: Text(f.$2),
                       selected: _statusFilter == f.$1,
                       onSelected: (_) => setState(() => _statusFilter = f.$1),
-                      selectedColor: AcadexColors.primary.withValues(alpha: 0.15),
+                      selectedColor: AcadexColors.primary.withValues(
+                        alpha: 0.15,
+                      ),
                       checkmarkColor: AcadexColors.primary,
                       labelStyle: TextStyle(
-                        color: _statusFilter == f.$1 ? AcadexColors.primary : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                        fontWeight: _statusFilter == f.$1 ? FontWeight.w600 : FontWeight.w400,
+                        color: _statusFilter == f.$1
+                            ? AcadexColors.primary
+                            : (isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted),
+                        fontWeight: _statusFilter == f.$1
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                         fontSize: 12,
                       ),
                       side: BorderSide(
-                        color: _statusFilter == f.$1 ? AcadexColors.primary : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                        color: _statusFilter == f.$1
+                            ? AcadexColors.primary
+                            : (isDark
+                                  ? AcadexColors.darkHairline
+                                  : AcadexColors.hairline),
                       ),
                     ),
                   ),
@@ -154,7 +174,8 @@ class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
                   if (colleges.isNotEmpty) {
                     return AcadexEmptyState.filterEmpty(
                       title: "No colleges match criteria",
-                      subtitle: "Try clearing search or filters to see all colleges.",
+                      subtitle:
+                          "Try clearing search or filters to see all colleges.",
                       onClearFilters: () {
                         setState(() {
                           _searchQuery = '';
@@ -180,14 +201,19 @@ class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
                     itemBuilder: (context, i) {
                       final c = filtered[i];
                       return GestureDetector(
-                        onTap: () => context.push('/academics/colleges/${c.id}'),
+                        onTap: () =>
+                            context.push('/academics/colleges/${c.id}'),
                         child: Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                            color: isDark
+                                ? AcadexColors.darkSurfaceCard
+                                : AcadexColors.surface,
                             borderRadius: AcadexRadius.borderRadiusLg,
                             border: Border.all(
-                              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                              color: isDark
+                                  ? AcadexColors.darkHairline
+                                  : AcadexColors.hairline,
                               width: 1,
                             ),
                           ),
@@ -195,13 +221,16 @@ class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
                                     child: Text(
                                       c.name,
                                       style: AcadexTypography.body(
-                                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                        color: isDark
+                                            ? AcadexColors.darkInk
+                                            : AcadexColors.ink,
                                       ).copyWith(fontWeight: FontWeight.w700),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -209,17 +238,28 @@ class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
                                   ),
                                   const SizedBox(width: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: c.isActive
-                                          ? (isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight)
-                                          : (isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft),
-                                      borderRadius: AcadexRadius.borderRadiusFull,
+                                          ? (isDark
+                                                ? AcadexColors
+                                                      .successDarkContainer
+                                                : AcadexColors.successLight)
+                                          : (isDark
+                                                ? AcadexColors.darkSurfaceHover
+                                                : AcadexColors.canvasSoft),
+                                      borderRadius:
+                                          AcadexRadius.borderRadiusFull,
                                     ),
                                     child: Text(
                                       c.isActive ? "Active" : "Inactive",
                                       style: TextStyle(
-                                        color: c.isActive ? AcadexColors.success : AcadexColors.inkMuted,
+                                        color: c.isActive
+                                            ? AcadexColors.success
+                                            : AcadexColors.inkMuted,
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -231,7 +271,9 @@ class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
                               Text(
                                 "Code: ${c.code} • ${c.principal}",
                                 style: AcadexTypography.caption(
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
                                 ),
                               ),
                               if (c.email.isNotEmpty || c.phone.isNotEmpty) ...[
@@ -239,7 +281,9 @@ class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
                                 Text(
                                   "${c.email}${c.phone.isNotEmpty ? ' • ${c.phone}' : ''}",
                                   style: AcadexTypography.caption(
-                                    color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                                    color: isDark
+                                        ? AcadexColors.darkInkFaint
+                                        : AcadexColors.inkFaint,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -250,9 +294,15 @@ class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   IconButton(
-                                    icon: Icon(LucideIcons.arrowRight, size: 16, color: AcadexColors.primary),
+                                    icon: Icon(
+                                      LucideIcons.arrowRight,
+                                      size: 16,
+                                      color: AcadexColors.primary,
+                                    ),
                                     tooltip: "View Details",
-                                    onPressed: () => context.push('/academics/colleges/${c.id}'),
+                                    onPressed: () => context.push(
+                                      '/academics/colleges/${c.id}',
+                                    ),
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
                                   ),
@@ -261,19 +311,28 @@ class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
                                     icon: Icon(
                                       LucideIcons.edit,
                                       size: 18,
-                                      color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                                      color: isDark
+                                          ? AcadexColors.darkInkSecondary
+                                          : AcadexColors.inkSecondary,
                                     ),
                                     tooltip: "Edit College",
-                                    onPressed: () => context.push('/academics/colleges/edit/${c.id}'),
+                                    onPressed: () => context.push(
+                                      '/academics/colleges/edit/${c.id}',
+                                    ),
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
                                   ),
                                   if (isSuperAdmin) ...[
                                     const SizedBox(width: 12),
                                     IconButton(
-                                      icon: const Icon(LucideIcons.trash2, size: 18, color: AcadexColors.error),
+                                      icon: const Icon(
+                                        LucideIcons.trash2,
+                                        size: 18,
+                                        color: AcadexColors.error,
+                                      ),
                                       tooltip: "Delete College",
-                                      onPressed: () => _confirmDeleteCollege(context, c),
+                                      onPressed: () =>
+                                          _confirmDeleteCollege(context, c),
                                       padding: EdgeInsets.zero,
                                       constraints: const BoxConstraints(),
                                     ),
@@ -289,55 +348,93 @@ class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
                 }
 
                 return AcadexDataTable(
-                  columns: const ["Code", "Name", "Principal", "Email", "Phone", "Status", "Actions"],
-                  rows: filtered.map((c) => DataRow(
-                    cells: [
-                      DataCell(Text(c.code, style: const TextStyle(fontWeight: FontWeight.bold))),
-                      DataCell(Text(c.name)),
-                      DataCell(Text(c.principal)),
-                      DataCell(Text(c.email)),
-                      DataCell(Text(c.phone)),
-                      DataCell(
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: c.isActive ? AcadexColors.successLight : AcadexColors.canvasSoft,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            c.isActive ? "Active" : "Inactive",
-                            style: TextStyle(
-                              color: c.isActive ? AcadexColors.success : AcadexColors.inkMuted,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                      DataCell(
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(LucideIcons.eye, size: 18),
-                              tooltip: "View Details",
-                              onPressed: () => context.push('/academics/colleges/${c.id}'),
-                            ),
-                            IconButton(
-                              icon: const Icon(LucideIcons.edit, size: 18),
-                              tooltip: "Edit College",
-                              onPressed: () => context.push('/academics/colleges/edit/${c.id}'),
-                            ),
-                            if (isSuperAdmin)
-                              IconButton(
-                                icon: const Icon(LucideIcons.trash2, size: 18, color: AcadexColors.error),
-                                tooltip: "Delete College",
-                                onPressed: () => _confirmDeleteCollege(context, c),
+                  columns: const [
+                    "Code",
+                    "Name",
+                    "Principal",
+                    "Email",
+                    "Phone",
+                    "Status",
+                    "Actions",
+                  ],
+                  rows: filtered
+                      .map(
+                        (c) => DataRow(
+                          cells: [
+                            DataCell(
+                              Text(
+                                c.code,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
+                            ),
+                            DataCell(Text(c.name)),
+                            DataCell(Text(c.principal)),
+                            DataCell(Text(c.email)),
+                            DataCell(Text(c.phone)),
+                            DataCell(
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: c.isActive
+                                      ? AcadexColors.successLight
+                                      : AcadexColors.canvasSoft,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  c.isActive ? "Active" : "Inactive",
+                                  style: TextStyle(
+                                    color: c.isActive
+                                        ? AcadexColors.success
+                                        : AcadexColors.inkMuted,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            DataCell(
+                              Row(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(LucideIcons.eye, size: 18),
+                                    tooltip: "View Details",
+                                    onPressed: () => context.push(
+                                      '/academics/colleges/${c.id}',
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      LucideIcons.edit,
+                                      size: 18,
+                                    ),
+                                    tooltip: "Edit College",
+                                    onPressed: () => context.push(
+                                      '/academics/colleges/edit/${c.id}',
+                                    ),
+                                  ),
+                                  if (isSuperAdmin)
+                                    IconButton(
+                                      icon: const Icon(
+                                        LucideIcons.trash2,
+                                        size: 18,
+                                        color: AcadexColors.error,
+                                      ),
+                                      tooltip: "Delete College",
+                                      onPressed: () =>
+                                          _confirmDeleteCollege(context, c),
+                                    ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
-                      ),
-                    ],
-                  )).toList(),
+                      )
+                      .toList(),
                 );
               },
             ),
@@ -389,9 +486,11 @@ class _CollegeFormScreenState extends ConsumerState<CollegeFormScreen> {
       try {
         college = await ref.read(collegeByIdProvider(widget.collegeId!).future);
       } catch (_) {
-        college = await ref.read(academicRepositoryProvider).getCollegeById(widget.collegeId!);
+        college = await ref
+            .read(academicRepositoryProvider)
+            .getCollegeById(widget.collegeId!);
       }
-      
+
       if (college != null && mounted) {
         _existing = college;
         _nameCtrl.text = college.name;
@@ -482,10 +581,19 @@ class _CollegeFormScreenState extends ConsumerState<CollegeFormScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface),
-          onPressed: () => context.safePop(fallbackRoute: '/academics/colleges'),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          onPressed: () =>
+              context.safePop(fallbackRoute: '/academics/colleges'),
         ),
-        title: Text(isEdit ? "Edit College" : "Add College", style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface)),
+        title: Text(
+          isEdit ? "Edit College" : "Add College",
+          style: AcadexTypography.body(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -495,7 +603,8 @@ class _CollegeFormScreenState extends ConsumerState<CollegeFormScreen> {
                 key: _formKey,
                 child: AcadexFormCard(
                   title: "College Details",
-                  onCancel: () => context.safePop(fallbackRoute: '/academics/colleges'),
+                  onCancel: () =>
+                      context.safePop(fallbackRoute: '/academics/colleges'),
                   onSave: _save,
                   child: Column(
                     children: [
@@ -504,8 +613,12 @@ class _CollegeFormScreenState extends ConsumerState<CollegeFormScreen> {
                         child: TextFormField(
                           controller: _nameCtrl,
                           validator: (v) => v!.isEmpty ? 'Required' : null,
-                          style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface),
-                          decoration: const InputDecoration(hintText: "e.g. Global Institute of Technology"),
+                          style: AcadexTypography.body(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: "e.g. Global Institute of Technology",
+                          ),
                         ),
                       ),
                       AcadexFormField(
@@ -513,8 +626,12 @@ class _CollegeFormScreenState extends ConsumerState<CollegeFormScreen> {
                         child: TextFormField(
                           controller: _codeCtrl,
                           validator: (v) => v!.isEmpty ? 'Required' : null,
-                          style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface),
-                          decoration: const InputDecoration(hintText: "e.g. GIT"),
+                          style: AcadexTypography.body(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: "e.g. GIT",
+                          ),
                         ),
                       ),
                       AcadexFormField(
@@ -522,8 +639,12 @@ class _CollegeFormScreenState extends ConsumerState<CollegeFormScreen> {
                         child: TextFormField(
                           controller: _principalCtrl,
                           validator: (v) => v!.isEmpty ? 'Required' : null,
-                          style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface),
-                          decoration: const InputDecoration(hintText: "e.g. Dr. Smith"),
+                          style: AcadexTypography.body(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: "e.g. Dr. Smith",
+                          ),
                         ),
                       ),
                       AcadexFormField(
@@ -531,8 +652,12 @@ class _CollegeFormScreenState extends ConsumerState<CollegeFormScreen> {
                         child: TextFormField(
                           controller: _addressCtrl,
                           validator: (v) => v!.isEmpty ? 'Required' : null,
-                          style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface),
-                          decoration: const InputDecoration(hintText: "e.g. 123 University Ave"),
+                          style: AcadexTypography.body(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: "e.g. 123 University Ave",
+                          ),
                         ),
                       ),
                       Row(
@@ -542,9 +667,16 @@ class _CollegeFormScreenState extends ConsumerState<CollegeFormScreen> {
                               label: "Email",
                               child: TextFormField(
                                 controller: _emailCtrl,
-                                validator: (v) => v!.isEmpty ? 'Required' : null,
-                                style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface),
-                                decoration: const InputDecoration(hintText: "e.g. admin@college.edu"),
+                                validator: (v) =>
+                                    v!.isEmpty ? 'Required' : null,
+                                style: AcadexTypography.body(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
+                                decoration: const InputDecoration(
+                                  hintText: "e.g. admin@college.edu",
+                                ),
                               ),
                             ),
                           ),
@@ -554,9 +686,16 @@ class _CollegeFormScreenState extends ConsumerState<CollegeFormScreen> {
                               label: "Phone",
                               child: TextFormField(
                                 controller: _phoneCtrl,
-                                validator: (v) => v!.isEmpty ? 'Required' : null,
-                                style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface),
-                                decoration: const InputDecoration(hintText: "e.g. 9876543210"),
+                                validator: (v) =>
+                                    v!.isEmpty ? 'Required' : null,
+                                style: AcadexTypography.body(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
+                                decoration: const InputDecoration(
+                                  hintText: "e.g. 9876543210",
+                                ),
                               ),
                             ),
                           ),

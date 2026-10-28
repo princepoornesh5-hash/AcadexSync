@@ -39,7 +39,8 @@ class StudentDetailedSubjectAttendance {
     required this.lateCount,
     required this.excusedCount,
     required this.attendancePercentage,
-    this.requiredThreshold = AttendanceAnalyticsConstants.lowAttendanceThreshold,
+    this.requiredThreshold =
+        AttendanceAnalyticsConstants.lowAttendanceThreshold,
     required this.marginClassesCanMiss,
     required this.recoveryClassesNeeded,
     required this.riskLevel,
@@ -59,7 +60,8 @@ class StudentDetailedSubjectAttendance {
     int absentCount = 0,
     int lateCount = 0,
     int excusedCount = 0,
-    double requiredThreshold = AttendanceAnalyticsConstants.lowAttendanceThreshold,
+    double requiredThreshold =
+        AttendanceAnalyticsConstants.lowAttendanceThreshold,
   }) {
     final double percentage = totalClasses > 0
         ? (presentCount / totalClasses) * 100.0
@@ -78,11 +80,12 @@ class StudentDetailedSubjectAttendance {
     }
 
     // Calculate recovery classes needed to reach threshold
-    final int recovery = AttendanceAnalyticsConstants.calculateSessionsNeededToReachThreshold(
-      presentCount: presentCount,
-      totalSessions: totalClasses,
-      targetThreshold: requiredThreshold,
-    );
+    final int recovery =
+        AttendanceAnalyticsConstants.calculateSessionsNeededToReachThreshold(
+          presentCount: presentCount,
+          totalSessions: totalClasses,
+          targetThreshold: requiredThreshold,
+        );
 
     return StudentDetailedSubjectAttendance(
       subjectId: subjectId,

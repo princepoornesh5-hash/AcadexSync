@@ -83,7 +83,9 @@ class _AiComposerState extends State<AiComposer> {
                 color: isDark ? const Color(0xFF1E293B) : Colors.white,
                 borderRadius: BorderRadius.circular(26),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFE2E8F0),
                   width: 1.2,
                 ),
                 boxShadow: [
@@ -116,22 +118,28 @@ class _AiComposerState extends State<AiComposer> {
                         maxLines: 5,
                         enabled: !widget.isLoading && !widget.isCooldownActive,
                         style: AcadexTypography.body(
-                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF0F172A),
                         ).copyWith(fontSize: 15, height: 1.45),
                         textInputAction: TextInputAction.newline,
                         decoration: InputDecoration(
                           hintText: widget.isLoading
-                              ? "ACADEX is responding..."
+                              ? "ACADEXSYNC is responding..."
                               : (widget.isCooldownActive
-                                  ? "Rate limit cooldown active. Please wait..."
-                                  : "Ask ACADEX Assistant..."),
+                                    ? "Rate limit cooldown active. Please wait..."
+                                    : "Ask ACADEXSYNC Assistant..."),
                           hintStyle: AcadexTypography.body(
-                            color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                            color: isDark
+                                ? const Color(0xFF64748B)
+                                : const Color(0xFF94A3B8),
                           ).copyWith(fontSize: 15),
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
                           focusedBorder: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 8,
+                          ),
                           isDense: true,
                         ),
                       ),
@@ -146,10 +154,16 @@ class _AiComposerState extends State<AiComposer> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: widget.isLoading
-                          ? (isDark ? const Color(0xFF334155) : const Color(0xFF0F172A))
+                          ? (isDark
+                                ? const Color(0xFF334155)
+                                : const Color(0xFF0F172A))
                           : (_hasText && !widget.isCooldownActive
-                              ? (isDark ? AcadexColors.primary : const Color(0xFF0F172A))
-                              : (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9))),
+                                ? (isDark
+                                      ? AcadexColors.primary
+                                      : const Color(0xFF0F172A))
+                                : (isDark
+                                      ? const Color(0xFF334155)
+                                      : const Color(0xFFF1F5F9))),
                     ),
                     child: IconButton(
                       iconSize: widget.isLoading ? 14 : 18,
@@ -157,20 +171,26 @@ class _AiComposerState extends State<AiComposer> {
                       tooltip: widget.isLoading
                           ? "Stop generating"
                           : (widget.isCooldownActive
-                              ? "Cooldown active"
-                              : "Send message"),
+                                ? "Cooldown active"
+                                : "Send message"),
                       onPressed: widget.isLoading
                           ? widget.onStopGenerating
-                          : ((_hasText && !widget.isCooldownActive && !_isSubmitting)
-                              ? _submit
-                              : null),
+                          : ((_hasText &&
+                                    !widget.isCooldownActive &&
+                                    !_isSubmitting)
+                                ? _submit
+                                : null),
                       icon: Icon(
-                        widget.isLoading ? LucideIcons.square : LucideIcons.arrowUp,
+                        widget.isLoading
+                            ? LucideIcons.square
+                            : LucideIcons.arrowUp,
                         color: widget.isLoading
                             ? Colors.white
                             : (_hasText && !widget.isCooldownActive
-                                ? Colors.white
-                                : (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))),
+                                  ? Colors.white
+                                  : (isDark
+                                        ? const Color(0xFF64748B)
+                                        : const Color(0xFF94A3B8))),
                       ),
                     ),
                   ),
@@ -182,10 +202,12 @@ class _AiComposerState extends State<AiComposer> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Text(
-                "Acadex AI can make mistakes. Verify important academic information.",
+                "ACADEXSYNC AI can make mistakes. Verify important academic information.",
                 style: TextStyle(
                   fontSize: 11.5,
-                  color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                  color: isDark
+                      ? const Color(0xFF64748B)
+                      : const Color(0xFF94A3B8),
                   fontWeight: FontWeight.w400,
                 ),
                 textAlign: TextAlign.center,

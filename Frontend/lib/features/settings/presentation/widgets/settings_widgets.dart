@@ -6,7 +6,11 @@ class SettingsSection extends StatelessWidget {
   final String title;
   final List<Widget> children;
 
-  const SettingsSection({super.key, required this.title, required this.children});
+  const SettingsSection({
+    super.key,
+    required this.title,
+    required this.children,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +48,9 @@ class SettingsSection extends StatelessWidget {
                     Divider(
                       height: 1,
                       indent: 56,
-                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                      color: isDark
+                          ? AcadexColors.darkHairline
+                          : AcadexColors.hairline,
                     ),
                 ],
               ],
@@ -78,7 +84,9 @@ class SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final defaultIconColor = iconColor ?? (isDark ? AcadexColors.primaryMuted : AcadexColors.primary);
+    final defaultIconColor =
+        iconColor ??
+        (isDark ? AcadexColors.primaryMuted : AcadexColors.primary);
 
     return Material(
       color: Colors.transparent,
@@ -113,7 +121,9 @@ class SettingsTile extends StatelessWidget {
                       Text(
                         subtitle!,
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                       ),
                     ],
@@ -126,7 +136,9 @@ class SettingsTile extends StatelessWidget {
                 Icon(
                   LucideIcons.chevronRight,
                   size: 16,
-                  color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                  color: isDark
+                      ? AcadexColors.darkInkFaint
+                      : AcadexColors.inkFaint,
                 ),
             ],
           ),
@@ -172,7 +184,11 @@ class ThemeSelector extends StatelessWidget {
   final ThemeMode currentMode;
   final ValueChanged<ThemeMode> onChanged;
 
-  const ThemeSelector({super.key, required this.currentMode, required this.onChanged});
+  const ThemeSelector({
+    super.key,
+    required this.currentMode,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -223,12 +239,20 @@ class _ThemeOption extends StatelessWidget {
     final selectedBg = isDark
         ? AcadexColors.primaryHover.withValues(alpha: 0.25)
         : AcadexColors.primaryLight;
-    final selectedBorder = isDark ? AcadexColors.primaryMuted : AcadexColors.primary;
+    final selectedBorder = isDark
+        ? AcadexColors.primaryMuted
+        : AcadexColors.primary;
     final selectedFg = isDark ? Colors.white : AcadexColors.primary;
 
-    final unselectedBg = isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface;
-    final unselectedBorder = isDark ? AcadexColors.darkHairline : AcadexColors.hairline;
-    final unselectedFg = isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted;
+    final unselectedBg = isDark
+        ? AcadexColors.darkSurfaceCard
+        : AcadexColors.surface;
+    final unselectedBorder = isDark
+        ? AcadexColors.darkHairline
+        : AcadexColors.hairline;
+    final unselectedFg = isDark
+        ? AcadexColors.darkInkMuted
+        : AcadexColors.inkMuted;
 
     return Expanded(
       child: GestureDetector(
@@ -248,14 +272,23 @@ class _ThemeOption extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: isSelected ? selectedFg : unselectedFg, size: 22),
+              Icon(
+                icon,
+                color: isSelected ? selectedFg : unselectedFg,
+                size: 22,
+              ),
               const SizedBox(height: 10),
               Text(
                 title,
-                style: AcadexTypography.caption(
-                  color: isSelected ? selectedFg : unselectedFg,
-                ).copyWith(fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500),
-              )
+                style:
+                    AcadexTypography.caption(
+                      color: isSelected ? selectedFg : unselectedFg,
+                    ).copyWith(
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                    ),
+              ),
             ],
           ),
         ),

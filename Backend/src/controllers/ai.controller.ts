@@ -17,7 +17,7 @@ export class AiController {
    */
   static chat = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user) {
-      throw ApiError.unauthorized('Authentication required to access ACADEX AI Assistant');
+      throw ApiError.unauthorized('Authentication required to access ACADEXSYNC AI Assistant');
     }
 
     const validatedInput = chatRequestSchema.parse(req.body);
@@ -51,7 +51,7 @@ export class AiController {
    */
   static chatStream = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user) {
-      throw ApiError.unauthorized('Authentication required to access ACADEX AI Assistant');
+      throw ApiError.unauthorized('Authentication required to access ACADEXSYNC AI Assistant');
     }
 
     const validatedInput = chatRequestSchema.parse(req.body);

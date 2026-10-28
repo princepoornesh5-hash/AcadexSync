@@ -47,7 +47,12 @@ class PersonalInformationCard extends StatelessWidget {
           const SizedBox(height: 12),
           _buildDetailRow('Full Name', profile.name, LucideIcons.user),
           const Divider(height: 24),
-          _buildDetailRow('Email Address', profile.email, LucideIcons.mail, readOnly: true),
+          _buildDetailRow(
+            'Email Address',
+            profile.email,
+            LucideIcons.mail,
+            readOnly: true,
+          ),
           const Divider(height: 24),
           _buildDetailRow(
             'Phone Number',
@@ -59,7 +64,12 @@ class PersonalInformationCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, IconData icon, {bool readOnly = false}) {
+  Widget _buildDetailRow(
+    String label,
+    String value,
+    IconData icon, {
+    bool readOnly = false,
+  }) {
     return Row(
       children: [
         Icon(icon, size: 20, color: DashboardColors.textSecondary),
@@ -79,8 +89,12 @@ class PersonalInformationCard extends StatelessWidget {
                   ),
                   if (readOnly) ...[
                     const SizedBox(width: 6),
-                    const Icon(LucideIcons.lock, size: 10, color: DashboardColors.textSecondary),
-                  ]
+                    const Icon(
+                      LucideIcons.lock,
+                      size: 10,
+                      color: DashboardColors.textSecondary,
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 2),

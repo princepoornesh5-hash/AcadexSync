@@ -429,7 +429,8 @@ class AcademicContextModel {
       if (semesterId != null) 'semesterId': semesterId,
       if (sectionId != null) 'sectionId': sectionId,
       if (subjectId != null) 'subjectId': subjectId,
-      if (facultyAssignmentId != null) 'facultyAssignmentId': facultyAssignmentId,
+      if (facultyAssignmentId != null)
+        'facultyAssignmentId': facultyAssignmentId,
       if (courseName != null) 'courseName': courseName,
       if (sectionName != null) 'sectionName': sectionName,
       if (subjectName != null) 'subjectName': subjectName,
@@ -460,14 +461,22 @@ class RequestDetailsModel {
 
   factory RequestDetailsModel.fromJson(Map<String, dynamic> json) {
     return RequestDetailsModel(
-      startDate: json['startDate'] != null ? DateTime.tryParse(json['startDate'].toString()) : null,
-      endDate: json['endDate'] != null ? DateTime.tryParse(json['endDate'].toString()) : null,
-      date: json['date'] != null ? DateTime.tryParse(json['date'].toString()) : null,
+      startDate: json['startDate'] != null
+          ? DateTime.tryParse(json['startDate'].toString())
+          : null,
+      endDate: json['endDate'] != null
+          ? DateTime.tryParse(json['endDate'].toString())
+          : null,
+      date: json['date'] != null
+          ? DateTime.tryParse(json['date'].toString())
+          : null,
       resourceName: json['resourceName']?.toString(),
       requestedChange: json['requestedChange']?.toString(),
       documentType: json['documentType']?.toString(),
       reason: json['reason']?.toString(),
-      metadata: json['metadata'] is Map<String, dynamic> ? json['metadata'] as Map<String, dynamic> : null,
+      metadata: json['metadata'] is Map<String, dynamic>
+          ? json['metadata'] as Map<String, dynamic>
+          : null,
     );
   }
 
@@ -475,7 +484,15 @@ class RequestDetailsModel {
     if (dt == null) return null;
     // Canonical UTC ISO 8601 timestamp ending in Z.
     // Preserves calendar date (year, month, day) without timezone drift.
-    return DateTime.utc(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, dt.millisecond).toIso8601String();
+    return DateTime.utc(
+      dt.year,
+      dt.month,
+      dt.day,
+      dt.hour,
+      dt.minute,
+      dt.second,
+      dt.millisecond,
+    ).toIso8601String();
   }
 
   Map<String, dynamic> toJson() {
@@ -509,7 +526,9 @@ class RequestAuditEntryModel {
 
   factory RequestAuditEntryModel.fromJson(Map<String, dynamic> json) {
     return RequestAuditEntryModel(
-      status: RequestStatusExtension.fromString(json['status']?.toString() ?? 'SUBMITTED'),
+      status: RequestStatusExtension.fromString(
+        json['status']?.toString() ?? 'SUBMITTED',
+      ),
       changedBy: json['changedBy']?.toString(),
       changedByName: json['changedByName']?.toString(),
       note: json['note']?.toString(),
@@ -593,28 +612,46 @@ class RequestModel {
       departmentId: json['departmentId']?.toString(),
       requesterUserId: json['requesterUserId']?.toString() ?? '',
       requesterName: json['requesterName']?.toString() ?? 'Requester',
-      requesterRole: AppRoleExtension.fromValue(json['requesterRole']?.toString() ?? 'STUDENT'),
-      targetRole: AppRoleExtension.fromValue(json['targetRole']?.toString() ?? 'FACULTY'),
+      requesterRole: AppRoleExtension.fromValue(
+        json['requesterRole']?.toString() ?? 'STUDENT',
+      ),
+      targetRole: AppRoleExtension.fromValue(
+        json['targetRole']?.toString() ?? 'FACULTY',
+      ),
       targetUserId: json['targetUserId']?.toString(),
       targetName: json['targetName']?.toString(),
-      requestType: RequestTypeExtension.fromString(json['requestType']?.toString() ?? 'GENERAL_REQUEST'),
+      requestType: RequestTypeExtension.fromString(
+        json['requestType']?.toString() ?? 'GENERAL_REQUEST',
+      ),
       title: json['title']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
       academicContext: json['academicContext'] is Map<String, dynamic>
-          ? AcademicContextModel.fromJson(json['academicContext'] as Map<String, dynamic>)
+          ? AcademicContextModel.fromJson(
+              json['academicContext'] as Map<String, dynamic>,
+            )
           : null,
       details: json['details'] is Map<String, dynamic>
-          ? RequestDetailsModel.fromJson(json['details'] as Map<String, dynamic>)
+          ? RequestDetailsModel.fromJson(
+              json['details'] as Map<String, dynamic>,
+            )
           : null,
-      status: RequestStatusExtension.fromString(json['status']?.toString() ?? 'SUBMITTED'),
-      respondedAt: json['respondedAt'] != null ? DateTime.tryParse(json['respondedAt'].toString()) : null,
+      status: RequestStatusExtension.fromString(
+        json['status']?.toString() ?? 'SUBMITTED',
+      ),
+      respondedAt: json['respondedAt'] != null
+          ? DateTime.tryParse(json['respondedAt'].toString())
+          : null,
       respondedBy: json['respondedBy']?.toString(),
       respondedByName: json['respondedByName']?.toString(),
       responseMessage: json['responseMessage']?.toString(),
       history: json['history'] is List
           ? (json['history'] as List)
-              .map((h) => RequestAuditEntryModel.fromJson(Map<String, dynamic>.from(h as Map)))
-              .toList()
+                .map(
+                  (h) => RequestAuditEntryModel.fromJson(
+                    Map<String, dynamic>.from(h as Map),
+                  ),
+                )
+                .toList()
           : const [],
       relatedEntityType: json['relatedEntityType']?.toString(),
       relatedEntityId: json['relatedEntityId']?.toString(),
@@ -662,10 +699,7 @@ class RequestSummaryCounts {
   final int myPendingCount;
   final int incomingCount;
 
-  const RequestSummaryCounts({
-    this.myPendingCount = 0,
-    this.incomingCount = 0,
-  });
+  const RequestSummaryCounts({this.myPendingCount = 0, this.incomingCount = 0});
 
   factory RequestSummaryCounts.fromJson(Map<String, dynamic> json) {
     return RequestSummaryCounts(

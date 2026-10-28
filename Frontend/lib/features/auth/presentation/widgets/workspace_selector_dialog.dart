@@ -27,7 +27,8 @@ class WorkspaceSelectorDialog extends ConsumerWidget {
     final activeWorkspaceId = ref.watch(activeWorkspaceIdProvider);
     final isSwitching = ref.watch(isSwitchingWorkspaceProvider);
 
-    final isSuperAdmin = authState is AuthAuthenticated &&
+    final isSuperAdmin =
+        authState is AuthAuthenticated &&
         authState.user.role == AppRole.superAdmin;
 
     return Dialog(
@@ -41,10 +42,7 @@ class WorkspaceSelectorDialog extends ConsumerWidget {
       ),
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: 460,
-          maxHeight: 560,
-        ),
+        constraints: const BoxConstraints(maxWidth: 460, maxHeight: 560),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -77,14 +75,18 @@ class WorkspaceSelectorDialog extends ConsumerWidget {
                         Text(
                           'Switch Workspace',
                           style: AcadexTypography.heading3(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ).copyWith(fontSize: 16, fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'Select an authorized institutional workspace',
                           style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                            color: isDark
+                                ? AcadexColors.darkInkSecondary
+                                : AcadexColors.inkSecondary,
                           ),
                         ),
                       ],
@@ -94,12 +96,19 @@ class WorkspaceSelectorDialog extends ConsumerWidget {
                     icon: Icon(
                       LucideIcons.x,
                       size: 18,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
-                    onPressed: isSwitching ? null : () => Navigator.of(context).pop(),
+                    onPressed: isSwitching
+                        ? null
+                        : () => Navigator.of(context).pop(),
                     tooltip: 'Close',
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
                   ),
                 ],
               ),
@@ -121,13 +130,19 @@ class WorkspaceSelectorDialog extends ConsumerWidget {
                   ),
                   child: Row(
                     children: [
-                      const Icon(LucideIcons.shieldCheck, size: 18, color: AcadexColors.warning),
+                      const Icon(
+                        LucideIcons.shieldCheck,
+                        size: 18,
+                        color: AcadexColors.warning,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           'Platform Super Admin session: You hold unrestricted oversight across all active campuses.',
                           style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ),
                         ),
                       ),
@@ -151,7 +166,10 @@ class WorkspaceSelectorDialog extends ConsumerWidget {
                             child: CircularProgressIndicator(strokeWidth: 2.5),
                           ),
                           SizedBox(height: 12),
-                          Text('Loading authorized workspaces...', style: TextStyle(fontSize: 13)),
+                          Text(
+                            'Loading authorized workspaces...',
+                            style: TextStyle(fontSize: 13),
+                          ),
                         ],
                       ),
                     ),
@@ -161,11 +179,17 @@ class WorkspaceSelectorDialog extends ConsumerWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(LucideIcons.alertTriangle, size: 32, color: AcadexColors.error),
+                        const Icon(
+                          LucideIcons.alertTriangle,
+                          size: 32,
+                          color: AcadexColors.error,
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           'Unable to load workspaces',
-                          style: AcadexTypography.body(color: AcadexColors.error),
+                          style: AcadexTypography.body(
+                            color: AcadexColors.error,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         OutlinedButton.icon(
@@ -183,12 +207,18 @@ class WorkspaceSelectorDialog extends ConsumerWidget {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(LucideIcons.building, size: 36, color: AcadexColors.inkMuted),
+                            const Icon(
+                              LucideIcons.building,
+                              size: 36,
+                              color: AcadexColors.inkMuted,
+                            ),
                             const SizedBox(height: 12),
                             Text(
                               'No Active Workspaces Found',
                               style: AcadexTypography.body(
-                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
                               ).copyWith(fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(height: 6),
@@ -196,7 +226,9 @@ class WorkspaceSelectorDialog extends ConsumerWidget {
                               'Your canonical account does not currently hold active memberships in any college workspace. Contact your administrator or log out.',
                               textAlign: TextAlign.center,
                               style: AcadexTypography.caption(
-                                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                                color: isDark
+                                    ? AcadexColors.darkInkSecondary
+                                    : AcadexColors.inkSecondary,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -239,7 +271,9 @@ class WorkspaceSelectorDialog extends ConsumerWidget {
                                 Navigator.of(context).pop();
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('Switched to ${ws.collegeName}'),
+                                    content: Text(
+                                      'Switched to ${ws.collegeName}',
+                                    ),
                                     duration: const Duration(seconds: 2),
                                   ),
                                 );
@@ -248,7 +282,9 @@ class WorkspaceSelectorDialog extends ConsumerWidget {
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('Could not switch workspace: $e'),
+                                    content: Text(
+                                      'Could not switch workspace: $e',
+                                    ),
                                     backgroundColor: AcadexColors.error,
                                   ),
                                 );
@@ -273,11 +309,15 @@ class WorkspaceSelectorDialog extends ConsumerWidget {
                   Text(
                     'Multi-Tenant Isolation Active',
                     style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ).copyWith(fontSize: 11),
                   ),
                   TextButton(
-                    onPressed: isSwitching ? null : () => Navigator.of(context).pop(),
+                    onPressed: isSwitching
+                        ? null
+                        : () => Navigator.of(context).pop(),
                     child: const Text('Done'),
                   ),
                 ],
@@ -313,8 +353,8 @@ class _WorkspaceItemTile extends StatelessWidget {
 
     final bgColor = isCurrent
         ? (isDark
-            ? AcadexColors.primary.withValues(alpha: 0.15)
-            : AcadexColors.primary.withValues(alpha: 0.05))
+              ? AcadexColors.primary.withValues(alpha: 0.15)
+              : AcadexColors.primary.withValues(alpha: 0.05))
         : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC));
 
     return InkWell(
@@ -336,16 +376,25 @@ class _WorkspaceItemTile extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isCurrent
                     ? AcadexColors.primary
-                    : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                    : (isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE2E8F0)),
                 borderRadius: AcadexRadius.borderRadiusSm,
               ),
               child: Center(
                 child: Text(
                   workspace.collegeCode.isNotEmpty
-                      ? workspace.collegeCode.substring(0, workspace.collegeCode.length.clamp(1, 3)).toUpperCase()
+                      ? workspace.collegeCode
+                            .substring(
+                              0,
+                              workspace.collegeCode.length.clamp(1, 3),
+                            )
+                            .toUpperCase()
                       : 'COL',
                   style: TextStyle(
-                    color: isCurrent ? Colors.white : (isDark ? Colors.white : const Color(0xFF0F172A)),
+                    color: isCurrent
+                        ? Colors.white
+                        : (isDark ? Colors.white : const Color(0xFF0F172A)),
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
@@ -364,12 +413,17 @@ class _WorkspaceItemTile extends StatelessWidget {
                       Expanded(
                         child: Text(
                           workspace.collegeName,
-                          style: AcadexTypography.body(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                          ).copyWith(
-                            fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
-                            fontSize: 13,
-                          ),
+                          style:
+                              AcadexTypography.body(
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
+                              ).copyWith(
+                                fontWeight: isCurrent
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
+                                fontSize: 13,
+                              ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -377,7 +431,10 @@ class _WorkspaceItemTile extends StatelessWidget {
                       if (isCurrent) ...[
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: AcadexColors.primary,
                             borderRadius: BorderRadius.circular(4),
@@ -400,49 +457,69 @@ class _WorkspaceItemTile extends StatelessWidget {
                     children: [
                       // Role Badges
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                          color: isDark
+                              ? const Color(0xFF334155)
+                              : const Color(0xFFE2E8F0),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           workspace.primaryRole.displayName,
                           style: TextStyle(
-                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                            color: isDark
+                                ? const Color(0xFF94A3B8)
+                                : const Color(0xFF475569),
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
-                      if (workspace.instituteId != null && workspace.instituteId!.isNotEmpty) ...[
+                      if (workspace.instituteId != null &&
+                          workspace.instituteId!.isNotEmpty) ...[
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                            color: isDark
+                                ? const Color(0xFF1E293B)
+                                : const Color(0xFFF1F5F9),
                             borderRadius: BorderRadius.circular(4),
                             border: Border.all(
-                              color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                              color: isDark
+                                  ? const Color(0xFF475569)
+                                  : const Color(0xFFCBD5E1),
                               width: 0.8,
                             ),
                           ),
                           child: Text(
                             'PIN: ${workspace.instituteId}',
                             style: TextStyle(
-                              color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+                              color: isDark
+                                  ? const Color(0xFFE2E8F0)
+                                  : const Color(0xFF334155),
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                       ],
-                      if (workspace.departmentName != null && workspace.departmentName!.isNotEmpty) ...[
+                      if (workspace.departmentName != null &&
+                          workspace.departmentName!.isNotEmpty) ...[
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             '• ${workspace.departmentName}',
                             style: TextStyle(
-                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                              color: isDark
+                                  ? const Color(0xFF94A3B8)
+                                  : const Color(0xFF64748B),
                               fontSize: 11,
                             ),
                             maxLines: 1,
@@ -460,9 +537,17 @@ class _WorkspaceItemTile extends StatelessWidget {
 
             // Action Indicator
             if (isCurrent)
-              const Icon(LucideIcons.check, size: 18, color: AcadexColors.primary)
+              const Icon(
+                LucideIcons.check,
+                size: 18,
+                color: AcadexColors.primary,
+              )
             else
-              const Icon(LucideIcons.chevronRight, size: 16, color: AcadexColors.inkMuted),
+              const Icon(
+                LucideIcons.chevronRight,
+                size: 16,
+                color: AcadexColors.inkMuted,
+              ),
           ],
         ),
       ),

@@ -8,7 +8,7 @@ class ApiCalendarRepository implements CalendarRepository {
   final ApiClient _apiClient;
 
   ApiCalendarRepository({ApiClient? apiClient})
-      : _apiClient = apiClient ?? apiClientInstance;
+    : _apiClient = apiClient ?? apiClientInstance;
 
   static ApiClient get apiClientInstance => apiClient;
 
@@ -33,12 +33,19 @@ class ApiCalendarRepository implements CalendarRepository {
       if (response.data != null && response.data['data'] is List) {
         final list = response.data['data'] as List;
         return list
-            .map((item) => CalendarEventModel.fromJson(Map<String, dynamic>.from(item as Map)))
+            .map(
+              (item) => CalendarEventModel.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
             .toList();
       }
       return [];
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load calendar events');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load calendar events',
+      );
     }
   }
 
@@ -57,7 +64,10 @@ class ApiCalendarRepository implements CalendarRepository {
         userMessage: 'The requested calendar event could not be found.',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load calendar event detail');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load calendar event detail',
+      );
     }
   }
 
@@ -76,12 +86,18 @@ class ApiCalendarRepository implements CalendarRepository {
         userMessage: 'Failed to create event. Please try again.',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to create calendar event');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to create calendar event',
+      );
     }
   }
 
   @override
-  Future<CalendarEventModel> updateEvent(String id, Map<String, dynamic> data) async {
+  Future<CalendarEventModel> updateEvent(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
     try {
       final response = await _apiClient.dio.put('/calendar/$id', data: data);
       if (response.data != null && response.data['data'] != null) {
@@ -95,7 +111,10 @@ class ApiCalendarRepository implements CalendarRepository {
         userMessage: 'Failed to update event. Please try again.',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to update calendar event');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to update calendar event',
+      );
     }
   }
 
@@ -117,7 +136,10 @@ class ApiCalendarRepository implements CalendarRepository {
         userMessage: 'Failed to cancel event. Please try again.',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to cancel calendar event');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to cancel calendar event',
+      );
     }
   }
 
@@ -136,7 +158,10 @@ class ApiCalendarRepository implements CalendarRepository {
         userMessage: 'Failed to publish event. Please try again.',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to publish calendar event');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to publish calendar event',
+      );
     }
   }
 
@@ -159,19 +184,31 @@ class ApiCalendarRepository implements CalendarRepository {
       if (response.data != null && response.data['data'] is List) {
         final list = response.data['data'] as List;
         return list
-            .map((item) => AcademicCalendarModel.fromJson(Map<String, dynamic>.from(item as Map)))
+            .map(
+              (item) => AcademicCalendarModel.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
             .toList();
       }
       return [];
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load academic calendars');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load academic calendars',
+      );
     }
   }
 
   @override
-  Future<AcademicCalendarModel> createAcademicCalendar(Map<String, dynamic> data) async {
+  Future<AcademicCalendarModel> createAcademicCalendar(
+    Map<String, dynamic> data,
+  ) async {
     try {
-      final response = await _apiClient.dio.post('/academic-calendars', data: data);
+      final response = await _apiClient.dio.post(
+        '/academic-calendars',
+        data: data,
+      );
       if (response.data != null && response.data['data'] != null) {
         return AcademicCalendarModel.fromJson(
           Map<String, dynamic>.from(response.data['data'] as Map),
@@ -183,7 +220,10 @@ class ApiCalendarRepository implements CalendarRepository {
         userMessage: 'Failed to create calendar. Please try again.',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to create academic calendar');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to create academic calendar',
+      );
     }
   }
 
@@ -210,16 +250,26 @@ class ApiCalendarRepository implements CalendarRepository {
           Map<String, dynamic>.from(response.data['data'] as Map),
         );
       }
-      return WorkingDayResolution(date: date, isWorkingDay: true, isHoliday: false);
+      return WorkingDayResolution(
+        date: date,
+        isWorkingDay: true,
+        isHoliday: false,
+      );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to resolve working day');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to resolve working day',
+      );
     }
   }
 
   @override
   Future<void> declareHoliday(Map<String, dynamic> data) async {
     try {
-      await _apiClient.dio.post('/academic-calendars/declare-holiday', data: data);
+      await _apiClient.dio.post(
+        '/academic-calendars/declare-holiday',
+        data: data,
+      );
     } on DioException catch (e) {
       throw AcadexException.fromDio(e, context: 'Failed to declare holiday');
     }

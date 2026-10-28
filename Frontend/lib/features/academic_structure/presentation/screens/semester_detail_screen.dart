@@ -19,8 +19,15 @@ class SemesterDetailScreen extends ConsumerWidget {
 
   const SemesterDetailScreen({super.key, required this.semesterId});
 
-  void _confirmCurrentToggle(BuildContext context, WidgetRef ref, String semesterName, bool isCurrentlyCurrent) {
-    final action = isCurrentlyCurrent ? 'Unset Current Term' : 'Set as Current Ongoing Term';
+  void _confirmCurrentToggle(
+    BuildContext context,
+    WidgetRef ref,
+    String semesterName,
+    bool isCurrentlyCurrent,
+  ) {
+    final action = isCurrentlyCurrent
+        ? 'Unset Current Term'
+        : 'Set as Current Ongoing Term';
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -43,10 +50,15 @@ class SemesterDetailScreen extends ConsumerWidget {
             onPressed: () async {
               Navigator.of(ctx).pop();
               try {
-                await ref.read(semestersProvider.notifier).toggleCurrent(semesterId, !isCurrentlyCurrent);
+                await ref
+                    .read(semestersProvider.notifier)
+                    .toggleCurrent(semesterId, !isCurrentlyCurrent);
                 ref.invalidate(semesterByIdProvider(semesterId));
                 if (context.mounted) {
-                  AcadexSnackBar.showSuccess(context, 'Semester current status updated successfully.');
+                  AcadexSnackBar.showSuccess(
+                    context,
+                    'Semester current status updated successfully.',
+                  );
                 }
               } catch (e) {
                 if (context.mounted) {
@@ -61,7 +73,12 @@ class SemesterDetailScreen extends ConsumerWidget {
     );
   }
 
-  void _confirmStatusToggle(BuildContext context, WidgetRef ref, String semesterName, bool isCurrentlyActive) {
+  void _confirmStatusToggle(
+    BuildContext context,
+    WidgetRef ref,
+    String semesterName,
+    bool isCurrentlyActive,
+  ) {
     final action = isCurrentlyActive ? 'Deactivate' : 'Activate';
     showDialog(
       context: context,
@@ -79,16 +96,23 @@ class SemesterDetailScreen extends ConsumerWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: isCurrentlyActive ? AcadexColors.error : AcadexColors.success,
+              backgroundColor: isCurrentlyActive
+                  ? AcadexColors.error
+                  : AcadexColors.success,
               foregroundColor: Colors.white,
             ),
             onPressed: () async {
               Navigator.of(ctx).pop();
               try {
-                await ref.read(semestersProvider.notifier).toggleStatus(semesterId, !isCurrentlyActive);
+                await ref
+                    .read(semestersProvider.notifier)
+                    .toggleStatus(semesterId, !isCurrentlyActive);
                 ref.invalidate(semesterByIdProvider(semesterId));
                 if (context.mounted) {
-                  AcadexSnackBar.showSuccess(context, 'Semester $action successful!');
+                  AcadexSnackBar.showSuccess(
+                    context,
+                    'Semester $action successful!',
+                  );
                 }
               } catch (e) {
                 if (context.mounted) {
@@ -113,9 +137,15 @@ class SemesterDetailScreen extends ConsumerWidget {
     final deptsAsync = ref.watch(departmentsProvider);
     final dateFormat = DateFormat('MMMM d, yyyy');
 
-    final coursesMap = {for (final c in coursesAsync.valueOrNull ?? <Course>[]) c.id: c};
-    final yearsMap = {for (final y in yearsAsync.valueOrNull ?? <AcademicYear>[]) y.id: y};
-    final deptsMap = {for (final d in deptsAsync.valueOrNull ?? <Department>[]) d.id: d};
+    final coursesMap = {
+      for (final c in coursesAsync.valueOrNull ?? <Course>[]) c.id: c,
+    };
+    final yearsMap = {
+      for (final y in yearsAsync.valueOrNull ?? <AcademicYear>[]) y.id: y,
+    };
+    final deptsMap = {
+      for (final d in deptsAsync.valueOrNull ?? <Department>[]) d.id: d,
+    };
     final hasEnclosingScaffold = Scaffold.maybeOf(context) != null;
 
     final bodyContent = semesterAsync.when(
@@ -126,13 +156,16 @@ class SemesterDetailScreen extends ConsumerWidget {
           title: 'Unable to load semester',
           onRetry: () => ref.invalidate(semesterByIdProvider(semesterId)),
           actionLabel: 'Go Back',
-          onAction: () => context.safePop(fallbackRoute: '/academics/semesters'),
+          onAction: () =>
+              context.safePop(fallbackRoute: '/academics/semesters'),
         ),
       ),
       data: (semester) {
         final course = coursesMap[semester.courseId];
         final academicYear = yearsMap[semester.academicYearId];
-        final department = deptsMap[semester.departmentId] ?? (course != null ? deptsMap[course.departmentId] : null);
+        final department =
+            deptsMap[semester.departmentId] ??
+            (course != null ? deptsMap[course.departmentId] : null);
 
         return AcadexPageContainer(
           backgroundColor: Colors.white,
@@ -167,8 +200,12 @@ class SemesterDetailScreen extends ConsumerWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-          onPressed: () => context.safePop(fallbackRoute: '/academics/semesters'),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
+          onPressed: () =>
+              context.safePop(fallbackRoute: '/academics/semesters'),
         ),
         title: Text(
           'Semester Term Overview',
@@ -217,7 +254,11 @@ class SemesterDetailScreen extends ConsumerWidget {
                 child: Center(
                   child: Text(
                     "T${semester.number}",
-                    style: const TextStyle(color: AcadexColors.primary, fontWeight: FontWeight.w800, fontSize: 18),
+                    style: const TextStyle(
+                      color: AcadexColors.primary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                    ),
                   ),
                 ),
               ),
@@ -236,19 +277,29 @@ class SemesterDetailScreen extends ConsumerWidget {
                     Row(
                       children: [
                         if (semester.isCurrent) ...[
-                          const AcadexBadge(label: 'CURRENT TERM', variant: AcadexBadgeVariant.primary),
+                          const AcadexBadge(
+                            label: 'CURRENT TERM',
+                            variant: AcadexBadgeVariant.primary,
+                          ),
                           const SizedBox(width: 8),
                         ],
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: semester.isActive ? AcadexColors.successLight : AcadexColors.errorLight,
+                            color: semester.isActive
+                                ? AcadexColors.successLight
+                                : AcadexColors.errorLight,
                             borderRadius: AcadexRadius.borderRadiusFull,
                           ),
                           child: Text(
                             semester.isActive ? 'Active' : 'Archived',
                             style: TextStyle(
-                              color: semester.isActive ? AcadexColors.success : AcadexColors.error,
+                              color: semester.isActive
+                                  ? AcadexColors.success
+                                  : AcadexColors.error,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -273,19 +324,34 @@ class SemesterDetailScreen extends ConsumerWidget {
                 label: 'Edit Semester',
                 icon: LucideIcons.edit,
                 variant: AcadexButtonVariant.primary,
-                onPressed: () => context.push('/academics/semesters/edit/$semesterId'),
+                onPressed: () =>
+                    context.push('/academics/semesters/edit/$semesterId'),
               ),
               AcadexButton(
-                label: semester.isCurrent ? 'Unset Current Term' : 'Set as Current Term',
+                label: semester.isCurrent
+                    ? 'Unset Current Term'
+                    : 'Set as Current Term',
                 icon: LucideIcons.checkCircle,
                 variant: AcadexButtonVariant.secondary,
-                onPressed: () => _confirmCurrentToggle(context, ref, semester.name, semester.isCurrent),
+                onPressed: () => _confirmCurrentToggle(
+                  context,
+                  ref,
+                  semester.name,
+                  semester.isCurrent,
+                ),
               ),
               AcadexButton(
                 label: semester.isActive ? 'Deactivate' : 'Activate',
-                icon: semester.isActive ? LucideIcons.powerOff : LucideIcons.power,
+                icon: semester.isActive
+                    ? LucideIcons.powerOff
+                    : LucideIcons.power,
                 variant: AcadexButtonVariant.secondary,
-                onPressed: () => _confirmStatusToggle(context, ref, semester.name, semester.isActive),
+                onPressed: () => _confirmStatusToggle(
+                  context,
+                  ref,
+                  semester.name,
+                  semester.isActive,
+                ),
               ),
             ],
           ),
@@ -307,7 +373,13 @@ class SemesterDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.graduationCap, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              Icon(
+                LucideIcons.graduationCap,
+                size: 16,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Curriculum & Hierarchy Affiliation',
@@ -322,7 +394,9 @@ class SemesterDetailScreen extends ConsumerWidget {
             isDark,
             LucideIcons.bookOpen,
             'Degree Program',
-            course != null ? "${course.name} (${course.code})" : "Linked Degree Program",
+            course != null
+                ? "${course.name} (${course.code})"
+                : "Linked Degree Program",
           ),
           const Divider(height: 16),
           _infoRow(
@@ -357,7 +431,13 @@ class SemesterDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.clock, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              Icon(
+                LucideIcons.clock,
+                size: 16,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Term Schedule & Metadata',
@@ -368,20 +448,29 @@ class SemesterDetailScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 14),
-          _infoRow(isDark, LucideIcons.hash, 'Sequence Term #', "Term ${semester.number}"),
+          _infoRow(
+            isDark,
+            LucideIcons.hash,
+            'Sequence Term #',
+            "Term ${semester.number}",
+          ),
           const Divider(height: 16),
           _infoRow(
             isDark,
             LucideIcons.calendarDays,
             'Start Date',
-            semester.startDate != null ? dateFormat.format(semester.startDate!) : "Not configured",
+            semester.startDate != null
+                ? dateFormat.format(semester.startDate!)
+                : "Not configured",
           ),
           const Divider(height: 16),
           _infoRow(
             isDark,
             LucideIcons.calendarCheck,
             'End Date',
-            semester.endDate != null ? dateFormat.format(semester.endDate!) : "Not configured",
+            semester.endDate != null
+                ? dateFormat.format(semester.endDate!)
+                : "Not configured",
           ),
           const Divider(height: 16),
           _infoRow(
@@ -392,7 +481,12 @@ class SemesterDetailScreen extends ConsumerWidget {
           ),
           if (semester.createdAt != null) ...[
             const Divider(height: 16),
-            _infoRow(isDark, LucideIcons.fileText, 'Created On', dateFormat.format(semester.createdAt!)),
+            _infoRow(
+              isDark,
+              LucideIcons.fileText,
+              'Created On',
+              dateFormat.format(semester.createdAt!),
+            ),
           ],
         ],
       ),
@@ -403,7 +497,11 @@ class SemesterDetailScreen extends ConsumerWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 15, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+        Icon(
+          icon,
+          size: 15,
+          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+        ),
         const SizedBox(width: 10),
         SizedBox(
           width: 120,

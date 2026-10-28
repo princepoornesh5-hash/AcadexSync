@@ -4,7 +4,10 @@ import 'certificate_detail_screen.dart';
 
 class FacultyCertificateDetailScreen extends ConsumerWidget {
   final String certificateId;
-  const FacultyCertificateDetailScreen({super.key, required this.certificateId});
+  const FacultyCertificateDetailScreen({
+    super.key,
+    required this.certificateId,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

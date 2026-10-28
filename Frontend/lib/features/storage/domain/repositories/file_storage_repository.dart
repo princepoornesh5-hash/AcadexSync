@@ -30,5 +30,8 @@ abstract class FileStorageRepository {
   Future<List<StoredFile>> listFiles(String directoryPath);
 
   /// Updates custom metadata for a specific file
-  Future<void> updateMetadata(String storagePath, Map<String, String> newMetadata);
+  Future<void> updateMetadata(
+    String storagePath,
+    Map<String, String> newMetadata,
+  );
 }

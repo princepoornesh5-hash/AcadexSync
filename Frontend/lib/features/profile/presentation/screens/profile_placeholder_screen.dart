@@ -12,11 +12,14 @@ class ProfilePlaceholderScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final user = authState is AuthAuthenticated ? authState.user : null;
-    
+
     return Scaffold(
       backgroundColor: DashboardColors.background,
       appBar: AppBar(
-        title: const Text('Profile', style: TextStyle(color: DashboardColors.textPrimary)),
+        title: const Text(
+          'Profile',
+          style: TextStyle(color: DashboardColors.textPrimary),
+        ),
         backgroundColor: DashboardColors.surface,
         iconTheme: const IconThemeData(color: DashboardColors.textPrimary),
         elevation: 0,
@@ -32,17 +35,28 @@ class ProfilePlaceholderScreen extends ConsumerWidget {
                 shape: BoxShape.circle,
                 color: DashboardColors.primaryLight,
               ),
-              child: const Icon(Icons.person, size: 50, color: DashboardColors.primary),
+              child: const Icon(
+                Icons.person,
+                size: 50,
+                color: DashboardColors.primary,
+              ),
             ),
             const SizedBox(height: 24),
             Text(
               user?.name ?? 'User Name',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: DashboardColors.textPrimary),
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: DashboardColors.textPrimary,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               user?.email ?? 'user@example.com',
-              style: const TextStyle(fontSize: 16, color: DashboardColors.textSecondary),
+              style: const TextStyle(
+                fontSize: 16,
+                color: DashboardColors.textSecondary,
+              ),
             ),
             const SizedBox(height: 8),
             Container(
@@ -53,7 +67,10 @@ class ProfilePlaceholderScreen extends ConsumerWidget {
               ),
               child: Text(
                 user?.role.displayName ?? 'Role',
-                style: const TextStyle(color: DashboardColors.primary, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: DashboardColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             const SizedBox(height: 32),

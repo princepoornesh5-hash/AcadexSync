@@ -106,26 +106,40 @@ class AcadexAssistantPainter extends CustomPainter {
   // ---------------------------------------------------------------------------
   // 1. FLOOR SHADOW
   // ---------------------------------------------------------------------------
-  void _paintFloorShadow(Canvas canvas, double cx, double h, double w, double scaleX) {
+  void _paintFloorShadow(
+    Canvas canvas,
+    double cx,
+    double h,
+    double w,
+    double scaleX,
+  ) {
     final shadowY = h * 0.95;
     final shadowW = w * 0.60 * scaleX;
     final shadowH = h * 0.12;
 
     final shadowPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          (isDark ? Colors.black : const Color(0xFF0F172A))
-              .withValues(alpha: isDark ? 0.35 : 0.22),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCenter(
+      ..shader =
+          RadialGradient(
+            colors: [
+              (isDark ? Colors.black : const Color(0xFF0F172A)).withValues(
+                alpha: isDark ? 0.35 : 0.22,
+              ),
+              Colors.transparent,
+            ],
+          ).createShader(
+            Rect.fromCenter(
+              center: Offset(cx, shadowY),
+              width: shadowW,
+              height: shadowH,
+            ),
+          );
+
+    canvas.drawOval(
+      Rect.fromCenter(
         center: Offset(cx, shadowY),
         width: shadowW,
         height: shadowH,
-      ));
-
-    canvas.drawOval(
-      Rect.fromCenter(center: Offset(cx, shadowY), width: shadowW, height: shadowH),
+      ),
       shadowPaint,
     );
   }
@@ -133,7 +147,13 @@ class AcadexAssistantPainter extends CustomPainter {
   // ---------------------------------------------------------------------------
   // 2. CAMPUS BACKPACK
   // ---------------------------------------------------------------------------
-  void _paintBackpack(Canvas canvas, double cx, double h, double w, double breathY) {
+  void _paintBackpack(
+    Canvas canvas,
+    double cx,
+    double h,
+    double w,
+    double breathY,
+  ) {
     // Positioned over right shoulder (viewer's right)
     final bpX = cx + (w * 0.22);
     final bpY = (h * 0.58) + (breathY * 0.4);
@@ -221,14 +241,20 @@ class AcadexAssistantPainter extends CustomPainter {
     canvas.drawPath(
       ribbonPath,
       Paint()
-        ..color = const Color(0xFFF59E0B) // Amber college ribbon
+        ..color =
+            const Color(0xFFF59E0B) // Amber college ribbon
         ..style = PaintingStyle.fill,
     );
 
     // Top grab loop handle
     final handlePath = Path()
       ..moveTo(bpX - (bpW * 0.15), bpY - (bpH * 0.50))
-      ..quadraticBezierTo(bpX, bpY - (bpH * 0.72), bpX + (bpW * 0.15), bpY - (bpH * 0.50));
+      ..quadraticBezierTo(
+        bpX,
+        bpY - (bpH * 0.72),
+        bpX + (bpW * 0.15),
+        bpY - (bpH * 0.50),
+      );
     canvas.drawPath(
       handlePath,
       Paint()
@@ -250,9 +276,19 @@ class AcadexAssistantPainter extends CustomPainter {
     // 3D Academic Blazer Main Silhouette
     final blazerPath = Path()
       ..moveTo(cx - (torsoW * 0.50), shoulderY) // Left shoulder
-      ..quadraticBezierTo(cx, shoulderY - (h * 0.02), cx + (torsoW * 0.50), shoulderY) // Collar bridge to Right shoulder
+      ..quadraticBezierTo(
+        cx,
+        shoulderY - (h * 0.02),
+        cx + (torsoW * 0.50),
+        shoulderY,
+      ) // Collar bridge to Right shoulder
       ..lineTo(cx + (torsoW * 0.48), hemY) // Right hem
-      ..quadraticBezierTo(cx, hemY + (h * 0.03), cx - (torsoW * 0.48), hemY) // Bottom curve
+      ..quadraticBezierTo(
+        cx,
+        hemY + (h * 0.03),
+        cx - (torsoW * 0.48),
+        hemY,
+      ) // Bottom curve
       ..close();
 
     // 3D Slate-Navy Fabric Gradient
@@ -308,11 +344,14 @@ class AcadexAssistantPainter extends CustomPainter {
       ..close();
 
     final lapelPaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFF3B82F6), Color(0xFF2563EB), Color(0xFF1D4ED8)],
-      ).createShader(Rect.fromLTWH(cx - (w * 0.12), shoulderY, w * 0.24, h * 0.16))
+      ..shader =
+          const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF3B82F6), Color(0xFF2563EB), Color(0xFF1D4ED8)],
+          ).createShader(
+            Rect.fromLTWH(cx - (w * 0.12), shoulderY, w * 0.24, h * 0.16),
+          )
       ..style = PaintingStyle.fill;
 
     canvas.drawPath(lapelLeft, lapelPaint);
@@ -328,10 +367,16 @@ class AcadexAssistantPainter extends CustomPainter {
       Offset(badgeX, badgeY),
       badgeRadius,
       Paint()
-        ..shader = const RadialGradient(
-          center: Alignment(-0.3, -0.3),
-          colors: [Color(0xFF60A5FA), Color(0xFF2563EB), Color(0xFF1E3A8A)],
-        ).createShader(Rect.fromCircle(center: Offset(badgeX, badgeY), radius: badgeRadius))
+        ..shader =
+            const RadialGradient(
+              center: Alignment(-0.3, -0.3),
+              colors: [Color(0xFF60A5FA), Color(0xFF2563EB), Color(0xFF1E3A8A)],
+            ).createShader(
+              Rect.fromCircle(
+                center: Offset(badgeX, badgeY),
+                radius: badgeRadius,
+              ),
+            )
         ..style = PaintingStyle.fill,
     );
     // Badge white crest silhouette ("A" monogram / academic crest)
@@ -428,7 +473,11 @@ class AcadexAssistantPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     canvas.drawOval(
-      Rect.fromCenter(center: handCenter, width: handRadius * 1.5, height: handRadius * 1.7),
+      Rect.fromCenter(
+        center: handCenter,
+        width: handRadius * 1.5,
+        height: handRadius * 1.7,
+      ),
       handPaint,
     );
 
@@ -584,7 +633,12 @@ class AcadexAssistantPainter extends CustomPainter {
 
     // Shirt Cuff
     final cuffRect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(-forearmW * 0.45, forearmL - (h * 0.02), forearmW * 0.90, h * 0.02),
+      Rect.fromLTWH(
+        -forearmW * 0.45,
+        forearmL - (h * 0.02),
+        forearmW * 0.90,
+        h * 0.02,
+      ),
       Radius.circular(w * 0.02),
     );
     canvas.drawRRect(cuffRect, Paint()..color = const Color(0xFFF8FAFC));
@@ -603,7 +657,11 @@ class AcadexAssistantPainter extends CustomPainter {
 
     // Palm base
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(0, handRadius * 0.5), width: handRadius * 1.5, height: handRadius * 1.7),
+      Rect.fromCenter(
+        center: Offset(0, handRadius * 0.5),
+        width: handRadius * 1.5,
+        height: handRadius * 1.7,
+      ),
       handPaint,
     );
 
@@ -625,14 +683,24 @@ class AcadexAssistantPainter extends CustomPainter {
           ..shader = const LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF1E3A8A), Color(0xFF2563EB), Color(0xFF60A5FA), Color(0xFF93C5FD)],
+            colors: [
+              Color(0xFF1E3A8A),
+              Color(0xFF2563EB),
+              Color(0xFF60A5FA),
+              Color(0xFF93C5FD),
+            ],
           ).createShader(penPath.getBounds())
           ..style = PaintingStyle.fill,
       );
 
       // Grip detail
       canvas.drawRect(
-        Rect.fromLTWH(-penW * 0.6, handRadius * 0.35, penW * 1.2, stylusL * 0.15),
+        Rect.fromLTWH(
+          -penW * 0.6,
+          handRadius * 0.35,
+          penW * 1.2,
+          stylusL * 0.15,
+        ),
         Paint()..color = const Color(0xFFCBD5E1),
       );
 
@@ -646,11 +714,15 @@ class AcadexAssistantPainter extends CustomPainter {
       final fingerPath = Path()
         ..moveTo(-w * 0.015, handRadius * 0.8)
         ..lineTo(-w * 0.015, handRadius * 2.0)
-        ..arcToPoint(Offset(w * 0.015, handRadius * 2.0), radius: Radius.circular(w * 0.015))
+        ..arcToPoint(
+          Offset(w * 0.015, handRadius * 2.0),
+          radius: Radius.circular(w * 0.015),
+        )
         ..lineTo(w * 0.015, handRadius * 0.8)
         ..close();
       canvas.drawPath(fingerPath, handPaint);
-    } else if (pose == AcadexAssistantPose.wave || pose == AcadexAssistantPose.magic) {
+    } else if (pose == AcadexAssistantPose.wave ||
+        pose == AcadexAssistantPose.magic) {
       for (int i = -2; i <= 2; i++) {
         final fAngle = i * 0.18;
         final fLen = handRadius * (1.5 - (i.abs() * 0.2));
@@ -662,10 +734,14 @@ class AcadexAssistantPainter extends CustomPainter {
 
     // Capture global tip coordinates for magic particles
     final matrix = Matrix4.fromFloat64List(canvas.getTransform());
-    final tipLocalY = (pose == AcadexAssistantPose.write || pose == AcadexAssistantPose.wipe)
+    final tipLocalY =
+        (pose == AcadexAssistantPose.write || pose == AcadexAssistantPose.wipe)
         ? stylusL
         : (handRadius * 2.0);
-    final globalHandTip = MatrixUtils.transformPoint(matrix, Offset(0, tipLocalY));
+    final globalHandTip = MatrixUtils.transformPoint(
+      matrix,
+      Offset(0, tipLocalY),
+    );
 
     canvas.restore();
 
@@ -753,12 +829,20 @@ class AcadexAssistantPainter extends CustomPainter {
 
     // Left ear
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(cx - (headRadius * 0.98), earY), width: earW, height: earH),
+      Rect.fromCenter(
+        center: Offset(cx - (headRadius * 0.98), earY),
+        width: earW,
+        height: earH,
+      ),
       earPaint,
     );
     // Right ear
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(cx + (headRadius * 0.98), earY), width: earW, height: earH),
+      Rect.fromCenter(
+        center: Offset(cx + (headRadius * 0.98), earY),
+        width: earW,
+        height: earH,
+      ),
       earPaint,
     );
 
@@ -779,22 +863,30 @@ class AcadexAssistantPainter extends CustomPainter {
       headCenter,
       headRadius,
       Paint()
-        ..shader = headGradient.createShader(Rect.fromCircle(center: headCenter, radius: headRadius))
+        ..shader = headGradient.createShader(
+          Rect.fromCircle(center: headCenter, radius: headRadius),
+        )
         ..style = PaintingStyle.fill,
     );
 
     // Cheerful Rosy Cheek Blush
     final blushPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          const Color(0xFFF472B6).withValues(alpha: 0.28),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCircle(center: headCenter, radius: headRadius * 0.4));
+      ..shader =
+          RadialGradient(
+            colors: [
+              const Color(0xFFF472B6).withValues(alpha: 0.28),
+              Colors.transparent,
+            ],
+          ).createShader(
+            Rect.fromCircle(center: headCenter, radius: headRadius * 0.4),
+          );
 
     canvas.drawOval(
       Rect.fromCenter(
-        center: Offset(cx - (headRadius * 0.55), headCenterY + (headRadius * 0.28)),
+        center: Offset(
+          cx - (headRadius * 0.55),
+          headCenterY + (headRadius * 0.28),
+        ),
         width: w * 0.09,
         height: h * 0.04,
       ),
@@ -802,7 +894,10 @@ class AcadexAssistantPainter extends CustomPainter {
     );
     canvas.drawOval(
       Rect.fromCenter(
-        center: Offset(cx + (headRadius * 0.55), headCenterY + (headRadius * 0.28)),
+        center: Offset(
+          cx + (headRadius * 0.55),
+          headCenterY + (headRadius * 0.28),
+        ),
         width: w * 0.09,
         height: h * 0.04,
       ),
@@ -825,7 +920,14 @@ class AcadexAssistantPainter extends CustomPainter {
   // ---------------------------------------------------------------------------
   // EYES
   // ---------------------------------------------------------------------------
-  void _paintEyes(Canvas canvas, double cx, double headY, double headR, double w, double h) {
+  void _paintEyes(
+    Canvas canvas,
+    double cx,
+    double headY,
+    double headR,
+    double w,
+    double h,
+  ) {
     final eyeSpacing = headR * 0.45;
     final eyeY = headY + (headR * 0.04);
     final eyeW = w * 0.095;
@@ -839,7 +941,12 @@ class AcadexAssistantPainter extends CustomPainter {
         // Closed / blinking eye curve
         final blinkPath = Path()
           ..moveTo(eyeX - (eyeW * 0.5), eyeY)
-          ..quadraticBezierTo(eyeX, eyeY + (eyeH * 0.2), eyeX + (eyeW * 0.5), eyeY);
+          ..quadraticBezierTo(
+            eyeX,
+            eyeY + (eyeH * 0.2),
+            eyeX + (eyeW * 0.5),
+            eyeY,
+          );
         canvas.drawPath(
           blinkPath,
           Paint()
@@ -852,7 +959,11 @@ class AcadexAssistantPainter extends CustomPainter {
       }
 
       // Sclera (Eye White with Soft Ambient Occlusion)
-      final eyeRect = Rect.fromCenter(center: eyeCenter, width: eyeW, height: eyeH);
+      final eyeRect = Rect.fromCenter(
+        center: eyeCenter,
+        width: eyeW,
+        height: eyeH,
+      );
       canvas.drawOval(
         eyeRect,
         Paint()
@@ -876,10 +987,17 @@ class AcadexAssistantPainter extends CustomPainter {
         pupilCenter,
         irisRadius,
         Paint()
-          ..shader = RadialGradient(
-            center: const Alignment(-0.2, -0.2),
-            colors: const [Color(0xFF78350F), Color(0xFF451A03), Color(0xFF270E04)],
-          ).createShader(Rect.fromCircle(center: pupilCenter, radius: irisRadius))
+          ..shader =
+              RadialGradient(
+                center: const Alignment(-0.2, -0.2),
+                colors: const [
+                  Color(0xFF78350F),
+                  Color(0xFF451A03),
+                  Color(0xFF270E04),
+                ],
+              ).createShader(
+                Rect.fromCircle(center: pupilCenter, radius: irisRadius),
+              )
           ..style = PaintingStyle.fill,
       );
 
@@ -907,7 +1025,14 @@ class AcadexAssistantPainter extends CustomPainter {
   // ---------------------------------------------------------------------------
   // EYEBROWS
   // ---------------------------------------------------------------------------
-  void _paintEyebrows(Canvas canvas, double cx, double headY, double headR, double w, double h) {
+  void _paintEyebrows(
+    Canvas canvas,
+    double cx,
+    double headY,
+    double headR,
+    double w,
+    double h,
+  ) {
     final browSpacing = headR * 0.45;
     final browBaseY = headY - (headR * 0.20);
     final browW = w * 0.080;
@@ -929,7 +1054,12 @@ class AcadexAssistantPainter extends CustomPainter {
 
       final browPath = Path()
         ..moveTo(browX - (browW * 0.5), browY - (tilt * browW))
-        ..quadraticBezierTo(browX, browY - (h * 0.008), browX + (browW * 0.5), browY + (tilt * browW));
+        ..quadraticBezierTo(
+          browX,
+          browY - (h * 0.008),
+          browX + (browW * 0.5),
+          browY + (tilt * browW),
+        );
 
       canvas.drawPath(browPath, browPaint);
     }
@@ -938,7 +1068,14 @@ class AcadexAssistantPainter extends CustomPainter {
   // ---------------------------------------------------------------------------
   // MOUTH
   // ---------------------------------------------------------------------------
-  void _paintMouth(Canvas canvas, double cx, double headY, double headR, double w, double h) {
+  void _paintMouth(
+    Canvas canvas,
+    double cx,
+    double headY,
+    double headR,
+    double w,
+    double h,
+  ) {
     final mouthY = headY + (headR * 0.50);
     final mouthW = w * 0.080;
 
@@ -952,19 +1089,34 @@ class AcadexAssistantPainter extends CustomPainter {
       // Subtle, intelligent, composed mouth line with very slight pleasant upturn
       final focusedSmile = Path()
         ..moveTo(cx - (mouthW * 0.35), mouthY)
-        ..quadraticBezierTo(cx, mouthY + (h * 0.006), cx + (mouthW * 0.35), mouthY);
+        ..quadraticBezierTo(
+          cx,
+          mouthY + (h * 0.006),
+          cx + (mouthW * 0.35),
+          mouthY,
+        );
       canvas.drawPath(focusedSmile, mouthPaint);
     } else if (expression == AcadexAssistantExpression.success) {
       // Small confident, satisfied smile
       final successSmile = Path()
         ..moveTo(cx - (mouthW * 0.45), mouthY - (h * 0.002))
-        ..quadraticBezierTo(cx, mouthY + (h * 0.018), cx + (mouthW * 0.45), mouthY - (h * 0.002));
+        ..quadraticBezierTo(
+          cx,
+          mouthY + (h * 0.018),
+          cx + (mouthW * 0.45),
+          mouthY - (h * 0.002),
+        );
       canvas.drawPath(successSmile, mouthPaint);
     } else {
       // Gentle, friendly, calm smile
       final calmSmile = Path()
         ..moveTo(cx - (mouthW * 0.42), mouthY)
-        ..quadraticBezierTo(cx, mouthY + (h * 0.014), cx + (mouthW * 0.42), mouthY);
+        ..quadraticBezierTo(
+          cx,
+          mouthY + (h * 0.014),
+          cx + (mouthW * 0.42),
+          mouthY,
+        );
       canvas.drawPath(calmSmile, mouthPaint);
     }
   }
@@ -972,7 +1124,14 @@ class AcadexAssistantPainter extends CustomPainter {
   // ---------------------------------------------------------------------------
   // HAIR
   // ---------------------------------------------------------------------------
-  void _paintHair(Canvas canvas, double cx, double headY, double headR, double w, double h) {
+  void _paintHair(
+    Canvas canvas,
+    double cx,
+    double headY,
+    double headR,
+    double w,
+    double h,
+  ) {
     // 3D Volumetric Swept-Parted Hair (Modern styled academic mentor hair)
     final hairPath = Path()
       // Left side curve behind ear
@@ -995,10 +1154,25 @@ class AcadexAssistantPainter extends CustomPainter {
         headY,
       )
       // Right temple sweep
-      ..quadraticBezierTo(cx + (headR * 0.85), headY - (headR * 0.35), cx + (headR * 0.55), headY - (headR * 0.30))
+      ..quadraticBezierTo(
+        cx + (headR * 0.85),
+        headY - (headR * 0.35),
+        cx + (headR * 0.55),
+        headY - (headR * 0.30),
+      )
       // Forehead swept fringe (parted on the left, swooping across forehead)
-      ..quadraticBezierTo(cx + (headR * 0.20), headY - (headR * 0.55), cx - (headR * 0.15), headY - (headR * 0.25))
-      ..quadraticBezierTo(cx - (headR * 0.65), headY - (headR * 0.40), cx - (headR * 1.05), headY)
+      ..quadraticBezierTo(
+        cx + (headR * 0.20),
+        headY - (headR * 0.55),
+        cx - (headR * 0.15),
+        headY - (headR * 0.25),
+      )
+      ..quadraticBezierTo(
+        cx - (headR * 0.65),
+        headY - (headR * 0.40),
+        cx - (headR * 1.05),
+        headY,
+      )
       ..close();
 
     // 3D Hair Shading Gradient
@@ -1023,8 +1197,18 @@ class AcadexAssistantPainter extends CustomPainter {
     // Front sweeping hair highlight streak
     final highlightPath = Path()
       ..moveTo(cx - (headR * 0.25), headY - (headR * 1.05))
-      ..quadraticBezierTo(cx + (headR * 0.15), headY - (headR * 1.18), cx + (headR * 0.55), headY - (headR * 0.85))
-      ..quadraticBezierTo(cx + (headR * 0.15), headY - (headR * 1.00), cx - (headR * 0.25), headY - (headR * 1.05));
+      ..quadraticBezierTo(
+        cx + (headR * 0.15),
+        headY - (headR * 1.18),
+        cx + (headR * 0.55),
+        headY - (headR * 0.85),
+      )
+      ..quadraticBezierTo(
+        cx + (headR * 0.15),
+        headY - (headR * 1.00),
+        cx - (headR * 0.25),
+        headY - (headR * 1.05),
+      );
 
     canvas.drawPath(
       highlightPath,
@@ -1037,9 +1221,16 @@ class AcadexAssistantPainter extends CustomPainter {
   // ---------------------------------------------------------------------------
   // 8. SIGNATURE MAGIC GESTURE SPARKLES
   // ---------------------------------------------------------------------------
-  void _paintMagicSparkles(Canvas canvas, Offset handCenter, double w, double h) {
+  void _paintMagicSparkles(
+    Canvas canvas,
+    Offset handCenter,
+    double w,
+    double h,
+  ) {
     final progress = (pose == AcadexAssistantPose.magic)
-        ? (magicSparkleProgress > 0 ? magicSparkleProgress : (poseProgress * 2.0).clamp(0.0, 1.0))
+        ? (magicSparkleProgress > 0
+              ? magicSparkleProgress
+              : (poseProgress * 2.0).clamp(0.0, 1.0))
         : magicSparkleProgress;
 
     if (progress <= 0.01) return;
@@ -1050,14 +1241,17 @@ class AcadexAssistantPainter extends CustomPainter {
     final ringAlpha = (1.0 - progress).clamp(0.0, 1.0) * 0.75;
 
     final ringPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          const Color(0xFF67E8F9).withValues(alpha: ringAlpha),
-          const Color(0xFF3B82F6).withValues(alpha: ringAlpha * 0.5),
-          Colors.transparent,
-        ],
-        stops: const [0.85, 0.95, 1.0],
-      ).createShader(Rect.fromCircle(center: handCenter, radius: ringRadius + 2))
+      ..shader =
+          RadialGradient(
+            colors: [
+              const Color(0xFF67E8F9).withValues(alpha: ringAlpha),
+              const Color(0xFF3B82F6).withValues(alpha: ringAlpha * 0.5),
+              Colors.transparent,
+            ],
+            stops: const [0.85, 0.95, 1.0],
+          ).createShader(
+            Rect.fromCircle(center: handCenter, radius: ringRadius + 2),
+          )
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5;
 
@@ -1067,8 +1261,13 @@ class AcadexAssistantPainter extends CustomPainter {
     final starCount = 8;
     for (int i = 0; i < starCount; i++) {
       final angle = (i * (2 * math.pi / starCount)) + (progress * 1.5);
-      final dist = (w * 0.08) + (progress * (w * 0.20) * (0.8 + (0.4 * math.sin(i * 1.7))));
-      final starCenter = handCenter.translate(math.cos(angle) * dist, math.sin(angle) * dist);
+      final dist =
+          (w * 0.08) +
+          (progress * (w * 0.20) * (0.8 + (0.4 * math.sin(i * 1.7))));
+      final starCenter = handCenter.translate(
+        math.cos(angle) * dist,
+        math.sin(angle) * dist,
+      );
       final starSize = (w * 0.035) * (1.0 - (progress * 0.5));
       final starAlpha = (1.0 - progress).clamp(0.0, 1.0);
 
@@ -1094,7 +1293,13 @@ class AcadexAssistantPainter extends CustomPainter {
     }
   }
 
-  void _draw4PointStar(Canvas canvas, Offset center, double size, Color color, double rotation) {
+  void _draw4PointStar(
+    Canvas canvas,
+    Offset center,
+    double size,
+    Color color,
+    double rotation,
+  ) {
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.rotate(rotation);
@@ -1107,7 +1312,12 @@ class AcadexAssistantPainter extends CustomPainter {
       ..quadraticBezierTo(0, 0, 0, -size)
       ..close();
 
-    canvas.drawPath(path, Paint()..color = color..style = PaintingStyle.fill);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.fill,
+    );
     canvas.restore();
   }
 

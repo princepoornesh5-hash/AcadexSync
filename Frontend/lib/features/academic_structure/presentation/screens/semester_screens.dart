@@ -35,11 +35,17 @@ class SemesterListScreen extends ConsumerStatefulWidget {
 
 class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
   String _searchQuery = '';
-  String _statusFilter = 'all'; // 'all' | 'current' | 'active' | 'upcoming' | 'completed'
+  String _statusFilter =
+      'all'; // 'all' | 'current' | 'active' | 'upcoming' | 'completed'
   String? _selectedCourseId;
   String? _selectedAcademicYearId;
 
-  void _navigateCreateSemester(BuildContext context, List<Course> courses, List<AcademicYear> years, TerminologyHelper terminology) {
+  void _navigateCreateSemester(
+    BuildContext context,
+    List<Course> courses,
+    List<AcademicYear> years,
+    TerminologyHelper terminology,
+  ) {
     final check = AcademicPrerequisiteGuard.checkSemesterPrerequisites(
       courses: courses,
       academicYears: years,
@@ -77,12 +83,19 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
         children: [
           AcadexPageHeader(
             title: semTitle,
-            subtitle: "Manage academic $semTitle, ${semSingular.toLowerCase()} numbers, curricula, and current cohorts.",
+            subtitle:
+                "Manage academic $semTitle, ${semSingular.toLowerCase()} numbers, curricula, and current cohorts.",
           ),
           AcadexSearchFilterBar(
-            searchHint: "Search ${semTitle.toLowerCase()} or ${progPlural.toLowerCase()}...",
+            searchHint:
+                "Search ${semTitle.toLowerCase()} or ${progPlural.toLowerCase()}...",
             onSearchChanged: (v) => setState(() => _searchQuery = v),
-            onActionTap: () => _navigateCreateSemester(context, coursesList, yearsList, terminology),
+            onActionTap: () => _navigateCreateSemester(
+              context,
+              coursesList,
+              yearsList,
+              terminology,
+            ),
             actionLabel: "Create $semSingular",
           ),
           const SizedBox(height: 10),
@@ -95,25 +108,50 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
               children: [
                 // Course Context Selector
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                    color: isDark
+                        ? AcadexColors.darkSurfaceCard
+                        : AcadexColors.surface,
                     borderRadius: AcadexRadius.borderRadiusMd,
                     border: Border.all(
-                      color: _selectedCourseId != null ? AcadexColors.primary : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                      color: _selectedCourseId != null
+                          ? AcadexColors.primary
+                          : (isDark
+                                ? AcadexColors.darkHairline
+                                : AcadexColors.hairline),
                     ),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: _selectedCourseId ?? 'all',
                       isDense: true,
-                      dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                      dropdownColor: isDark
+                          ? AcadexColors.darkSurfaceCard
+                          : AcadexColors.surface,
                       items: [
-                        DropdownMenuItem(value: 'all', child: Text('All $progPlural', style: const TextStyle(fontSize: 12))),
+                        DropdownMenuItem(
+                          value: 'all',
+                          child: Text(
+                            'All $progPlural',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
                         for (final c in coursesList)
-                          DropdownMenuItem(value: c.id, child: Text("${c.name} (${c.code})", style: const TextStyle(fontSize: 12))),
+                          DropdownMenuItem(
+                            value: c.id,
+                            child: Text(
+                              "${c.name} (${c.code})",
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
                       ],
-                      onChanged: (v) => setState(() => _selectedCourseId = v == 'all' ? null : v),
+                      onChanged: (v) => setState(
+                        () => _selectedCourseId = v == 'all' ? null : v,
+                      ),
                     ),
                   ),
                 ),
@@ -121,39 +159,68 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
 
                 // Academic Year Context Selector
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                    color: isDark
+                        ? AcadexColors.darkSurfaceCard
+                        : AcadexColors.surface,
                     borderRadius: AcadexRadius.borderRadiusMd,
                     border: Border.all(
-                      color: _selectedAcademicYearId != null ? AcadexColors.primary : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                      color: _selectedAcademicYearId != null
+                          ? AcadexColors.primary
+                          : (isDark
+                                ? AcadexColors.darkHairline
+                                : AcadexColors.hairline),
                     ),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: _selectedAcademicYearId ?? 'all',
                       isDense: true,
-                      dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                      dropdownColor: isDark
+                          ? AcadexColors.darkSurfaceCard
+                          : AcadexColors.surface,
                       items: [
-                        const DropdownMenuItem(value: 'all', child: Text('All Academic Years', style: TextStyle(fontSize: 12))),
+                        const DropdownMenuItem(
+                          value: 'all',
+                          child: Text(
+                            'All Academic Years',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
                         for (final y in yearsList)
-                          DropdownMenuItem(value: y.id, child: Text(y.name, style: const TextStyle(fontSize: 12))),
+                          DropdownMenuItem(
+                            value: y.id,
+                            child: Text(
+                              y.name,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
                       ],
-                      onChanged: (v) => setState(() => _selectedAcademicYearId = v == 'all' ? null : v),
+                      onChanged: (v) => setState(
+                        () => _selectedAcademicYearId = v == 'all' ? null : v,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
 
                 // Clear Context Button
-                if (_selectedCourseId != null || _selectedAcademicYearId != null)
+                if (_selectedCourseId != null ||
+                    _selectedAcademicYearId != null)
                   TextButton.icon(
                     style: TextButton.styleFrom(
                       visualDensity: VisualDensity.compact,
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                     ),
                     icon: const Icon(LucideIcons.x, size: 14),
-                    label: const Text("Reset Context", style: TextStyle(fontSize: 12)),
+                    label: const Text(
+                      "Reset Context",
+                      style: TextStyle(fontSize: 12),
+                    ),
                     onPressed: () => setState(() {
                       _selectedCourseId = null;
                       _selectedAcademicYearId = null;
@@ -183,15 +250,27 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                       label: Text(f.$2),
                       selected: _statusFilter == f.$1,
                       onSelected: (_) => setState(() => _statusFilter = f.$1),
-                      selectedColor: AcadexColors.primary.withValues(alpha: 0.15),
+                      selectedColor: AcadexColors.primary.withValues(
+                        alpha: 0.15,
+                      ),
                       checkmarkColor: AcadexColors.primary,
                       labelStyle: TextStyle(
-                        color: _statusFilter == f.$1 ? AcadexColors.primary : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                        fontWeight: _statusFilter == f.$1 ? FontWeight.w600 : FontWeight.w400,
+                        color: _statusFilter == f.$1
+                            ? AcadexColors.primary
+                            : (isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted),
+                        fontWeight: _statusFilter == f.$1
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                         fontSize: 12,
                       ),
                       side: BorderSide(
-                        color: _statusFilter == f.$1 ? AcadexColors.primary : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                        color: _statusFilter == f.$1
+                            ? AcadexColors.primary
+                            : (isDark
+                                  ? AcadexColors.darkHairline
+                                  : AcadexColors.hairline),
                       ),
                     ),
                   ),
@@ -210,18 +289,31 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
               data: (semesters) {
                 final filtered = semesters.where((s) {
                   // Contextual filter
-                  if (_selectedCourseId != null && s.courseId != _selectedCourseId) return false;
-                  if (_selectedAcademicYearId != null && s.academicYearId != _selectedAcademicYearId) return false;
+                  if (_selectedCourseId != null &&
+                      s.courseId != _selectedCourseId)
+                    return false;
+                  if (_selectedAcademicYearId != null &&
+                      s.academicYearId != _selectedAcademicYearId)
+                    return false;
 
                   if (_statusFilter == 'current' && !s.isCurrent) return false;
-                  if (_statusFilter == 'active' && (!s.isActive || s.status == 'completed' || s.status == 'archived')) return false;
-                  if (_statusFilter == 'upcoming' && s.status != 'upcoming') return false;
-                  if (_statusFilter == 'completed' && s.status != 'completed' && s.status != 'archived') return false;
+                  if (_statusFilter == 'active' &&
+                      (!s.isActive ||
+                          s.status == 'completed' ||
+                          s.status == 'archived'))
+                    return false;
+                  if (_statusFilter == 'upcoming' && s.status != 'upcoming')
+                    return false;
+                  if (_statusFilter == 'completed' &&
+                      s.status != 'completed' &&
+                      s.status != 'archived')
+                    return false;
 
                   if (_searchQuery.isEmpty) return true;
                   final q = _searchQuery.toLowerCase();
                   final cName = (coursesMap[s.courseId] ?? '').toLowerCase();
-                  final yName = (yearsMap[s.academicYearId] ?? '').toLowerCase();
+                  final yName = (yearsMap[s.academicYearId] ?? '')
+                      .toLowerCase();
                   return s.name.toLowerCase().contains(q) ||
                       cName.contains(q) ||
                       yName.contains(q) ||
@@ -230,7 +322,9 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                 }).toList();
 
                 if (filtered.isEmpty) {
-                  if (_searchQuery.isEmpty && _selectedCourseId == null && _selectedAcademicYearId == null) {
+                  if (_searchQuery.isEmpty &&
+                      _selectedCourseId == null &&
+                      _selectedAcademicYearId == null) {
                     if (coursesList.isEmpty) {
                       return FreshDepartmentSetupCard(
                         currentStep: AcademicSetupStep.course,
@@ -246,8 +340,10 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                         currentStep: AcademicSetupStep.academicYear,
                         customMessage:
                             "Step 2 Pending: ${terminology.academicYearName()} required. Establish an ${terminology.academicYearName()} session before defining ${semTitle.toLowerCase()}.",
-                        actionLabel: "View ${terminology.academicYearName(plural: true)}",
-                        onAction: () => context.push('/academics/academic_years'),
+                        actionLabel:
+                            "View ${terminology.academicYearName(plural: true)}",
+                        onAction: () =>
+                            context.push('/academics/academic_years'),
                         termHelper: terminology,
                       );
                     }
@@ -264,15 +360,23 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                   if (semesters.isEmpty) {
                     return AcadexEmptyState(
                       title: "No $semTitle Found",
-                      subtitle: "Create a ${semSingular.toLowerCase()} for the selected ${terminology.programName().toLowerCase()} and ${terminology.academicYearName().toLowerCase()}.",
+                      subtitle:
+                          "Create a ${semSingular.toLowerCase()} for the selected ${terminology.programName().toLowerCase()} and ${terminology.academicYearName().toLowerCase()}.",
                       icon: LucideIcons.calendarClock,
                       actionLabel: "Create $semSingular",
-                      onActionTap: () => _navigateCreateSemester(context, coursesList, yearsList, terminology),
+                      onActionTap: () => _navigateCreateSemester(
+                        context,
+                        coursesList,
+                        yearsList,
+                        terminology,
+                      ),
                     );
                   }
 
                   return AcadexEmptyState.filterEmpty(
-                    filterSummary: _searchQuery.isNotEmpty ? "query '$_searchQuery'" : "selected filters",
+                    filterSummary: _searchQuery.isNotEmpty
+                        ? "query '$_searchQuery'"
+                        : "selected filters",
                     onClearFilters: () => setState(() {
                       _searchQuery = '';
                       _selectedCourseId = null;
@@ -293,16 +397,21 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                       final yName = yearsMap[s.academicYearId] ?? 'Session';
 
                       return GestureDetector(
-                        onTap: () => context.push('/academics/semesters/${s.id}'),
+                        onTap: () =>
+                            context.push('/academics/semesters/${s.id}'),
                         child: Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                            color: isDark
+                                ? AcadexColors.darkSurfaceCard
+                                : AcadexColors.surface,
                             borderRadius: AcadexRadius.borderRadiusLg,
                             border: Border.all(
                               color: s.isCurrent
                                   ? AcadexColors.primary
-                                  : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                                  : (isDark
+                                        ? AcadexColors.darkHairline
+                                        : AcadexColors.hairline),
                               width: s.isCurrent ? 1.5 : 1,
                             ),
                           ),
@@ -310,16 +419,23 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
                                     child: Row(
                                       children: [
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: AcadexColors.primary.withValues(alpha: 0.12),
-                                            borderRadius: BorderRadius.circular(4),
+                                            color: AcadexColors.primary
+                                                .withValues(alpha: 0.12),
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
                                           ),
                                           child: Text(
                                             "Term ${s.number}",
@@ -334,9 +450,14 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                                         Expanded(
                                           child: Text(
                                             s.name,
-                                            style: AcadexTypography.body(
-                                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                                            ).copyWith(fontWeight: FontWeight.w700),
+                                            style:
+                                                AcadexTypography.body(
+                                                  color: isDark
+                                                      ? AcadexColors.darkInk
+                                                      : AcadexColors.ink,
+                                                ).copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
@@ -344,20 +465,35 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                                     ),
                                   ),
                                   if (s.isCurrent)
-                                    const AcadexBadge(label: "CURRENT", variant: AcadexBadgeVariant.primary)
+                                    const AcadexBadge(
+                                      label: "CURRENT",
+                                      variant: AcadexBadgeVariant.primary,
+                                    )
                                   else
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: s.isActive
-                                            ? (isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight)
-                                            : (isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft),
-                                        borderRadius: AcadexRadius.borderRadiusFull,
+                                            ? (isDark
+                                                  ? AcadexColors
+                                                        .successDarkContainer
+                                                  : AcadexColors.successLight)
+                                            : (isDark
+                                                  ? AcadexColors
+                                                        .darkSurfaceHover
+                                                  : AcadexColors.canvasSoft),
+                                        borderRadius:
+                                            AcadexRadius.borderRadiusFull,
                                       ),
                                       child: Text(
                                         s.isActive ? "Active" : "Archived",
                                         style: TextStyle(
-                                          color: s.isActive ? AcadexColors.success : AcadexColors.inkMuted,
+                                          color: s.isActive
+                                              ? AcadexColors.success
+                                              : AcadexColors.inkMuted,
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -369,7 +505,9 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                               Text(
                                 "Course: $cName",
                                 style: AcadexTypography.caption(
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
                                 ).copyWith(fontWeight: FontWeight.w500),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -377,7 +515,9 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                               Text(
                                 "Academic Year: $yName",
                                 style: AcadexTypography.caption(
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -386,9 +526,15 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   IconButton(
-                                    icon: const Icon(LucideIcons.arrowRight, size: 16, color: AcadexColors.primary),
+                                    icon: const Icon(
+                                      LucideIcons.arrowRight,
+                                      size: 16,
+                                      color: AcadexColors.primary,
+                                    ),
                                     tooltip: "View Details",
-                                    onPressed: () => context.push('/academics/semesters/${s.id}'),
+                                    onPressed: () => context.push(
+                                      '/academics/semesters/${s.id}',
+                                    ),
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
                                   ),
@@ -397,10 +543,14 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                                     icon: Icon(
                                       LucideIcons.edit,
                                       size: 18,
-                                      color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                                      color: isDark
+                                          ? AcadexColors.darkInkSecondary
+                                          : AcadexColors.inkSecondary,
                                     ),
                                     tooltip: "Edit Semester",
-                                    onPressed: () => context.push('/academics/semesters/edit/${s.id}'),
+                                    onPressed: () => context.push(
+                                      '/academics/semesters/edit/${s.id}',
+                                    ),
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
                                   ),
@@ -415,51 +565,109 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                 }
 
                 return AcadexDataTable(
-                  columns: const ["Semester Name", "Term #", "Course", "Academic Year", "Current", "Status", "Actions"],
+                  columns: const [
+                    "Semester Name",
+                    "Term #",
+                    "Course",
+                    "Academic Year",
+                    "Current",
+                    "Status",
+                    "Actions",
+                  ],
                   rows: filtered.map((s) {
                     return DataRow(
-                      onSelectChanged: (_) => context.push('/academics/semesters/${s.id}'),
+                      onSelectChanged: (_) =>
+                          context.push('/academics/semesters/${s.id}'),
                       cells: [
                         DataCell(
                           Row(
                             children: [
-                              Icon(LucideIcons.calendarClock, size: 16, color: s.isCurrent ? AcadexColors.primary : AcadexColors.inkMuted),
+                              Icon(
+                                LucideIcons.calendarClock,
+                                size: 16,
+                                color: s.isCurrent
+                                    ? AcadexColors.primary
+                                    : AcadexColors.inkMuted,
+                              ),
                               const SizedBox(width: 8),
-                              Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Text(
+                                s.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                         ),
                         DataCell(
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
-                              color: AcadexColors.primary.withValues(alpha: 0.1),
+                              color: AcadexColors.primary.withValues(
+                                alpha: 0.1,
+                              ),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               "Term ${s.number}",
-                              style: const TextStyle(color: AcadexColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
+                              style: const TextStyle(
+                                color: AcadexColors.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ),
-                        DataCell(Text(AcadexEntityFormatters.formatCourseLabel(coursesMap[s.courseId], rawId: s.courseId))),
-                        DataCell(Text(AcadexEntityFormatters.formatAcademicYearLabel(yearsMap[s.academicYearId], rawId: s.academicYearId))),
+                        DataCell(
+                          Text(
+                            AcadexEntityFormatters.formatCourseLabel(
+                              coursesMap[s.courseId],
+                              rawId: s.courseId,
+                            ),
+                          ),
+                        ),
+                        DataCell(
+                          Text(
+                            AcadexEntityFormatters.formatAcademicYearLabel(
+                              yearsMap[s.academicYearId],
+                              rawId: s.academicYearId,
+                            ),
+                          ),
+                        ),
                         DataCell(
                           s.isCurrent
-                              ? const AcadexBadge(label: "CURRENT", variant: AcadexBadgeVariant.primary)
-                              : const Text("—", style: TextStyle(color: AcadexColors.inkMuted)),
+                              ? const AcadexBadge(
+                                  label: "CURRENT",
+                                  variant: AcadexBadgeVariant.primary,
+                                )
+                              : const Text(
+                                  "—",
+                                  style: TextStyle(
+                                    color: AcadexColors.inkMuted,
+                                  ),
+                                ),
                         ),
                         DataCell(
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: s.isActive ? AcadexColors.successLight : AcadexColors.canvasSoft,
+                              color: s.isActive
+                                  ? AcadexColors.successLight
+                                  : AcadexColors.canvasSoft,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               s.isActive ? "Active" : "Archived",
                               style: TextStyle(
-                                color: s.isActive ? AcadexColors.success : AcadexColors.inkMuted,
+                                color: s.isActive
+                                    ? AcadexColors.success
+                                    : AcadexColors.inkMuted,
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -472,12 +680,16 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                               IconButton(
                                 icon: const Icon(LucideIcons.eye, size: 18),
                                 tooltip: "View Details",
-                                onPressed: () => context.push('/academics/semesters/${s.id}'),
+                                onPressed: () => context.push(
+                                  '/academics/semesters/${s.id}',
+                                ),
                               ),
                               IconButton(
                                 icon: const Icon(LucideIcons.edit, size: 18),
                                 tooltip: "Edit",
-                                onPressed: () => context.push('/academics/semesters/edit/${s.id}'),
+                                onPressed: () => context.push(
+                                  '/academics/semesters/edit/${s.id}',
+                                ),
                               ),
                             ],
                           ),
@@ -562,7 +774,9 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
   }
 
   Future<void> _pickDate(bool isStart) async {
-    final initial = isStart ? (_startDate ?? DateTime.now()) : (_endDate ?? DateTime.now());
+    final initial = isStart
+        ? (_startDate ?? DateTime.now())
+        : (_endDate ?? DateTime.now());
     final picked = await showDatePicker(
       context: context,
       initialDate: initial,
@@ -590,18 +804,19 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
       );
       return;
     }
-    if (_startDate != null && _endDate != null && !_endDate!.isAfter(_startDate!)) {
-      AcadexSnackBar.showWarning(
-        context,
-        'End date must be after Start date',
-      );
+    if (_startDate != null &&
+        _endDate != null &&
+        !_endDate!.isAfter(_startDate!)) {
+      AcadexSnackBar.showWarning(context, 'End date must be after Start date');
       return;
     }
 
     setState(() => _isLoading = true);
     try {
       final courses = ref.read(coursesProvider).valueOrNull ?? [];
-      final selectedCourse = courses.where((c) => c.id == _selectedCourseId).firstOrNull;
+      final selectedCourse = courses
+          .where((c) => c.id == _selectedCourseId)
+          .firstOrNull;
       final effectiveDeptId = _existing?.departmentId.isNotEmpty == true
           ? _existing!.departmentId
           : (selectedCourse?.departmentId ?? '');
@@ -632,21 +847,32 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
         }
 
         final freshSemesters = await ref.read(semestersProvider.future);
-        final createdSem = freshSemesters.where((s) =>
-            s.courseId == sem.courseId &&
-            s.academicYearId == sem.academicYearId &&
-            s.number == sem.number).firstOrNull ?? sem;
+        final createdSem =
+            freshSemesters
+                .where(
+                  (s) =>
+                      s.courseId == sem.courseId &&
+                      s.academicYearId == sem.academicYearId &&
+                      s.number == sem.number,
+                )
+                .firstOrNull ??
+            sem;
 
         if (mounted) {
           final terminology = ref.read(terminologyProvider);
           final semLabel = terminology.semesterName();
           final isSecEnabled = terminology.isSectionEnabled;
-          final nextActionLabel = isSecEnabled ? 'Continue to ${terminology.sectionName()}' : 'Continue to ${terminology.subjectName()}';
+          final nextActionLabel = isSecEnabled
+              ? 'Continue to ${terminology.sectionName()}'
+              : 'Continue to ${terminology.subjectName()}';
           final nextRoute = isSecEnabled
               ? '/academics/sections/new?courseId=${createdSem.courseId}&semesterId=${createdSem.id}&academicYearId=${createdSem.academicYearId}'
               : '/academics/subjects/new?courseId=${createdSem.courseId}&semesterId=${createdSem.id}';
 
-          AcadexSnackBar.showSuccess(context, '$semLabel created successfully.');
+          AcadexSnackBar.showSuccess(
+            context,
+            '$semLabel created successfully.',
+          );
 
           SetupContinuationDialog.show(
             context,
@@ -660,7 +886,8 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
               context.push(nextRoute);
             },
             secondaryActionLabel: 'Done',
-            onDone: () => context.safePop(fallbackRoute: '/academics/semesters'),
+            onDone: () =>
+                context.safePop(fallbackRoute: '/academics/semesters'),
           );
         }
       } else {
@@ -673,7 +900,10 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
         if (mounted) {
           final terminology = ref.read(terminologyProvider);
           final semLabel = terminology.semesterName();
-          AcadexSnackBar.showSuccess(context, '$semLabel updated successfully.');
+          AcadexSnackBar.showSuccess(
+            context,
+            '$semLabel updated successfully.',
+          );
           context.safePop(fallbackRoute: '/academics/semesters');
         }
       }
@@ -699,11 +929,17 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-          onPressed: () => context.safePop(fallbackRoute: '/academics/semesters'),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
+          onPressed: () =>
+              context.safePop(fallbackRoute: '/academics/semesters'),
         ),
         title: Text(
           isEdit ? "Edit $semLabel" : "Create $semLabel",
@@ -722,109 +958,164 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
                   title: isEdit ? "Edit $semLabel" : "$semLabel Details",
                   isSaving: _isLoading,
                   saveLabel: isEdit ? "Update $semLabel" : "Create $semLabel",
-                  onCancel: () => context.safePop(fallbackRoute: '/academics/semesters'),
+                  onCancel: () =>
+                      context.safePop(fallbackRoute: '/academics/semesters'),
                   onSave: _save,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Contextual Header when entered with known Course / Academic Year
-                      Builder(builder: (context) {
-                        final hasInheritedContext = !isEdit &&
-                            widget.initialCourseId != null &&
-                            _selectedCourseId != null &&
-                            !_showManualContext;
-                        final selectedCourse = coursesAsync.valueOrNull
-                            ?.where((c) => c.id == _selectedCourseId)
-                            .firstOrNull;
-                        final selectedYear = yearsAsync.valueOrNull
-                            ?.where((y) => y.id == _selectedAcademicYearId)
-                            .firstOrNull;
+                      Builder(
+                        builder: (context) {
+                          final hasInheritedContext =
+                              !isEdit &&
+                              widget.initialCourseId != null &&
+                              _selectedCourseId != null &&
+                              !_showManualContext;
+                          final selectedCourse = coursesAsync.valueOrNull
+                              ?.where((c) => c.id == _selectedCourseId)
+                              .firstOrNull;
+                          final selectedYear = yearsAsync.valueOrNull
+                              ?.where((y) => y.id == _selectedAcademicYearId)
+                              .firstOrNull;
 
-                        if (hasInheritedContext && selectedCourse != null) {
-                          return AcadexWorkflowContextBanner(
-                            targetEntityName: 'Semester',
-                            contextItems: [
-                              AcadexContextItem(
-                                label: 'Course',
-                                value: '${selectedCourse.name} (${selectedCourse.code})',
-                                icon: LucideIcons.bookOpen,
-                              ),
-                              if (selectedYear != null)
+                          if (hasInheritedContext && selectedCourse != null) {
+                            return AcadexWorkflowContextBanner(
+                              targetEntityName: 'Semester',
+                              contextItems: [
                                 AcadexContextItem(
-                                  label: 'Academic Session',
-                                  value: selectedYear.name,
-                                  icon: LucideIcons.calendar,
+                                  label: 'Course',
+                                  value:
+                                      '${selectedCourse.name} (${selectedCourse.code})',
+                                  icon: LucideIcons.bookOpen,
                                 ),
-                            ],
-                            onChangeContext: () => setState(() => _showManualContext = true),
-                          );
-                        }
+                                if (selectedYear != null)
+                                  AcadexContextItem(
+                                    label: 'Academic Session',
+                                    value: selectedYear.name,
+                                    icon: LucideIcons.calendar,
+                                  ),
+                              ],
+                              onChangeContext: () =>
+                                  setState(() => _showManualContext = true),
+                            );
+                          }
 
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Course / Program Selector with Auto-resolution (Requirement 9)
-                            AcadexFormField(
-                              label: "${ref.watch(terminologyProvider).label(AcademicConcept.program)} *",
-                              child: coursesAsync.when(
-                                loading: () => const LinearProgressIndicator(),
-                                error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error)),
-                                data: (courses) => ContextProgramSelector(
-                                  courses: courses,
-                                  selectedCourseId: _selectedCourseId,
-                                  isEdit: isEdit,
-                                  onCourseChanged: (v) => setState(() => _selectedCourseId = v),
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Course / Program Selector with Auto-resolution (Requirement 9)
+                              AcadexFormField(
+                                label:
+                                    "${ref.watch(terminologyProvider).label(AcademicConcept.program)} *",
+                                child: coursesAsync.when(
+                                  loading: () =>
+                                      const LinearProgressIndicator(),
+                                  error: (e, _) => Text(
+                                    AcadexException.sanitizedMessage(e),
+                                    style: const TextStyle(
+                                      color: AcadexColors.error,
+                                    ),
+                                  ),
+                                  data: (courses) => ContextProgramSelector(
+                                    courses: courses,
+                                    selectedCourseId: _selectedCourseId,
+                                    isEdit: isEdit,
+                                    onCourseChanged: (v) =>
+                                        setState(() => _selectedCourseId = v),
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 14),
+                              const SizedBox(height: 14),
 
-                            // Academic Year Selector
-                            AcadexFormField(
-                              label: "Academic Session (Year) *",
-                              child: yearsAsync.when(
-                                loading: () => const LinearProgressIndicator(),
-                                error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error)),
-                                data: (years) {
-                                  if (years.isEmpty) {
-                                    return Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.warningLight,
-                                        borderRadius: AcadexRadius.borderRadiusMd,
-                                        border: Border.all(color: AcadexColors.warning),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Text("No Academic Years Found", style: TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.warning)),
-                                          const SizedBox(height: 4),
-                                          const Text("You must create at least one academic session/year before adding a semester."),
-                                          const SizedBox(height: 8),
-                                          ElevatedButton(
-                                            onPressed: () => context.push('/academics/academic_years/new'),
-                                            child: const Text("Create Academic Year"),
+                              // Academic Year Selector
+                              AcadexFormField(
+                                label: "Academic Session (Year) *",
+                                child: yearsAsync.when(
+                                  loading: () =>
+                                      const LinearProgressIndicator(),
+                                  error: (e, _) => Text(
+                                    AcadexException.sanitizedMessage(e),
+                                    style: const TextStyle(
+                                      color: AcadexColors.error,
+                                    ),
+                                  ),
+                                  data: (years) {
+                                    if (years.isEmpty) {
+                                      return Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: isDark
+                                              ? AcadexColors.darkSurfaceCard
+                                              : AcadexColors.warningLight,
+                                          borderRadius:
+                                              AcadexRadius.borderRadiusMd,
+                                          border: Border.all(
+                                            color: AcadexColors.warning,
                                           ),
-                                        ],
-                                      ),
-                                    );
-                                  }
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              "No Academic Years Found",
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: AcadexColors.warning,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            const Text(
+                                              "You must create at least one academic session/year before adding a semester.",
+                                            ),
+                                            const SizedBox(height: 8),
+                                            ElevatedButton(
+                                              onPressed: () => context.push(
+                                                '/academics/academic_years/new',
+                                              ),
+                                              child: const Text(
+                                                "Create Academic Year",
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }
 
-                                  return DropdownButtonFormField<String>(
-                                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                                    initialValue: _selectedAcademicYearId,
-                                    decoration: const InputDecoration(hintText: "Select Academic Session"),
-                                    validator: (v) => v == null ? 'Academic Year is required' : null,
-                                    items: years.map((y) => DropdownMenuItem(value: y.id, child: Text(y.name))).toList(),
-                                    onChanged: isEdit ? null : (v) => setState(() => _selectedAcademicYearId = v),
-                                  );
-                                },
+                                    return DropdownButtonFormField<String>(
+                                      dropdownColor: isDark
+                                          ? AcadexColors.darkSurfaceCard
+                                          : AcadexColors.surface,
+                                      initialValue: _selectedAcademicYearId,
+                                      decoration: const InputDecoration(
+                                        hintText: "Select Academic Session",
+                                      ),
+                                      validator: (v) => v == null
+                                          ? 'Academic Year is required'
+                                          : null,
+                                      items: years
+                                          .map(
+                                            (y) => DropdownMenuItem(
+                                              value: y.id,
+                                              child: Text(y.name),
+                                            ),
+                                          )
+                                          .toList(),
+                                      onChanged: isEdit
+                                          ? null
+                                          : (v) => setState(
+                                              () => _selectedAcademicYearId = v,
+                                            ),
+                                    );
+                                  },
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 14),
-                          ],
-                        );
-                      }),
+                              const SizedBox(height: 14),
+                            ],
+                          );
+                        },
+                      ),
 
                       // Name & Number Row
                       Row(
@@ -837,13 +1128,22 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
                               child: TextFormField(
                                 controller: _nameCtrl,
                                 validator: (v) {
-                                  if (v == null || v.trim().isEmpty) return 'Name is required';
-                                  if (v.trim().length < 2) return 'Min 2 characters';
-                                  if (v.trim().length > 50) return 'Max 50 characters';
+                                  if (v == null || v.trim().isEmpty)
+                                    return 'Name is required';
+                                  if (v.trim().length < 2)
+                                    return 'Min 2 characters';
+                                  if (v.trim().length > 50)
+                                    return 'Max 50 characters';
                                   return null;
                                 },
-                                style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-                                decoration: const InputDecoration(hintText: "e.g. Semester 1 or Fall 2026"),
+                                style: AcadexTypography.body(
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
+                                ),
+                                decoration: const InputDecoration(
+                                  hintText: "e.g. Semester 1 or Fall 2026",
+                                ),
                               ),
                             ),
                           ),
@@ -853,17 +1153,27 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
                             child: AcadexFormField(
                               label: "Term # *",
                               child: DropdownButtonFormField<int>(
-                                dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                dropdownColor: isDark
+                                    ? AcadexColors.darkSurfaceCard
+                                    : AcadexColors.surface,
                                 value: _semesterNumber,
                                 decoration: const InputDecoration(),
                                 items: List.generate(12, (i) => i + 1)
-                                    .map((n) => DropdownMenuItem(value: n, child: Text("Term $n")))
+                                    .map(
+                                      (n) => DropdownMenuItem(
+                                        value: n,
+                                        child: Text("Term $n"),
+                                      ),
+                                    )
                                     .toList(),
                                 onChanged: (v) {
                                   if (v != null) {
                                     setState(() {
                                       _semesterNumber = v;
-                                      if (_nameCtrl.text.isEmpty || _nameCtrl.text.startsWith('Semester ')) {
+                                      if (_nameCtrl.text.isEmpty ||
+                                          _nameCtrl.text.startsWith(
+                                            'Semester ',
+                                          )) {
                                         _nameCtrl.text = "Semester $v";
                                       }
                                     });
@@ -885,23 +1195,39 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
                               child: InkWell(
                                 onTap: () => _pickDate(true),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 14,
+                                  ),
                                   decoration: BoxDecoration(
                                     border: Border.all(
-                                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                      color: isDark
+                                          ? AcadexColors.darkHairline
+                                          : AcadexColors.hairline,
                                     ),
                                     borderRadius: AcadexRadius.borderRadiusMd,
                                   ),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        _startDate != null ? dateFormat.format(_startDate!) : "Select Date",
+                                        _startDate != null
+                                            ? dateFormat.format(_startDate!)
+                                            : "Select Date",
                                         style: AcadexTypography.body(
-                                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                          color: isDark
+                                              ? AcadexColors.darkInk
+                                              : AcadexColors.ink,
                                         ),
                                       ),
-                                      Icon(LucideIcons.calendar, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                      Icon(
+                                        LucideIcons.calendar,
+                                        size: 16,
+                                        color: isDark
+                                            ? AcadexColors.darkInkMuted
+                                            : AcadexColors.inkMuted,
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -915,23 +1241,39 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
                               child: InkWell(
                                 onTap: () => _pickDate(false),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 14,
+                                  ),
                                   decoration: BoxDecoration(
                                     border: Border.all(
-                                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                      color: isDark
+                                          ? AcadexColors.darkHairline
+                                          : AcadexColors.hairline,
                                     ),
                                     borderRadius: AcadexRadius.borderRadiusMd,
                                   ),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        _endDate != null ? dateFormat.format(_endDate!) : "Select Date",
+                                        _endDate != null
+                                            ? dateFormat.format(_endDate!)
+                                            : "Select Date",
                                         style: AcadexTypography.body(
-                                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                          color: isDark
+                                              ? AcadexColors.darkInk
+                                              : AcadexColors.ink,
                                         ),
                                       ),
-                                      Icon(LucideIcons.calendar, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                      Icon(
+                                        LucideIcons.calendar,
+                                        size: 16,
+                                        color: isDark
+                                            ? AcadexColors.darkInkMuted
+                                            : AcadexColors.inkMuted,
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -946,10 +1288,14 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                          color: isDark
+                              ? AcadexColors.darkCanvasSoft
+                              : AcadexColors.canvasSoft,
                           borderRadius: AcadexRadius.borderRadiusMd,
                           border: Border.all(
-                            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                            color: isDark
+                                ? AcadexColors.darkHairline
+                                : AcadexColors.hairline,
                           ),
                         ),
                         child: Material(
@@ -960,14 +1306,22 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
                             activeThumbColor: AcadexColors.primary,
                             title: Text(
                               "Set as Current Ongoing Term",
-                              style: AcadexTypography.body(
-                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                              ).copyWith(fontWeight: FontWeight.w700, fontSize: 13),
+                              style:
+                                  AcadexTypography.body(
+                                    color: isDark
+                                        ? AcadexColors.darkInk
+                                        : AcadexColors.ink,
+                                  ).copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                  ),
                             ),
                             subtitle: Text(
                               "Indicates this semester is currently active for teaching and section scheduling.",
                               style: AcadexTypography.caption(
-                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
                               ).copyWith(fontSize: 11),
                             ),
                             onChanged: (v) => setState(() => _isCurrent = v),

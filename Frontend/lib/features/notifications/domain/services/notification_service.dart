@@ -95,8 +95,9 @@ class NotificationService {
     required DateTime sessionDate,
   }) async {
     // Format date simply
-    final dateStr = '${sessionDate.year}-${sessionDate.month.toString().padLeft(2, '0')}-${sessionDate.day.toString().padLeft(2, '0')}';
-    
+    final dateStr =
+        '${sessionDate.year}-${sessionDate.month.toString().padLeft(2, '0')}-${sessionDate.day.toString().padLeft(2, '0')}';
+
     await notifySection(
       sectionId: sectionId,
       title: 'Attendance Recorded',

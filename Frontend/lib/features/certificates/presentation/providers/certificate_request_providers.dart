@@ -8,68 +8,79 @@ import '../../data/repositories/certificate_request_repository.dart';
 import '../../data/repositories/mock_certificate_request_repository.dart';
 import '../../data/repositories/firebase_certificate_request_repository.dart';
 
-final mockCertificateRequestRepositoryProvider = Provider<CertificateRequestRepository>((ref) {
-  return MockCertificateRequestRepository();
-});
+final mockCertificateRequestRepositoryProvider =
+    Provider<CertificateRequestRepository>((ref) {
+      return MockCertificateRequestRepository();
+    });
 
-final firebaseCertificateRequestRepositoryProvider = Provider<CertificateRequestRepository>((ref) {
-  // final firestoreService = ref.watch(firestoreServiceProvider);
-  return FirebaseCertificateRequestRepository();
-});
+final firebaseCertificateRequestRepositoryProvider =
+    Provider<CertificateRequestRepository>((ref) {
+      // final firestoreService = ref.watch(firestoreServiceProvider);
+      return FirebaseCertificateRequestRepository();
+    });
 
-final certificateRequestRepositoryProvider = Provider<CertificateRequestRepository>((ref) {
-  if (FirebaseInitializer.shouldUseMock) {
-    return ref.watch(mockCertificateRequestRepositoryProvider);
-  }
-  return ref.watch(firebaseCertificateRequestRepositoryProvider);
-});
+final certificateRequestRepositoryProvider =
+    Provider<CertificateRequestRepository>((ref) {
+      if (FirebaseInitializer.shouldUseMock) {
+        return ref.watch(mockCertificateRequestRepositoryProvider);
+      }
+      return ref.watch(firebaseCertificateRequestRepositoryProvider);
+    });
 
-final certificateTypesProvider = FutureProvider<List<ConfiguredCertificateType>>((ref) async {
-  final repository = ref.watch(certificateRequestRepositoryProvider);
-  return repository.getCertificateTypes();
-});
+final certificateTypesProvider =
+    FutureProvider<List<ConfiguredCertificateType>>((ref) async {
+      final repository = ref.watch(certificateRequestRepositoryProvider);
+      return repository.getCertificateTypes();
+    });
 
-final userCertificateRequestsProvider = StreamProvider<List<CertificateRequest>>((ref) async* {
-  final authState = ref.watch(authProvider);
-  if (authState is! AuthAuthenticated) {
-    yield [];
-    return;
-  }
+final userCertificateRequestsProvider =
+    StreamProvider<List<CertificateRequest>>((ref) async* {
+      final authState = ref.watch(authProvider);
+      if (authState is! AuthAuthenticated) {
+        yield [];
+        return;
+      }
 
-  final user = authState.user;
-  final repository = ref.watch(certificateRequestRepositoryProvider);
+      final user = authState.user;
+      final repository = ref.watch(certificateRequestRepositoryProvider);
 
-  if (user.role == AppRole.student) {
-    await for (final requests in repository.watchStudentRequests(user.firebaseUid ?? user.id)) {
-      yield requests;
-    }
-  } else if (user.role == AppRole.hod) {
-    await for (final requests in repository.watchAdminRequests(
-      collegeId: user.collegeId,
-      departmentId: user.departmentId,
-    )) {
-      yield requests;
-    }
-  } else if (user.role == AppRole.collegeAdmin) {
-    await for (final requests in repository.watchAdminRequests(collegeId: user.collegeId)) {
-      yield requests;
-    }
-  } else if (user.role == AppRole.superAdmin) {
-    await for (final requests in repository.watchAdminRequests()) {
-      yield requests;
-    }
-  } else {
-    yield [];
-  }
-});
+      if (user.role == AppRole.student) {
+        await for (final requests in repository.watchStudentRequests(
+          user.firebaseUid ?? user.id,
+        )) {
+          yield requests;
+        }
+      } else if (user.role == AppRole.hod) {
+        await for (final requests in repository.watchAdminRequests(
+          collegeId: user.collegeId,
+          departmentId: user.departmentId,
+        )) {
+          yield requests;
+        }
+      } else if (user.role == AppRole.collegeAdmin) {
+        await for (final requests in repository.watchAdminRequests(
+          collegeId: user.collegeId,
+        )) {
+          yield requests;
+        }
+      } else if (user.role == AppRole.superAdmin) {
+        await for (final requests in repository.watchAdminRequests()) {
+          yield requests;
+        }
+      } else {
+        yield [];
+      }
+    });
 
-final certificateRequestByIdProvider = Provider.family<CertificateRequest?, String>((ref, requestId) {
-  final async = ref.watch(userCertificateRequestsProvider);
-  return async.maybeWhen(
-    data: (requests) => requests.where((r) => r.id == requestId).firstOrNull,
-    orElse: () => null,
-  );
-});
+final certificateRequestByIdProvider =
+    Provider.family<CertificateRequest?, String>((ref, requestId) {
+      final async = ref.watch(userCertificateRequestsProvider);
+      return async.maybeWhen(
+        data: (requests) =>
+            requests.where((r) => r.id == requestId).firstOrNull,
+        orElse: () => null,
+      );
+    });
 
 class CertificateRequestFilterState {
   final CertificateRequestStatus? status;
@@ -91,34 +102,43 @@ class CertificateRequestFilterState {
   }) {
     return CertificateRequestFilterState(
       status: clearStatus ? null : (status ?? this.status),
-      certificateTypeId: clearType ? null : (certificateTypeId ?? this.certificateTypeId),
+      certificateTypeId: clearType
+          ? null
+          : (certificateTypeId ?? this.certificateTypeId),
       searchQuery: searchQuery ?? this.searchQuery,
     );
   }
 }
 
-final certificateRequestFilterProvider = StateProvider<CertificateRequestFilterState>((ref) => CertificateRequestFilterState());
+final certificateRequestFilterProvider =
+    StateProvider<CertificateRequestFilterState>(
+      (ref) => CertificateRequestFilterState(),
+    );
 
-final filteredCertificateRequestsProvider = Provider<AsyncValue<List<CertificateRequest>>>((ref) {
-  final asyncRequests = ref.watch(userCertificateRequestsProvider);
-  final filters = ref.watch(certificateRequestFilterProvider);
+final filteredCertificateRequestsProvider =
+    Provider<AsyncValue<List<CertificateRequest>>>((ref) {
+      final asyncRequests = ref.watch(userCertificateRequestsProvider);
+      final filters = ref.watch(certificateRequestFilterProvider);
 
-  return asyncRequests.whenData((requests) {
-    return requests.where((req) {
-      if (filters.status != null && req.status != filters.status) return false;
-      if (filters.certificateTypeId != null && req.certificateTypeId != filters.certificateTypeId) return false;
-      
-      if (filters.searchQuery.isNotEmpty) {
-        final query = filters.searchQuery.toLowerCase();
-        if (!req.certificateTypeName.toLowerCase().contains(query) &&
-            !req.studentId.toLowerCase().contains(query)) {
-          return false;
-        }
-      }
-      return true;
-    }).toList();
-  });
-});
+      return asyncRequests.whenData((requests) {
+        return requests.where((req) {
+          if (filters.status != null && req.status != filters.status)
+            return false;
+          if (filters.certificateTypeId != null &&
+              req.certificateTypeId != filters.certificateTypeId)
+            return false;
+
+          if (filters.searchQuery.isNotEmpty) {
+            final query = filters.searchQuery.toLowerCase();
+            if (!req.certificateTypeName.toLowerCase().contains(query) &&
+                !req.studentId.toLowerCase().contains(query)) {
+              return false;
+            }
+          }
+          return true;
+        }).toList();
+      });
+    });
 
 class CertificateRequestManagementNotifier extends AsyncNotifier<void> {
   @override
@@ -144,7 +164,7 @@ class CertificateRequestManagementNotifier extends AsyncNotifier<void> {
       if (authState is AuthAuthenticated) {
         reviewerId = authState.user.id;
       }
-      
+
       final repository = ref.read(certificateRequestRepositoryProvider);
       await repository.updateRequestStatus(
         requestId: requestId,
@@ -156,6 +176,7 @@ class CertificateRequestManagementNotifier extends AsyncNotifier<void> {
   }
 }
 
-final certificateRequestManagementProvider = AsyncNotifierProvider<CertificateRequestManagementNotifier, void>(() {
-  return CertificateRequestManagementNotifier();
-});
+final certificateRequestManagementProvider =
+    AsyncNotifierProvider<CertificateRequestManagementNotifier, void>(() {
+      return CertificateRequestManagementNotifier();
+    });

@@ -8,7 +8,8 @@ class MockSettingsRepository implements SettingsRepository {
   static const String _keySettings = 'acadex_local_app_settings';
 
   AppSettings _appSettings = AppSettings.defaults();
-  NotificationPreferences _notificationPreferences = NotificationPreferences.defaults();
+  NotificationPreferences _notificationPreferences =
+      NotificationPreferences.defaults();
   bool _loaded = false;
 
   Future<void> _loadFromStorage() async {
@@ -16,7 +17,9 @@ class MockSettingsRepository implements SettingsRepository {
     try {
       final jsonStr = await _storage.read(key: _keySettings);
       if (jsonStr != null) {
-        _appSettings = AppSettings.fromJson(jsonDecode(jsonStr) as Map<String, dynamic>);
+        _appSettings = AppSettings.fromJson(
+          jsonDecode(jsonStr) as Map<String, dynamic>,
+        );
       }
     } catch (_) {}
     _loaded = true;
@@ -32,7 +35,10 @@ class MockSettingsRepository implements SettingsRepository {
   Future<void> updateAppSettings(AppSettings newSettings) async {
     _appSettings = newSettings;
     try {
-      await _storage.write(key: _keySettings, value: jsonEncode(newSettings.toJson()));
+      await _storage.write(
+        key: _keySettings,
+        value: jsonEncode(newSettings.toJson()),
+      );
     } catch (_) {}
   }
 
@@ -42,7 +48,9 @@ class MockSettingsRepository implements SettingsRepository {
   }
 
   @override
-  Future<void> updateNotificationPreferences(NotificationPreferences newPrefs) async {
+  Future<void> updateNotificationPreferences(
+    NotificationPreferences newPrefs,
+  ) async {
     _notificationPreferences = newPrefs;
   }
 }

@@ -4,7 +4,8 @@ import '../../domain/models/stored_file.dart';
 import '../../domain/repositories/file_storage_repository.dart';
 
 class NotConfiguredFileStorageRepository implements FileStorageRepository {
-  static const String limitationMessage = 'Persistent file storage provider not configured.';
+  static const String limitationMessage =
+      'Persistent file storage provider not configured.';
 
   @override
   Future<StoredFile> uploadFile({
@@ -43,7 +44,10 @@ class NotConfiguredFileStorageRepository implements FileStorageRepository {
   }
 
   @override
-  Future<void> updateMetadata(String storagePath, Map<String, String> newMetadata) async {
+  Future<void> updateMetadata(
+    String storagePath,
+    Map<String, String> newMetadata,
+  ) async {
     throw Exception(limitationMessage);
   }
 }

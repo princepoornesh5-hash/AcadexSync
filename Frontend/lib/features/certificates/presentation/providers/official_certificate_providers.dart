@@ -12,86 +12,92 @@ import '../../data/repositories/mock_official_certificate_repository.dart';
 import '../../data/repositories/firebase_official_certificate_repository.dart';
 
 /// Repository Provider
-final officialCertificateRepositoryProvider = Provider<OfficialCertificateRepository>((ref) {
-  if (FirebaseInitializer.shouldUseMock) {
-    final authState = ref.watch(authProvider);
-    UserModel? currentUser;
-    if (authState is AuthAuthenticated) {
-      currentUser = authState.user;
-    }
-    return MockOfficialCertificateRepository(currentUser: currentUser);
-  }
+final officialCertificateRepositoryProvider =
+    Provider<OfficialCertificateRepository>((ref) {
+      if (FirebaseInitializer.shouldUseMock) {
+        final authState = ref.watch(authProvider);
+        UserModel? currentUser;
+        if (authState is AuthAuthenticated) {
+          currentUser = authState.user;
+        }
+        return MockOfficialCertificateRepository(currentUser: currentUser);
+      }
 
-  final firestoreService = ref.watch(firestoreServiceProvider);
-  final fileStorage = ref.watch(fileStorageRepositoryProvider);
-  return FirebaseOfficialCertificateRepository(
-    firestoreService,
-    fileStorageRepository: fileStorage,
-  );
-});
+      final firestoreService = ref.watch(firestoreServiceProvider);
+      final fileStorage = ref.watch(fileStorageRepositoryProvider);
+      return FirebaseOfficialCertificateRepository(
+        firestoreService,
+        fileStorageRepository: fileStorage,
+      );
+    });
 
 /// Student-facing: Applicable Requirements with Submissions Stream
 final studentOfficialRequirementsWithSubmissionsProvider =
     StreamProvider.autoDispose<List<RequirementWithSubmission>>((ref) {
-  final authState = ref.watch(authProvider);
-  if (authState is! AuthAuthenticated) {
-    return const Stream.empty();
-  }
+      final authState = ref.watch(authProvider);
+      if (authState is! AuthAuthenticated) {
+        return const Stream.empty();
+      }
 
-  final student = authState.user;
-  final repo = ref.watch(officialCertificateRepositoryProvider);
-  return repo.watchRequirementsWithSubmissionsForStudent(student: student);
-});
+      final student = authState.user;
+      final repo = ref.watch(officialCertificateRepositoryProvider);
+      return repo.watchRequirementsWithSubmissionsForStudent(student: student);
+    });
 
 /// Student-facing: Direct Submissions Stream
-final studentOfficialSubmissionsProvider = StreamProvider.autoDispose<List<OfficialCertificate>>((ref) {
-  final authState = ref.watch(authProvider);
-  if (authState is! AuthAuthenticated) {
-    return const Stream.empty();
-  }
+final studentOfficialSubmissionsProvider =
+    StreamProvider.autoDispose<List<OfficialCertificate>>((ref) {
+      final authState = ref.watch(authProvider);
+      if (authState is! AuthAuthenticated) {
+        return const Stream.empty();
+      }
 
-  final repo = ref.watch(officialCertificateRepositoryProvider);
-  return repo.watchStudentSubmissions(authState.user.id);
-});
+      final repo = ref.watch(officialCertificateRepositoryProvider);
+      return repo.watchStudentSubmissions(authState.user.id);
+    });
 
 /// Admin/HOD: Requirements Stream
 final officialCertificateRequirementsListProvider =
     StreamProvider.autoDispose<List<OfficialCertificateRequirement>>((ref) {
-  final authState = ref.watch(authProvider);
-  if (authState is! AuthAuthenticated) {
-    return const Stream.empty();
-  }
+      final authState = ref.watch(authProvider);
+      if (authState is! AuthAuthenticated) {
+        return const Stream.empty();
+      }
 
-  final user = authState.user;
-  final collegeId = user.collegeId ?? '';
-  final repo = ref.watch(officialCertificateRepositoryProvider);
+      final user = authState.user;
+      final collegeId = user.collegeId ?? '';
+      final repo = ref.watch(officialCertificateRepositoryProvider);
 
-  String? departmentScope;
-  if (user.role == AppRole.hod) {
-    departmentScope = user.departmentId;
-  }
+      String? departmentScope;
+      if (user.role == AppRole.hod) {
+        departmentScope = user.departmentId;
+      }
 
-  return repo.watchRequirements(collegeId, departmentId: departmentScope);
-});
+      return repo.watchRequirements(collegeId, departmentId: departmentScope);
+    });
 
 /// Admin/HOD: Submissions Stream
-final officialCertificateSubmissionsListProvider = StreamProvider.autoDispose<List<OfficialCertificate>>((ref) {
-  final authState = ref.watch(authProvider);
-  if (authState is! AuthAuthenticated) {
-    return const Stream.empty();
-  }
+final officialCertificateSubmissionsListProvider =
+    StreamProvider.autoDispose<List<OfficialCertificate>>((ref) {
+      final authState = ref.watch(authProvider);
+      if (authState is! AuthAuthenticated) {
+        return const Stream.empty();
+      }
 
-  final user = authState.user;
-  final collegeId = user.collegeId ?? '';
-  final repo = ref.watch(officialCertificateRepositoryProvider);
+      final user = authState.user;
+      final collegeId = user.collegeId ?? '';
+      final repo = ref.watch(officialCertificateRepositoryProvider);
 
-  String? departmentScope;
-  if (user.role == AppRole.hod) {
-    departmentScope = user.departmentId;
-  }
+      String? departmentScope;
+      if (user.role == AppRole.hod) {
+        departmentScope = user.departmentId;
+      }
 
-  return repo.watchCollegeSubmissions(collegeId, departmentId: departmentScope);
-});
+      return repo.watchCollegeSubmissions(
+        collegeId,
+        departmentId: departmentScope,
+      );
+    });
 
 /// Filter State
 class OfficialCertificateFilter {
@@ -119,50 +125,58 @@ class OfficialCertificateFilter {
     return OfficialCertificateFilter(
       searchQuery: searchQuery ?? this.searchQuery,
       statusFilter: clearStatus ? null : (statusFilter ?? this.statusFilter),
-      departmentFilter: clearDepartment ? null : (departmentFilter ?? this.departmentFilter),
-      requirementFilter: clearRequirement ? null : (requirementFilter ?? this.requirementFilter),
+      departmentFilter: clearDepartment
+          ? null
+          : (departmentFilter ?? this.departmentFilter),
+      requirementFilter: clearRequirement
+          ? null
+          : (requirementFilter ?? this.requirementFilter),
     );
   }
 }
 
-final officialCertificateFilterProvider = StateProvider.autoDispose<OfficialCertificateFilter>((ref) {
-  return const OfficialCertificateFilter();
-});
+final officialCertificateFilterProvider =
+    StateProvider.autoDispose<OfficialCertificateFilter>((ref) {
+      return const OfficialCertificateFilter();
+    });
 
 /// Filtered Submissions Provider
-final filteredOfficialSubmissionsProvider = Provider.autoDispose<List<OfficialCertificate>>((ref) {
-  final asyncSubmissions = ref.watch(officialCertificateSubmissionsListProvider);
-  final filter = ref.watch(officialCertificateFilterProvider);
+final filteredOfficialSubmissionsProvider =
+    Provider.autoDispose<List<OfficialCertificate>>((ref) {
+      final asyncSubmissions = ref.watch(
+        officialCertificateSubmissionsListProvider,
+      );
+      final filter = ref.watch(officialCertificateFilterProvider);
 
-  final submissions = asyncSubmissions.valueOrNull ?? [];
+      final submissions = asyncSubmissions.valueOrNull ?? [];
 
-  return submissions.where((s) {
-    if (filter.statusFilter != null && s.status != filter.statusFilter) {
-      return false;
-    }
-    if (filter.departmentFilter != null &&
-        filter.departmentFilter!.isNotEmpty &&
-        s.departmentId != filter.departmentFilter) {
-      return false;
-    }
-    if (filter.requirementFilter != null &&
-        filter.requirementFilter!.isNotEmpty &&
-        s.requirementId != filter.requirementFilter) {
-      return false;
-    }
-    if (filter.searchQuery.isNotEmpty) {
-      final query = filter.searchQuery.toLowerCase();
-      final nameMatch = s.studentName.toLowerCase().contains(query);
-      final idMatch = s.studentId.toLowerCase().contains(query);
-      final certMatch = s.certificateName.toLowerCase().contains(query);
-      final fileMatch = s.fileName.toLowerCase().contains(query);
-      if (!nameMatch && !idMatch && !certMatch && !fileMatch) {
-        return false;
-      }
-    }
-    return true;
-  }).toList();
-});
+      return submissions.where((s) {
+        if (filter.statusFilter != null && s.status != filter.statusFilter) {
+          return false;
+        }
+        if (filter.departmentFilter != null &&
+            filter.departmentFilter!.isNotEmpty &&
+            s.departmentId != filter.departmentFilter) {
+          return false;
+        }
+        if (filter.requirementFilter != null &&
+            filter.requirementFilter!.isNotEmpty &&
+            s.requirementId != filter.requirementFilter) {
+          return false;
+        }
+        if (filter.searchQuery.isNotEmpty) {
+          final query = filter.searchQuery.toLowerCase();
+          final nameMatch = s.studentName.toLowerCase().contains(query);
+          final idMatch = s.studentId.toLowerCase().contains(query);
+          final certMatch = s.certificateName.toLowerCase().contains(query);
+          final fileMatch = s.fileName.toLowerCase().contains(query);
+          if (!nameMatch && !idMatch && !certMatch && !fileMatch) {
+            return false;
+          }
+        }
+        return true;
+      }).toList();
+    });
 
 /// Student Summary Metrics Model
 class StudentCertificateMetrics {
@@ -182,46 +196,49 @@ class StudentCertificateMetrics {
 }
 
 /// Student Summary Metrics Provider
-final studentOfficialCertificateMetricsProvider = Provider.autoDispose<StudentCertificateMetrics>((ref) {
-  final asyncList = ref.watch(studentOfficialRequirementsWithSubmissionsProvider);
-  final list = asyncList.valueOrNull ?? [];
+final studentOfficialCertificateMetricsProvider =
+    Provider.autoDispose<StudentCertificateMetrics>((ref) {
+      final asyncList = ref.watch(
+        studentOfficialRequirementsWithSubmissionsProvider,
+      );
+      final list = asyncList.valueOrNull ?? [];
 
-  int requiredCount = 0;
-  int submittedCount = 0;
-  int verifiedCount = 0;
-  int pendingCount = 0;
-  int resubmissionCount = 0;
+      int requiredCount = 0;
+      int submittedCount = 0;
+      int verifiedCount = 0;
+      int pendingCount = 0;
+      int resubmissionCount = 0;
 
-  for (final item in list) {
-    if (item.requirement.required) {
-      requiredCount++;
-    }
-    if (item.submission != null) {
-      submittedCount++;
-      switch (item.submission!.status) {
-        case OfficialCertificateStatus.verified:
-          verifiedCount++;
-          break;
-        case OfficialCertificateStatus.pending:
-          pendingCount++;
-          break;
-        case OfficialCertificateStatus.resubmissionRequired:
-          resubmissionCount++;
-          break;
-        default:
-          break;
+      for (final item in list) {
+        if (item.requirement.required) {
+          requiredCount++;
+        }
+        if (item.submission != null) {
+          submittedCount++;
+          switch (item.submission!.status) {
+            case OfficialCertificateStatus.verified:
+              verifiedCount++;
+              break;
+            case OfficialCertificateStatus.pending:
+              pendingCount++;
+              break;
+            case OfficialCertificateStatus.resubmissionRequired:
+              resubmissionCount++;
+              break;
+            default:
+              break;
+          }
+        }
       }
-    }
-  }
 
-  return StudentCertificateMetrics(
-    totalRequired: requiredCount,
-    totalSubmitted: submittedCount,
-    totalVerified: verifiedCount,
-    totalPending: pendingCount,
-    totalResubmissionRequired: resubmissionCount,
-  );
-});
+      return StudentCertificateMetrics(
+        totalRequired: requiredCount,
+        totalSubmitted: submittedCount,
+        totalVerified: verifiedCount,
+        totalPending: pendingCount,
+        totalResubmissionRequired: resubmissionCount,
+      );
+    });
 
 /// Admin/HOD Summary Metrics Model
 class AdminCertificateMetrics {
@@ -243,40 +260,45 @@ class AdminCertificateMetrics {
 }
 
 /// Admin/HOD Summary Metrics Provider
-final adminOfficialCertificateMetricsProvider = Provider.autoDispose<AdminCertificateMetrics>((ref) {
-  final reqs = ref.watch(officialCertificateRequirementsListProvider).valueOrNull ?? [];
-  final subs = ref.watch(officialCertificateSubmissionsListProvider).valueOrNull ?? [];
+final adminOfficialCertificateMetricsProvider =
+    Provider.autoDispose<AdminCertificateMetrics>((ref) {
+      final reqs =
+          ref.watch(officialCertificateRequirementsListProvider).valueOrNull ??
+          [];
+      final subs =
+          ref.watch(officialCertificateSubmissionsListProvider).valueOrNull ??
+          [];
 
-  int pending = 0;
-  int verified = 0;
-  int resubmission = 0;
-  int rejected = 0;
+      int pending = 0;
+      int verified = 0;
+      int resubmission = 0;
+      int rejected = 0;
 
-  for (final s in subs) {
-    switch (s.status) {
-      case OfficialCertificateStatus.pending:
-        pending++;
-        break;
-      case OfficialCertificateStatus.verified:
-        verified++;
-        break;
-      case OfficialCertificateStatus.resubmissionRequired:
-        resubmission++;
-        break;
-      case OfficialCertificateStatus.rejected:
-        rejected++;
-        break;
-      default:
-        break;
-    }
-  }
+      for (final s in subs) {
+        switch (s.status) {
+          case OfficialCertificateStatus.pending:
+            pending++;
+            break;
+          case OfficialCertificateStatus.verified:
+            verified++;
+            break;
+          case OfficialCertificateStatus.resubmissionRequired:
+            resubmission++;
+            break;
+          case OfficialCertificateStatus.rejected:
+            rejected++;
+            break;
+          default:
+            break;
+        }
+      }
 
-  return AdminCertificateMetrics(
-    totalRequirements: reqs.length,
-    totalSubmissions: subs.length,
-    pendingVerification: pending,
-    verified: verified,
-    resubmissionRequired: resubmission,
-    rejected: rejected,
-  );
-});
+      return AdminCertificateMetrics(
+        totalRequirements: reqs.length,
+        totalSubmissions: subs.length,
+        pendingVerification: pending,
+        verified: verified,
+        resubmissionRequired: resubmission,
+        rejected: rejected,
+      );
+    });

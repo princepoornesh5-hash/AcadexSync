@@ -14,16 +14,15 @@ import '../widgets/marks_slider_row.dart';
 class AssignmentActivityScreen extends ConsumerStatefulWidget {
   final String assignmentId;
 
-  const AssignmentActivityScreen({
-    super.key,
-    required this.assignmentId,
-  });
+  const AssignmentActivityScreen({super.key, required this.assignmentId});
 
   @override
-  ConsumerState<AssignmentActivityScreen> createState() => _AssignmentActivityScreenState();
+  ConsumerState<AssignmentActivityScreen> createState() =>
+      _AssignmentActivityScreenState();
 }
 
-class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScreen>
+class _AssignmentActivityScreenState
+    extends ConsumerState<AssignmentActivityScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isSaving = false;
@@ -42,14 +41,19 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
 
   Future<void> _handleSaveMarks() async {
     setState(() => _isSaving = true);
-    final notifier = ref.read(assignmentActivityProvider(widget.assignmentId).notifier);
+    final notifier = ref.read(
+      assignmentActivityProvider(widget.assignmentId).notifier,
+    );
     final success = await notifier.saveMarks();
     if (mounted) {
       setState(() => _isSaving = false);
       if (success) {
         AcadexSnackBar.showSuccess(context, 'Marks saved successfully.');
       } else {
-        AcadexSnackBar.showError(context, "Couldn't save marks. Please try again.");
+        AcadexSnackBar.showError(
+          context,
+          "Couldn't save marks. Please try again.",
+        );
       }
     }
   }
@@ -57,15 +61,24 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final activityAsync = ref.watch(assignmentActivityProvider(widget.assignmentId));
-    final activityNotifier = ref.read(assignmentActivityProvider(widget.assignmentId).notifier);
+    final activityAsync = ref.watch(
+      assignmentActivityProvider(widget.assignmentId),
+    );
+    final activityNotifier = ref.read(
+      assignmentActivityProvider(widget.assignmentId).notifier,
+    );
 
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/assignments'),
         ),
         title: Text(
@@ -77,7 +90,9 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
         bottom: TabBar(
           controller: _tabController,
           labelColor: AcadexColors.primary,
-          unselectedLabelColor: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+          unselectedLabelColor: isDark
+              ? AcadexColors.darkInkSecondary
+              : AcadexColors.inkSecondary,
           indicatorColor: AcadexColors.primary,
           indicatorWeight: 2.5,
           tabs: const [
@@ -87,12 +102,15 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
         ),
       ),
       body: activityAsync.when(
-        loading: () => const AcadexLoadingState(message: 'Loading assignment activity...'),
+        loading: () =>
+            const AcadexLoadingState(message: 'Loading assignment activity...'),
         error: (err, stack) => Center(
           child: AcadexErrorState(
             message: "Couldn't load assignment activity.",
             retryLabel: 'Retry',
-            onRetry: () => ref.read(assignmentActivityProvider(widget.assignmentId).notifier).loadActivity(),
+            onRetry: () => ref
+                .read(assignmentActivityProvider(widget.assignmentId).notifier)
+                .loadActivity(),
           ),
         ),
         data: (activityData) {
@@ -106,12 +124,19 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
               // Header Summary Card (Title shown ONCE at top)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                  color: isDark
+                      ? AcadexColors.darkSurface
+                      : AcadexColors.surface,
                   border: Border(
                     bottom: BorderSide(
-                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                      color: isDark
+                          ? AcadexColors.darkHairline
+                          : AcadexColors.hairline,
                     ),
                   ),
                 ),
@@ -125,16 +150,23 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                           child: Text(
                             asgn.title,
                             style: AcadexTypography.heading2(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.primaryTint,
+                            color: isDark
+                                ? AcadexColors.darkCanvasSoft
+                                : AcadexColors.primaryTint,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -155,7 +187,8 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                       child: Row(
                         children: [
                           _buildMetricChip(
-                            label: '${summary.completedCount} / ${summary.totalStudents} Completed',
+                            label:
+                                '${summary.completedCount} / ${summary.totalStudents} Completed',
                             color: const Color(0xFF15803D),
                             bg: const Color(0xFFDCFCE7),
                           ),
@@ -180,7 +213,9 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                                color: isDark
+                                    ? AcadexColors.darkInkSecondary
+                                    : AcadexColors.inkSecondary,
                               ),
                             ),
                           ],
@@ -207,10 +242,7 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                     ),
 
                     // Tab 2: Pending Students (No slider)
-                    _buildPendingTab(
-                      pendingList: pendingList,
-                      isDark: isDark,
-                    ),
+                    _buildPendingTab(pendingList: pendingList, isDark: isDark),
                   ],
                 ),
               ),
@@ -218,12 +250,19 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
               // Bottom Save Marks Bar (only when in Completed tab and has changes or pending edits)
               if (activityNotifier.hasPendingChanges)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                    color: isDark
+                        ? AcadexColors.darkSurface
+                        : AcadexColors.surface,
                     border: Border(
                       top: BorderSide(
-                        color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                        color: isDark
+                            ? AcadexColors.darkHairline
+                            : AcadexColors.hairline,
                       ),
                     ),
                   ),
@@ -234,7 +273,9 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                         Text(
                           '${activityNotifier.pendingMarks.length} pending mark(s)',
                           style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                            color: isDark
+                                ? AcadexColors.darkInkSecondary
+                                : AcadexColors.inkSecondary,
                           ),
                         ),
                         const Spacer(),
@@ -314,15 +355,23 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
     );
   }
 
-  void _showReviewSheet(StudentAssignmentActivityModel student, int maximumMarks) {
+  void _showReviewSheet(
+    StudentAssignmentActivityModel student,
+    int maximumMarks,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final marksController = TextEditingController(
       text: student.marks != null
-          ? (student.marks! % 1 == 0 ? student.marks!.toInt().toString() : student.marks!.toString())
+          ? (student.marks! % 1 == 0
+                ? student.marks!.toInt().toString()
+                : student.marks!.toString())
           : '',
     );
-    final feedbackController = TextEditingController(text: student.feedback ?? '');
-    FacultyReviewStatus selectedStatus = student.reviewStatus == FacultyReviewStatus.notReviewed
+    final feedbackController = TextEditingController(
+      text: student.feedback ?? '',
+    );
+    FacultyReviewStatus selectedStatus =
+        student.reviewStatus == FacultyReviewStatus.notReviewed
         ? FacultyReviewStatus.reviewed
         : student.reviewStatus;
     bool isSavingReview = false;
@@ -356,7 +405,9 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                         width: 36,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                          color: isDark
+                              ? AcadexColors.darkHairline
+                              : AcadexColors.hairline,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -373,14 +424,18 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                               Text(
                                 student.studentName,
                                 style: AcadexTypography.heading2(
-                                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
                                 ),
                               ),
                               if (student.rollNumber != null)
                                 Text(
                                   'Roll: ${student.rollNumber} • Version ${student.version}',
                                   style: AcadexTypography.caption(
-                                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
                                   ),
                                 ),
                             ],
@@ -388,7 +443,10 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                         ),
                         if (student.isLate)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFFEE2E2),
                               borderRadius: BorderRadius.circular(4),
@@ -406,15 +464,22 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                     ),
 
                     const SizedBox(height: 12),
-                    Divider(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                    Divider(
+                      color: isDark
+                          ? AcadexColors.darkHairline
+                          : AcadexColors.hairline,
+                    ),
                     const SizedBox(height: 10),
 
                     // Student Text Response
-                    if (student.textResponse != null && student.textResponse!.isNotEmpty) ...[
+                    if (student.textResponse != null &&
+                        student.textResponse!.isNotEmpty) ...[
                       Text(
                         'STUDENT RESPONSE',
                         style: AcadexTypography.eyebrow(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -422,16 +487,22 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                          color: isDark
+                              ? AcadexColors.darkCanvasSoft
+                              : AcadexColors.canvasSoft,
                           borderRadius: AcadexRadius.borderRadiusMd,
                           border: Border.all(
-                            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                            color: isDark
+                                ? AcadexColors.darkHairline
+                                : AcadexColors.hairline,
                           ),
                         ),
                         child: Text(
                           student.textResponse!,
                           style: AcadexTypography.body(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ),
                         ),
                       ),
@@ -443,24 +514,37 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                       Text(
                         'SUBMITTED FILES (${student.attachments.length})',
                         style: AcadexTypography.eyebrow(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                       ),
                       const SizedBox(height: 6),
                       ...student.attachments.map((att) {
                         return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
                           margin: const EdgeInsets.only(bottom: 6),
                           decoration: BoxDecoration(
-                            color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                            color: isDark
+                                ? AcadexColors.darkCanvasSoft
+                                : AcadexColors.canvasSoft,
                             borderRadius: AcadexRadius.borderRadiusMd,
                             border: Border.all(
-                              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                              color: isDark
+                                  ? AcadexColors.darkHairline
+                                  : AcadexColors.hairline,
                             ),
                           ),
                           child: Row(
                             children: [
-                              const Icon(LucideIcons.paperclip, size: 16, color: AcadexColors.primary),
+                              const Icon(
+                                LucideIcons.paperclip,
+                                size: 16,
+                                color: AcadexColors.primary,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -468,7 +552,9 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
-                                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                    color: isDark
+                                        ? AcadexColors.darkInk
+                                        : AcadexColors.ink,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -476,27 +562,43 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                               TextButton.icon(
                                 onPressed: () async {
                                   try {
-                                    final repo = ref.read(assignmentsRepositoryProvider);
+                                    final repo = ref.read(
+                                      assignmentsRepositoryProvider,
+                                    );
                                     if (student.submissionId != null) {
-                                      final url = await repo.getSubmissionFileDownloadUrl(
-                                        submissionId: student.submissionId!,
-                                        fileId: att.fileId,
-                                      );
+                                      final url = await repo
+                                          .getSubmissionFileDownloadUrl(
+                                            submissionId: student.submissionId!,
+                                            fileId: att.fileId,
+                                          );
                                       if (url.isNotEmpty) {
                                         final uri = Uri.parse(url);
                                         if (await canLaunchUrl(uri)) {
-                                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                          await launchUrl(
+                                            uri,
+                                            mode:
+                                                LaunchMode.externalApplication,
+                                          );
                                         }
                                       }
                                     }
                                   } catch (e) {
                                     if (context.mounted) {
-                                      AcadexSnackBar.showError(context, 'Could not open file: ${e.toString()}');
+                                      AcadexSnackBar.showError(
+                                        context,
+                                        'Could not open file: ${e.toString()}',
+                                      );
                                     }
                                   }
                                 },
-                                icon: const Icon(LucideIcons.download, size: 14),
-                                label: const Text('Download', style: TextStyle(fontSize: 11)),
+                                icon: const Icon(
+                                  LucideIcons.download,
+                                  size: 14,
+                                ),
+                                label: const Text(
+                                  'Download',
+                                  style: TextStyle(fontSize: 11),
+                                ),
                               ),
                             ],
                           ),
@@ -515,22 +617,32 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                               Text(
                                 'AWARDED MARKS (Max: $maximumMarks)',
                                 style: AcadexTypography.eyebrow(
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
                                 ),
                               ),
                               const SizedBox(height: 6),
                               TextField(
                                 controller: marksController,
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
                                 decoration: InputDecoration(
                                   hintText: 'e.g. 8.5',
                                   suffixText: '/ $maximumMarks',
                                   errorText: errorText,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
                                   border: OutlineInputBorder(
                                     borderRadius: AcadexRadius.borderRadiusMd,
                                     borderSide: BorderSide(
-                                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                      color: isDark
+                                          ? AcadexColors.darkHairline
+                                          : AcadexColors.hairline,
                                     ),
                                   ),
                                 ),
@@ -547,7 +659,9 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                     Text(
                       'FACULTY FEEDBACK',
                       style: AcadexTypography.eyebrow(
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -555,12 +669,18 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                       controller: feedbackController,
                       maxLines: 3,
                       decoration: InputDecoration(
-                        hintText: 'Add constructive feedback for the student...',
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        hintText:
+                            'Add constructive feedback for the student...',
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
                           borderSide: BorderSide(
-                            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                            color: isDark
+                                ? AcadexColors.darkHairline
+                                : AcadexColors.hairline,
                           ),
                         ),
                       ),
@@ -577,21 +697,33 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                         Text(
                           'Status: ',
                           style: AcadexTypography.body(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ),
                         ),
                         ChoiceChip(
                           label: const Text('Reviewed'),
-                          selected: selectedStatus == FacultyReviewStatus.reviewed,
+                          selected:
+                              selectedStatus == FacultyReviewStatus.reviewed,
                           onSelected: (val) {
-                            if (val) setSheetState(() => selectedStatus = FacultyReviewStatus.reviewed);
+                            if (val)
+                              setSheetState(
+                                () => selectedStatus =
+                                    FacultyReviewStatus.reviewed,
+                              );
                           },
                         ),
                         ChoiceChip(
                           label: const Text('Under Review'),
-                          selected: selectedStatus == FacultyReviewStatus.underReview,
+                          selected:
+                              selectedStatus == FacultyReviewStatus.underReview,
                           onSelected: (val) {
-                            if (val) setSheetState(() => selectedStatus = FacultyReviewStatus.underReview);
+                            if (val)
+                              setSheetState(
+                                () => selectedStatus =
+                                    FacultyReviewStatus.underReview,
+                              );
                           },
                         ),
                       ],
@@ -620,9 +752,12 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                                     double? parsedMark;
                                     if (text.isNotEmpty) {
                                       parsedMark = double.tryParse(text);
-                                      if (parsedMark == null || parsedMark < 0 || parsedMark > maximumMarks) {
+                                      if (parsedMark == null ||
+                                          parsedMark < 0 ||
+                                          parsedMark > maximumMarks) {
                                         setSheetState(() {
-                                          errorText = 'Mark must be between 0 and $maximumMarks';
+                                          errorText =
+                                              'Mark must be between 0 and $maximumMarks';
                                         });
                                         return;
                                       }
@@ -633,14 +768,18 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                                       errorText = null;
                                     });
 
-                                    final notifier = ref.read(assignmentActionProvider.notifier);
-                                    final res = await notifier.reviewSingleSubmission(
-                                      assignmentId: widget.assignmentId,
-                                      studentId: student.studentId,
-                                      marks: parsedMark,
-                                      feedback: feedbackController.text.trim(),
-                                      reviewStatus: selectedStatus,
+                                    final notifier = ref.read(
+                                      assignmentActionProvider.notifier,
                                     );
+                                    final res = await notifier
+                                        .reviewSingleSubmission(
+                                          assignmentId: widget.assignmentId,
+                                          studentId: student.studentId,
+                                          marks: parsedMark,
+                                          feedback: feedbackController.text
+                                              .trim(),
+                                          reviewStatus: selectedStatus,
+                                        );
 
                                     if (mounted) {
                                       Navigator.of(sheetContext).pop();
@@ -719,7 +858,9 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                       Text(
                         'Roll: ${student.rollNumber}',
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                       ),
                     ],
@@ -729,7 +870,9 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: isOverdue ? const Color(0xFFFEE2E2) : AcadexColors.primaryTint,
+                  color: isOverdue
+                      ? const Color(0xFFFEE2E2)
+                      : AcadexColors.primaryTint,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -737,7 +880,9 @@ class _AssignmentActivityScreenState extends ConsumerState<AssignmentActivityScr
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: isOverdue ? const Color(0xFFDC2626) : AcadexColors.primary,
+                    color: isOverdue
+                        ? const Color(0xFFDC2626)
+                        : AcadexColors.primary,
                   ),
                 ),
               ),

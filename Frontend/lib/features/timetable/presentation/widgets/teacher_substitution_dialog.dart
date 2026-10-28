@@ -80,10 +80,12 @@ class TeacherSubstitutionDialog extends ConsumerStatefulWidget {
   }
 
   @override
-  ConsumerState<TeacherSubstitutionDialog> createState() => _TeacherSubstitutionDialogState();
+  ConsumerState<TeacherSubstitutionDialog> createState() =>
+      _TeacherSubstitutionDialogState();
 }
 
-class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionDialog> {
+class _TeacherSubstitutionDialogState
+    extends ConsumerState<TeacherSubstitutionDialog> {
   late DateTime _selectedDate;
   String? _selectedSubstituteId;
   late TextEditingController _reasonController;
@@ -98,10 +100,14 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
     _selectedDate = widget.initialDate ?? _findNextOccurrence(widget.dayOfWeek);
     _activeSubstitution = widget.existingSubstitution;
     _selectedSubstituteId = widget.existingSubstitution?.substituteFacultyId;
-    _reasonController = TextEditingController(text: widget.existingSubstitution?.reason ?? '');
+    _reasonController = TextEditingController(
+      text: widget.existingSubstitution?.reason ?? '',
+    );
 
     if (_activeSubstitution == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _fetchExistingSubstitution());
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _fetchExistingSubstitution(),
+      );
     }
   }
 
@@ -134,7 +140,9 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
         date: _formatDate(_selectedDate),
         timetableId: widget.timetableId,
       );
-      final match = list.where((s) => s.timetableEntryId == widget.timetableEntryId).firstOrNull;
+      final match = list
+          .where((s) => s.timetableEntryId == widget.timetableEntryId)
+          .firstOrNull;
       if (mounted) {
         setState(() {
           _activeSubstitution = match;
@@ -186,7 +194,8 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
 
     if (_selectedSubstituteId == widget.originalFacultyId) {
       setState(() {
-        _errorMessage = 'Substitute faculty cannot be the same as the original faculty.';
+        _errorMessage =
+            'Substitute faculty cannot be the same as the original faculty.';
       });
       return;
     }
@@ -222,7 +231,11 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
 
       // Reconcile and invalidate state from authoritative backend
       ref.invalidate(todayScheduleProvider);
-      ref.invalidate(dateScheduleProvider(DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day)));
+      ref.invalidate(
+        dateScheduleProvider(
+          DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day),
+        ),
+      );
       ref.invalidate(weeklyTimetableProvider);
 
       if (mounted) {
@@ -264,7 +277,11 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
 
       // Reconcile and invalidate state from authoritative backend
       ref.invalidate(todayScheduleProvider);
-      ref.invalidate(dateScheduleProvider(DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day)));
+      ref.invalidate(
+        dateScheduleProvider(
+          DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day),
+        ),
+      );
       ref.invalidate(weeklyTimetableProvider);
 
       if (mounted) {
@@ -294,23 +311,35 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final userRole = authState is AuthAuthenticated ? authState.user.role : null;
-    final isAuthorized = userRole == AppRole.hod ||
+    final userRole = authState is AuthAuthenticated
+        ? authState.user.role
+        : null;
+    final isAuthorized =
+        userRole == AppRole.hod ||
         userRole == AppRole.collegeAdmin ||
         userRole == AppRole.superAdmin;
 
     if (!isAuthorized) {
       return AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusLg),
+        shape: RoundedRectangleBorder(
+          borderRadius: AcadexRadius.borderRadiusLg,
+        ),
         title: const Text('Unauthorized'),
-        content: const Text('Only HODs and administrators can manage teacher substitutions.'),
+        content: const Text(
+          'Only HODs and administrators can manage teacher substitutions.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
         ],
       );
     }
 
-    final userDeptId = authState is AuthAuthenticated ? authState.user.departmentId : null;
+    final userDeptId = authState is AuthAuthenticated
+        ? authState.user.departmentId
+        : null;
     final facultyMap = ref.watch(timetableFacultyMapProvider);
     final subjectMap = ref.watch(timetableSubjectMapProvider);
     final sectionMap = ref.watch(timetableSectionMapProvider);
@@ -320,14 +349,23 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
     final section = sectionMap[widget.sectionId];
 
     // Restrict candidate faculty: HOD must only see faculty from their own department
-    final candidateFaculties = facultyMap.values
-        .where((f) => f.id != widget.originalFacultyId)
-        .where((f) => userRole != AppRole.hod || (userDeptId != null && userDeptId.isNotEmpty && f.departmentId == userDeptId))
-        .toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+    final candidateFaculties =
+        facultyMap.values
+            .where((f) => f.id != widget.originalFacultyId)
+            .where(
+              (f) =>
+                  userRole != AppRole.hod ||
+                  (userDeptId != null &&
+                      userDeptId.isNotEmpty &&
+                      f.departmentId == userDeptId),
+            )
+            .toList()
+          ..sort((a, b) => a.name.compareTo(b.name));
 
     final hasActiveSub = _activeSubstitution != null;
-    final activeSubFaculty = hasActiveSub ? facultyMap[_activeSubstitution!.substituteFacultyId] : null;
+    final activeSubFaculty = hasActiveSub
+        ? facultyMap[_activeSubstitution!.substituteFacultyId]
+        : null;
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusLg),
@@ -339,12 +377,18 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
               color: AcadexColors.primary.withValues(alpha: 0.12),
               borderRadius: AcadexRadius.borderRadiusMd,
             ),
-            child: const Icon(Icons.swap_horiz_rounded, color: AcadexColors.primary, size: 22),
+            child: const Icon(
+              Icons.swap_horiz_rounded,
+              color: AcadexColors.primary,
+              size: 22,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              hasActiveSub ? 'Manage Teacher Substitution' : 'Assign Teacher Substitute',
+              hasActiveSub
+                  ? 'Manage Teacher Substitution'
+                  : 'Assign Teacher Substitute',
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
@@ -370,7 +414,10 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
                   children: [
                     Text(
                       subject?.name ?? widget.subjectId,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Wrap(
@@ -379,23 +426,37 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
                       children: [
                         Text(
                           'Section: ${section?.name ?? widget.sectionId}',
-                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
                         ),
                         Text(
                           'Time: ${widget.startTime} - ${widget.endTime}',
-                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
                         ),
-                        if (widget.roomNumber != null && widget.roomNumber!.isNotEmpty)
+                        if (widget.roomNumber != null &&
+                            widget.roomNumber!.isNotEmpty)
                           Text(
                             'Room: ${widget.roomNumber}',
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
                           ),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Original Teacher: ${originalFaculty?.name ?? widget.originalFacultyId}',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AcadexColors.primary),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AcadexColors.primary,
+                      ),
                     ),
                   ],
                 ),
@@ -408,12 +469,18 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
                   decoration: BoxDecoration(
                     color: AcadexColors.warning.withValues(alpha: 0.12),
                     borderRadius: AcadexRadius.borderRadiusMd,
-                    border: Border.all(color: AcadexColors.warning.withValues(alpha: 0.4)),
+                    border: Border.all(
+                      color: AcadexColors.warning.withValues(alpha: 0.4),
+                    ),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.info_outline, color: AcadexColors.warning, size: 20),
+                      const Icon(
+                        Icons.info_outline,
+                        color: AcadexColors.warning,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
@@ -421,7 +488,10 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
                           children: [
                             Text(
                               'Active Substitution on ${_activeSubstitution!.date}',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -430,7 +500,10 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
                             ),
                             Text(
                               'Reason: ${_activeSubstitution!.reason}',
-                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
                             ),
                           ],
                         ),
@@ -443,15 +516,23 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
               const SizedBox(height: 16),
 
               // Date selection
-              const Text('Substitution Date', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              const Text(
+                'Substitution Date',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              ),
               const SizedBox(height: 6),
               InkWell(
                 onTap: _isLoading ? null : _pickDate,
                 borderRadius: AcadexRadius.borderRadiusMd,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.withValues(alpha: 0.4)),
+                    border: Border.all(
+                      color: Colors.grey.withValues(alpha: 0.4),
+                    ),
                     borderRadius: AcadexRadius.borderRadiusMd,
                   ),
                   child: Row(
@@ -462,9 +543,17 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
                         style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
                       if (_isCheckingExisting)
-                        const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                        const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       else
-                        const Icon(Icons.calendar_today, size: 16, color: AcadexColors.primary),
+                        const Icon(
+                          Icons.calendar_today,
+                          size: 16,
+                          color: AcadexColors.primary,
+                        ),
                     ],
                   ),
                 ),
@@ -473,16 +562,26 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
 
               // Substitute Faculty dropdown
               Text(
-                hasActiveSub ? 'Replace Substitute Teacher' : 'Substitute Teacher',
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                hasActiveSub
+                    ? 'Replace Substitute Teacher'
+                    : 'Substitute Teacher',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
               ),
               const SizedBox(height: 6),
               DropdownButtonFormField<String>(
                 value: _selectedSubstituteId,
                 isExpanded: true,
                 decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  border: OutlineInputBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: AcadexRadius.borderRadiusMd,
+                  ),
                 ),
                 hint: const Text('Select substitute faculty'),
                 items: candidateFaculties.map((f) {
@@ -494,20 +593,28 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
                     ),
                   );
                 }).toList(),
-                onChanged: _isLoading ? null : (val) => setState(() => _selectedSubstituteId = val),
+                onChanged: _isLoading
+                    ? null
+                    : (val) => setState(() => _selectedSubstituteId = val),
               ),
               const SizedBox(height: 16),
 
               // Reason
-              const Text('Reason for Substitution', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              const Text(
+                'Reason for Substitution',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              ),
               const SizedBox(height: 6),
               TextField(
                 controller: _reasonController,
                 maxLines: 2,
                 enabled: !_isLoading,
                 decoration: InputDecoration(
-                  hintText: 'e.g. Leave coverage, Faculty on duty at conference',
-                  border: OutlineInputBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                  hintText:
+                      'e.g. Leave coverage, Faculty on duty at conference',
+                  border: OutlineInputBorder(
+                    borderRadius: AcadexRadius.borderRadiusMd,
+                  ),
                 ),
               ),
 
@@ -521,12 +628,19 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline, color: AcadexColors.error, size: 18),
+                      const Icon(
+                        Icons.error_outline,
+                        color: AcadexColors.error,
+                        size: 18,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           _errorMessage!,
-                          style: const TextStyle(color: AcadexColors.error, fontSize: 12),
+                          style: const TextStyle(
+                            color: AcadexColors.error,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ],
@@ -555,8 +669,17 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
             foregroundColor: Colors.white,
           ),
           child: _isLoading
-              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : Text(hasActiveSub ? 'Update / Replace' : 'Confirm Substitution'),
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : Text(
+                  hasActiveSub ? 'Update / Replace' : 'Confirm Substitution',
+                ),
         ),
       ],
     );

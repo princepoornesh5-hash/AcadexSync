@@ -71,21 +71,27 @@ class MockUserRepository implements UserRepository {
     await Future.delayed(const Duration(milliseconds: 600)); // Simulate network
 
     return _users.where((user) {
-      if (scopeCollegeId != null && user.collegeId != scopeCollegeId) return false;
-      if (scopeDepartmentId != null && user.departmentId != scopeDepartmentId) return false;
+      if (scopeCollegeId != null && user.collegeId != scopeCollegeId)
+        return false;
+      if (scopeDepartmentId != null && user.departmentId != scopeDepartmentId)
+        return false;
 
       if (role != null && user.role != role) return false;
-      if (departmentId != null && user.departmentId != departmentId) return false;
+      if (departmentId != null && user.departmentId != departmentId)
+        return false;
       if (status != null && user.status != status) return false;
 
       if (searchQuery != null && searchQuery.isNotEmpty) {
         final query = searchQuery.toLowerCase();
         final nameMatch = user.name.toLowerCase().contains(query);
         final emailMatch = user.email.toLowerCase().contains(query);
-        final empIdMatch = user.employeeId?.toLowerCase().contains(query) ?? false;
-        final rollNoMatch = user.rollNumber?.toLowerCase().contains(query) ?? false;
-        
-        if (!nameMatch && !emailMatch && !empIdMatch && !rollNoMatch) return false;
+        final empIdMatch =
+            user.employeeId?.toLowerCase().contains(query) ?? false;
+        final rollNoMatch =
+            user.rollNumber?.toLowerCase().contains(query) ?? false;
+
+        if (!nameMatch && !emailMatch && !empIdMatch && !rollNoMatch)
+          return false;
       }
       return true;
     }).toList();
@@ -104,7 +110,7 @@ class MockUserRepository implements UserRepository {
   @override
   Future<UserProfileModel> createUser(UserProfileModel user) async {
     await Future.delayed(const Duration(milliseconds: 500));
-    
+
     // Validation
     final emailExists = _users.any((u) => u.email == user.email);
     if (emailExists) throw Exception('Email already exists');
@@ -119,7 +125,9 @@ class MockUserRepository implements UserRepository {
       if (rollExists) throw Exception('Roll Number already exists');
     }
 
-    final newUser = user.copyWith(id: 'usr-${DateTime.now().millisecondsSinceEpoch}');
+    final newUser = user.copyWith(
+      id: 'usr-${DateTime.now().millisecondsSinceEpoch}',
+    );
     _users.add(newUser);
     return newUser;
   }
@@ -140,9 +148,10 @@ class MockUserRepository implements UserRepository {
     await Future.delayed(const Duration(milliseconds: 500));
     final index = _users.indexWhere((u) => u.id == user.id);
     if (index == -1) throw Exception('User not found');
-    
+
     // Check for unique constraints on update
-    if (user.email != _users[index].email && _users.any((u) => u.email == user.email && u.id != user.id)) {
+    if (user.email != _users[index].email &&
+        _users.any((u) => u.email == user.email && u.id != user.id)) {
       throw Exception('Email already in use');
     }
 

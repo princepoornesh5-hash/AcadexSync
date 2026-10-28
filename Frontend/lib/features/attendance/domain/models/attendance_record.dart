@@ -7,7 +7,8 @@ class AttendanceRecord {
   final String rollNumber;
   final String sectionId;
   final AttendanceStatus? status;
-  final AttendanceStatus? oldStatus; // Used during editing/corrections to show what changed
+  final AttendanceStatus?
+  oldStatus; // Used during editing/corrections to show what changed
   final DateTime? lastModified;
   final String? modifiedBy; // ID of faculty or HOD who edited/corrected
   final String? remarks;
@@ -58,25 +59,31 @@ class AttendanceRecord {
   factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
     return AttendanceRecord(
       id: (json['id'] ?? json['_id'] ?? json['attendanceId'] ?? '').toString(),
-      studentId: (json['studentId'] is Map
-              ? (json['studentId']['_id'] ?? json['studentId']['id'] ?? '')
-              : (json['studentId'] ?? ''))
-          .toString(),
+      studentId:
+          (json['studentId'] is Map
+                  ? (json['studentId']['_id'] ?? json['studentId']['id'] ?? '')
+                  : (json['studentId'] ?? ''))
+              .toString(),
       studentName: json['studentName'] as String? ?? '',
       rollNumber: json['rollNumber'] as String? ?? '',
-      sectionId: (json['sectionId'] is Map
-              ? (json['sectionId']['_id'] ?? json['sectionId']['id'] ?? '')
-              : (json['sectionId'] ?? ''))
-          .toString(),
+      sectionId:
+          (json['sectionId'] is Map
+                  ? (json['sectionId']['_id'] ?? json['sectionId']['id'] ?? '')
+                  : (json['sectionId'] ?? ''))
+              .toString(),
       status: json['status'] != null
           ? AttendanceStatus.values.firstWhere(
-              (e) => e.name.toLowerCase() == json['status'].toString().toLowerCase(),
+              (e) =>
+                  e.name.toLowerCase() ==
+                  json['status'].toString().toLowerCase(),
               orElse: () => AttendanceStatus.present,
             )
           : null,
       oldStatus: json['oldStatus'] != null
           ? AttendanceStatus.values.firstWhere(
-              (e) => e.name.toLowerCase() == json['oldStatus'].toString().toLowerCase(),
+              (e) =>
+                  e.name.toLowerCase() ==
+                  json['oldStatus'].toString().toLowerCase(),
               orElse: () => AttendanceStatus.present,
             )
           : null,

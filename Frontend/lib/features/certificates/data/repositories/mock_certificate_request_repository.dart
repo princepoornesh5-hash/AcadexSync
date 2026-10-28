@@ -30,7 +30,8 @@ class MockCertificateRequestRepository implements CertificateRequestRepository {
     ),
   ];
 
-  Future<void> _delay() async => await Future.delayed(const Duration(milliseconds: 300));
+  Future<void> _delay() async =>
+      await Future.delayed(const Duration(milliseconds: 300));
 
   void _emit() {
     if (!_controller.isClosed) {
@@ -110,7 +111,8 @@ class MockCertificateRequestRepository implements CertificateRequestRepository {
     return _controller.stream.map((requests) {
       return requests.where((r) {
         if (collegeId != null && r.collegeId != collegeId) return false;
-        if (departmentId != null && r.departmentId != departmentId) return false;
+        if (departmentId != null && r.departmentId != departmentId)
+          return false;
         return true;
       }).toList()..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     });

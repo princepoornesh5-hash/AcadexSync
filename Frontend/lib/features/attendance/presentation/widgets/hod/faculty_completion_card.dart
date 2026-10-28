@@ -14,7 +14,7 @@ class FacultyCompletionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isComplete = completion.pendingClasses == 0;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -60,7 +60,9 @@ class FacultyCompletionCard extends StatelessWidget {
             Text(
               completion.assignedSubjects.join(", "),
               style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
             ),
             const SizedBox(height: 12),
@@ -71,9 +73,13 @@ class FacultyCompletionCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: completion.progress,
-                      backgroundColor: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+                      backgroundColor: isDark
+                          ? AcadexColors.darkSurfaceHover
+                          : AcadexColors.canvasSoft,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        isComplete ? AcadexColors.success : AcadexColors.primary,
+                        isComplete
+                            ? AcadexColors.success
+                            : AcadexColors.primary,
                       ),
                       minHeight: 6,
                     ),
@@ -97,7 +103,7 @@ class FacultyCompletionCard extends StatelessWidget {
                     color: AcadexColors.success,
                   ).copyWith(fontSize: 11),
                 ),
-              )
+              ),
           ],
         ),
       ),

@@ -1,8 +1,4 @@
-enum FileStatus {
-  active,
-  deleted,
-  failed,
-}
+enum FileStatus { active, deleted, failed }
 
 extension FileStatusExtension on FileStatus {
   String get value {

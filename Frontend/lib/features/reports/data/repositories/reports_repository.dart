@@ -53,7 +53,7 @@ class ApiReportsRepository implements ReportsRepository {
   final ApiClient _apiClient;
 
   ApiReportsRepository({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient();
+    : _apiClient = apiClient ?? ApiClient();
 
   Map<String, dynamic> _buildQueryParams({
     DateRangePreset preset = DateRangePreset.thisMonth,
@@ -62,13 +62,13 @@ class ApiReportsRepository implements ReportsRepository {
     String? collegeId,
     String? departmentId,
   }) {
-    final params = <String, dynamic>{
-      'preset': preset.toApiValue(),
-    };
+    final params = <String, dynamic>{'preset': preset.toApiValue()};
     if (startDate != null) params['startDate'] = startDate.toIso8601String();
     if (endDate != null) params['endDate'] = endDate.toIso8601String();
-    if (collegeId != null && collegeId.isNotEmpty) params['collegeId'] = collegeId;
-    if (departmentId != null && departmentId.isNotEmpty) params['departmentId'] = departmentId;
+    if (collegeId != null && collegeId.isNotEmpty)
+      params['collegeId'] = collegeId;
+    if (departmentId != null && departmentId.isNotEmpty)
+      params['departmentId'] = departmentId;
     return params;
   }
 
@@ -93,7 +93,9 @@ class ApiReportsRepository implements ReportsRepository {
       );
       final data = response.data;
       if (data != null && data['success'] == true && data['data'] != null) {
-        return RoleDashboardReportModel.fromJson(data['data'] as Map<String, dynamic>);
+        return RoleDashboardReportModel.fromJson(
+          data['data'] as Map<String, dynamic>,
+        );
       }
       return null;
     } catch (e) {
@@ -119,7 +121,9 @@ class ApiReportsRepository implements ReportsRepository {
       );
       final data = response.data;
       if (data != null && data['success'] == true && data['data'] != null) {
-        return StudentAttendanceReportModel.fromJson(data['data'] as Map<String, dynamic>);
+        return StudentAttendanceReportModel.fromJson(
+          data['data'] as Map<String, dynamic>,
+        );
       }
       return null;
     } catch (e) {
@@ -145,7 +149,9 @@ class ApiReportsRepository implements ReportsRepository {
       );
       final data = response.data;
       if (data != null && data['success'] == true && data['data'] != null) {
-        return SectionAttendanceReportModel.fromJson(data['data'] as Map<String, dynamic>);
+        return SectionAttendanceReportModel.fromJson(
+          data['data'] as Map<String, dynamic>,
+        );
       }
       return null;
     } catch (e) {
@@ -171,7 +177,9 @@ class ApiReportsRepository implements ReportsRepository {
       );
       final data = response.data;
       if (data != null && data['success'] == true && data['data'] != null) {
-        return DepartmentAttendanceReportModel.fromJson(data['data'] as Map<String, dynamic>);
+        return DepartmentAttendanceReportModel.fromJson(
+          data['data'] as Map<String, dynamic>,
+        );
       }
       return null;
     } catch (e) {
@@ -197,7 +205,9 @@ class ApiReportsRepository implements ReportsRepository {
       );
       final data = response.data;
       if (data != null && data['success'] == true && data['data'] != null) {
-        return CollegeAttendanceReportModel.fromJson(data['data'] as Map<String, dynamic>);
+        return CollegeAttendanceReportModel.fromJson(
+          data['data'] as Map<String, dynamic>,
+        );
       }
       return null;
     } catch (e) {
@@ -220,7 +230,9 @@ class ApiReportsRepository implements ReportsRepository {
       );
       final data = response.data;
       if (data != null && data['success'] == true && data['data'] != null) {
-        return AcademicHierarchyReportModel.fromJson(data['data'] as Map<String, dynamic>);
+        return AcademicHierarchyReportModel.fromJson(
+          data['data'] as Map<String, dynamic>,
+        );
       }
       return null;
     } catch (e) {
@@ -243,7 +255,9 @@ class ApiReportsRepository implements ReportsRepository {
       );
       final data = response.data;
       if (data != null && data['success'] == true && data['data'] != null) {
-        return NotesAnalyticsReportModel.fromJson(data['data'] as Map<String, dynamic>);
+        return NotesAnalyticsReportModel.fromJson(
+          data['data'] as Map<String, dynamic>,
+        );
       }
       return null;
     } catch (e) {

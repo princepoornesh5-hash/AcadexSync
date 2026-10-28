@@ -49,10 +49,12 @@ class ProgressiveEnrollmentDialog extends ConsumerStatefulWidget {
   }
 
   @override
-  ConsumerState<ProgressiveEnrollmentDialog> createState() => _ProgressiveEnrollmentDialogState();
+  ConsumerState<ProgressiveEnrollmentDialog> createState() =>
+      _ProgressiveEnrollmentDialogState();
 }
 
-class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollmentDialog> {
+class _ProgressiveEnrollmentDialogState
+    extends ConsumerState<ProgressiveEnrollmentDialog> {
   int _currentStep = 0;
   bool _isSubmitting = false;
   String? _errorMessage;
@@ -69,10 +71,14 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
   void initState() {
     super.initState();
     _selectedStudent = widget.initialStudent;
-    _selectedDeptId = widget.initialDepartmentId ?? widget.initialStudent?.departmentId;
-    _selectedCourseId = widget.initialCourseId ?? widget.initialStudent?.courseId;
-    _selectedSemesterId = widget.initialSemesterId ?? widget.initialStudent?.semesterId;
-    _selectedSectionId = widget.initialSectionId ?? widget.initialStudent?.sectionId;
+    _selectedDeptId =
+        widget.initialDepartmentId ?? widget.initialStudent?.departmentId;
+    _selectedCourseId =
+        widget.initialCourseId ?? widget.initialStudent?.courseId;
+    _selectedSemesterId =
+        widget.initialSemesterId ?? widget.initialStudent?.semesterId;
+    _selectedSectionId =
+        widget.initialSectionId ?? widget.initialStudent?.sectionId;
 
     final authState = ref.read(authProvider);
     if (authState is AuthAuthenticated && authState.user.role == AppRole.hod) {
@@ -96,7 +102,9 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
     final secLabel = terminology.sectionName();
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.lg)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AcadexRadius.lg),
+      ),
       backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Container(
@@ -115,7 +123,11 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
                     color: AcadexColors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(AcadexRadius.md),
                   ),
-                  child: const Icon(LucideIcons.userCheck, color: AcadexColors.primary, size: 20),
+                  child: const Icon(
+                    LucideIcons.userCheck,
+                    color: AcadexColors.primary,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -125,7 +137,9 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
                       Text(
                         'Enroll Student',
                         style: AcadexTypography.heading2(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ).copyWith(fontSize: 18),
                       ),
                       Text(
@@ -133,7 +147,9 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                       ),
                     ],
@@ -154,7 +170,9 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
                 Text(
                   'Step ${_currentStep + 1} of ${_getTotalSteps(isSectionEnabled)}',
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ).copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
@@ -169,16 +187,25 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
                 decoration: BoxDecoration(
                   color: AcadexColors.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AcadexRadius.sm),
-                  border: Border.all(color: AcadexColors.error.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AcadexColors.error.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 18),
+                    const Icon(
+                      LucideIcons.alertCircle,
+                      color: AcadexColors.error,
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _errorMessage!,
-                        style: const TextStyle(color: AcadexColors.error, fontSize: 13),
+                        style: const TextStyle(
+                          color: AcadexColors.error,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ],
@@ -190,7 +217,12 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
             // Step Content
             Expanded(
               child: SingleChildScrollView(
-                child: _buildCurrentStepContent(progLabel, semLabel, secLabel, isSectionEnabled),
+                child: _buildCurrentStepContent(
+                  progLabel,
+                  semLabel,
+                  secLabel,
+                  isSectionEnabled,
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -201,7 +233,9 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
                 Expanded(
                   child: _currentStep > 0
                       ? OutlinedButton.icon(
-                          onPressed: _isSubmitting ? null : () => setState(() => _currentStep--),
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => setState(() => _currentStep--),
                           icon: const Icon(LucideIcons.chevronLeft, size: 16),
                           label: const Text('Back'),
                         )
@@ -216,9 +250,9 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
                       ? ElevatedButton.icon(
                           onPressed: _canProceedNext(isSectionEnabled)
                               ? () => setState(() {
-                                    _errorMessage = null;
-                                    _currentStep++;
-                                  })
+                                  _errorMessage = null;
+                                  _currentStep++;
+                                })
                               : null,
                           icon: const Icon(LucideIcons.chevronRight, size: 16),
                           label: const Text('Continue'),
@@ -233,10 +267,16 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
                               ? const SizedBox(
                                   width: 16,
                                   height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
                                 )
                               : const Icon(LucideIcons.check, size: 16),
-                          label: const Text('Confirm', overflow: TextOverflow.ellipsis),
+                          label: const Text(
+                            'Confirm',
+                            overflow: TextOverflow.ellipsis,
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AcadexColors.success,
                             foregroundColor: Colors.white,
@@ -267,8 +307,8 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
               color: isCompleted
                   ? AcadexColors.success
                   : isCurrent
-                      ? AcadexColors.primary
-                      : Colors.grey.withValues(alpha: 0.3),
+                  ? AcadexColors.primary
+                  : Colors.grey.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -286,17 +326,24 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
       case 2:
         return _selectedCourseId != null && _selectedCourseId!.isNotEmpty;
       case 3:
-        return _selectedAcademicYearId != null && _selectedAcademicYearId!.isNotEmpty;
+        return _selectedAcademicYearId != null &&
+            _selectedAcademicYearId!.isNotEmpty;
       case 4:
         return _selectedSemesterId != null && _selectedSemesterId!.isNotEmpty;
       case 5:
-        return !isSectionEnabled || (_selectedSectionId != null && _selectedSectionId!.isNotEmpty);
+        return !isSectionEnabled ||
+            (_selectedSectionId != null && _selectedSectionId!.isNotEmpty);
       default:
         return false;
     }
   }
 
-  Widget _buildCurrentStepContent(String progLabel, String semLabel, String secLabel, bool isSectionEnabled) {
+  Widget _buildCurrentStepContent(
+    String progLabel,
+    String semLabel,
+    String secLabel,
+    bool isSectionEnabled,
+  ) {
     switch (_currentStep) {
       case 0:
         return _buildStudentSelectionStep();
@@ -312,17 +359,29 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
         if (isSectionEnabled) {
           return _buildSectionStep(secLabel);
         } else {
-          return _buildReviewStep(progLabel, semLabel, secLabel, isSectionEnabled);
+          return _buildReviewStep(
+            progLabel,
+            semLabel,
+            secLabel,
+            isSectionEnabled,
+          );
         }
       case 6:
-        return _buildReviewStep(progLabel, semLabel, secLabel, isSectionEnabled);
+        return _buildReviewStep(
+          progLabel,
+          semLabel,
+          secLabel,
+          isSectionEnabled,
+        );
       default:
         return const SizedBox.shrink();
     }
   }
 
   Widget _buildStudentSelectionStep() {
-    final studentsState = ref.watch(studentsProvider((sectionId: null, departmentId: _selectedDeptId)));
+    final studentsState = ref.watch(
+      studentsProvider((sectionId: null, departmentId: _selectedDeptId)),
+    );
     final allStudents = studentsState.items;
     final filtered = allStudents.where((s) {
       if (!s.isActive) return false;
@@ -336,7 +395,12 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Step 1: Select Student', style: AcadexTypography.heading3(color: Theme.of(context).colorScheme.onSurface)),
+        Text(
+          'Step 1: Select Student',
+          style: AcadexTypography.heading3(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
         const SizedBox(height: 8),
         TextField(
           decoration: const InputDecoration(
@@ -363,13 +427,27 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
                 ),
               ),
               leading: CircleAvatar(
-                backgroundColor: isSelected ? AcadexColors.primary : AcadexColors.primary.withValues(alpha: 0.1),
-                foregroundColor: isSelected ? Colors.white : AcadexColors.primary,
+                backgroundColor: isSelected
+                    ? AcadexColors.primary
+                    : AcadexColors.primary.withValues(alpha: 0.1),
+                foregroundColor: isSelected
+                    ? Colors.white
+                    : AcadexColors.primary,
                 child: Text(s.name.isNotEmpty ? s.name[0].toUpperCase() : 'S'),
               ),
-              title: Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text("Roll: ${s.rollNumber.isNotEmpty ? s.rollNumber : 'N/A'} • ID: ${s.instituteId ?? 'N/A'}"),
-              trailing: isSelected ? const Icon(LucideIcons.checkCircle, color: AcadexColors.primary) : null,
+              title: Text(
+                s.name,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(
+                "Roll: ${s.rollNumber.isNotEmpty ? s.rollNumber : 'N/A'} • ID: ${s.instituteId ?? 'N/A'}",
+              ),
+              trailing: isSelected
+                  ? const Icon(
+                      LucideIcons.checkCircle,
+                      color: AcadexColors.primary,
+                    )
+                  : null,
               onTap: () => setState(() {
                 _selectedStudent = s;
                 _selectedDeptId ??= s.departmentId;
@@ -385,7 +463,12 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Step 2: Department Context', style: AcadexTypography.heading3(color: Theme.of(context).colorScheme.onSurface)),
+        Text(
+          'Step 2: Department Context',
+          style: AcadexTypography.heading3(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
         const SizedBox(height: 12),
         deptsAsync.when(
           data: (depts) {
@@ -393,7 +476,10 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
             return Column(
               children: activeDepts.map((d) {
                 return RadioListTile<String>(
-                  title: Text(d.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  title: Text(
+                    d.name,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   subtitle: Text("Code: ${d.code}"),
                   value: d.id,
                   groupValue: _selectedDeptId,
@@ -419,19 +505,33 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Step 3: Select $progLabel', style: AcadexTypography.heading3(color: Theme.of(context).colorScheme.onSurface)),
+        Text(
+          'Step 3: Select $progLabel',
+          style: AcadexTypography.heading3(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
         const SizedBox(height: 12),
         coursesAsync.when(
           data: (courses) {
-            final filtered = courses.where((c) => c.departmentId == _selectedDeptId && c.isActive).toList();
+            final filtered = courses
+                .where((c) => c.departmentId == _selectedDeptId && c.isActive)
+                .toList();
             if (filtered.isEmpty) {
-              return Text('No active $progLabel available for this department.');
+              return Text(
+                'No active $progLabel available for this department.',
+              );
             }
             return Column(
               children: filtered.map((c) {
                 return RadioListTile<String>(
-                  title: Text(c.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Text("Code: ${c.code} • Duration: ${c.duration} Years"),
+                  title: Text(
+                    c.name,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    "Code: ${c.code} • Duration: ${c.duration} Years",
+                  ),
                   value: c.id,
                   groupValue: _selectedCourseId,
                   onChanged: (val) => setState(() {
@@ -455,7 +555,12 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Step 4: Academic Year (Operational Cycle)', style: AcadexTypography.heading3(color: Theme.of(context).colorScheme.onSurface)),
+        Text(
+          'Step 4: Academic Year (Operational Cycle)',
+          style: AcadexTypography.heading3(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
         const SizedBox(height: 8),
         Text(
           'Represents the institutional cycle (e.g. 2026–27), distinct from multi-year student cohorts.',
@@ -466,23 +571,38 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
           data: (years) {
             final activeYears = years.where((y) => y.isActive).toList();
             if (activeYears.isEmpty) {
-              return const Text('No active Academic Year found. Please create an Academic Year first.');
+              return const Text(
+                'No active Academic Year found. Please create an Academic Year first.',
+              );
             }
             return Column(
               children: activeYears.map((ay) {
                 return RadioListTile<String>(
                   title: Row(
                     children: [
-                      Text(ay.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      Text(
+                        ay.name,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
                       if (ay.isCurrent) ...[
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: AcadexColors.success.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Text('CURRENT', style: TextStyle(color: AcadexColors.success, fontSize: 10, fontWeight: FontWeight.bold)),
+                          child: const Text(
+                            'CURRENT',
+                            style: TextStyle(
+                              color: AcadexColors.success,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ],
                     ],
@@ -510,22 +630,36 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Step 5: Select $semLabel', style: AcadexTypography.heading3(color: Theme.of(context).colorScheme.onSurface)),
+        Text(
+          'Step 5: Select $semLabel',
+          style: AcadexTypography.heading3(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
         const SizedBox(height: 12),
         semAsync.when(
           data: (semesters) {
             final filtered = semesters.where((s) {
               if (s.courseId != _selectedCourseId) return false;
-              if (_selectedAcademicYearId != null && s.academicYearId != _selectedAcademicYearId) return false;
+              if (_selectedAcademicYearId != null &&
+                  s.academicYearId != _selectedAcademicYearId)
+                return false;
               return s.isActive;
             }).toList();
             if (filtered.isEmpty) {
-              return Text('No active $semLabel found for this course and academic year.');
+              return Text(
+                'No active $semLabel found for this course and academic year.',
+              );
             }
             return Column(
               children: filtered.map((s) {
                 return RadioListTile<String>(
-                  title: Text(s.name.isNotEmpty ? s.name : "$semLabel ${s.semesterNumber}", style: const TextStyle(fontWeight: FontWeight.w600)),
+                  title: Text(
+                    s.name.isNotEmpty
+                        ? s.name
+                        : "$semLabel ${s.semesterNumber}",
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   subtitle: Text("Academic Period ${s.semesterNumber}"),
                   value: s.id,
                   groupValue: _selectedSemesterId,
@@ -549,18 +683,31 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Step 6: Select $secLabel', style: AcadexTypography.heading3(color: Theme.of(context).colorScheme.onSurface)),
+        Text(
+          'Step 6: Select $secLabel',
+          style: AcadexTypography.heading3(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
         const SizedBox(height: 12),
         secAsync.when(
           data: (sections) {
-            final filtered = sections.where((sec) => sec.semesterId == _selectedSemesterId && sec.isActive).toList();
+            final filtered = sections
+                .where(
+                  (sec) =>
+                      sec.semesterId == _selectedSemesterId && sec.isActive,
+                )
+                .toList();
             if (filtered.isEmpty) {
               return Text('No active $secLabel available for this semester.');
             }
             return Column(
               children: filtered.map((sec) {
                 return RadioListTile<String>(
-                  title: Text(sec.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  title: Text(
+                    sec.name,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   subtitle: Text("Capacity: ${sec.capacity}"),
                   value: sec.id,
                   groupValue: _selectedSectionId,
@@ -576,7 +723,12 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
     );
   }
 
-  Widget _buildReviewStep(String progLabel, String semLabel, String secLabel, bool isSectionEnabled) {
+  Widget _buildReviewStep(
+    String progLabel,
+    String semLabel,
+    String secLabel,
+    bool isSectionEnabled,
+  ) {
     final depts = ref.watch(departmentMapProvider);
     final courses = ref.watch(courseMapProvider);
     final ays = ref.watch(academicYearMapProvider);
@@ -584,26 +736,40 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
     final secs = ref.watch(sectionMapProvider);
 
     final deptName = depts[_selectedDeptId]?.name ?? 'Selected Department';
-    final courseName = courses[_selectedCourseId]?.name ?? 'Selected $progLabel';
-    final ayName = ays[_selectedAcademicYearId]?.name ?? 'Selected Academic Year';
+    final courseName =
+        courses[_selectedCourseId]?.name ?? 'Selected $progLabel';
+    final ayName =
+        ays[_selectedAcademicYearId]?.name ?? 'Selected Academic Year';
     final semName = sems[_selectedSemesterId]?.name ?? 'Selected $semLabel';
-    final secName = isSectionEnabled ? (secs[_selectedSectionId]?.name ?? 'None') : 'Disabled by Institution';
+    final secName = isSectionEnabled
+        ? (secs[_selectedSectionId]?.name ?? 'None')
+        : 'Disabled by Institution';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Review Academic Placement', style: AcadexTypography.heading3(color: Theme.of(context).colorScheme.onSurface)),
+        Text(
+          'Review Academic Placement',
+          style: AcadexTypography.heading3(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: AcadexColors.primary.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(AcadexRadius.md),
-            border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.2)),
+            border: Border.all(
+              color: AcadexColors.primary.withValues(alpha: 0.2),
+            ),
           ),
           child: Column(
             children: [
-              _buildReviewRow('Student', "${_selectedStudent?.name} (${_selectedStudent?.rollNumber})"),
+              _buildReviewRow(
+                'Student',
+                "${_selectedStudent?.name} (${_selectedStudent?.rollNumber})",
+              ),
               const Divider(height: 20),
               _buildReviewRow('Department', deptName),
               const Divider(height: 20),
@@ -627,7 +793,13 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.grey)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Colors.grey,
+          ),
+        ),
         Flexible(
           child: Text(
             value,
@@ -647,20 +819,27 @@ class _ProgressiveEnrollmentDialogState extends ConsumerState<ProgressiveEnrollm
 
     try {
       final isSectionEnabled = ref.read(terminologyProvider).isSectionEnabled;
-      await ref.read(academicRepositoryProvider).enrollStudent(
-        studentId: _selectedStudent!.id,
-        courseId: _selectedCourseId!,
-        academicYearId: _selectedAcademicYearId!,
-        semesterId: _selectedSemesterId!,
-        sectionId: isSectionEnabled ? _selectedSectionId : null,
-      );
+      await ref
+          .read(academicRepositoryProvider)
+          .enrollStudent(
+            studentId: _selectedStudent!.id,
+            courseId: _selectedCourseId!,
+            academicYearId: _selectedAcademicYearId!,
+            semesterId: _selectedSemesterId!,
+            sectionId: isSectionEnabled ? _selectedSectionId : null,
+          );
 
       ref.invalidate(studentsProvider);
-      if (_selectedDeptId != null) ref.invalidate(studentsByDepartmentProvider(_selectedDeptId!));
-      if (_selectedSectionId != null) ref.invalidate(studentsBySectionProvider(_selectedSectionId!));
+      if (_selectedDeptId != null)
+        ref.invalidate(studentsByDepartmentProvider(_selectedDeptId!));
+      if (_selectedSectionId != null)
+        ref.invalidate(studentsBySectionProvider(_selectedSectionId!));
 
       if (mounted) {
-        AcadexSnackBar.showSuccess(context, "Student successfully enrolled in academic context");
+        AcadexSnackBar.showSuccess(
+          context,
+          "Student successfully enrolled in academic context",
+        );
         Navigator.of(context).pop(true);
       }
     } catch (e) {

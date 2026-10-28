@@ -28,7 +28,8 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final standardTitleColor = titleColor ?? (isDark ? AcadexColors.darkInk : AcadexColors.ink);
+    final standardTitleColor =
+        titleColor ?? (isDark ? AcadexColors.darkInk : AcadexColors.ink);
     final standardActionColor = actionColor ?? AcadexColors.primary;
     final effectiveAccentColor = accentColor ?? AcadexColors.primary;
 

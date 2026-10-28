@@ -12,10 +12,12 @@ class NotificationPreferencesScreen extends ConsumerStatefulWidget {
   const NotificationPreferencesScreen({super.key});
 
   @override
-  ConsumerState<NotificationPreferencesScreen> createState() => _NotificationPreferencesScreenState();
+  ConsumerState<NotificationPreferencesScreen> createState() =>
+      _NotificationPreferencesScreenState();
 }
 
-class _NotificationPreferencesScreenState extends ConsumerState<NotificationPreferencesScreen> {
+class _NotificationPreferencesScreenState
+    extends ConsumerState<NotificationPreferencesScreen> {
   bool _inAppEnabled = true;
   bool _pushEnabled = true;
   bool _assignments = true;
@@ -40,7 +42,10 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/notifications'),
         ),
         title: Text(
@@ -51,7 +56,9 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
         ),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+        iconTheme: IconThemeData(
+          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+        ),
       ),
       body: prefsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -61,9 +68,16 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(LucideIcons.alertCircle, size: 48, color: AcadexColors.error),
+                const Icon(
+                  LucideIcons.alertCircle,
+                  size: 48,
+                  color: AcadexColors.error,
+                ),
                 const SizedBox(height: 16),
-                Text('Failed to load preferences: $err', textAlign: TextAlign.center),
+                Text(
+                  'Failed to load preferences: $err',
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => ref.refresh(notificationPreferencesProvider),
@@ -99,12 +113,18 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
                 decoration: BoxDecoration(
                   color: AcadexColors.primary.withValues(alpha: 0.08),
                   borderRadius: AcadexRadius.borderRadiusMd,
-                  border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.2)),
+                  border: Border.all(
+                    color: AcadexColors.primary.withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(LucideIcons.shieldCheck, color: AcadexColors.primary, size: 20),
+                    const Icon(
+                      LucideIcons.shieldCheck,
+                      color: AcadexColors.primary,
+                      size: 20,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -113,14 +133,18 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
                           Text(
                             'System & Official Academic Results',
                             style: AcadexTypography.body(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ).copyWith(fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Critical security notifications, official academic result releases, and emergency broadcasts are mandatory and cannot be disabled.',
                             style: AcadexTypography.bodySmall(
-                              color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                              color: isDark
+                                  ? AcadexColors.darkInkSecondary
+                                  : AcadexColors.inkSecondary,
                             ),
                           ),
                         ],
@@ -151,7 +175,8 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
 
               _buildPreferenceTile(
                 title: 'Push Notifications (FCM)',
-                subtitle: 'Receive background push banners when ACADEX is closed.',
+                subtitle:
+                    'Receive background push banners when ACADEX is closed.',
                 icon: LucideIcons.smartphone,
                 value: _pushEnabled,
                 onChanged: (val) => setState(() => _pushEnabled = val),
@@ -169,7 +194,8 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
 
               _buildPreferenceTile(
                 title: 'Assignments & Tasks',
-                subtitle: 'New homework, due date reminders, and grading notices.',
+                subtitle:
+                    'New homework, due date reminders, and grading notices.',
                 icon: LucideIcons.bookMarked,
                 value: _assignments,
                 onChanged: (val) => setState(() => _assignments = val),
@@ -178,7 +204,8 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
 
               _buildPreferenceTile(
                 title: 'Practical Lab Sessions',
-                subtitle: 'Lab scheduling, rescheduling, and session completion notices.',
+                subtitle:
+                    'Lab scheduling, rescheduling, and session completion notices.',
                 icon: LucideIcons.flaskConical,
                 value: _practicals,
                 onChanged: (val) => setState(() => _practicals = val),
@@ -187,7 +214,8 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
 
               _buildPreferenceTile(
                 title: 'Assessments & Internal Tests',
-                subtitle: 'Test schedules, syllabus updates, and internal mark releases.',
+                subtitle:
+                    'Test schedules, syllabus updates, and internal mark releases.',
                 icon: LucideIcons.clipboardCheck,
                 value: _assessments,
                 onChanged: (val) => setState(() => _assessments = val),
@@ -196,7 +224,8 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
 
               _buildPreferenceTile(
                 title: 'Academic Calendar & Holidays',
-                subtitle: 'Declared holidays, term dates, and calendar event updates.',
+                subtitle:
+                    'Declared holidays, term dates, and calendar event updates.',
                 icon: LucideIcons.calendar,
                 value: _calendar,
                 onChanged: (val) => setState(() => _calendar = val),
@@ -205,7 +234,8 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
 
               _buildPreferenceTile(
                 title: 'Attendance Alerts',
-                subtitle: 'Low attendance warnings, drop threshold notices, and daily logs.',
+                subtitle:
+                    'Low attendance warnings, drop threshold notices, and daily logs.',
                 icon: LucideIcons.calendarCheck,
                 value: _attendanceAlerts,
                 onChanged: (val) => setState(() => _attendanceAlerts = val),
@@ -232,7 +262,8 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
 
               _buildPreferenceTile(
                 title: 'Announcements',
-                subtitle: 'Official broadcasts from Department Heads and College Administration.',
+                subtitle:
+                    'Official broadcasts from Department Heads and College Administration.',
                 icon: LucideIcons.megaphone,
                 value: _announcements,
                 onChanged: (val) => setState(() => _announcements = val),
@@ -241,7 +272,8 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
 
               _buildPreferenceTile(
                 title: 'Certificates & Documents',
-                subtitle: 'Status updates on digital diploma requests and verified certificates.',
+                subtitle:
+                    'Status updates on digital diploma requests and verified certificates.',
                 icon: LucideIcons.award,
                 value: _certificateUpdates,
                 onChanged: (val) => setState(() => _certificateUpdates = val),
@@ -250,7 +282,8 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
 
               _buildPreferenceTile(
                 title: 'General Campus Notifications',
-                subtitle: 'Library reminders, campus club updates, and scheduled maintenance notices.',
+                subtitle:
+                    'Library reminders, campus club updates, and scheduled maintenance notices.',
                 icon: LucideIcons.bellRing,
                 value: _generalNotifications,
                 onChanged: (val) => setState(() => _generalNotifications = val),
@@ -261,7 +294,9 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
               SizedBox(
                 width: double.infinity,
                 child: AcadexButton(
-                  label: _isSaving ? 'Saving Preferences...' : 'Save Preferences',
+                  label: _isSaving
+                      ? 'Saving Preferences...'
+                      : 'Save Preferences',
                   icon: LucideIcons.save,
                   isLoading: _isSaving,
                   onPressed: _savePreferences,
@@ -317,7 +352,9 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
                 Text(
                   subtitle,
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                    color: isDark
+                        ? AcadexColors.darkInkSecondary
+                        : AcadexColors.inkSecondary,
                   ),
                 ),
               ],
@@ -352,7 +389,9 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
         generalNotifications: _generalNotifications,
       );
 
-      await ref.read(notificationPreferencesProvider.notifier).updatePreferences(updated);
+      await ref
+          .read(notificationPreferencesProvider.notifier)
+          .updatePreferences(updated);
 
       if (mounted) {
         AcadexSnackBar.showSuccess(

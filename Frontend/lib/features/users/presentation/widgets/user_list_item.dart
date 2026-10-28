@@ -77,7 +77,11 @@ class UserListItem extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.email_outlined, size: 13, color: AcadexColors.textSecondary),
+                          const Icon(
+                            Icons.email_outlined,
+                            size: 13,
+                            color: AcadexColors.textSecondary,
+                          ),
                           const SizedBox(width: 4),
                           ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 180),
@@ -96,7 +100,11 @@ class UserListItem extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.badge_outlined, size: 13, color: AcadexColors.textSecondary),
+                          const Icon(
+                            Icons.badge_outlined,
+                            size: 13,
+                            color: AcadexColors.textSecondary,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             idLabel,
@@ -111,7 +119,11 @@ class UserListItem extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.account_tree_outlined, size: 13, color: AcadexColors.textSecondary),
+                          const Icon(
+                            Icons.account_tree_outlined,
+                            size: 13,
+                            color: AcadexColors.textSecondary,
+                          ),
                           const SizedBox(width: 4),
                           ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 160),
@@ -133,7 +145,11 @@ class UserListItem extends StatelessWidget {
           ),
           if (onDelete != null) ...[
             IconButton(
-              icon: const Icon(Icons.delete_forever, color: AcadexColors.error, size: 20),
+              icon: const Icon(
+                Icons.delete_forever,
+                color: AcadexColors.error,
+                size: 20,
+              ),
               tooltip: 'Delete Permanently',
               onPressed: onDelete,
             ),

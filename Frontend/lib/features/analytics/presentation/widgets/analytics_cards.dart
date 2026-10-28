@@ -74,9 +74,12 @@ class InsightCard extends StatelessWidget {
   Widget build(BuildContext context) {
     Color getSeverityColor() {
       switch (insight.severity) {
-        case InsightSeverity.positive: return DashboardColors.success;
-        case InsightSeverity.negative: return DashboardColors.error;
-        case InsightSeverity.neutral: return DashboardColors.primary;
+        case InsightSeverity.positive:
+          return DashboardColors.success;
+        case InsightSeverity.negative:
+          return DashboardColors.error;
+        case InsightSeverity.neutral:
+          return DashboardColors.primary;
       }
     }
 
@@ -143,7 +146,10 @@ class ProjectionCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [DashboardColors.primary.withValues(alpha: 0.8), DashboardColors.primary],
+          colors: [
+            DashboardColors.primary.withValues(alpha: 0.8),
+            DashboardColors.primary,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -170,7 +176,10 @@ class ProjectionCard extends StatelessWidget {
           if (projection.requiredConsecutiveClasses > 0) ...[
             Text(
               'You need to attend',
-              style: GoogleFonts.inter(fontSize: 14, color: Colors.white.withValues(alpha: 0.9)),
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
             ),
             const SizedBox(height: 4),
             Row(
@@ -178,14 +187,22 @@ class ProjectionCard extends StatelessWidget {
               children: [
                 Text(
                   '${projection.requiredConsecutiveClasses}',
-                  style: GoogleFonts.inter(fontSize: 32, fontWeight: FontWeight.w800, color: Colors.white),
+                  style: GoogleFonts.inter(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Text(
                     'consecutive classes',
-                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.white),
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ],
@@ -193,17 +210,27 @@ class ProjectionCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               'to reach the ${projection.targetPercentage.toInt()}% threshold.',
-              style: GoogleFonts.inter(fontSize: 14, color: Colors.white.withValues(alpha: 0.9)),
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
             ),
           ] else ...[
             Text(
               'You are in Good Standing!',
-              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               'Keep attending to maintain your buffer.',
-              style: GoogleFonts.inter(fontSize: 14, color: Colors.white.withValues(alpha: 0.9)),
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
             ),
           ],
         ],

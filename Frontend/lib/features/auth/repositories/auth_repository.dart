@@ -41,12 +41,54 @@ abstract class AuthRepository {
 
   /// Revoke all active sessions for this user across all devices
   Future<void> logoutAll();
+
+  /// Request email OTP challenge for login
+  Future<void> requestLoginOtp(String email);
+
+  /// Verify email OTP and establish authenticated session
+  Future<UserModel> loginWithOtp(String email, String otp);
+
+  /// Request email OTP for self-registration
+  Future<void> requestRegistrationOtp(String email);
+
+  /// Verify email OTP and receive short-lived registrationToken
+  Future<String> verifyRegistrationOtp({
+    required String email,
+    required String otp,
+  });
+
+  /// Complete self-registration with registrationToken and password
+  Future<UserModel> completeRegistration({
+    required String registrationToken,
+    required String password,
+    required String confirmPassword,
+    String? name,
+  });
+
+  /// Request email OTP for institutional account activation
+  Future<void> requestInstitutionalActivationOtp(String email);
+
+  /// Verify institutional activation OTP and receive emailVerificationToken
+  Future<String> verifyInstitutionalActivationOtp({
+    required String email,
+    required String otp,
+  });
+
+  /// Complete institutional activation with emailVerificationToken & activation code
+  Future<Map<String, dynamic>> completeInstitutionalActivation({
+    required String emailVerificationToken,
+    required String activationCode,
+    String? password,
+    String? confirmPassword,
+  });
 }
 
 class MockAuthRepository implements AuthRepository {
   MockAuthRepository() {
     if (!kDebugMode) {
-      throw StateError('CRITICAL: MockAuthRepository must not be instantiated in release builds.');
+      throw StateError(
+        'CRITICAL: MockAuthRepository must not be instantiated in release builds.',
+      );
     }
   }
 
@@ -185,5 +227,92 @@ class MockAuthRepository implements AuthRepository {
   @override
   Future<void> logoutAll() async {
     await Future.delayed(const Duration(milliseconds: 300));
+  }
+
+  @override
+  Future<void> requestLoginOtp(String email) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+  }
+
+  @override
+  Future<UserModel> loginWithOtp(String email, String otp) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    try {
+      return _mockUsers.firstWhere((user) => user.email == email);
+    } catch (_) {
+      return const UserModel(
+        id: 'mock-otp-user',
+        name: 'Mock OTP User',
+        email: 'otp.user@acadex.edu',
+        role: AppRole.student,
+        accountStatus: AccountStatus.active,
+      );
+    }
+  }
+
+  @override
+  Future<void> requestRegistrationOtp(String email) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+  }
+
+  @override
+  Future<String> verifyRegistrationOtp({
+    required String email,
+    required String otp,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    return 'mock-registration-token';
+  }
+
+  @override
+  Future<UserModel> completeRegistration({
+    required String registrationToken,
+    required String password,
+    required String confirmPassword,
+    String? name,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    return UserModel(
+      id: 'mock-registered-user',
+      name: name ?? 'Registered Student',
+      email: 'student@registered.edu',
+      role: AppRole.student,
+      accountStatus: AccountStatus.active,
+    );
+  }
+
+  @override
+  Future<void> requestInstitutionalActivationOtp(String email) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+  }
+
+  @override
+  Future<String> verifyInstitutionalActivationOtp({
+    required String email,
+    required String otp,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    return 'mock-email-verification-token';
+  }
+
+  @override
+  Future<Map<String, dynamic>> completeInstitutionalActivation({
+    required String emailVerificationToken,
+    required String activationCode,
+    String? password,
+    String? confirmPassword,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    return {
+      'user': {
+        'id': 'mock-activated-id',
+        'name': 'Institutional User',
+        'email': 'user@college.edu',
+        'role': 'STUDENT',
+        'collegeCode': 'MOCK-COLLEGE',
+        'accountStatus': 'active',
+        'instituteId': 'MOCK-PIN-123',
+      },
+    };
   }
 }

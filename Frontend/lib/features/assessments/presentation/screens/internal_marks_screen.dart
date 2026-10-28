@@ -30,7 +30,8 @@ class InternalMarksScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<InternalMarksScreen> createState() => _InternalMarksScreenState();
+  ConsumerState<InternalMarksScreen> createState() =>
+      _InternalMarksScreenState();
 }
 
 class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
@@ -56,10 +57,10 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
   bool _isSaving = false;
 
   AssessmentContextParams get _params => (
-        sectionId: widget.sectionId,
-        subjectId: widget.subjectId,
-        academicYearId: widget.academicYearId,
-      );
+    sectionId: widget.sectionId,
+    subjectId: widget.subjectId,
+    academicYearId: widget.academicYearId,
+  );
 
   void _showToast(String message, {bool isError = false}) {
     if (!mounted) return;
@@ -102,10 +103,16 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
     if (_isRosterInitialized) return;
     for (final item in rosterData.roster) {
       final markText = item.marks != null
-          ? (item.marks! % 1 == 0 ? item.marks!.toInt().toString() : item.marks!.toString())
+          ? (item.marks! % 1 == 0
+                ? item.marks!.toInt().toString()
+                : item.marks!.toString())
           : '';
-      _marksControllers[item.studentEnrollmentId] = TextEditingController(text: markText);
-      _remarksControllers[item.studentEnrollmentId] = TextEditingController(text: item.remarks ?? '');
+      _marksControllers[item.studentEnrollmentId] = TextEditingController(
+        text: markText,
+      );
+      _remarksControllers[item.studentEnrollmentId] = TextEditingController(
+        text: item.remarks ?? '',
+      );
       _statuses[item.studentEnrollmentId] = item.status;
       _focusNodes[item.studentEnrollmentId] = FocusNode();
     }
@@ -131,11 +138,17 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
         if (text.isNotEmpty) {
           final val = double.tryParse(text);
           if (val == null || val < 0) {
-            _showToast('Invalid negative or non-numeric mark entered.', isError: true);
+            _showToast(
+              'Invalid negative or non-numeric mark entered.',
+              isError: true,
+            );
             return false;
           }
           if (val > maximumMarks) {
-            _showToast('Mark $val exceeds maximum allowed marks ($maximumMarks).', isError: true);
+            _showToast(
+              'Mark $val exceeds maximum allowed marks ($maximumMarks).',
+              isError: true,
+            );
             return false;
           }
         }
@@ -144,8 +157,11 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
     return true;
   }
 
-  Future<void> _handleSaveRosterDraft(MarksRosterResponseModel rosterData) async {
-    final maxMarks = (rosterData.assessment['maximumMarks'] as num?)?.toDouble() ?? 25.0;
+  Future<void> _handleSaveRosterDraft(
+    MarksRosterResponseModel rosterData,
+  ) async {
+    final maxMarks =
+        (rosterData.assessment['maximumMarks'] as num?)?.toDouble() ?? 25.0;
     if (!_validateRosterMarks(maxMarks)) return;
 
     setState(() => _isSaving = true);
@@ -155,7 +171,8 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
         final enrollmentId = item.studentEnrollmentId;
         final status = _statuses[enrollmentId] ?? item.status;
         final markText = _marksControllers[enrollmentId]?.text.trim() ?? '';
-        final double? markVal = (status == StudentMarkStatus.present && markText.isNotEmpty)
+        final double? markVal =
+            (status == StudentMarkStatus.present && markText.isNotEmpty)
             ? double.tryParse(markText)
             : null;
 
@@ -175,10 +192,9 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
         );
       }
 
-      await ref.read(assessmentRepositoryProvider).saveDraftMarks(
-            assessmentId: widget.assessmentId,
-            entries: entries,
-          );
+      await ref
+          .read(assessmentRepositoryProvider)
+          .saveDraftMarks(assessmentId: widget.assessmentId, entries: entries);
 
       _showToast('Draft marks saved successfully.');
       setState(() => _hasUnsavedChanges = false);
@@ -193,7 +209,8 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
   }
 
   Future<void> _handleSubmitRoster(MarksRosterResponseModel rosterData) async {
-    final maxMarks = (rosterData.assessment['maximumMarks'] as num?)?.toDouble() ?? 25.0;
+    final maxMarks =
+        (rosterData.assessment['maximumMarks'] as num?)?.toDouble() ?? 25.0;
     if (!_validateRosterMarks(maxMarks)) return;
 
     // Calculate live confirmation stats from current local state
@@ -204,8 +221,10 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
     int unresolved = 0;
 
     for (final item in rosterData.roster) {
-      final s = _statuses[item.studentEnrollmentId] ?? StudentMarkStatus.notEntered;
-      final markText = _marksControllers[item.studentEnrollmentId]?.text.trim() ?? '';
+      final s =
+          _statuses[item.studentEnrollmentId] ?? StudentMarkStatus.notEntered;
+      final markText =
+          _marksControllers[item.studentEnrollmentId]?.text.trim() ?? '';
       if (s == StudentMarkStatus.present) {
         if (markText.isNotEmpty && double.tryParse(markText) != null) {
           present++;
@@ -266,7 +285,11 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
               const SizedBox(height: 12),
               Text(
                 'Note: All active students must have an explicit outcome before submission. Submission will be rejected if unresolved students remain.',
-                style: TextStyle(fontSize: 12, color: AcadexColors.error, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AcadexColors.error,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ],
@@ -277,9 +300,16 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
-            onPressed: unresolved > 0 ? null : () => Navigator.of(ctx).pop(true),
-            child: const Text('Confirm & Submit', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.primary,
+            ),
+            onPressed: unresolved > 0
+                ? null
+                : () => Navigator.of(ctx).pop(true),
+            child: const Text(
+              'Confirm & Submit',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -293,7 +323,9 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
       await _handleSaveRosterDraft(rosterData);
 
       // Submit marks
-      await ref.read(assessmentRepositoryProvider).submitMarks(assessmentId: widget.assessmentId!);
+      await ref
+          .read(assessmentRepositoryProvider)
+          .submitMarks(assessmentId: widget.assessmentId!);
       _showToast('Assessment marks submitted successfully and locked.');
       ref.invalidate(assessmentRosterProvider(widget.assessmentId!));
     } catch (e) {
@@ -303,13 +335,20 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
     }
   }
 
-  Widget _buildSummaryRow(String label, String value, {bool isWarning = false}) {
+  Widget _buildSummaryRow(
+    String label,
+    String value, {
+    bool isWarning = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+          ),
           Text(
             value,
             style: TextStyle(
@@ -327,7 +366,9 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
     if (widget.assessmentId == null) return;
     setState(() => _isSaving = true);
     try {
-      await ref.read(assessmentRepositoryProvider).completeAssessment(widget.assessmentId!);
+      await ref
+          .read(assessmentRepositoryProvider)
+          .completeAssessment(widget.assessmentId!);
       _showToast('Assessment exam completed. Marks entry is now open.');
       ref.invalidate(assessmentRosterProvider(widget.assessmentId!));
     } catch (e) {
@@ -337,10 +378,14 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
     }
   }
 
-  Future<void> _handleRequestCorrectionDialog(MarksRosterResponseModel rosterData) async {
+  Future<void> _handleRequestCorrectionDialog(
+    MarksRosterResponseModel rosterData,
+  ) async {
     final reasonController = TextEditingController();
     final markController = TextEditingController();
-    String? selectedEnrollmentId = rosterData.roster.isNotEmpty ? rosterData.roster.first.studentEnrollmentId : null;
+    String? selectedEnrollmentId = rosterData.roster.isNotEmpty
+        ? rosterData.roster.first.studentEnrollmentId
+        : null;
     StudentMarkStatus proposedStatus = StudentMarkStatus.present;
 
     final confirmed = await showDialog<bool>(
@@ -360,9 +405,13 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                 const SizedBox(height: 14),
                 DropdownButtonFormField<String>(
                   value: selectedEnrollmentId,
-                  decoration: const InputDecoration(labelText: 'Target Student'),
+                  decoration: const InputDecoration(
+                    labelText: 'Target Student',
+                  ),
                   items: rosterData.roster.map((s) {
-                    final roll = s.rollNumber != null ? '[${s.rollNumber}] ' : '';
+                    final roll = s.rollNumber != null
+                        ? '[${s.rollNumber}] '
+                        : '';
                     return DropdownMenuItem(
                       value: s.studentEnrollmentId,
                       child: Text(
@@ -372,17 +421,32 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                       ),
                     );
                   }).toList(),
-                  onChanged: (val) => setDialogState(() => selectedEnrollmentId = val),
+                  onChanged: (val) =>
+                      setDialogState(() => selectedEnrollmentId = val),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<StudentMarkStatus>(
                   value: proposedStatus,
-                  decoration: const InputDecoration(labelText: 'Proposed Status'),
+                  decoration: const InputDecoration(
+                    labelText: 'Proposed Status',
+                  ),
                   items: const [
-                    DropdownMenuItem(value: StudentMarkStatus.present, child: Text('Present')),
-                    DropdownMenuItem(value: StudentMarkStatus.absent, child: Text('Absent')),
-                    DropdownMenuItem(value: StudentMarkStatus.exempted, child: Text('Exempted')),
-                    DropdownMenuItem(value: StudentMarkStatus.notAppeared, child: Text('Not Appeared')),
+                    DropdownMenuItem(
+                      value: StudentMarkStatus.present,
+                      child: Text('Present'),
+                    ),
+                    DropdownMenuItem(
+                      value: StudentMarkStatus.absent,
+                      child: Text('Absent'),
+                    ),
+                    DropdownMenuItem(
+                      value: StudentMarkStatus.exempted,
+                      child: Text('Exempted'),
+                    ),
+                    DropdownMenuItem(
+                      value: StudentMarkStatus.notAppeared,
+                      child: Text('Not Appeared'),
+                    ),
                   ],
                   onChanged: (val) {
                     if (val != null) setDialogState(() => proposedStatus = val);
@@ -392,7 +456,9 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                   const SizedBox(height: 12),
                   TextField(
                     controller: markController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     decoration: const InputDecoration(
                       labelText: 'Proposed Marks',
                       hintText: 'e.g. 22.5',
@@ -405,7 +471,8 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                   maxLines: 3,
                   decoration: const InputDecoration(
                     labelText: 'Reason for Correction *',
-                    hintText: 'e.g. Evaluator recalculation error on question 3',
+                    hintText:
+                        'e.g. Evaluator recalculation error on question 3',
                   ),
                 ),
               ],
@@ -417,19 +484,27 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AcadexColors.primary,
+              ),
               onPressed: () {
                 if (selectedEnrollmentId == null) {
                   _showToast('Please select a student.', isError: true);
                   return;
                 }
                 if (reasonController.text.trim().length < 5) {
-                  _showToast('Please provide a descriptive reason (at least 5 characters).', isError: true);
+                  _showToast(
+                    'Please provide a descriptive reason (at least 5 characters).',
+                    isError: true,
+                  );
                   return;
                 }
                 Navigator.of(ctx).pop(true);
               },
-              child: const Text('Submit Request', style: TextStyle(color: Colors.white)),
+              child: const Text(
+                'Submit Request',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),
@@ -440,11 +515,15 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
 
     setState(() => _isSaving = true);
     try {
-      final double? markVal = proposedStatus == StudentMarkStatus.present && markController.text.trim().isNotEmpty
+      final double? markVal =
+          proposedStatus == StudentMarkStatus.present &&
+              markController.text.trim().isNotEmpty
           ? double.tryParse(markController.text.trim())
           : null;
 
-      await ref.read(assessmentRepositoryProvider).requestCorrection(
+      await ref
+          .read(assessmentRepositoryProvider)
+          .requestCorrection(
             assessmentId: widget.assessmentId!,
             studentEnrollmentId: selectedEnrollmentId!,
             reason: reasonController.text.trim(),
@@ -474,7 +553,8 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
 
     final targetSectionId = prefillSectionId ?? widget.sectionId;
     final targetSubjectId = prefillSubjectId ?? widget.subjectId;
-    final targetAssignmentId = prefillFacultyAssignmentId ?? widget.facultyAssignmentId;
+    final targetAssignmentId =
+        prefillFacultyAssignmentId ?? widget.facultyAssignmentId;
     final targetYearId = prefillAcademicYearId ?? widget.academicYearId;
 
     final created = await showDialog<bool>(
@@ -511,7 +591,9 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                     Expanded(
                       child: TextField(
                         controller: maxMarksController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         decoration: const InputDecoration(
                           labelText: 'Max Marks *',
                           hintText: 'e.g. 25',
@@ -522,7 +604,9 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                     Expanded(
                       child: TextField(
                         controller: passMarksController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         decoration: const InputDecoration(
                           labelText: 'Pass Marks',
                           hintText: 'e.g. 10',
@@ -538,11 +622,20 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Historical Exam Date', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                        const Text(
+                          'Historical Exam Date',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         const SizedBox(height: 4),
                         Text(
                           '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}',
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
@@ -578,13 +671,18 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
               ),
               onPressed: () {
                 final title = titleController.text.trim();
-                final maxMarks = double.tryParse(maxMarksController.text.trim());
+                final maxMarks = double.tryParse(
+                  maxMarksController.text.trim(),
+                );
                 if (title.isEmpty) {
                   _showToast('Assessment title is required.', isError: true);
                   return;
                 }
                 if (maxMarks == null || maxMarks <= 0) {
-                  _showToast('Maximum marks must be greater than zero.', isError: true);
+                  _showToast(
+                    'Maximum marks must be greater than zero.',
+                    isError: true,
+                  );
                   return;
                 }
                 Navigator.of(ctx).pop(true);
@@ -604,19 +702,21 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
       final maxMarks = double.parse(maxMarksController.text.trim());
       final passMarks = double.tryParse(passMarksController.text.trim()) ?? 0.0;
 
-      final newAssessment = await ref.read(assessmentRepositoryProvider).createAssessment(
-        title: title,
-        maximumMarks: maxMarks,
-        passMarks: passMarks,
-        assessmentDate: selectedDate,
-        sectionId: targetSectionId,
-        subjectId: targetSubjectId,
-        facultyAssignmentId: targetAssignmentId,
-        academicYearId: targetYearId,
-        sourceType: 'HISTORICAL_MANUAL',
-        isHistorical: true,
-        assessmentType: 'INTERNAL_EXAM',
-      );
+      final newAssessment = await ref
+          .read(assessmentRepositoryProvider)
+          .createAssessment(
+            title: title,
+            maximumMarks: maxMarks,
+            passMarks: passMarks,
+            assessmentDate: selectedDate,
+            sectionId: targetSectionId,
+            subjectId: targetSubjectId,
+            facultyAssignmentId: targetAssignmentId,
+            academicYearId: targetYearId,
+            sourceType: 'HISTORICAL_MANUAL',
+            isHistorical: true,
+            assessmentType: 'INTERNAL_EXAM',
+          );
 
       _showToast('Historical unit test "$title" created successfully.');
       if (mounted && newAssessment.id != null) {
@@ -657,23 +757,31 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
 
       for (final comp in contextData.components) {
         final val = entry.componentMarks[comp.key];
-        final text = val != null ? (val % 1 == 0 ? val.toInt().toString() : val.toString()) : '';
+        final text = val != null
+            ? (val % 1 == 0 ? val.toInt().toString() : val.toString())
+            : '';
         final ctrl = TextEditingController(text: text);
         sMap[comp.key] = ctrl;
         if (val != null) total += val;
       }
       _legacyControllers[entry.studentId] = sMap;
-      _legacyRemarksControllers[entry.studentId] = TextEditingController(text: entry.remarks ?? '');
+      _legacyRemarksControllers[entry.studentId] = TextEditingController(
+        text: entry.remarks ?? '',
+      );
       _legacyStudentTotals[entry.studentId] = total;
       _legacyStudentStatuses[entry.studentId] = entry.status;
     }
-    if (_activeMobileComponentKey == null && contextData.components.isNotEmpty) {
+    if (_activeMobileComponentKey == null &&
+        contextData.components.isNotEmpty) {
       _activeMobileComponentKey = contextData.components.first.key;
     }
     _isLegacyInitialized = true;
   }
 
-  void _recalculateLegacyTotal(String studentId, List<AssessmentComponentModel> comps) {
+  void _recalculateLegacyTotal(
+    String studentId,
+    List<AssessmentComponentModel> comps,
+  ) {
     final sMap = _legacyControllers[studentId];
     if (sMap == null) return;
 
@@ -690,7 +798,9 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
     });
   }
 
-  List<StudentAssessmentEntryModel> _buildLegacyEntries(AssessmentContextModel data) {
+  List<StudentAssessmentEntryModel> _buildLegacyEntries(
+    AssessmentContextModel data,
+  ) {
     final entries = <StudentAssessmentEntryModel>[];
     final originalEntries = data.assessment?.entries ?? [];
     final originalMap = {for (final e in originalEntries) e.studentId: e};
@@ -721,8 +831,11 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
           admissionNumber: orig?.admissionNumber,
           componentMarks: marks,
           totalMarks: MathUtils.round1(total),
-          status: _legacyStudentStatuses[sId] ??
-              (marks.values.any((m) => m != null) ? StudentMarkStatus.entered : StudentMarkStatus.notEntered),
+          status:
+              _legacyStudentStatuses[sId] ??
+              (marks.values.any((m) => m != null)
+                  ? StudentMarkStatus.entered
+                  : StudentMarkStatus.notEntered),
           remarks: _legacyRemarksControllers[sId]?.text.trim(),
         ),
       );
@@ -731,16 +844,20 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
   }
 
   String? _resolveSectionId(AssessmentContextModel? data) =>
-      widget.sectionId ?? (data?.section['id']?.toString() ?? data?.section['_id']?.toString());
+      widget.sectionId ??
+      (data?.section['id']?.toString() ?? data?.section['_id']?.toString());
 
   String? _resolveSubjectId(AssessmentContextModel? data) =>
-      widget.subjectId ?? (data?.subject['id']?.toString() ?? data?.subject['_id']?.toString());
+      widget.subjectId ??
+      (data?.subject['id']?.toString() ?? data?.subject['_id']?.toString());
 
   Future<void> _handleSaveLegacyDraft(AssessmentContextModel data) async {
     setState(() => _isSaving = true);
     try {
       final entries = _buildLegacyEntries(data);
-      await ref.read(assessmentRepositoryProvider).saveDraftMarks(
+      await ref
+          .read(assessmentRepositoryProvider)
+          .saveDraftMarks(
             assessmentId: widget.assessmentId ?? data.assessment?.id,
             sectionId: _resolveSectionId(data),
             subjectId: _resolveSubjectId(data),
@@ -761,14 +878,18 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
     setState(() => _isSaving = true);
     try {
       final entries = _buildLegacyEntries(data);
-      await ref.read(assessmentRepositoryProvider).saveDraftMarks(
+      await ref
+          .read(assessmentRepositoryProvider)
+          .saveDraftMarks(
             assessmentId: widget.assessmentId ?? data.assessment?.id,
             sectionId: _resolveSectionId(data),
             subjectId: _resolveSubjectId(data),
             entries: entries,
           );
 
-      await ref.read(assessmentRepositoryProvider).reviewMarks(
+      await ref
+          .read(assessmentRepositoryProvider)
+          .reviewMarks(
             assessmentId: widget.assessmentId ?? data.assessment?.id,
             sectionId: _resolveSectionId(data),
             subjectId: _resolveSubjectId(data),
@@ -797,9 +918,14 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.primary,
+            ),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Publish & Lock', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Publish & Lock',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -810,14 +936,18 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
     setState(() => _isSaving = true);
     try {
       final entries = _buildLegacyEntries(data);
-      await ref.read(assessmentRepositoryProvider).saveDraftMarks(
+      await ref
+          .read(assessmentRepositoryProvider)
+          .saveDraftMarks(
             assessmentId: widget.assessmentId ?? data.assessment?.id,
             sectionId: _resolveSectionId(data),
             subjectId: _resolveSubjectId(data),
             entries: entries,
           );
 
-      await ref.read(assessmentRepositoryProvider).publishMarks(
+      await ref
+          .read(assessmentRepositoryProvider)
+          .publishMarks(
             assessmentId: widget.assessmentId ?? data.assessment?.id,
             sectionId: _resolveSectionId(data),
             subjectId: _resolveSubjectId(data),
@@ -841,26 +971,36 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final authState = ref.watch(authProvider);
 
-    final isHODOrAdmin = authState is AuthAuthenticated &&
+    final isHODOrAdmin =
+        authState is AuthAuthenticated &&
         (authState.user.role == AppRole.hod ||
             authState.user.role == AppRole.collegeAdmin ||
             authState.user.role == AppRole.superAdmin);
 
     // If assessmentId is present, prioritize canonical Assessment Roster flow
     if (widget.assessmentId != null && widget.assessmentId!.isNotEmpty) {
-      final rosterAsync = ref.watch(assessmentRosterProvider(widget.assessmentId!));
+      final rosterAsync = ref.watch(
+        assessmentRosterProvider(widget.assessmentId!),
+      );
 
       return Scaffold(
         backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
         appBar: AppBar(
-          backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+          backgroundColor: isDark
+              ? AcadexColors.darkSurface
+              : AcadexColors.surface,
           leading: IconButton(
-            icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+            icon: Icon(
+              LucideIcons.arrowLeft,
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ),
             onPressed: () => context.safePop(fallbackRoute: '/my-assignments'),
           ),
           title: Text(
             'Marks Entry Register',
-            style: AcadexTypography.title(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+            style: AcadexTypography.title(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ),
           ),
           actions: [
             if (!isHODOrAdmin)
@@ -885,7 +1025,9 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
           ],
         ),
         body: rosterAsync.when(
-          loading: () => const AcadexLoadingState(message: 'Loading enrolled students marks roster...'),
+          loading: () => const AcadexLoadingState(
+            message: 'Loading enrolled students marks roster...',
+          ),
           error: (err, _) => Center(
             child: AcadexErrorState(
               message: err.toString(),
@@ -925,19 +1067,28 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
     final status = InternalAssessmentStatus.fromValue(statusStr);
     final maxMarks = (assessment['maximumMarks'] as num?)?.toDouble() ?? 25.0;
 
-    final subject = assessment['subjectId'] is Map ? assessment['subjectId'] as Map : {};
+    final subject = assessment['subjectId'] is Map
+        ? assessment['subjectId'] as Map
+        : {};
     final subjectName = subject['name']?.toString() ?? 'Subject';
     final subjectCode = subject['code']?.toString() ?? '';
 
-    final section = assessment['sectionId'] is Map ? assessment['sectionId'] as Map : {};
+    final section = assessment['sectionId'] is Map
+        ? assessment['sectionId'] as Map
+        : {};
     final sectionName = section['name']?.toString() ?? 'Section';
 
-    final faculty = assessment['facultyId'] is Map ? assessment['facultyId'] as Map : {};
+    final faculty = assessment['facultyId'] is Map
+        ? assessment['facultyId'] as Map
+        : {};
     final facultyName = faculty['name']?.toString() ?? 'Assigned Faculty';
 
-    final schedule = assessment['schedule'] is Map ? assessment['schedule'] as Map : null;
+    final schedule = assessment['schedule'] is Map
+        ? assessment['schedule'] as Map
+        : null;
 
-    final isLocked = status == InternalAssessmentStatus.locked ||
+    final isLocked =
+        status == InternalAssessmentStatus.locked ||
         status == InternalAssessmentStatus.published ||
         status == InternalAssessmentStatus.closed;
     final isSubmitted = status == InternalAssessmentStatus.submitted;
@@ -986,13 +1137,22 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                             runSpacing: 4,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AcadexColors.primary.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                                  color: AcadexColors.primary.withValues(
+                                    alpha: 0.12,
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    AcadexRadius.xs,
+                                  ),
                                 ),
                                 child: Text(
-                                  subjectCode.isNotEmpty ? subjectCode : 'ASSESSMENT',
+                                  subjectCode.isNotEmpty
+                                      ? subjectCode
+                                      : 'ASSESSMENT',
                                   style: const TextStyle(
                                     color: AcadexColors.primary,
                                     fontWeight: FontWeight.bold,
@@ -1001,33 +1161,64 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
-                                  borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                                  color: isDark
+                                      ? AcadexColors.darkSurfaceCard
+                                      : AcadexColors.canvasSoft,
+                                  borderRadius: BorderRadius.circular(
+                                    AcadexRadius.xs,
+                                  ),
                                 ),
                                 child: Text(
-                                  sectionName.toLowerCase().startsWith('section') ? sectionName : 'Section $sectionName',
-                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                                  sectionName.toLowerCase().startsWith(
+                                        'section',
+                                      )
+                                      ? sectionName
+                                      : 'Section $sectionName',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
-                                  borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                                  color: isDark
+                                      ? AcadexColors.darkSurfaceCard
+                                      : AcadexColors.canvasSoft,
+                                  borderRadius: BorderRadius.circular(
+                                    AcadexRadius.xs,
+                                  ),
                                 ),
                                 child: Text(
                                   'Max: ${maxMarks.toInt()} Marks',
-                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                               if (_hasUnsavedChanges)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: AcadexColors.accentOrange.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                                    color: AcadexColors.accentOrange.withValues(
+                                      alpha: 0.15,
+                                    ),
+                                    borderRadius: BorderRadius.circular(
+                                      AcadexRadius.xs,
+                                    ),
                                   ),
                                   child: const Text(
                                     '● Unsaved Changes',
@@ -1038,18 +1229,35 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                                     ),
                                   ),
                                 ),
-                              if ((assessment['sourceType']?.toString() ?? '') == 'HISTORICAL_MANUAL')
+                              if ((assessment['sourceType']?.toString() ??
+                                      '') ==
+                                  'HISTORICAL_MANUAL')
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: AcadexColors.warning.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(AcadexRadius.xs),
-                                    border: Border.all(color: AcadexColors.warning.withValues(alpha: 0.4)),
+                                    color: AcadexColors.warning.withValues(
+                                      alpha: 0.15,
+                                    ),
+                                    borderRadius: BorderRadius.circular(
+                                      AcadexRadius.xs,
+                                    ),
+                                    border: Border.all(
+                                      color: AcadexColors.warning.withValues(
+                                        alpha: 0.4,
+                                      ),
+                                    ),
                                   ),
                                   child: const Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(LucideIcons.history, size: 12, color: AcadexColors.warning),
+                                      Icon(
+                                        LucideIcons.history,
+                                        size: 12,
+                                        color: AcadexColors.warning,
+                                      ),
                                       SizedBox(width: 4),
                                       Text(
                                         'HISTORICAL UNIT TEST',
@@ -1067,12 +1275,18 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                           const SizedBox(height: 8),
                           Text(
                             title,
-                            style: AcadexTypography.heading2(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                            style: AcadexTypography.heading2(
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
+                            ),
                           ),
                           Text(
                             '$subjectName • Assigned Faculty: $facultyName',
                             style: AcadexTypography.caption(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
                             ),
                           ),
                           if (assessment['assessmentDate'] != null)
@@ -1080,7 +1294,10 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                               padding: const EdgeInsets.only(top: 4),
                               child: Text(
                                 'Exam Date: ${DateTime.tryParse(assessment['assessmentDate'].toString())?.toLocal().toString().split(' ')[0] ?? assessment['assessmentDate']}',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                           if (schedule != null)
@@ -1088,7 +1305,10 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                               padding: const EdgeInsets.only(top: 4),
                               child: Text(
                                 'Scheduled: ${schedule['dateString'] ?? ''} (${schedule['startTime'] ?? ''} - ${schedule['endTime'] ?? ''})',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                         ],
@@ -1102,20 +1322,33 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                 if (isHODOrAdmin) ...[
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: AcadexColors.info.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(AcadexRadius.xs),
-                      border: Border.all(color: AcadexColors.info.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: AcadexColors.info.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(LucideIcons.shieldAlert, size: 16, color: AcadexColors.info),
+                        const Icon(
+                          LucideIcons.shieldAlert,
+                          size: 16,
+                          color: AcadexColors.info,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Administrative Review Mode: Marks are owned by teaching faculty ($facultyName). Editing is restricted.',
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AcadexColors.info),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AcadexColors.info,
+                            ),
                           ),
                         ),
                       ],
@@ -1136,16 +1369,27 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                     // Exam completion action if scheduled
                     if (isScheduled && !isHODOrAdmin)
                       ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.accentPurple),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AcadexColors.accentPurple,
+                        ),
                         onPressed: _isSaving ? null : _handleCompleteAssessment,
-                        icon: const Icon(LucideIcons.checkCircle2, size: 16, color: Colors.white),
-                        label: const Text('Complete Exam & Open Entry', style: TextStyle(color: Colors.white)),
+                        icon: const Icon(
+                          LucideIcons.checkCircle2,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                        label: const Text(
+                          'Complete Exam & Open Entry',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
 
                     // Faculty Editing buttons (only if not locked, not submitted, and not HOD/Admin)
                     if (!isLocked && !isSubmitted && !isHODOrAdmin) ...[
                       OutlinedButton.icon(
-                        onPressed: _isSaving ? null : () => _handleSaveRosterDraft(rosterData),
+                        onPressed: _isSaving
+                            ? null
+                            : () => _handleSaveRosterDraft(rosterData),
                         icon: const Icon(LucideIcons.save, size: 16),
                         label: const Text('Save Draft'),
                       ),
@@ -1154,7 +1398,9 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                           backgroundColor: AcadexColors.primary,
                           foregroundColor: Colors.white,
                         ),
-                        onPressed: _isSaving ? null : () => _handleSubmitRoster(rosterData),
+                        onPressed: _isSaving
+                            ? null
+                            : () => _handleSubmitRoster(rosterData),
                         icon: const Icon(LucideIcons.send, size: 16),
                         label: const Text('Submit Marks'),
                       ),
@@ -1165,25 +1411,31 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                         onPressed: _isSaving
                             ? null
                             : () => _handleCreateHistoricalAssessmentDialog(
-                                  prefillSectionId: (assessment['sectionId'] is Map
-                                          ? assessment['sectionId']['_id'] ?? assessment['sectionId']['id']
-                                          : assessment['sectionId'])
-                                      ?.toString(),
-                                  prefillSubjectId: (assessment['subjectId'] is Map
-                                          ? assessment['subjectId']['_id'] ?? assessment['subjectId']['id']
-                                          : assessment['subjectId'])
-                                      ?.toString(),
-                                  prefillFacultyAssignmentId: (assessment['facultyAssignmentId'] is Map
-                                          ? assessment['facultyAssignmentId']['_id'] ??
-                                              assessment['facultyAssignmentId']['id']
-                                          : assessment['facultyAssignmentId'])
-                                      ?.toString(),
-                                  prefillAcademicYearId: (assessment['academicYearId'] is Map
-                                          ? assessment['academicYearId']['_id'] ??
-                                              assessment['academicYearId']['id']
-                                          : assessment['academicYearId'])
-                                      ?.toString(),
-                                ),
+                                prefillSectionId:
+                                    (assessment['sectionId'] is Map
+                                            ? assessment['sectionId']['_id'] ??
+                                                  assessment['sectionId']['id']
+                                            : assessment['sectionId'])
+                                        ?.toString(),
+                                prefillSubjectId:
+                                    (assessment['subjectId'] is Map
+                                            ? assessment['subjectId']['_id'] ??
+                                                  assessment['subjectId']['id']
+                                            : assessment['subjectId'])
+                                        ?.toString(),
+                                prefillFacultyAssignmentId:
+                                    (assessment['facultyAssignmentId'] is Map
+                                            ? assessment['facultyAssignmentId']['_id'] ??
+                                                  assessment['facultyAssignmentId']['id']
+                                            : assessment['facultyAssignmentId'])
+                                        ?.toString(),
+                                prefillAcademicYearId:
+                                    (assessment['academicYearId'] is Map
+                                            ? assessment['academicYearId']['_id'] ??
+                                                  assessment['academicYearId']['id']
+                                            : assessment['academicYearId'])
+                                        ?.toString(),
+                              ),
                         icon: const Icon(LucideIcons.history, size: 16),
                         label: const Text('+ Historical Unit Test'),
                       ),
@@ -1193,11 +1445,19 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(LucideIcons.lock, size: 16, color: AcadexColors.success),
+                          const Icon(
+                            LucideIcons.lock,
+                            size: 16,
+                            color: AcadexColors.success,
+                          ),
                           const SizedBox(width: 6),
                           Text(
-                            isSubmitted ? 'Marks submitted (Read-only)' : 'Assessment locked against direct edits',
-                            style: AcadexTypography.body(color: AcadexColors.success).copyWith(fontWeight: FontWeight.w600),
+                            isSubmitted
+                                ? 'Marks submitted (Read-only)'
+                                : 'Assessment locked against direct edits',
+                            style: AcadexTypography.body(
+                              color: AcadexColors.success,
+                            ).copyWith(fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
@@ -1206,7 +1466,9 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                           backgroundColor: AcadexColors.accentOrange,
                           foregroundColor: Colors.white,
                         ),
-                        onPressed: _isSaving ? null : () => _handleRequestCorrectionDialog(rosterData),
+                        onPressed: _isSaving
+                            ? null
+                            : () => _handleRequestCorrectionDialog(rosterData),
                         icon: const Icon(LucideIcons.filePenLine, size: 16),
                         label: const Text('Request Correction'),
                       ),
@@ -1223,24 +1485,59 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildStatPill('Total Enrolled', '${summary.totalStudents}', LucideIcons.users, isDark),
+                _buildStatPill(
+                  'Total Enrolled',
+                  '${summary.totalStudents}',
+                  LucideIcons.users,
+                  isDark,
+                ),
                 const SizedBox(width: 8),
-                _buildStatPill('Entered', '${summary.enteredCount}', LucideIcons.check, isDark, color: AcadexColors.primary),
+                _buildStatPill(
+                  'Entered',
+                  '${summary.enteredCount}',
+                  LucideIcons.check,
+                  isDark,
+                  color: AcadexColors.primary,
+                ),
                 const SizedBox(width: 8),
-                _buildStatPill('Present', '${summary.presentCount}', LucideIcons.userCheck, isDark, color: AcadexColors.success),
+                _buildStatPill(
+                  'Present',
+                  '${summary.presentCount}',
+                  LucideIcons.userCheck,
+                  isDark,
+                  color: AcadexColors.success,
+                ),
                 const SizedBox(width: 8),
-                _buildStatPill('Absent', '${summary.absentCount}', LucideIcons.userX, isDark, color: AcadexColors.accentOrange),
+                _buildStatPill(
+                  'Absent',
+                  '${summary.absentCount}',
+                  LucideIcons.userX,
+                  isDark,
+                  color: AcadexColors.accentOrange,
+                ),
                 const SizedBox(width: 8),
-                _buildStatPill('Exempted', '${summary.exemptedCount}', LucideIcons.shieldCheck, isDark),
+                _buildStatPill(
+                  'Exempted',
+                  '${summary.exemptedCount}',
+                  LucideIcons.shieldCheck,
+                  isDark,
+                ),
                 const SizedBox(width: 8),
-                _buildStatPill('Not Appeared', '${summary.notAppearedCount}', LucideIcons.clock, isDark),
+                _buildStatPill(
+                  'Not Appeared',
+                  '${summary.notAppearedCount}',
+                  LucideIcons.clock,
+                  isDark,
+                ),
                 const SizedBox(width: 8),
                 _buildStatPill(
                   'Unresolved',
                   '${summary.unresolvedCount}',
                   LucideIcons.alertCircle,
                   isDark,
-                  color: summary.unresolvedCount > 0 ? AcadexColors.error : AcadexColors.inkMuted,
+                  color: summary.unresolvedCount > 0
+                      ? AcadexColors.error
+                      : AcadexColors.inkMuted,
                 ),
               ],
             ),
@@ -1257,14 +1554,20 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                     decoration: InputDecoration(
                       hintText: 'Search by student name, roll number...',
                       prefixIcon: const Icon(LucideIcons.search, size: 18),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                      ),
                       isDense: true,
                       filled: true,
-                      fillColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                      fillColor: isDark
+                          ? AcadexColors.darkSurfaceCard
+                          : Colors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(AcadexRadius.xs),
                         borderSide: BorderSide(
-                          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                          color: isDark
+                              ? AcadexColors.darkHairline
+                              : AcadexColors.hairline,
                         ),
                       ),
                     ),
@@ -1292,7 +1595,9 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                     color: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
                     borderRadius: BorderRadius.circular(AcadexRadius.xs),
                     border: Border.all(
-                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                      color: isDark
+                          ? AcadexColors.darkHairline
+                          : AcadexColors.hairline,
                     ),
                   ),
                   child: Row(
@@ -1300,8 +1605,13 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                       const Icon(LucideIcons.arrowUpDown, size: 16),
                       const SizedBox(width: 6),
                       Text(
-                        _sortBy == 'rollNumber' ? 'Sort: Roll No.' : 'Sort: Name',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        _sortBy == 'rollNumber'
+                            ? 'Sort: Roll No.'
+                            : 'Sort: Name',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const SizedBox(width: 4),
                       Icon(
@@ -1313,8 +1623,14 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                   ),
                 ),
                 itemBuilder: (context) => [
-                  const PopupMenuItem(value: 'rollNumber', child: Text('Roll Number')),
-                  const PopupMenuItem(value: 'studentName', child: Text('Student Name')),
+                  const PopupMenuItem(
+                    value: 'rollNumber',
+                    child: Text('Roll Number'),
+                  ),
+                  const PopupMenuItem(
+                    value: 'studentName',
+                    child: Text('Student Name'),
+                  ),
                 ],
               ),
             ],
@@ -1328,41 +1644,70 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
               child: Center(
                 child: AcadexEmptyState(
                   title: 'No Matching Students',
-                  subtitle: 'No student enrolled in this section matches your search criteria.',
+                  subtitle:
+                      'No student enrolled in this section matches your search criteria.',
                   icon: LucideIcons.users,
                 ),
               ),
             )
           else if (isMobile)
-            _buildCanonicalMobileList(filteredRoster, isDark, isLocked || isSubmitted || isHODOrAdmin, maxMarks)
+            _buildCanonicalMobileList(
+              filteredRoster,
+              isDark,
+              isLocked || isSubmitted || isHODOrAdmin,
+              maxMarks,
+            )
           else
-            _buildCanonicalDesktopTable(filteredRoster, isDark, isLocked || isSubmitted || isHODOrAdmin, maxMarks),
+            _buildCanonicalDesktopTable(
+              filteredRoster,
+              isDark,
+              isLocked || isSubmitted || isHODOrAdmin,
+              maxMarks,
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildStatPill(String label, String value, IconData icon, bool isDark, {Color? color}) {
+  Widget _buildStatPill(
+    String label,
+    String value,
+    IconData icon,
+    bool isDark, {
+    Color? color,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
         borderRadius: BorderRadius.circular(AcadexRadius.xs),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: color ?? (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted)),
+          Icon(
+            icon,
+            size: 14,
+            color:
+                color ??
+                (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+          ),
           const SizedBox(width: 6),
-          Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+          ),
           const SizedBox(width: 6),
           Text(
             value,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: color ?? (isDark ? AcadexColors.darkInk : AcadexColors.ink),
+              color:
+                  color ?? (isDark ? AcadexColors.darkInk : AcadexColors.ink),
             ),
           ),
         ],
@@ -1389,23 +1734,40 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                 child: DataTable(
                   columnSpacing: 24,
                   headingRowColor: WidgetStateProperty.all(
-                    isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
+                    isDark
+                        ? AcadexColors.darkSurfaceCard
+                        : AcadexColors.canvasSoft,
                   ),
                   columns: [
                     const DataColumn(
-                      label: Text('Roll No.', style: TextStyle(fontWeight: FontWeight.bold)),
+                      label: Text(
+                        'Roll No.',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                     const DataColumn(
-                      label: Text('Student Name', style: TextStyle(fontWeight: FontWeight.bold)),
+                      label: Text(
+                        'Student Name',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                     const DataColumn(
-                      label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
+                      label: Text(
+                        'Status',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                     DataColumn(
-                      label: Text('Marks (Max: ${maxMarks.toInt()})', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      label: Text(
+                        'Marks (Max: ${maxMarks.toInt()})',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                     const DataColumn(
-                      label: Text('Remarks', style: TextStyle(fontWeight: FontWeight.bold)),
+                      label: Text(
+                        'Remarks',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ],
                   rows: roster.asMap().entries.map((entryIndex) {
@@ -1414,13 +1776,15 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                     final enrollmentId = item.studentEnrollmentId;
                     final markCtrl = _marksControllers[enrollmentId];
                     final remarksCtrl = _remarksControllers[enrollmentId];
-                    final currentStatus = _statuses[enrollmentId] ?? StudentMarkStatus.notEntered;
+                    final currentStatus =
+                        _statuses[enrollmentId] ?? StudentMarkStatus.notEntered;
                     final focusNode = _focusNodes[enrollmentId];
 
                     // Check for invalid mark in local state
                     final markText = markCtrl?.text.trim() ?? '';
                     final markNum = double.tryParse(markText);
-                    final isInvalid = currentStatus == StudentMarkStatus.present &&
+                    final isInvalid =
+                        currentStatus == StudentMarkStatus.present &&
                         markText.isNotEmpty &&
                         (markNum == null || markNum < 0 || markNum > maxMarks);
 
@@ -1429,7 +1793,10 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                         DataCell(
                           Text(
                             item.rollNumber ?? '—',
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                         DataCell(
@@ -1439,13 +1806,18 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                             children: [
                               Text(
                                 item.studentName,
-                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
                               ),
                               if (item.admissionNumber != null)
                                 Text(
                                   item.admissionNumber!,
                                   style: AcadexTypography.caption(
-                                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
                                   ),
                                 ),
                             ],
@@ -1455,7 +1827,8 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                           _buildStatusSelector(
                             currentStatus: currentStatus,
                             isReadOnly: isReadOnly,
-                            onChanged: (newStatus) => _onStatusChanged(enrollmentId, newStatus),
+                            onChanged: (newStatus) =>
+                                _onStatusChanged(enrollmentId, newStatus),
                           ),
                         ),
                         DataCell(
@@ -1464,45 +1837,77 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                             child: TextFormField(
                               controller: markCtrl,
                               focusNode: focusNode,
-                              enabled: !isReadOnly && currentStatus == StudentMarkStatus.present,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              enabled:
+                                  !isReadOnly &&
+                                  currentStatus == StudentMarkStatus.present,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
                               textAlign: TextAlign.center,
-                              textInputAction: index < roster.length - 1 ? TextInputAction.next : TextInputAction.done,
+                              textInputAction: index < roster.length - 1
+                                  ? TextInputAction.next
+                                  : TextInputAction.done,
                               onFieldSubmitted: (_) {
                                 if (index < roster.length - 1) {
-                                  _focusNodes[roster[index + 1].studentEnrollmentId]?.requestFocus();
+                                  _focusNodes[roster[index + 1]
+                                          .studentEnrollmentId]
+                                      ?.requestFocus();
                                 }
                               },
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                color: isInvalid ? AcadexColors.error : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                                color: isInvalid
+                                    ? AcadexColors.error
+                                    : (isDark
+                                          ? AcadexColors.darkInk
+                                          : AcadexColors.ink),
                               ),
                               decoration: InputDecoration(
                                 isDense: true,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 8,
+                                ),
                                 filled: true,
-                                fillColor: isReadOnly || currentStatus != StudentMarkStatus.present
-                                    ? (isDark ? Colors.black12 : Colors.grey.shade100)
-                                    : (isDark ? AcadexColors.darkSurfaceCard : Colors.white),
+                                fillColor:
+                                    isReadOnly ||
+                                        currentStatus !=
+                                            StudentMarkStatus.present
+                                    ? (isDark
+                                          ? Colors.black12
+                                          : Colors.grey.shade100)
+                                    : (isDark
+                                          ? AcadexColors.darkSurfaceCard
+                                          : Colors.white),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                                  borderRadius: BorderRadius.circular(
+                                    AcadexRadius.xs,
+                                  ),
                                   borderSide: BorderSide(
                                     color: isInvalid
                                         ? AcadexColors.error
-                                        : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                                        : (isDark
+                                              ? AcadexColors.darkHairline
+                                              : AcadexColors.hairline),
                                   ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                                  borderRadius: BorderRadius.circular(
+                                    AcadexRadius.xs,
+                                  ),
                                   borderSide: BorderSide(
                                     color: isInvalid
                                         ? AcadexColors.error
-                                        : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                                        : (isDark
+                                              ? AcadexColors.darkHairline
+                                              : AcadexColors.hairline),
                                   ),
                                 ),
                               ),
-                              onChanged: (_) => setState(() => _hasUnsavedChanges = true),
+                              onChanged: (_) =>
+                                  setState(() => _hasUnsavedChanges = true),
                             ),
                           ),
                         ),
@@ -1515,17 +1920,27 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                               style: const TextStyle(fontSize: 12),
                               decoration: InputDecoration(
                                 isDense: true,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 8,
+                                ),
                                 hintText: 'Optional remark',
                                 filled: true,
                                 fillColor: isReadOnly
-                                    ? (isDark ? Colors.black12 : Colors.grey.shade100)
-                                    : (isDark ? AcadexColors.darkSurfaceCard : Colors.white),
+                                    ? (isDark
+                                          ? Colors.black12
+                                          : Colors.grey.shade100)
+                                    : (isDark
+                                          ? AcadexColors.darkSurfaceCard
+                                          : Colors.white),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                                  borderRadius: BorderRadius.circular(
+                                    AcadexRadius.xs,
+                                  ),
                                 ),
                               ),
-                              onChanged: (_) => setState(() => _hasUnsavedChanges = true),
+                              onChanged: (_) =>
+                                  setState(() => _hasUnsavedChanges = true),
                             ),
                           ),
                         ),
@@ -1557,11 +1972,13 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
         final enrollmentId = item.studentEnrollmentId;
         final markCtrl = _marksControllers[enrollmentId];
         final remarksCtrl = _remarksControllers[enrollmentId];
-        final currentStatus = _statuses[enrollmentId] ?? StudentMarkStatus.notEntered;
+        final currentStatus =
+            _statuses[enrollmentId] ?? StudentMarkStatus.notEntered;
 
         final markText = markCtrl?.text.trim() ?? '';
         final markNum = double.tryParse(markText);
-        final isInvalid = currentStatus == StudentMarkStatus.present &&
+        final isInvalid =
+            currentStatus == StudentMarkStatus.present &&
             markText.isNotEmpty &&
             (markNum == null || markNum < 0 || markNum > maxMarks);
 
@@ -1571,7 +1988,11 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
             color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
             borderRadius: AcadexRadius.borderRadiusMd,
             border: Border.all(
-              color: isInvalid ? AcadexColors.error : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+              color: isInvalid
+                  ? AcadexColors.error
+                  : (isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline),
             ),
           ),
           child: Column(
@@ -1589,13 +2010,19 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ),
                         ),
                         Text(
-                          item.rollNumber != null ? 'Roll: ${item.rollNumber}' : 'Roll: —',
+                          item.rollNumber != null
+                              ? 'Roll: ${item.rollNumber}'
+                              : 'Roll: —',
                           style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                         ),
                       ],
@@ -1604,7 +2031,8 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                   _buildStatusSelector(
                     currentStatus: currentStatus,
                     isReadOnly: isReadOnly,
-                    onChanged: (newStatus) => _onStatusChanged(enrollmentId, newStatus),
+                    onChanged: (newStatus) =>
+                        _onStatusChanged(enrollmentId, newStatus),
                   ),
                 ],
               ),
@@ -1613,31 +2041,53 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                 children: [
                   Text(
                     'Marks: ',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ),
                   ),
                   SizedBox(
                     width: 70,
                     height: 38,
                     child: TextFormField(
                       controller: markCtrl,
-                      enabled: !isReadOnly && currentStatus == StudentMarkStatus.present,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      enabled:
+                          !isReadOnly &&
+                          currentStatus == StudentMarkStatus.present,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: isInvalid ? AcadexColors.error : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                        color: isInvalid
+                            ? AcadexColors.error
+                            : (isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink),
                       ),
                       decoration: InputDecoration(
                         isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 8,
+                        ),
                         filled: true,
-                        fillColor: isReadOnly || currentStatus != StudentMarkStatus.present
+                        fillColor:
+                            isReadOnly ||
+                                currentStatus != StudentMarkStatus.present
                             ? (isDark ? Colors.black12 : Colors.grey.shade100)
-                            : (isDark ? AcadexColors.darkSurface : Colors.white),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.xs)),
+                            : (isDark
+                                  ? AcadexColors.darkSurface
+                                  : Colors.white),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                        ),
                       ),
-                      onChanged: (_) => setState(() => _hasUnsavedChanges = true),
+                      onChanged: (_) =>
+                          setState(() => _hasUnsavedChanges = true),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -1646,7 +2096,9 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
                   const Spacer(),
@@ -1661,14 +2113,24 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                         decoration: InputDecoration(
                           isDense: true,
                           hintText: 'Remarks',
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 8,
+                          ),
                           filled: true,
                           fillColor: isReadOnly
                               ? (isDark ? Colors.black12 : Colors.grey.shade100)
-                              : (isDark ? AcadexColors.darkSurface : Colors.white),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.xs)),
+                              : (isDark
+                                    ? AcadexColors.darkSurface
+                                    : Colors.white),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                              AcadexRadius.xs,
+                            ),
+                          ),
                         ),
-                        onChanged: (_) => setState(() => _hasUnsavedChanges = true),
+                        onChanged: (_) =>
+                            setState(() => _hasUnsavedChanges = true),
                       ),
                     ),
                   ),
@@ -1706,25 +2168,39 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
 
     return DropdownButtonHideUnderline(
       child: DropdownButton<StudentMarkStatus>(
-        value: currentStatus == StudentMarkStatus.notEntered ? StudentMarkStatus.present : currentStatus,
+        value: currentStatus == StudentMarkStatus.notEntered
+            ? StudentMarkStatus.present
+            : currentStatus,
         isDense: true,
         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
         items: const [
           DropdownMenuItem(
             value: StudentMarkStatus.present,
-            child: Text('Present', style: TextStyle(color: AcadexColors.success)),
+            child: Text(
+              'Present',
+              style: TextStyle(color: AcadexColors.success),
+            ),
           ),
           DropdownMenuItem(
             value: StudentMarkStatus.absent,
-            child: Text('Absent', style: TextStyle(color: AcadexColors.accentOrange)),
+            child: Text(
+              'Absent',
+              style: TextStyle(color: AcadexColors.accentOrange),
+            ),
           ),
           DropdownMenuItem(
             value: StudentMarkStatus.exempted,
-            child: Text('Exempted', style: TextStyle(color: AcadexColors.accentPurple)),
+            child: Text(
+              'Exempted',
+              style: TextStyle(color: AcadexColors.accentPurple),
+            ),
           ),
           DropdownMenuItem(
             value: StudentMarkStatus.notAppeared,
-            child: Text('Not Appeared', style: TextStyle(color: AcadexColors.inkMuted)),
+            child: Text(
+              'Not Appeared',
+              style: TextStyle(color: AcadexColors.inkMuted),
+            ),
           ),
         ],
         onChanged: (val) {
@@ -1761,14 +2237,21 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/my-assignments'),
         ),
         title: Text(
           'Internal Assessment',
-          style: AcadexTypography.title(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          style: AcadexTypography.title(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
         ),
         actions: [
           if (!isHODOrAdmin)
@@ -1793,7 +2276,9 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
         ],
       ),
       body: contextAsync.when(
-        loading: () => const AcadexLoadingState(message: 'Loading assessment roster and configuration...'),
+        loading: () => const AcadexLoadingState(
+          message: 'Loading assessment roster and configuration...',
+        ),
         error: (err, _) => Center(
           child: AcadexErrorState(
             message: err.toString(),
@@ -1832,13 +2317,22 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                                   runSpacing: 4,
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: AcadexColors.primary.withValues(alpha: 0.12),
-                                        borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                                        color: AcadexColors.primary.withValues(
+                                          alpha: 0.12,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          AcadexRadius.xs,
+                                        ),
                                       ),
                                       child: Text(
-                                        subjectCode.isNotEmpty ? subjectCode : 'SUBJECT',
+                                        subjectCode.isNotEmpty
+                                            ? subjectCode
+                                            : 'SUBJECT',
                                         style: const TextStyle(
                                           color: AcadexColors.primary,
                                           fontWeight: FontWeight.bold,
@@ -1847,14 +2341,28 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                                       ),
                                     ),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
-                                        borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                                        color: isDark
+                                            ? AcadexColors.darkSurfaceCard
+                                            : AcadexColors.canvasSoft,
+                                        borderRadius: BorderRadius.circular(
+                                          AcadexRadius.xs,
+                                        ),
                                       ),
                                       child: Text(
-                                        sectionName.toLowerCase().startsWith('section') ? sectionName : 'Section $sectionName',
-                                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                                        sectionName.toLowerCase().startsWith(
+                                              'section',
+                                            )
+                                            ? sectionName
+                                            : 'Section $sectionName',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 12,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -1862,22 +2370,32 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                                 const SizedBox(height: 8),
                                 Text(
                                   subjectName,
-                                  style: AcadexTypography.heading2(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                                  style: AcadexTypography.heading2(
+                                    color: isDark
+                                        ? AcadexColors.darkInk
+                                        : AcadexColors.ink,
+                                  ),
                                 ),
-                                if (data.facultyAssignment?['facultyName'] != null)
+                                if (data.facultyAssignment?['facultyName'] !=
+                                    null)
                                   Padding(
                                     padding: const EdgeInsets.only(top: 4),
                                     child: Text(
                                       'Teaching Faculty: ${data.facultyAssignment!['facultyName']}',
                                       style: AcadexTypography.caption(
-                                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                        color: isDark
+                                            ? AcadexColors.darkInkMuted
+                                            : AcadexColors.inkMuted,
                                       ),
                                     ),
                                   ),
                               ],
                             ),
                           ),
-                          _buildStatusPill(assessment?.status ?? InternalAssessmentStatus.draft),
+                          _buildStatusPill(
+                            assessment?.status ??
+                                InternalAssessmentStatus.draft,
+                          ),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -1890,13 +2408,20 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                         children: [
                           if (!isLocked) ...[
                             OutlinedButton.icon(
-                              onPressed: _isSaving ? null : () => _handleSaveLegacyDraft(data),
+                              onPressed: _isSaving
+                                  ? null
+                                  : () => _handleSaveLegacyDraft(data),
                               icon: const Icon(LucideIcons.save, size: 16),
                               label: const Text('Save Draft'),
                             ),
                             OutlinedButton.icon(
-                              onPressed: _isSaving ? null : () => _handleReviewLegacyMarks(data),
-                              icon: const Icon(LucideIcons.checkSquare, size: 16),
+                              onPressed: _isSaving
+                                  ? null
+                                  : () => _handleReviewLegacyMarks(data),
+                              icon: const Icon(
+                                LucideIcons.checkSquare,
+                                size: 16,
+                              ),
                               label: const Text('Mark as Reviewed'),
                             ),
                             ElevatedButton.icon(
@@ -1904,7 +2429,9 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                                 backgroundColor: AcadexColors.primary,
                                 foregroundColor: Colors.white,
                               ),
-                              onPressed: _isSaving ? null : () => _handlePublishLegacyMarks(data),
+                              onPressed: _isSaving
+                                  ? null
+                                  : () => _handlePublishLegacyMarks(data),
                               icon: const Icon(LucideIcons.lock, size: 16),
                               label: const Text('Finalize & Publish'),
                             ),
@@ -1914,30 +2441,45 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                             OutlinedButton.icon(
                               onPressed: _isSaving
                                   ? null
-                                  : () => _handleCreateHistoricalAssessmentDialog(
-                                        prefillSectionId: widget.sectionId ??
-                                            data.section['id']?.toString() ??
-                                            data.section['_id']?.toString(),
-                                        prefillSubjectId: widget.subjectId ??
-                                            data.subject['id']?.toString() ??
-                                            data.subject['_id']?.toString(),
-                                        prefillFacultyAssignmentId: widget.facultyAssignmentId ??
-                                            data.facultyAssignment?['id']?.toString() ??
-                                            data.facultyAssignment?['_id']?.toString(),
-                                        prefillAcademicYearId: widget.academicYearId,
-                                      ),
+                                  : () =>
+                                        _handleCreateHistoricalAssessmentDialog(
+                                          prefillSectionId:
+                                              widget.sectionId ??
+                                              data.section['id']?.toString() ??
+                                              data.section['_id']?.toString(),
+                                          prefillSubjectId:
+                                              widget.subjectId ??
+                                              data.subject['id']?.toString() ??
+                                              data.subject['_id']?.toString(),
+                                          prefillFacultyAssignmentId:
+                                              widget.facultyAssignmentId ??
+                                              data.facultyAssignment?['id']
+                                                  ?.toString() ??
+                                              data.facultyAssignment?['_id']
+                                                  ?.toString(),
+                                          prefillAcademicYearId:
+                                              widget.academicYearId,
+                                        ),
                               icon: const Icon(LucideIcons.history, size: 16),
-                              label: const Text('+ Enter Historical Unit Test Marks'),
+                              label: const Text(
+                                '+ Enter Historical Unit Test Marks',
+                              ),
                             ),
                           if (isLocked) ...[
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(LucideIcons.lock, size: 16, color: AcadexColors.success),
+                                const Icon(
+                                  LucideIcons.lock,
+                                  size: 16,
+                                  color: AcadexColors.success,
+                                ),
                                 const SizedBox(width: 6),
                                 Text(
                                   'Assessment marks finalized and locked.',
-                                  style: AcadexTypography.body(color: AcadexColors.success).copyWith(fontWeight: FontWeight.w600),
+                                  style: AcadexTypography.body(
+                                    color: AcadexColors.success,
+                                  ).copyWith(fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),
@@ -1954,7 +2496,8 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                     child: Center(
                       child: AcadexEmptyState(
                         title: 'No Students Enrolled',
-                        subtitle: 'No active student enrollments were found for this section.',
+                        subtitle:
+                            'No active student enrollments were found for this section.',
                         icon: LucideIcons.users,
                       ),
                     ),
@@ -1971,7 +2514,11 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
     );
   }
 
-  Widget _buildLegacyDesktopView(AssessmentContextModel data, bool isDark, bool isLocked) {
+  Widget _buildLegacyDesktopView(
+    AssessmentContextModel data,
+    bool isDark,
+    bool isLocked,
+  ) {
     final entries = data.assessment?.entries ?? [];
     final components = data.components;
 
@@ -1988,14 +2535,22 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                 child: DataTable(
                   columnSpacing: 20,
                   headingRowColor: WidgetStateProperty.all(
-                    isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
+                    isDark
+                        ? AcadexColors.darkSurfaceCard
+                        : AcadexColors.canvasSoft,
                   ),
                   columns: [
                     const DataColumn(
-                      label: Text('Roll No.', style: TextStyle(fontWeight: FontWeight.bold)),
+                      label: Text(
+                        'Roll No.',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                     const DataColumn(
-                      label: Text('Student Name', style: TextStyle(fontWeight: FontWeight.bold)),
+                      label: Text(
+                        'Student Name',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                     for (final comp in components)
                       DataColumn(
@@ -2003,7 +2558,13 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(comp.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            Text(
+                              comp.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
                             Text(
                               'Max: ${comp.maxMarks.toInt()}',
                               style: const TextStyle(
@@ -2018,24 +2579,38 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                     const DataColumn(
                       label: Text(
                         'Total',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.success),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AcadexColors.success,
+                        ),
                       ),
                     ),
                     const DataColumn(
-                      label: Text('Remarks', style: TextStyle(fontWeight: FontWeight.bold)),
+                      label: Text(
+                        'Remarks',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ],
                   rows: entries.map((entry) {
                     final sMap = _legacyControllers[entry.studentId] ?? {};
-                    final total = _legacyStudentTotals[entry.studentId] ?? entry.totalMarks;
+                    final total =
+                        _legacyStudentTotals[entry.studentId] ??
+                        entry.totalMarks;
 
                     return DataRow(
                       cells: [
                         DataCell(
-                          Text(entry.rollNumber ?? '—', style: const TextStyle(fontWeight: FontWeight.w500)),
+                          Text(
+                            entry.rollNumber ?? '—',
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
                         ),
                         DataCell(
-                          Text(entry.studentName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                          Text(
+                            entry.studentName,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
                         ),
                         for (final comp in components)
                           DataCell(
@@ -2044,32 +2619,64 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                               child: TextFormField(
                                 controller: sMap[comp.key],
                                 enabled: !isLocked,
-                                keyboardType: const TextInputKeybTypeWithOptions(decimal: true),
+                                keyboardType:
+                                    const TextInputKeybTypeWithOptions(
+                                      decimal: true,
+                                    ),
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
                                 decoration: InputDecoration(
                                   isDense: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 8,
+                                  ),
                                   filled: true,
                                   fillColor: isLocked
-                                      ? (isDark ? Colors.black12 : Colors.grey.shade100)
-                                      : (isDark ? AcadexColors.darkSurfaceCard : Colors.white),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.xs)),
+                                      ? (isDark
+                                            ? Colors.black12
+                                            : Colors.grey.shade100)
+                                      : (isDark
+                                            ? AcadexColors.darkSurfaceCard
+                                            : Colors.white),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      AcadexRadius.xs,
+                                    ),
+                                  ),
                                 ),
-                                onChanged: (_) => _recalculateLegacyTotal(entry.studentId, components),
+                                onChanged: (_) => _recalculateLegacyTotal(
+                                  entry.studentId,
+                                  components,
+                                ),
                               ),
                             ),
                           ),
                         DataCell(
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: AcadexColors.success.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                              color: AcadexColors.success.withValues(
+                                alpha: 0.12,
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                AcadexRadius.xs,
+                              ),
                             ),
                             child: Text(
-                              total % 1 == 0 ? total.toInt().toString() : total.toString(),
-                              style: const TextStyle(color: AcadexColors.success, fontWeight: FontWeight.bold),
+                              total % 1 == 0
+                                  ? total.toInt().toString()
+                                  : total.toString(),
+                              style: const TextStyle(
+                                color: AcadexColors.success,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -2077,18 +2684,30 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                           SizedBox(
                             width: 140,
                             child: TextFormField(
-                              controller: _legacyRemarksControllers[entry.studentId],
+                              controller:
+                                  _legacyRemarksControllers[entry.studentId],
                               enabled: !isLocked,
                               style: const TextStyle(fontSize: 12),
                               decoration: InputDecoration(
                                 isDense: true,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 8,
+                                ),
                                 hintText: 'Optional',
                                 filled: true,
                                 fillColor: isLocked
-                                    ? (isDark ? Colors.black12 : Colors.grey.shade100)
-                                    : (isDark ? AcadexColors.darkSurfaceCard : Colors.white),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.xs)),
+                                    ? (isDark
+                                          ? Colors.black12
+                                          : Colors.grey.shade100)
+                                    : (isDark
+                                          ? AcadexColors.darkSurfaceCard
+                                          : Colors.white),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    AcadexRadius.xs,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -2105,7 +2724,11 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
     );
   }
 
-  Widget _buildLegacyMobileView(AssessmentContextModel data, bool isDark, bool isLocked) {
+  Widget _buildLegacyMobileView(
+    AssessmentContextModel data,
+    bool isDark,
+    bool isLocked,
+  ) {
     final components = data.components;
     final entries = data.assessment?.entries ?? [];
     if (components.isEmpty) {
@@ -2136,11 +2759,14 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                   label: Text('${comp.name} (Max: ${comp.maxMarks.toInt()})'),
                   selected: isSelected,
                   onSelected: (selected) {
-                    if (selected) setState(() => _activeMobileComponentKey = comp.key);
+                    if (selected)
+                      setState(() => _activeMobileComponentKey = comp.key);
                   },
                   selectedColor: AcadexColors.primary.withValues(alpha: 0.15),
                   labelStyle: TextStyle(
-                    color: isSelected ? AcadexColors.primary : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                    color: isSelected
+                        ? AcadexColors.primary
+                        : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     fontSize: 12,
                   ),
@@ -2159,14 +2785,21 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
             final entry = entries[index];
             final sMap = _legacyControllers[entry.studentId] ?? {};
             final ctrl = sMap[activeComp.key];
-            final total = _legacyStudentTotals[entry.studentId] ?? entry.totalMarks;
+            final total =
+                _legacyStudentTotals[entry.studentId] ?? entry.totalMarks;
 
             return Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                color: isDark
+                    ? AcadexColors.darkSurfaceCard
+                    : AcadexColors.surface,
                 borderRadius: AcadexRadius.borderRadiusMd,
-                border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                border: Border.all(
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
+                ),
               ),
               child: Row(
                 children: [
@@ -2176,12 +2809,19 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                       children: [
                         Text(
                           entry.studentName,
-                          style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink)
-                              .copyWith(fontWeight: FontWeight.w700),
+                          style: AcadexTypography.body(
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
+                          ).copyWith(fontWeight: FontWeight.w700),
                         ),
                         Text(
                           '${entry.rollNumber ?? 'Roll —'} • Total: ${total % 1 == 0 ? total.toInt().toString() : total.toString()}',
-                          style: const TextStyle(fontSize: 11, color: AcadexColors.success, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AcadexColors.success,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
@@ -2192,23 +2832,42 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
                     child: TextFormField(
                       controller: ctrl,
                       enabled: !isLocked,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
                       decoration: InputDecoration(
                         isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 10,
+                        ),
                         filled: true,
                         fillColor: isLocked
                             ? (isDark ? Colors.black12 : Colors.grey.shade100)
-                            : (isDark ? AcadexColors.darkSurface : Colors.white),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.xs)),
+                            : (isDark
+                                  ? AcadexColors.darkSurface
+                                  : Colors.white),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                        ),
                       ),
-                      onChanged: (_) => _recalculateLegacyTotal(entry.studentId, components),
+                      onChanged: (_) =>
+                          _recalculateLegacyTotal(entry.studentId, components),
                     ),
                   ),
                   const SizedBox(width: 6),
-                  Text('/ ${activeComp.maxMarks.toInt()}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  Text(
+                    '/ ${activeComp.maxMarks.toInt()}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
               ),
             );
@@ -2221,34 +2880,67 @@ class _InternalMarksScreenState extends ConsumerState<InternalMarksScreen> {
   Widget _buildStatusPill(InternalAssessmentStatus status) {
     switch (status) {
       case InternalAssessmentStatus.published:
-        return const AcadexBadge(label: 'Published & Locked', variant: AcadexBadgeVariant.success);
+        return const AcadexBadge(
+          label: 'Published & Locked',
+          variant: AcadexBadgeVariant.success,
+        );
       case InternalAssessmentStatus.closed:
-        return const AcadexBadge(label: 'Closed & Locked', variant: AcadexBadgeVariant.neutral);
+        return const AcadexBadge(
+          label: 'Closed & Locked',
+          variant: AcadexBadgeVariant.neutral,
+        );
       case InternalAssessmentStatus.reviewed:
-        return const AcadexBadge(label: 'Reviewed', variant: AcadexBadgeVariant.info);
+        return const AcadexBadge(
+          label: 'Reviewed',
+          variant: AcadexBadgeVariant.info,
+        );
       case InternalAssessmentStatus.open:
-        return const AcadexBadge(label: 'Open for Entry', variant: AcadexBadgeVariant.info);
+        return const AcadexBadge(
+          label: 'Open for Entry',
+          variant: AcadexBadgeVariant.info,
+        );
       case InternalAssessmentStatus.marksEntry:
-        return const AcadexBadge(label: 'Marks Entry Open', variant: AcadexBadgeVariant.info);
+        return const AcadexBadge(
+          label: 'Marks Entry Open',
+          variant: AcadexBadgeVariant.info,
+        );
       case InternalAssessmentStatus.submitted:
-        return const AcadexBadge(label: 'Submitted', variant: AcadexBadgeVariant.warning);
+        return const AcadexBadge(
+          label: 'Submitted',
+          variant: AcadexBadgeVariant.warning,
+        );
       case InternalAssessmentStatus.completed:
-        return const AcadexBadge(label: 'Exam Completed', variant: AcadexBadgeVariant.info);
+        return const AcadexBadge(
+          label: 'Exam Completed',
+          variant: AcadexBadgeVariant.info,
+        );
       case InternalAssessmentStatus.scheduled:
-        return const AcadexBadge(label: 'Scheduled', variant: AcadexBadgeVariant.info);
+        return const AcadexBadge(
+          label: 'Scheduled',
+          variant: AcadexBadgeVariant.info,
+        );
       case InternalAssessmentStatus.locked:
-        return const AcadexBadge(label: 'Locked', variant: AcadexBadgeVariant.neutral);
+        return const AcadexBadge(
+          label: 'Locked',
+          variant: AcadexBadgeVariant.neutral,
+        );
       case InternalAssessmentStatus.archived:
-        return const AcadexBadge(label: 'Archived', variant: AcadexBadgeVariant.neutral);
+        return const AcadexBadge(
+          label: 'Archived',
+          variant: AcadexBadgeVariant.neutral,
+        );
       case InternalAssessmentStatus.draft:
-        return const AcadexBadge(label: 'Draft', variant: AcadexBadgeVariant.warning);
+        return const AcadexBadge(
+          label: 'Draft',
+          variant: AcadexBadgeVariant.warning,
+        );
     }
   }
 }
 
 class TextInputKeybTypeWithOptions extends TextInputType {
   const TextInputKeybTypeWithOptions({bool decimal = false})
-      : super.numberWithOptions(decimal: decimal, signed: false);
+    : super.numberWithOptions(decimal: decimal, signed: false);
 }
 
 class MathUtils {

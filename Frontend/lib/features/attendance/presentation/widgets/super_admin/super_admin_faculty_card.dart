@@ -13,7 +13,7 @@ class SuperAdminFacultyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isComplete = completion.pendingClasses == 0;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -40,7 +40,9 @@ class SuperAdminFacultyCard extends StatelessWidget {
                       Text(
                         completion.facultyName,
                         style: AcadexTypography.title(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -75,9 +77,13 @@ class SuperAdminFacultyCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: completion.progress,
-                      backgroundColor: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+                      backgroundColor: isDark
+                          ? AcadexColors.darkSurfaceHover
+                          : AcadexColors.canvasSoft,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        isComplete ? AcadexColors.success : AcadexColors.primary,
+                        isComplete
+                            ? AcadexColors.success
+                            : AcadexColors.primary,
                       ),
                       minHeight: 6,
                     ),

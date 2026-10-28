@@ -2,20 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../../app/theme/app_theme.dart';
 import '../../../domain/models/college_attendance_comparison.dart';
-import '../../../domain/models/department_attendance_comparison.dart' show TrendDirection;
+import '../../../domain/models/department_attendance_comparison.dart'
+    show TrendDirection;
 
 class CollegeComparisonCard extends StatelessWidget {
   final CollegeAttendanceComparison comparison;
   final int rank;
 
-  const CollegeComparisonCard({super.key, required this.comparison, required this.rank});
+  const CollegeComparisonCard({
+    super.key,
+    required this.comparison,
+    required this.rank,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     IconData trendIcon;
     Color trendColor;
-    
+
     switch (comparison.trend) {
       case TrendDirection.up:
         trendIcon = LucideIcons.trendingUp;
@@ -50,7 +55,9 @@ class CollegeComparisonCard extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+                color: isDark
+                    ? AcadexColors.darkSurfaceHover
+                    : AcadexColors.canvasSoft,
                 borderRadius: AcadexRadius.borderRadiusMd,
               ),
               child: Center(
@@ -80,7 +87,9 @@ class CollegeComparisonCard extends StatelessWidget {
                   Text(
                     "${comparison.collegeCode} • ${comparison.studentCount} Students",
                     style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
                 ],
@@ -108,7 +117,9 @@ class CollegeComparisonCard extends StatelessWidget {
                   Text(
                     "${comparison.completionRate.toInt()}% Completion",
                     style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
                 ],

@@ -42,7 +42,9 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     return AnimatedContainer(
       duration: AcadexMotion.micro,
       margin: const EdgeInsets.only(bottom: 12),
-      transform: _isHovered ? Matrix4.translationValues(0, -2, 0) : Matrix4.identity(),
+      transform: _isHovered
+          ? Matrix4.translationValues(0, -2, 0)
+          : Matrix4.identity(),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: AcadexRadius.borderRadiusLg,
@@ -55,10 +57,12 @@ class _NoteCardState extends ConsumerState<NoteCard> {
         boxShadow: _isHovered
             ? [
                 BoxShadow(
-                  color: Theme.of(context).shadowColor.withValues(alpha: isDark ? 0.25 : 0.08),
+                  color: Theme.of(
+                    context,
+                  ).shadowColor.withValues(alpha: isDark ? 0.25 : 0.08),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
-                )
+                ),
               ]
             : [],
       ),
@@ -84,22 +88,32 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         color: isFile
-                            ? Theme.of(context).primaryColor.withValues(alpha: 0.12)
+                            ? Theme.of(
+                                context,
+                              ).primaryColor.withValues(alpha: 0.12)
                             : isLink
-                                ? (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)
-                                    .withValues(alpha: 0.1)
-                                : Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                            ? (Theme.of(context).textTheme.bodySmall?.color ??
+                                      AcadexColors.inkMuted)
+                                  .withValues(alpha: 0.1)
+                            : Theme.of(
+                                context,
+                              ).primaryColor.withValues(alpha: 0.1),
                         borderRadius: AcadexRadius.borderRadiusMd,
                       ),
                       child: Icon(
                         isFile
                             ? LucideIcons.paperclip
-                            : (isLink ? LucideIcons.link : LucideIcons.fileText),
+                            : (isLink
+                                  ? LucideIcons.link
+                                  : LucideIcons.fileText),
                         color: isFile
                             ? Theme.of(context).primaryColor
                             : (isLink
-                                ? (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)
-                                : Theme.of(context).primaryColor),
+                                  ? (Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall?.color ??
+                                        AcadexColors.inkMuted)
+                                  : Theme.of(context).primaryColor),
                         size: 20,
                       ),
                     ),
@@ -108,7 +122,8 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (note.chapter != null && note.chapter!.isNotEmpty) ...[
+                          if (note.chapter != null &&
+                              note.chapter!.isNotEmpty) ...[
                             Text(
                               note.chapter!,
                               style: TextStyle(
@@ -134,7 +149,11 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                             note.description,
                             style: TextStyle(
                               fontSize: 14,
-                              color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                              color:
+                                  (Theme.of(
+                                    context,
+                                  ).textTheme.bodySmall?.color ??
+                                  AcadexColors.inkMuted),
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -156,11 +175,16 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                   children: [
                     if (effectiveSubject != null) ...[
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Theme.of(context).scaffoldBackgroundColor,
                           borderRadius: AcadexRadius.borderRadiusXs,
-                          border: Border.all(color: Theme.of(context).dividerColor),
+                          border: Border.all(
+                            color: Theme.of(context).dividerColor,
+                          ),
                         ),
                         child: Text(
                           effectiveSubject.code,
@@ -174,41 +198,57 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                     ],
                     if (note.fileType != null && note.fileType!.isNotEmpty) ...[
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Theme.of(context).scaffoldBackgroundColor,
                           borderRadius: AcadexRadius.borderRadiusXs,
-                          border: Border.all(color: Theme.of(context).dividerColor),
+                          border: Border.all(
+                            color: Theme.of(context).dividerColor,
+                          ),
                         ),
                         child: Text(
                           note.fileType!.toUpperCase(),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                            color:
+                                (Theme.of(context).textTheme.bodySmall?.color ??
+                                AcadexColors.inkMuted),
                           ),
                         ),
                       ),
                     ],
                     if (isFile) ...[
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: note.isPreviewable
                               ? AcadexColors.success.withValues(alpha: 0.1)
-                              : (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)
-                                  .withValues(alpha: 0.08),
+                              : (Theme.of(context).textTheme.bodySmall?.color ??
+                                        AcadexColors.inkMuted)
+                                    .withValues(alpha: 0.08),
                           borderRadius: AcadexRadius.borderRadiusXs,
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              note.isPreviewable ? LucideIcons.eye : LucideIcons.download,
+                              note.isPreviewable
+                                  ? LucideIcons.eye
+                                  : LucideIcons.download,
                               size: 12,
                               color: note.isPreviewable
                                   ? AcadexColors.success
-                                  : (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                                  : (Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall?.color ??
+                                        AcadexColors.inkMuted),
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -218,7 +258,10 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                                 fontWeight: FontWeight.w600,
                                 color: note.isPreviewable
                                     ? AcadexColors.success
-                                    : (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                                    : (Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall?.color ??
+                                          AcadexColors.inkMuted),
                               ),
                             ),
                           ],
@@ -230,7 +273,11 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(LucideIcons.clock, size: 13, color: AcadexColors.inkMuted),
+                        Icon(
+                          LucideIcons.clock,
+                          size: 13,
+                          color: AcadexColors.inkMuted,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           timeago.format(note.updatedAt),

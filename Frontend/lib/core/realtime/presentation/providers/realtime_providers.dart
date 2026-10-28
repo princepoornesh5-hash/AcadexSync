@@ -32,7 +32,9 @@ final realtimeDispatcherProvider = Provider<RealtimeDispatcher>((ref) {
   final sub = service.statusStream.listen((status) {
     if (previousStatus == RealtimeConnectionStatus.reconnecting &&
         status == RealtimeConnectionStatus.connected) {
-      debugPrint('[Realtime] Socket reconnected. Triggering authoritative resync.');
+      debugPrint(
+        '[Realtime] Socket reconnected. Triggering authoritative resync.',
+      );
       dispatcher.triggerAuthoritativeResync();
     }
     previousStatus = status;
@@ -54,10 +56,14 @@ final realtimeConnectionCoordinatorProvider = Provider<void>((ref) {
   ref.watch(realtimeDispatcherProvider);
 
   if (authState is AuthAuthenticated) {
-    debugPrint('[Realtime Coordinator] User authenticated (${authState.user.id}). Connecting realtime socket.');
+    debugPrint(
+      '[Realtime Coordinator] User authenticated (${authState.user.id}). Connecting realtime socket.',
+    );
     realtimeService.connect();
   } else {
-    debugPrint('[Realtime Coordinator] User logged out or unauthenticated. Disconnecting socket.');
+    debugPrint(
+      '[Realtime Coordinator] User logged out or unauthenticated. Disconnecting socket.',
+    );
     realtimeService.disconnect(isLogout: true);
   }
 });

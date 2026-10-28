@@ -15,7 +15,11 @@ class DemoRoleSwitcher extends StatelessWidget {
         const Text(
           "Development Fast Login",
           textAlign: TextAlign.center,
-          style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: AppColors.textMuted,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -23,11 +27,31 @@ class DemoRoleSwitcher extends StatelessWidget {
           runSpacing: 8,
           alignment: WrapAlignment.center,
           children: [
-            _buildRoleButton("Super Admin", "superadmin.test@acadex.com", LucideIcons.shieldCheck),
-            _buildRoleButton("College Admin", "admin.test@acadex.com", LucideIcons.building),
-            _buildRoleButton("HOD", "hod.test@acadex.com", LucideIcons.bookOpen),
-            _buildRoleButton("Faculty", "faculty.test@acadex.com", LucideIcons.userCheck),
-            _buildRoleButton("Student", "student.test@acadex.com", LucideIcons.user),
+            _buildRoleButton(
+              "Super Admin",
+              "superadmin.test@acadex.com",
+              LucideIcons.shieldCheck,
+            ),
+            _buildRoleButton(
+              "College Admin",
+              "admin.test@acadex.com",
+              LucideIcons.building,
+            ),
+            _buildRoleButton(
+              "HOD",
+              "hod.test@acadex.com",
+              LucideIcons.bookOpen,
+            ),
+            _buildRoleButton(
+              "Faculty",
+              "faculty.test@acadex.com",
+              LucideIcons.userCheck,
+            ),
+            _buildRoleButton(
+              "Student",
+              "student.test@acadex.com",
+              LucideIcons.user,
+            ),
           ],
         ),
       ],

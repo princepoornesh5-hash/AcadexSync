@@ -38,7 +38,9 @@ class AiChatSidebar extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final auth = authState;
     final userName = auth is AuthAuthenticated ? auth.user.name : 'Guest';
-    final userRole = auth is AuthAuthenticated ? auth.user.role : AppRole.student;
+    final userRole = auth is AuthAuthenticated
+        ? auth.user.role
+        : AppRole.student;
     final userInitial = userName.isNotEmpty ? userName[0].toUpperCase() : 'U';
 
     return Container(
@@ -65,12 +67,17 @@ class AiChatSidebar extends StatelessWidget {
                     onTap: onNewChat,
                     borderRadius: BorderRadius.circular(10),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: isDark ? const Color(0xFF1E293B) : Colors.white,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                          color: isDark
+                              ? const Color(0xFF334155)
+                              : const Color(0xFFE2E8F0),
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -88,7 +95,9 @@ class AiChatSidebar extends StatelessWidget {
                               Icon(
                                 LucideIcons.plus,
                                 size: 16,
-                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF0F172A),
                               ),
                               const SizedBox(width: 8),
                               Text(
@@ -96,7 +105,9 @@ class AiChatSidebar extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF0F172A),
                                 ),
                               ),
                             ],
@@ -104,7 +115,9 @@ class AiChatSidebar extends StatelessWidget {
                           Icon(
                             LucideIcons.penSquare,
                             size: 15,
-                            color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                            color: isDark
+                                ? const Color(0xFF64748B)
+                                : const Color(0xFF94A3B8),
                           ),
                         ],
                       ),
@@ -138,19 +151,28 @@ class AiChatSidebar extends StatelessWidget {
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.6,
-                        color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                        color: isDark
+                            ? const Color(0xFF64748B)
+                            : const Color(0xFF94A3B8),
                       ),
                     ),
                   ),
                   // Clean Empty State
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 24,
+                    ),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.5) : Colors.white,
+                      color: isDark
+                          ? const Color(0xFF1E293B).withValues(alpha: 0.5)
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE2E8F0),
                         style: BorderStyle.solid,
                       ),
                     ),
@@ -160,7 +182,9 @@ class AiChatSidebar extends StatelessWidget {
                         Icon(
                           LucideIcons.messageSquareDashed,
                           size: 28,
-                          color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                          color: isDark
+                              ? const Color(0xFF475569)
+                              : const Color(0xFFCBD5E1),
                         ),
                         const SizedBox(height: 10),
                         Text(
@@ -168,7 +192,9 @@ class AiChatSidebar extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                            color: isDark
+                                ? const Color(0xFF94A3B8)
+                                : const Color(0xFF64748B),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -177,7 +203,9 @@ class AiChatSidebar extends StatelessWidget {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 11,
-                            color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                            color: isDark
+                                ? const Color(0xFF64748B)
+                                : const Color(0xFF94A3B8),
                             height: 1.35,
                           ),
                         ),
@@ -196,7 +224,9 @@ class AiChatSidebar extends StatelessWidget {
               color: isDark ? const Color(0xFF1E293B) : Colors.white,
               border: Border(
                 top: BorderSide(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFE2E8F0),
                 ),
               ),
             ),
@@ -227,14 +257,18 @@ class AiChatSidebar extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF0F172A),
                         ),
                       ),
                       Text(
                         _formatRoleName(userRole),
                         style: TextStyle(
                           fontSize: 11,
-                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          color: isDark
+                              ? const Color(0xFF94A3B8)
+                              : const Color(0xFF64748B),
                         ),
                       ),
                     ],

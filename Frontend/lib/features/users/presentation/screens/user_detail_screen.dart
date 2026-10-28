@@ -38,7 +38,8 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
   bool _isActionInProgress = false;
 
   Future<void> _handleDeactivateReactivate(UserProfileModel user) async {
-    final isDeactivated = user.accountStatus.name.toLowerCase().contains('deactivat') ||
+    final isDeactivated =
+        user.accountStatus.name.toLowerCase().contains('deactivat') ||
         user.accountStatus.name.toLowerCase().contains('inactive');
 
     final actionName = isDeactivated ? 'Reactivate' : 'Deactivate';
@@ -59,7 +60,9 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: isDeactivated ? AcadexColors.emerald : AcadexColors.coral,
+              backgroundColor: isDeactivated
+                  ? AcadexColors.emerald
+                  : AcadexColors.coral,
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.pop(ctx, true),
@@ -73,9 +76,13 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
       setState(() => _isActionInProgress = true);
       try {
         if (isDeactivated) {
-          await ref.read(userManagementProvider.notifier).reactivateUser(user.id);
+          await ref
+              .read(userManagementProvider.notifier)
+              .reactivateUser(user.id);
         } else {
-          await ref.read(userManagementProvider.notifier).deactivateUser(user.id);
+          await ref
+              .read(userManagementProvider.notifier)
+              .deactivateUser(user.id);
         }
         if (mounted) {
           AcadexSnackBar.showSuccess(
@@ -128,7 +135,9 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
     if (confirmed == true && mounted) {
       setState(() => _isActionInProgress = true);
       try {
-        await ref.read(userManagementProvider.notifier).deleteUserPermanently(user.id);
+        await ref
+            .read(userManagementProvider.notifier)
+            .deleteUserPermanently(user.id);
         if (mounted) {
           AcadexSnackBar.showSuccess(
             context,
@@ -166,7 +175,9 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.primary,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Reissue'),
           ),
@@ -177,7 +188,9 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
 
     setState(() => _isActionInProgress = true);
     try {
-      final code = await ref.read(userManagementProvider.notifier).reissueActivationCode(user.id);
+      final code = await ref
+          .read(userManagementProvider.notifier)
+          .reissueActivationCode(user.id);
       if (mounted) {
         _showActivationCodeDialog(code, user.name);
       }
@@ -203,7 +216,9 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Share this activation code with $userName for initial account setup:'),
+            Text(
+              'Share this activation code with $userName for initial account setup:',
+            ),
             const SizedBox(height: AcadexSpacing.md),
             Container(
               padding: const EdgeInsets.all(AcadexSpacing.md),
@@ -231,7 +246,10 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
                     tooltip: 'Copy Code',
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: code));
-                      AcadexSnackBar.showSuccess(context, 'Activation code copied to clipboard');
+                      AcadexSnackBar.showSuccess(
+                        context,
+                        'Activation code copied to clipboard',
+                      );
                     },
                   ),
                 ],
@@ -266,21 +284,30 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
       final file = result.files.first;
       if (file.bytes == null) {
         if (mounted) {
-          AcadexSnackBar.showWarning(context, 'Unable to read the selected file.');
+          AcadexSnackBar.showWarning(
+            context,
+            'Unable to read the selected file.',
+          );
         }
         return;
       }
 
       if (!ProfileRepository.isImageExtensionSupported(file.name)) {
         if (mounted) {
-          AcadexSnackBar.showWarning(context, 'Unsupported image format. Allowed: JPG, JPEG, PNG, WebP.');
+          AcadexSnackBar.showWarning(
+            context,
+            'Unsupported image format. Allowed: JPG, JPEG, PNG, WebP.',
+          );
         }
         return;
       }
 
       if (file.size > ProfileRepository.maxProfileImageSizeBytes) {
         if (mounted) {
-          AcadexSnackBar.showWarning(context, 'Image must be under 5MB (JPG, PNG, or WebP)');
+          AcadexSnackBar.showWarning(
+            context,
+            'Image must be under 5MB (JPG, PNG, or WebP)',
+          );
         }
         return;
       }
@@ -320,14 +347,17 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
 
     final userAsync = ref.watch(userDetailProvider(widget.userId));
     final departmentsAsync = ref.watch(departmentsProvider);
-    final collegesAsync = isSuperAdmin ? ref.watch(collegesProvider) : const AsyncValue.data([]);
+    final collegesAsync = isSuperAdmin
+        ? ref.watch(collegesProvider)
+        : const AsyncValue.data([]);
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     return AcadexPageContainer(
       child: userAsync.when(
-        loading: () => const AcadexLoadingState(message: 'Loading user details...'),
+        loading: () =>
+            const AcadexLoadingState(message: 'Loading user details...'),
         error: (err, _) => AcadexErrorState(
           title: 'Failed to load user profile',
           message: err.toString(),
@@ -337,7 +367,8 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
           if (user == null) {
             return const AcadexErrorState(
               title: 'User not found',
-              message: 'The requested user record could not be found or has been removed.',
+              message:
+                  'The requested user record could not be found or has been removed.',
             );
           }
 
@@ -364,8 +395,11 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
             }
           }
 
-          final isPending = user.accountStatus.name.toLowerCase().contains('pending');
-          final isDeactivated = user.accountStatus.name.toLowerCase().contains('deactivat') ||
+          final isPending = user.accountStatus.name.toLowerCase().contains(
+            'pending',
+          );
+          final isDeactivated =
+              user.accountStatus.name.toLowerCase().contains('deactivat') ||
               user.accountStatus.name.toLowerCase().contains('inactive');
 
           return Column(
@@ -373,7 +407,8 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
             children: [
               AcadexPageHeader(
                 title: 'User Profile',
-                subtitle: 'Institutional identity, contact records, and role permissions',
+                subtitle:
+                    'Institutional identity, contact records, and role permissions',
                 onBack: () => context.safePop(fallbackRoute: '/users'),
               ),
 
@@ -403,7 +438,8 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
                                     customBorder: const CircleBorder(),
                                     onTap: _isActionInProgress
                                         ? null
-                                        : () => _pickAndUploadProfileImage(user),
+                                        : () =>
+                                              _pickAndUploadProfileImage(user),
                                     child: const Padding(
                                       padding: EdgeInsets.all(6.0),
                                       child: Icon(
@@ -425,7 +461,9 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
                               Text(
                                 user.name,
                                 style: AcadexTypography.h2.copyWith(
-                                  color: isDark ? Colors.white : AcadexColors.textPrimaryLight,
+                                  color: isDark
+                                      ? Colors.white
+                                      : AcadexColors.textPrimaryLight,
                                 ),
                               ),
                               const SizedBox(height: AcadexSpacing.xs),
@@ -437,9 +475,13 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
                                   UserStatusBadge(status: user.accountStatus),
                                   if (deptName != '—')
                                     Chip(
-                                      label: Text(deptName, style: const TextStyle(fontSize: 12)),
+                                      label: Text(
+                                        deptName,
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
                                       padding: EdgeInsets.zero,
-                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      materialTapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
                                     ),
                                 ],
                               ),
@@ -447,7 +489,9 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
                               Text(
                                 'Institutional ID: ${user.employeeId ?? user.rollNumber ?? user.id}',
                                 style: AcadexTypography.caption.copyWith(
-                                  color: isDark ? Colors.white70 : AcadexColors.textSecondaryLight,
+                                  color: isDark
+                                      ? Colors.white70
+                                      : AcadexColors.textSecondaryLight,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -467,7 +511,8 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
                             label: 'Edit User',
                             icon: Icons.edit_outlined,
                             variant: AcadexButtonVariant.secondary,
-                            onPressed: () => context.go('/users/edit/${user.id}'),
+                            onPressed: () =>
+                                context.go('/users/edit/${user.id}'),
                           ),
                           if (isPending)
                             AcadexButton(
@@ -475,12 +520,19 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
                               icon: Icons.vpn_key_outlined,
                               variant: AcadexButtonVariant.soft,
                               isLoading: _isActionInProgress,
-                              onPressed: () => _generateOrReissueActivationCode(user),
+                              onPressed: () =>
+                                  _generateOrReissueActivationCode(user),
                             ),
                           AcadexButton(
-                            label: isDeactivated ? 'Reactivate Account' : 'Deactivate Account',
-                            icon: isDeactivated ? Icons.check_circle_outline : Icons.block_outlined,
-                            variant: isDeactivated ? AcadexButtonVariant.primary : AcadexButtonVariant.danger,
+                            label: isDeactivated
+                                ? 'Reactivate Account'
+                                : 'Deactivate Account',
+                            icon: isDeactivated
+                                ? Icons.check_circle_outline
+                                : Icons.block_outlined,
+                            variant: isDeactivated
+                                ? AcadexButtonVariant.primary
+                                : AcadexButtonVariant.danger,
                             isLoading: _isActionInProgress,
                             onPressed: () => _handleDeactivateReactivate(user),
                           ),
@@ -513,10 +565,19 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
                         const AcadexSectionHeader(title: 'Identity & Contact'),
                         const SizedBox(height: AcadexSpacing.sm),
                         _buildInfoRow('Full Name', user.name),
-                        _buildInfoRow('Email Address', user.email.isNotEmpty ? user.email : '—'),
-                        _buildInfoRow('Phone Number', user.phone.isNotEmpty ? user.phone : '—'),
+                        _buildInfoRow(
+                          'Email Address',
+                          user.email.isNotEmpty ? user.email : '—',
+                        ),
+                        _buildInfoRow(
+                          'Phone Number',
+                          user.phone.isNotEmpty ? user.phone : '—',
+                        ),
                         _buildInfoRow('Account Role', user.role.displayName),
-                        _buildInfoRow('Status', user.accountStatus.name.toUpperCase()),
+                        _buildInfoRow(
+                          'Status',
+                          user.accountStatus.name.toUpperCase(),
+                        ),
                       ],
                     ),
                   );
@@ -526,16 +587,32 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const AcadexSectionHeader(title: 'Academic & System Record'),
+                        const AcadexSectionHeader(
+                          title: 'Academic & System Record',
+                        ),
                         const SizedBox(height: AcadexSpacing.sm),
-                        if (isSuperAdmin) _buildInfoRow('College / Campus', collegeName),
+                        if (isSuperAdmin)
+                          _buildInfoRow('College / Campus', collegeName),
                         _buildInfoRow('Department', deptName),
-                        if (user.role == AppRole.student && user.rollNumber != null)
+                        if (user.role == AppRole.student &&
+                            user.rollNumber != null)
                           _buildInfoRow('Roll Number', user.rollNumber!),
                         if (user.createdAt != null)
-                          _buildInfoRow('Account Created', user.createdAt!.toLocal().toString().substring(0, 16)),
+                          _buildInfoRow(
+                            'Account Created',
+                            user.createdAt!.toLocal().toString().substring(
+                              0,
+                              16,
+                            ),
+                          ),
                         if (user.lastLoginAt != null)
-                          _buildInfoRow('Last Login', user.lastLoginAt!.toLocal().toString().substring(0, 16)),
+                          _buildInfoRow(
+                            'Last Login',
+                            user.lastLoginAt!.toLocal().toString().substring(
+                              0,
+                              16,
+                            ),
+                          ),
                       ],
                     ),
                   );
@@ -586,7 +663,9 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
           Expanded(
             child: Text(
               value,
-              style: AcadexTypography.body.copyWith(fontWeight: FontWeight.w500),
+              style: AcadexTypography.body.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],

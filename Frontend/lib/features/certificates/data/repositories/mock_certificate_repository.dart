@@ -32,7 +32,8 @@ class MockCertificateRepository implements CertificateRepository {
         sectionId: 'sec-a',
         title: 'AWS Cloud Practitioner',
         type: CertificateType.technical,
-        description: 'Foundational cloud certification from Amazon Web Services',
+        description:
+            'Foundational cloud certification from Amazon Web Services',
         issuer: 'Amazon Web Services',
         issueDate: now.subtract(const Duration(days: 60)),
         fileName: 'aws_cert.pdf',
@@ -112,7 +113,10 @@ class MockCertificateRepository implements CertificateRepository {
   }
 
   @override
-  Future<void> deleteCertificate(String certificateId, String requestingUid) async {
+  Future<void> deleteCertificate(
+    String certificateId,
+    String requestingUid,
+  ) async {
     await Future.delayed(const Duration(milliseconds: 200));
     final cert = _store[certificateId];
     if (cert == null) throw Exception('Certificate not found: $certificateId');
@@ -139,15 +143,16 @@ class MockCertificateRepository implements CertificateRepository {
     final q = query.toLowerCase();
     return _store.values.where((c) {
       if (!c.status.isVisible) return false;
-      if (scopeStudentUid != null && c.studentUid != scopeStudentUid) return false;
+      if (scopeStudentUid != null && c.studentUid != scopeStudentUid)
+        return false;
       if (scopeCollegeId != null && c.collegeId != scopeCollegeId) return false;
-      if (scopeDepartmentId != null && c.departmentId != scopeDepartmentId) return false;
+      if (scopeDepartmentId != null && c.departmentId != scopeDepartmentId)
+        return false;
       return c.title.toLowerCase().contains(q) ||
           c.issuer.toLowerCase().contains(q) ||
           c.studentName.toLowerCase().contains(q) ||
           c.type.displayName.toLowerCase().contains(q);
-    }).toList()
-      ..sort((a, b) => b.uploadedAt.compareTo(a.uploadedAt));
+    }).toList()..sort((a, b) => b.uploadedAt.compareTo(a.uploadedAt));
   }
 
   @override
@@ -167,11 +172,12 @@ class MockCertificateRepository implements CertificateRepository {
       if (departmentId != null && c.departmentId != departmentId) return false;
       if (type != null && c.type != type) return false;
       if (status != null && c.status != status) return false;
-      if (issuedAfter != null && c.issueDate.isBefore(issuedAfter)) return false;
-      if (issuedBefore != null && c.issueDate.isAfter(issuedBefore)) return false;
+      if (issuedAfter != null && c.issueDate.isBefore(issuedAfter))
+        return false;
+      if (issuedBefore != null && c.issueDate.isAfter(issuedBefore))
+        return false;
       return c.status.isVisible;
-    }).toList()
-      ..sort((a, b) => b.uploadedAt.compareTo(a.uploadedAt));
+    }).toList()..sort((a, b) => b.uploadedAt.compareTo(a.uploadedAt));
   }
 
   @override
@@ -190,8 +196,7 @@ class MockCertificateRepository implements CertificateRepository {
       // Further scope if section provided
       if (sectionId != null && c.sectionId != sectionId) return false;
       return true;
-    }).toList()
-      ..sort((a, b) => b.uploadedAt.compareTo(a.uploadedAt));
+    }).toList()..sort((a, b) => b.uploadedAt.compareTo(a.uploadedAt));
   }
 
   @override
@@ -205,7 +210,9 @@ class MockCertificateRepository implements CertificateRepository {
     if (cert == null) throw Exception('Certificate not found: $certificateId');
     // Security: student cannot verify their own certificate
     if (cert.studentUid == verifierUid) {
-      throw Exception('Permission denied: students cannot verify their own certificates.');
+      throw Exception(
+        'Permission denied: students cannot verify their own certificates.',
+      );
     }
     final verified = cert.copyWith(
       isVerified: true,

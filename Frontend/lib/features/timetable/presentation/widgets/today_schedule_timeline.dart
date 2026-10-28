@@ -49,7 +49,9 @@ class TodayScheduleTimeline extends ConsumerWidget {
               Icon(
                 LucideIcons.calendarOff,
                 size: 36,
-                color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                color: isDark
+                    ? AcadexColors.darkInkFaint
+                    : AcadexColors.inkFaint,
               ),
               const SizedBox(height: 12),
               Text(
@@ -62,7 +64,9 @@ class TodayScheduleTimeline extends ConsumerWidget {
               Text(
                 'Enjoy your free day or prepare for upcoming classes.',
                 style: AcadexTypography.caption(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
             ],
@@ -89,7 +93,9 @@ class TodayScheduleTimeline extends ConsumerWidget {
         final faculty = facultyMap[entry.facultyId];
         final section = sectionMap[entry.sectionId];
 
-        final subjectName = subject?.name ?? (entry.subjectId.isNotEmpty ? entry.subjectId : 'Class');
+        final subjectName =
+            subject?.name ??
+            (entry.subjectId.isNotEmpty ? entry.subjectId : 'Class');
         final subjectCode = subject?.code ?? '';
         final facultyName = faculty?.name ?? entry.facultyId;
         final sectionName = section?.name ?? entry.sectionId;
@@ -101,7 +107,9 @@ class TodayScheduleTimeline extends ConsumerWidget {
           child: AcadexCard(
             backgroundColor: isNow
                 ? (isDark ? const Color(0xFF1E1B4B) : const Color(0xFFEEF2FF))
-                : (isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface),
+                : (isDark
+                      ? AcadexColors.darkSurfaceCard
+                      : AcadexColors.surface),
             borderColor: isNow
                 ? (isDark ? const Color(0xFF4338CA) : const Color(0xFF818CF8))
                 : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
@@ -113,16 +121,23 @@ class TodayScheduleTimeline extends ConsumerWidget {
                   // Time block
                   Container(
                     width: 76,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: isNow
                           ? const Color(0xFF4F46E5).withValues(alpha: 0.15)
-                          : (isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft),
+                          : (isDark
+                                ? AcadexColors.darkSurfaceHover
+                                : AcadexColors.canvasSoft),
                       borderRadius: AcadexRadius.borderRadiusMd,
                       border: Border.all(
                         color: isNow
                             ? const Color(0xFF6366F1).withValues(alpha: 0.3)
-                            : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                            : (isDark
+                                  ? AcadexColors.darkHairline
+                                  : AcadexColors.hairline),
                       ),
                     ),
                     child: Column(
@@ -131,13 +146,17 @@ class TodayScheduleTimeline extends ConsumerWidget {
                         Text(
                           entry.startTime,
                           style: AcadexTypography.body(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ).copyWith(fontWeight: FontWeight.w700, fontSize: 13),
                         ),
                         Text(
                           entry.endTime,
                           style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ).copyWith(fontSize: 11),
                         ),
                       ],
@@ -178,7 +197,9 @@ class TodayScheduleTimeline extends ConsumerWidget {
                             if (entry.isSubstituted) ...[
                               const SizedBox(width: 6),
                               AcadexBadge(
-                                label: isFaculty ? 'Substitute Duty' : 'Substitute Teacher',
+                                label: isFaculty
+                                    ? 'Substitute Duty'
+                                    : 'Substitute Teacher',
                                 variant: AcadexBadgeVariant.warning,
                               ),
                             ],
@@ -187,13 +208,18 @@ class TodayScheduleTimeline extends ConsumerWidget {
                         const SizedBox(height: 8),
                         Text(
                           subjectName,
-                          style: AcadexTypography.title(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                          ).copyWith(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            decoration: isCompleted ? TextDecoration.lineThrough : null,
-                          ),
+                          style:
+                              AcadexTypography.title(
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
+                              ).copyWith(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                decoration: isCompleted
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -215,11 +241,21 @@ class TodayScheduleTimeline extends ConsumerWidget {
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(LucideIcons.layoutGrid, size: 12, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                  Icon(
+                                    LucideIcons.layoutGrid,
+                                    size: 12,
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                     'Sec: $sectionName',
-                                    style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                    style: AcadexTypography.caption(
+                                      color: isDark
+                                          ? AcadexColors.darkInkMuted
+                                          : AcadexColors.inkMuted,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -227,11 +263,21 @@ class TodayScheduleTimeline extends ConsumerWidget {
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(LucideIcons.user, size: 12, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                  Icon(
+                                    LucideIcons.user,
+                                    size: 12,
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                     facultyName,
-                                    style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                    style: AcadexTypography.caption(
+                                      color: isDark
+                                          ? AcadexColors.darkInkMuted
+                                          : AcadexColors.inkMuted,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -239,11 +285,21 @@ class TodayScheduleTimeline extends ConsumerWidget {
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(LucideIcons.mapPin, size: 12, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                  Icon(
+                                    LucideIcons.mapPin,
+                                    size: 12,
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                     'Room ${entry.roomNumber}${entry.building != null ? ' · ${entry.building}' : ''}',
-                                    style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                    style: AcadexTypography.caption(
+                                      color: isDark
+                                          ? AcadexColors.darkInkMuted
+                                          : AcadexColors.inkMuted,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -261,7 +317,9 @@ class TodayScheduleTimeline extends ConsumerWidget {
                         label: 'Attendance',
                         icon: LucideIcons.userCheck,
                         size: AcadexButtonSize.sm,
-                        variant: isNow ? AcadexButtonVariant.primary : AcadexButtonVariant.secondary,
+                        variant: isNow
+                            ? AcadexButtonVariant.primary
+                            : AcadexButtonVariant.secondary,
                         onPressed: () {
                           context.go('/attendance');
                         },

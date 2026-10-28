@@ -11,10 +11,7 @@ class StudentAnalyticsQuery {
   final String studentId;
   final AttendanceDateRange? dateRange;
 
-  const StudentAnalyticsQuery({
-    required this.studentId,
-    this.dateRange,
-  });
+  const StudentAnalyticsQuery({required this.studentId, this.dateRange});
 
   @override
   bool operator ==(Object other) =>
@@ -60,10 +57,7 @@ class SectionAnalyticsQuery {
   final String sectionId;
   final AttendanceDateRange? dateRange;
 
-  const SectionAnalyticsQuery({
-    required this.sectionId,
-    this.dateRange,
-  });
+  const SectionAnalyticsQuery({required this.sectionId, this.dateRange});
 
   @override
   bool operator ==(Object other) =>
@@ -83,10 +77,7 @@ class FacultyAnalyticsQuery {
   final String facultyId;
   final AttendanceDateRange? dateRange;
 
-  const FacultyAnalyticsQuery({
-    required this.facultyId,
-    this.dateRange,
-  });
+  const FacultyAnalyticsQuery({required this.facultyId, this.dateRange});
 
   @override
   bool operator ==(Object other) =>
@@ -127,90 +118,111 @@ class DateRangeSummaryQuery {
 }
 
 /// Student Attendance Analytics Provider (Family)
-final studentAttendanceAnalyticsProvider =
-    FutureProvider.autoDispose.family<StudentAttendanceAnalytics, StudentAnalyticsQuery>((ref, query) async {
-  final repo = ref.watch(attendanceRepoProvider);
-  return repo.getStudentAttendanceAnalytics(
-    query.studentId,
-    dateRange: query.dateRange,
-  );
-});
+final studentAttendanceAnalyticsProvider = FutureProvider.autoDispose
+    .family<StudentAttendanceAnalytics, StudentAnalyticsQuery>((
+      ref,
+      query,
+    ) async {
+      final repo = ref.watch(attendanceRepoProvider);
+      return repo.getStudentAttendanceAnalytics(
+        query.studentId,
+        dateRange: query.dateRange,
+      );
+    });
 
 /// Subject Attendance Analytics Provider (Family)
-final subjectAttendanceAnalyticsProvider =
-    FutureProvider.autoDispose.family<SubjectAttendanceAnalytics, SubjectAnalyticsQuery>((ref, query) async {
-  final repo = ref.watch(attendanceRepoProvider);
-  return repo.getSubjectAttendanceAnalytics(
-    query.subjectId,
-    sectionId: query.sectionId,
-    dateRange: query.dateRange,
-  );
-});
+final subjectAttendanceAnalyticsProvider = FutureProvider.autoDispose
+    .family<SubjectAttendanceAnalytics, SubjectAnalyticsQuery>((
+      ref,
+      query,
+    ) async {
+      final repo = ref.watch(attendanceRepoProvider);
+      return repo.getSubjectAttendanceAnalytics(
+        query.subjectId,
+        sectionId: query.sectionId,
+        dateRange: query.dateRange,
+      );
+    });
 
 /// Section Attendance Analytics Provider (Family)
-final sectionAttendanceAnalyticsProvider =
-    FutureProvider.autoDispose.family<SectionAttendanceAnalytics, SectionAnalyticsQuery>((ref, query) async {
-  final repo = ref.watch(attendanceRepoProvider);
-  return repo.getSectionAttendanceAnalytics(
-    query.sectionId,
-    dateRange: query.dateRange,
-  );
-});
+final sectionAttendanceAnalyticsProvider = FutureProvider.autoDispose
+    .family<SectionAttendanceAnalytics, SectionAnalyticsQuery>((
+      ref,
+      query,
+    ) async {
+      final repo = ref.watch(attendanceRepoProvider);
+      return repo.getSectionAttendanceAnalytics(
+        query.sectionId,
+        dateRange: query.dateRange,
+      );
+    });
 
 /// Faculty Attendance Analytics Provider (Family)
-final facultyAttendanceAnalyticsProvider =
-    FutureProvider.autoDispose.family<FacultyAttendanceAnalytics, FacultyAnalyticsQuery>((ref, query) async {
-  final repo = ref.watch(attendanceRepoProvider);
-  return repo.getFacultyAttendanceAnalytics(
-    query.facultyId,
-    dateRange: query.dateRange,
-  );
-});
+final facultyAttendanceAnalyticsProvider = FutureProvider.autoDispose
+    .family<FacultyAttendanceAnalytics, FacultyAnalyticsQuery>((
+      ref,
+      query,
+    ) async {
+      final repo = ref.watch(attendanceRepoProvider);
+      return repo.getFacultyAttendanceAnalytics(
+        query.facultyId,
+        dateRange: query.dateRange,
+      );
+    });
 
 /// Date Range Summary Analytics Provider (Family)
-final attendanceDateRangeSummaryProvider =
-    FutureProvider.autoDispose.family<AttendanceDateRangeSummary, DateRangeSummaryQuery>((ref, query) async {
-  final repo = ref.watch(attendanceRepoProvider);
-  return repo.getAttendanceDateRangeSummary(
-    dateRange: query.dateRange,
-    departmentId: query.departmentId,
-    sectionId: query.sectionId,
-  );
-});
+final attendanceDateRangeSummaryProvider = FutureProvider.autoDispose
+    .family<AttendanceDateRangeSummary, DateRangeSummaryQuery>((
+      ref,
+      query,
+    ) async {
+      final repo = ref.watch(attendanceRepoProvider);
+      return repo.getAttendanceDateRangeSummary(
+        dateRange: query.dateRange,
+        departmentId: query.departmentId,
+        sectionId: query.sectionId,
+      );
+    });
 
 /// Contextual Provider for Currently Logged-in Student
-final currentStudentAnalyticsProvider =
-    FutureProvider.autoDispose.family<StudentAttendanceAnalytics, AttendanceDateRange?>((ref, dateRange) async {
-  final authState = ref.watch(authProvider);
-  if (authState is! AuthAuthenticated) {
-    return const StudentAttendanceAnalytics(
-      studentId: '',
-      attendancePercentage: 0.0,
-      isLowAttendance: false,
-    );
-  }
+final currentStudentAnalyticsProvider = FutureProvider.autoDispose
+    .family<StudentAttendanceAnalytics, AttendanceDateRange?>((
+      ref,
+      dateRange,
+    ) async {
+      final authState = ref.watch(authProvider);
+      if (authState is! AuthAuthenticated) {
+        return const StudentAttendanceAnalytics(
+          studentId: '',
+          attendancePercentage: 0.0,
+          isLowAttendance: false,
+        );
+      }
 
-  final repo = ref.watch(attendanceRepoProvider);
-  return repo.getStudentAttendanceAnalytics(
-    authState.user.id,
-    dateRange: dateRange,
-  );
-});
+      final repo = ref.watch(attendanceRepoProvider);
+      return repo.getStudentAttendanceAnalytics(
+        authState.user.id,
+        dateRange: dateRange,
+      );
+    });
 
 /// Contextual Provider for Currently Logged-in Faculty
-final currentFacultyAnalyticsProvider =
-    FutureProvider.autoDispose.family<FacultyAttendanceAnalytics, AttendanceDateRange?>((ref, dateRange) async {
-  final authState = ref.watch(authProvider);
-  if (authState is! AuthAuthenticated) {
-    return const FacultyAttendanceAnalytics(
-      facultyId: '',
-      attendancePercentage: 0.0,
-    );
-  }
+final currentFacultyAnalyticsProvider = FutureProvider.autoDispose
+    .family<FacultyAttendanceAnalytics, AttendanceDateRange?>((
+      ref,
+      dateRange,
+    ) async {
+      final authState = ref.watch(authProvider);
+      if (authState is! AuthAuthenticated) {
+        return const FacultyAttendanceAnalytics(
+          facultyId: '',
+          attendancePercentage: 0.0,
+        );
+      }
 
-  final repo = ref.watch(attendanceRepoProvider);
-  return repo.getFacultyAttendanceAnalytics(
-    authState.user.id,
-    dateRange: dateRange,
-  );
-});
+      final repo = ref.watch(attendanceRepoProvider);
+      return repo.getFacultyAttendanceAnalytics(
+        authState.user.id,
+        dateRange: dateRange,
+      );
+    });

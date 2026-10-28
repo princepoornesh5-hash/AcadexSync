@@ -333,7 +333,8 @@ class CalendarEventModel {
       eventType: CalendarEventType.fromString(json['eventType'] as String?),
       scope: CalendarEventScope.fromString(json['scope'] as String?),
       startDate: json['startDate'] as String? ?? '',
-      endDate: json['endDate'] as String? ?? (json['startDate'] as String? ?? ''),
+      endDate:
+          json['endDate'] as String? ?? (json['startDate'] as String? ?? ''),
       startTime: json['startTime'] as String?,
       endTime: json['endTime'] as String?,
       allDay: json['allDay'] as bool? ?? false,
@@ -490,7 +491,13 @@ class AcademicCalendarModel {
     required this.startDate,
     required this.endDate,
     required this.status,
-    this.workingDays = const ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
+    this.workingDays = const [
+      'MONDAY',
+      'TUESDAY',
+      'WEDNESDAY',
+      'THURSDAY',
+      'FRIDAY',
+    ],
     this.holidays = const [],
     this.createdAt,
     this.updatedAt,
@@ -509,11 +516,13 @@ class AcademicCalendarModel {
       startDate: json['startDate'] as String? ?? '',
       endDate: json['endDate'] as String? ?? '',
       status: json['status'] as String? ?? 'ACTIVE',
-      workingDays: (json['workingDays'] as List<dynamic>?)
+      workingDays:
+          (json['workingDays'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
-      holidays: (json['holidays'] as List<dynamic>?)
+      holidays:
+          (json['holidays'] as List<dynamic>?)
               ?.map((e) => Map<String, dynamic>.from(e as Map))
               .toList() ??
           const [],

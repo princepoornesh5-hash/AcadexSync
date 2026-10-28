@@ -11,12 +11,7 @@ import '../../../institution_config/presentation/providers/institution_config_pr
 
 export '../models/setup_action_decision.dart';
 
-enum SetupMilestoneStatus {
-  completed,
-  ready,
-  waitingOnAdmin,
-  blocked,
-}
+enum SetupMilestoneStatus { completed, ready, waitingOnAdmin, blocked }
 
 class SetupMilestone {
   final SetupMilestoneId id;
@@ -56,7 +51,8 @@ class SetupMilestone {
   bool get isCompleted => status == SetupMilestoneStatus.completed;
   bool get isReady => status == SetupMilestoneStatus.ready;
   bool get isBlocked => status == SetupMilestoneStatus.blocked;
-  bool get canCurrentUserAct => decision?.canCurrentUserAct ?? (status == SetupMilestoneStatus.ready);
+  bool get canCurrentUserAct =>
+      decision?.canCurrentUserAct ?? (status == SetupMilestoneStatus.ready);
   String? get waitingReason => decision?.waitingReason ?? adminMessage;
 
   factory SetupMilestone.fromDecision({
@@ -97,7 +93,9 @@ class SetupMilestone {
       status: status,
       completedCount: completedCount,
       summaryDetail: summaryDetail,
-      actionLabel: decision.actionLabel ?? (isWaiting ? 'Notify College Admin' : 'Action Required'),
+      actionLabel:
+          decision.actionLabel ??
+          (isWaiting ? 'Notify College Admin' : 'Action Required'),
       actionRoute: decision.actionRoute,
       viewLabel: viewLabel,
       viewRoute: viewRoute,
@@ -152,7 +150,10 @@ class DepartmentSetupState {
 }
 
 /// Computes the authoritative progressive academic onboarding & setup state for a department.
-final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetupState, String?>((ref, explicitDeptId) async {
+final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetupState, String?>((
+  ref,
+  explicitDeptId,
+) async {
   final authState = ref.watch(authProvider);
   final user = authState is AuthAuthenticated ? authState.user : null;
   final role = user?.role ?? AppRole.student;
@@ -192,20 +193,27 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
 
   if (effectiveDeptId.isNotEmpty) {
     try {
-      currentDepartment = departments.firstWhere((d) => d.id == effectiveDeptId);
+      currentDepartment = departments.firstWhere(
+        (d) => d.id == effectiveDeptId,
+      );
     } catch (_) {
       currentDepartment = null;
     }
   }
 
   // If still empty and authorized admin, fallback to first available department
-  if (currentDepartment == null && departments.isNotEmpty && (isCollegeAdmin || isSuperAdmin)) {
+  if (currentDepartment == null &&
+      departments.isNotEmpty &&
+      (isCollegeAdmin || isSuperAdmin)) {
     currentDepartment = departments.first;
     effectiveDeptId = currentDepartment.id;
   }
 
-  final effectiveCollegeId = currentDepartment?.collegeId ?? user?.collegeId ?? '';
-  final effectiveDeptName = currentDepartment?.name ?? (effectiveDeptId.isNotEmpty ? effectiveDeptId : 'Your Department');
+  final effectiveCollegeId =
+      currentDepartment?.collegeId ?? user?.collegeId ?? '';
+  final effectiveDeptName =
+      currentDepartment?.name ??
+      (effectiveDeptId.isNotEmpty ? effectiveDeptId : 'Your Department');
 
   // 2. Fetch authoritative domain data
   final courses = await coursesFuture;
@@ -214,10 +222,12 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
   final sections = await sectionsFuture;
   final subjects = await subjectsFuture;
   final assignments = await assignmentsFuture;
-  
+
   List<Faculty> facultyList = [];
   try {
-    facultyList = await academicRepo.getFaculty(departmentId: effectiveDeptId.isNotEmpty ? effectiveDeptId : null);
+    facultyList = await academicRepo.getFaculty(
+      departmentId: effectiveDeptId.isNotEmpty ? effectiveDeptId : null,
+    );
   } catch (_) {
     facultyList = fallbackFaculty;
   }
@@ -226,7 +236,9 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
   List<Student> departmentStudents = [];
   if (effectiveDeptId.isNotEmpty) {
     try {
-      departmentStudents = await academicRepo.getStudentsByDepartment(effectiveDeptId);
+      departmentStudents = await academicRepo.getStudentsByDepartment(
+        effectiveDeptId,
+      );
     } catch (_) {
       departmentStudents = [];
     }
@@ -247,15 +259,43 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
   }
 
   // 3. Filter entities for current department context
-  final deptCourses = courses.where((c) => c.departmentId == effectiveDeptId && c.isActive).toList();
-  final activeCollegeYears = academicYears.where((y) => (effectiveCollegeId.isEmpty || y.collegeId == effectiveCollegeId) && y.isActive).toList();
-  final effectiveAcademicYear = currentAcademicYear ?? (activeCollegeYears.isNotEmpty ? activeCollegeYears.first : null);
+  final deptCourses = courses
+      .where((c) => c.departmentId == effectiveDeptId && c.isActive)
+      .toList();
+  final activeCollegeYears = academicYears
+      .where(
+        (y) =>
+            (effectiveCollegeId.isEmpty || y.collegeId == effectiveCollegeId) &&
+            y.isActive,
+      )
+      .toList();
+  final effectiveAcademicYear =
+      currentAcademicYear ??
+      (activeCollegeYears.isNotEmpty ? activeCollegeYears.first : null);
 
-  final deptSemesters = semesters.where((s) => s.departmentId == effectiveDeptId && s.status != 'archived' && (s.isActive || s.isCurrent || s.status == 'active' || s.status == 'upcoming')).toList();
-  final deptSections = sections.where((s) => s.departmentId == effectiveDeptId && s.isActive).toList();
-  final deptSubjects = subjects.where((s) => s.departmentId == effectiveDeptId && s.isActive).toList();
-  final deptAssignments = assignments.where((a) => a.departmentId == effectiveDeptId && a.isActive).toList();
-  final enrolledStudents = departmentStudents.where((s) => s.isActive && (!isSectionEnabled || s.sectionId.isNotEmpty)).toList();
+  final deptSemesters = semesters
+      .where(
+        (s) =>
+            s.departmentId == effectiveDeptId &&
+            s.status != 'archived' &&
+            (s.isActive ||
+                s.isCurrent ||
+                s.status == 'active' ||
+                s.status == 'upcoming'),
+      )
+      .toList();
+  final deptSections = sections
+      .where((s) => s.departmentId == effectiveDeptId && s.isActive)
+      .toList();
+  final deptSubjects = subjects
+      .where((s) => s.departmentId == effectiveDeptId && s.isActive)
+      .toList();
+  final deptAssignments = assignments
+      .where((a) => a.departmentId == effectiveDeptId && a.isActive)
+      .toList();
+  final enrolledStudents = departmentStudents
+      .where((s) => s.isActive && (!isSectionEnabled || s.sectionId.isNotEmpty))
+      .toList();
 
   // 4. Resolve the authoritative milestones using AcademicPrerequisiteGuard
   final List<SetupMilestone> milestones = [];
@@ -285,12 +325,14 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
       id: SetupMilestoneId.course,
       stepNumber: currentStep++,
       title: terminology.label(AcademicConcept.program),
-      description: 'Define ${terminology.label(AcademicConcept.program, plural: true).toLowerCase()} offered by your department.',
+      description:
+          'Define ${terminology.label(AcademicConcept.program, plural: true).toLowerCase()} offered by your department.',
       completedCount: deptCourses.length,
       summaryDetail: deptCourses.isNotEmpty
           ? '${deptCourses.first.name}${deptCourses.length > 1 ? " (+${deptCourses.length - 1} more)" : ""}'
           : null,
-      viewLabel: 'View ${terminology.label(AcademicConcept.program, plural: true)}',
+      viewLabel:
+          'View ${terminology.label(AcademicConcept.program, plural: true)}',
       viewRoute: '/academics/courses',
       decision: courseDecision,
     ),
@@ -323,7 +365,8 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
       description: 'Associate with active college academic calendar.',
       completedCount: effectiveAcademicYear != null ? 1 : 0,
       summaryDetail: effectiveAcademicYear?.name,
-      viewLabel: 'View ${terminology.label(AcademicConcept.academicYear, plural: true)}',
+      viewLabel:
+          'View ${terminology.label(AcademicConcept.academicYear, plural: true)}',
       viewRoute: '/academics/academic_years',
       decision: ayDecision,
     ),
@@ -353,12 +396,14 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
       id: SetupMilestoneId.semester,
       stepNumber: currentStep++,
       title: terminology.label(AcademicConcept.semester),
-      description: 'Create active teaching terms under your department courses.',
+      description:
+          'Create active teaching terms under your department courses.',
       completedCount: deptSemesters.length,
       summaryDetail: deptSemesters.isNotEmpty
           ? '${deptSemesters.first.name}${deptSemesters.length > 1 ? " (+${deptSemesters.length - 1} more)" : ""}'
           : null,
-      viewLabel: 'View ${terminology.label(AcademicConcept.semester, plural: true)}',
+      viewLabel:
+          'View ${terminology.label(AcademicConcept.semester, plural: true)}',
       viewRoute: '/academics/semesters',
       decision: semDecision,
     ),
@@ -382,19 +427,21 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
       timetableCount: timetableCount,
       currentAcademicYear: currentAcademicYear,
       isSectionEnabled: isSectionEnabled,
-    termHelper: terminology,
+      termHelper: terminology,
     );
     milestones.add(
       SetupMilestone.fromDecision(
         id: SetupMilestoneId.section,
         stepNumber: currentStep++,
         title: terminology.label(AcademicConcept.section, plural: true),
-        description: 'Form classroom student cohorts with designated seat capacity.',
+        description:
+            'Form classroom student cohorts with designated seat capacity.',
         completedCount: deptSections.length,
         summaryDetail: deptSections.isNotEmpty
             ? '${deptSections.first.name} (${deptSections.first.capacity} seats)${deptSections.length > 1 ? " (+${deptSections.length - 1} more)" : ""}'
             : null,
-        viewLabel: 'View ${terminology.label(AcademicConcept.section, plural: true)}',
+        viewLabel:
+            'View ${terminology.label(AcademicConcept.section, plural: true)}',
         viewRoute: '/academics/sections',
         decision: secDecision,
       ),
@@ -430,7 +477,8 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
       summaryDetail: deptSubjects.isNotEmpty
           ? '${deptSubjects.first.name} (${deptSubjects.first.code})${deptSubjects.length > 1 ? " (+${deptSubjects.length - 1} more)" : ""}'
           : null,
-      viewLabel: 'View ${terminology.label(AcademicConcept.subject, plural: true)}',
+      viewLabel:
+          'View ${terminology.label(AcademicConcept.subject, plural: true)}',
       viewRoute: '/academics/subjects',
       decision: subDecision,
     ),
@@ -460,9 +508,12 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
       id: SetupMilestoneId.facultyAssignment,
       stepNumber: currentStep++,
       title: 'Faculty Assignments',
-      description: 'Allocate teachers and professors to subject teaching duties.',
+      description:
+          'Allocate teachers and professors to subject teaching duties.',
       completedCount: deptAssignments.length,
-      summaryDetail: deptAssignments.isNotEmpty ? '${deptAssignments.length} Teaching Allocations' : null,
+      summaryDetail: deptAssignments.isNotEmpty
+          ? '${deptAssignments.length} Teaching Allocations'
+          : null,
       viewLabel: 'View Allocations',
       viewRoute: '/faculty-assignments',
       decision: facDecision,
@@ -493,9 +544,12 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
       id: SetupMilestoneId.studentEnrollment,
       stepNumber: currentStep++,
       title: 'Student Enrollment',
-      description: 'Assign admitted students to department cohorts for rosters.',
+      description:
+          'Assign admitted students to department cohorts for rosters.',
       completedCount: enrolledStudents.length,
-      summaryDetail: enrolledStudents.isNotEmpty ? '${enrolledStudents.length} Students Enrolled' : null,
+      summaryDetail: enrolledStudents.isNotEmpty
+          ? '${enrolledStudents.length} Students Enrolled'
+          : null,
       viewLabel: 'View Students',
       viewRoute: '/academics/students',
       decision: enrDecision,
@@ -526,9 +580,12 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
       id: SetupMilestoneId.timetable,
       stepNumber: currentStep++,
       title: 'Timetable',
-      description: 'Build and publish regular class lecture schedule containers.',
+      description:
+          'Build and publish regular class lecture schedule containers.',
       completedCount: timetableCount,
-      summaryDetail: timetableCount > 0 ? '$timetableCount Timetables Scheduled' : null,
+      summaryDetail: timetableCount > 0
+          ? '$timetableCount Timetables Scheduled'
+          : null,
       viewLabel: 'View Timetable',
       viewRoute: '/timetable',
       decision: ttDecision,
@@ -539,7 +596,8 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
   final courseCoverages = <CourseSetupCoverage>[];
   for (final c in deptCourses) {
     final hasSem = deptSemesters.any((s) => s.courseId == c.id);
-    final hasSec = !isSectionEnabled || deptSections.any((s) => s.courseId == c.id);
+    final hasSec =
+        !isSectionEnabled || deptSections.any((s) => s.courseId == c.id);
     final hasSub = deptSubjects.any((s) => s.courseId == c.id);
     final hasFac = deptAssignments.any((a) => a.courseId == c.id);
     final hasEnr = enrolledStudents.any((st) => st.courseId == c.id);
@@ -560,17 +618,24 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
     );
   }
 
-  final incompleteCourses = courseCoverages.where((cov) => !cov.isFullyCovered).toList();
-  final bool hasRemainingCourseCoverage = deptCourses.length > 1 && incompleteCourses.isNotEmpty;
+  final incompleteCourses = courseCoverages
+      .where((cov) => !cov.isFullyCovered)
+      .toList();
+  final bool hasRemainingCourseCoverage =
+      deptCourses.length > 1 && incompleteCourses.isNotEmpty;
 
   // 6. Overall progress calculation
   final completedCount = milestones.where((m) => m.isCompleted).length;
   final totalCount = milestones.length;
-  final progressRatio = totalCount > 0 ? completedCount / totalCount.toDouble() : 1.0;
+  final progressRatio = totalCount > 0
+      ? completedCount / totalCount.toDouble()
+      : 1.0;
   final percentage = (progressRatio * 100).round();
-  final isCurrentContextComplete = totalCount > 0 && completedCount == totalCount;
+  final isCurrentContextComplete =
+      totalCount > 0 && completedCount == totalCount;
   // Department is only completely done when current context is complete AND all department courses are covered
-  final isDepartmentFullyConfigured = isCurrentContextComplete && !hasRemainingCourseCoverage;
+  final isDepartmentFullyConfigured =
+      isCurrentContextComplete && !hasRemainingCourseCoverage;
   final isComplete = isDepartmentFullyConfigured;
 
   // 7. Smart Next Step Selection (Prompt 10 Section 9)
@@ -585,21 +650,26 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
   // 8. Multi-context notice generation (Prompt 9 & Prompt 10 Section 7)
   String? multiContextNotice;
   if (deptCourses.length > 1) {
-    final coursesMissingSemester = deptCourses.where((c) => !deptSemesters.any((s) => s.courseId == c.id)).toList();
+    final coursesMissingSemester = deptCourses
+        .where((c) => !deptSemesters.any((s) => s.courseId == c.id))
+        .toList();
     if (isCurrentContextComplete && incompleteCourses.isNotEmpty) {
       final incomplete = incompleteCourses.firstWhere(
         (cov) => cov.courseId != deptCourses.first.id,
         orElse: () => incompleteCourses.first,
       );
-      multiContextNotice = 'Current setup context complete, but ${incomplete.courseName} still has setup work remaining: ${incomplete.missingSteps.join(", ")}.';
+      multiContextNotice =
+          'Current setup context complete, but ${incomplete.courseName} still has setup work remaining: ${incomplete.missingSteps.join(", ")}.';
     } else if (coursesMissingSemester.isNotEmpty) {
-      multiContextNotice = 'Multiple courses detected: ${coursesMissingSemester.first.name} does not have an active semester configured yet.';
+      multiContextNotice =
+          'Multiple courses detected: ${coursesMissingSemester.first.name} does not have an active semester configured yet.';
     } else if (incompleteCourses.isNotEmpty) {
       final incomplete = incompleteCourses.firstWhere(
         (cov) => cov.courseId != deptCourses.first.id,
         orElse: () => incompleteCourses.first,
       );
-      multiContextNotice = 'Note: ${incomplete.courseName} requires ${incomplete.missingSteps.first} for full department coverage.';
+      multiContextNotice =
+          'Note: ${incomplete.courseName} requires ${incomplete.missingSteps.first} for full department coverage.';
     }
   }
 
@@ -621,6 +691,7 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
     nextActionableMilestone: nextActionable,
     multiContextNotice: multiContextNotice,
     isHod: isHod,
-    canSwitchDepartment: (isCollegeAdmin || isSuperAdmin) && departments.length > 1,
+    canSwitchDepartment:
+        (isCollegeAdmin || isSuperAdmin) && departments.length > 1,
   );
 });

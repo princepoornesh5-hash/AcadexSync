@@ -51,7 +51,8 @@ class _HistoricalAttendanceScreenState
   DateTime _selectedDate = DateTime.now().subtract(const Duration(days: 1));
   String _selectedPeriod = 'Period 1 (09:00 - 10:00)';
   final TextEditingController _customPeriodController = TextEditingController();
-  final TextEditingController _sessionRemarksController = TextEditingController();
+  final TextEditingController _sessionRemarksController =
+      TextEditingController();
   final Map<String, AttendanceStatus?> _detailedStatuses = {};
   final Map<String, String> _detailedRemarks = {};
   bool _isSavingDetailed = false;
@@ -154,15 +155,18 @@ class _HistoricalAttendanceScreenState
       );
 
       final rawList = result['roster'] as List<dynamic>? ?? [];
-      final parsedRoster = rawList.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      final parsedRoster = rawList
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
 
       // Sort roster alphabetically by rollNumber / name
       parsedRoster.sort((a, b) {
         final rA = a['rollNumber']?.toString() ?? '';
         final rB = b['rollNumber']?.toString() ?? '';
         if (rA.isNotEmpty && rB.isNotEmpty) return rA.compareTo(rB);
-        return (a['studentName']?.toString() ?? '')
-            .compareTo(b['studentName']?.toString() ?? '');
+        return (a['studentName']?.toString() ?? '').compareTo(
+          b['studentName']?.toString() ?? '',
+        );
       });
 
       // Clear & initialize Mode A detailed controllers
@@ -170,7 +174,8 @@ class _HistoricalAttendanceScreenState
       _detailedRemarks.clear();
       for (final s in parsedRoster) {
         final id = s['enrollmentId']?.toString() ?? '';
-        _detailedStatuses[id] = AttendanceStatus.present; // Default to present for convenience
+        _detailedStatuses[id] =
+            AttendanceStatus.present; // Default to present for convenience
       }
 
       // Clear & initialize Mode B summary controllers
@@ -193,8 +198,12 @@ class _HistoricalAttendanceScreenState
 
       for (final s in parsedRoster) {
         final id = s['enrollmentId']?.toString() ?? '';
-        _heldControllers[id] = TextEditingController(text: _bulkClassesHeldController.text);
-        _presentControllers[id] = TextEditingController(text: _bulkClassesHeldController.text);
+        _heldControllers[id] = TextEditingController(
+          text: _bulkClassesHeldController.text,
+        );
+        _presentControllers[id] = TextEditingController(
+          text: _bulkClassesHeldController.text,
+        );
         _percentageControllers[id] = TextEditingController(text: '100');
         _summaryRemarksControllers[id] = TextEditingController();
       }
@@ -218,7 +227,10 @@ class _HistoricalAttendanceScreenState
         _isLoadingRoster = false;
       });
       if (mounted) {
-        AcadexSnackBar.showError(context, 'Failed to resolve historical roster: $e');
+        AcadexSnackBar.showError(
+          context,
+          'Failed to resolve historical roster: $e',
+        );
       }
     }
   }
@@ -246,9 +258,16 @@ class _HistoricalAttendanceScreenState
     // Verify date is not in the future
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final targetDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+    final targetDate = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+    );
     if (targetDate.isAfter(today)) {
-      AcadexSnackBar.showError(context, 'Historical attendance cannot be marked for future dates.');
+      AcadexSnackBar.showError(
+        context,
+        'Historical attendance cannot be marked for future dates.',
+      );
       return;
     }
 
@@ -262,7 +281,10 @@ class _HistoricalAttendanceScreenState
       final confirm = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text('Unmarked Students ($unmarkedCount)', style: AcadexTypography.heading3),
+          title: Text(
+            'Unmarked Students ($unmarkedCount)',
+            style: AcadexTypography.heading3,
+          ),
           content: Text(
             'There are $unmarkedCount students without an attendance status. Would you like to mark them absent and proceed?',
             style: AcadexTypography.body(),
@@ -274,8 +296,13 @@ class _HistoricalAttendanceScreenState
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(ctx).pop(true),
-              style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
-              child: const Text('Mark Absent & Save', style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AcadexColors.primary,
+              ),
+              child: const Text(
+                'Mark Absent & Save',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),
@@ -311,9 +338,16 @@ class _HistoricalAttendanceScreenState
       builder: (ctx) => AlertDialog(
         title: Row(
           children: [
-            const Icon(LucideIcons.history, color: AcadexColors.primary, size: 22),
+            const Icon(
+              LucideIcons.history,
+              color: AcadexColors.primary,
+              size: 22,
+            ),
             const SizedBox(width: 8),
-            Text('Confirm Historical Session', style: AcadexTypography.heading3),
+            Text(
+              'Confirm Historical Session',
+              style: AcadexTypography.heading3,
+            ),
           ],
         ),
         content: ConstrainedBox(
@@ -327,7 +361,10 @@ class _HistoricalAttendanceScreenState
                 style: AcadexTypography.caption(),
               ),
               const SizedBox(height: 12),
-              _buildAuditRow('Historical Date', DateFormat('EEEE, MMM d, yyyy').format(_selectedDate)),
+              _buildAuditRow(
+                'Historical Date',
+                DateFormat('EEEE, MMM d, yyyy').format(_selectedDate),
+              ),
               _buildAuditRow('Class Period', period),
               _buildAuditRow('Total Students', '${_roster.length}'),
               _buildAuditRow('Present / Late', '$present / $late'),
@@ -338,16 +375,24 @@ class _HistoricalAttendanceScreenState
                 decoration: BoxDecoration(
                   color: AcadexColors.warning.withValues(alpha: 0.1),
                   borderRadius: AcadexRadius.borderRadiusSm,
-                  border: Border.all(color: AcadexColors.warning.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AcadexColors.warning.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.alertTriangle, size: 16, color: AcadexColors.warning),
+                    const Icon(
+                      LucideIcons.alertTriangle,
+                      size: 16,
+                      color: AcadexColors.warning,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'This record will be saved with sourceType: HISTORICAL_MANUAL and will appear in Student 360 history.',
-                        style: AcadexTypography.caption(color: AcadexColors.warning),
+                        style: AcadexTypography.caption(
+                          color: AcadexColors.warning,
+                        ),
                       ),
                     ),
                   ],
@@ -363,8 +408,13 @@ class _HistoricalAttendanceScreenState
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
-            child: const Text('Save Historical Session', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.primary,
+            ),
+            child: const Text(
+              'Save Historical Session',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -409,9 +459,16 @@ class _HistoricalAttendanceScreenState
           builder: (ctx) => AlertDialog(
             title: Row(
               children: [
-                const Icon(LucideIcons.checkCircle2, color: AcadexColors.success, size: 24),
+                const Icon(
+                  LucideIcons.checkCircle2,
+                  color: AcadexColors.success,
+                  size: 24,
+                ),
                 const SizedBox(width: 8),
-                Text('Historical Session Recorded', style: AcadexTypography.heading3),
+                Text(
+                  'Historical Session Recorded',
+                  style: AcadexTypography.heading3,
+                ),
               ],
             ),
             content: Text(
@@ -437,8 +494,13 @@ class _HistoricalAttendanceScreenState
                     _detailedStatuses.clear();
                   });
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
-                child: const Text('Done', style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AcadexColors.primary,
+                ),
+                child: const Text(
+                  'Done',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -447,7 +509,10 @@ class _HistoricalAttendanceScreenState
     } catch (e) {
       setState(() => _isSavingDetailed = false);
       if (mounted) {
-        AcadexSnackBar.showError(context, 'Failed to save historical session: $e');
+        AcadexSnackBar.showError(
+          context,
+          'Failed to save historical session: $e',
+        );
       }
     }
   }
@@ -465,7 +530,10 @@ class _HistoricalAttendanceScreenState
 
     final periodLabel = _summaryPeriodLabelController.text.trim();
     if (periodLabel.isEmpty) {
-      AcadexSnackBar.showWarning(context, 'Please specify the period label (e.g. "Term 1 Aggregate").');
+      AcadexSnackBar.showWarning(
+        context,
+        'Please specify the period label (e.g. "Term 1 Aggregate").',
+      );
       return;
     }
 
@@ -534,7 +602,11 @@ class _HistoricalAttendanceScreenState
       builder: (ctx) => AlertDialog(
         title: Row(
           children: [
-            const Icon(LucideIcons.calculator, color: AcadexColors.primary, size: 22),
+            const Icon(
+              LucideIcons.calculator,
+              color: AcadexColors.primary,
+              size: 22,
+            ),
             const SizedBox(width: 8),
             Text('Save Historical Summaries', style: AcadexTypography.heading3),
           ],
@@ -551,8 +623,13 @@ class _HistoricalAttendanceScreenState
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
-            child: const Text('Save Summaries', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.primary,
+            ),
+            child: const Text(
+              'Save Summaries',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -635,9 +712,16 @@ class _HistoricalAttendanceScreenState
           builder: (ctx) => AlertDialog(
             title: Row(
               children: [
-                const Icon(LucideIcons.shieldCheck, color: AcadexColors.success, size: 24),
+                const Icon(
+                  LucideIcons.shieldCheck,
+                  color: AcadexColors.success,
+                  size: 24,
+                ),
                 const SizedBox(width: 8),
-                Text('Correction Applied & Audited', style: AcadexTypography.heading3),
+                Text(
+                  'Correction Applied & Audited',
+                  style: AcadexTypography.heading3,
+                ),
               ],
             ),
             content: Text(
@@ -650,8 +734,13 @@ class _HistoricalAttendanceScreenState
             actions: [
               ElevatedButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
-                child: const Text('Done', style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AcadexColors.primary,
+                ),
+                child: const Text(
+                  'Done',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -682,7 +771,10 @@ class _HistoricalAttendanceScreenState
   void _applyBulkClassesHeld() {
     final val = _bulkClassesHeldController.text.trim();
     if (int.tryParse(val) == null) {
-      AcadexSnackBar.showWarning(context, 'Please enter a valid integer for Classes Held.');
+      AcadexSnackBar.showWarning(
+        context,
+        'Please enter a valid integer for Classes Held.',
+      );
       return;
     }
     setState(() {
@@ -692,7 +784,10 @@ class _HistoricalAttendanceScreenState
         _presentControllers[id]?.text = val;
       }
     });
-    AcadexSnackBar.showSuccess(context, 'Applied $val classes held to all students.');
+    AcadexSnackBar.showSuccess(
+      context,
+      'Applied $val classes held to all students.',
+    );
   }
 
   // ==========================================
@@ -725,12 +820,23 @@ class _HistoricalAttendanceScreenState
           controller: _tabController,
           isScrollable: true,
           labelColor: AcadexColors.primary,
-          unselectedLabelColor: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          unselectedLabelColor: isDark
+              ? AcadexColors.darkInkMuted
+              : AcadexColors.inkMuted,
           indicatorColor: AcadexColors.primary,
           tabs: const [
-            Tab(icon: Icon(LucideIcons.calendarCheck2, size: 18), text: 'Detailed Session'),
-            Tab(icon: Icon(LucideIcons.calculator, size: 18), text: 'Historical Summary'),
-            Tab(icon: Icon(LucideIcons.userCog, size: 18), text: 'Student Correction'),
+            Tab(
+              icon: Icon(LucideIcons.calendarCheck2, size: 18),
+              text: 'Detailed Session',
+            ),
+            Tab(
+              icon: Icon(LucideIcons.calculator, size: 18),
+              text: 'Historical Summary',
+            ),
+            Tab(
+              icon: Icon(LucideIcons.userCog, size: 18),
+              text: 'Student Correction',
+            ),
           ],
         ),
       ),
@@ -778,7 +884,11 @@ class _HistoricalAttendanceScreenState
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(LucideIcons.archive, color: AcadexColors.primary, size: 20),
+          const Icon(
+            LucideIcons.archive,
+            color: AcadexColors.primary,
+            size: 20,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -791,9 +901,13 @@ class _HistoricalAttendanceScreenState
                   children: [
                     Text(
                       'HISTORICAL ACADEMIC ARCHIVE WORKFLOW',
-                      style: AcadexTypography.caption(
-                        color: AcadexColors.primary,
-                      ).copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                      style:
+                          AcadexTypography.caption(
+                            color: AcadexColors.primary,
+                          ).copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                          ),
                     ),
                     const AcadexBadge(
                       label: 'AUDITED',
@@ -805,7 +919,9 @@ class _HistoricalAttendanceScreenState
                 Text(
                   'Record past class attendance sessions and accumulated totals. All records are tagged with sourceType: HISTORICAL_MANUAL and recorded in the audit log. Live attendance period timing rules are not modified.',
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                    color: isDark
+                        ? AcadexColors.darkInkSecondary
+                        : AcadexColors.inkSecondary,
                   ),
                 ),
               ],
@@ -828,12 +944,16 @@ class _HistoricalAttendanceScreenState
 
     // Filter semesters by academic year
     final filteredSemesters = _selectedAcademicYearId != null
-        ? semesters.where((s) => s.academicYearId == _selectedAcademicYearId).toList()
+        ? semesters
+              .where((s) => s.academicYearId == _selectedAcademicYearId)
+              .toList()
         : semesters;
 
     // Filter sections by semester
     final filteredSections = _selectedSemesterId != null
-        ? sections.where((sec) => sec.semesterId == _selectedSemesterId).toList()
+        ? sections
+              .where((sec) => sec.semesterId == _selectedSemesterId)
+              .toList()
         : sections;
 
     return AcadexCard(
@@ -842,9 +962,16 @@ class _HistoricalAttendanceScreenState
         children: [
           Row(
             children: [
-              const Icon(LucideIcons.graduationCap, size: 18, color: AcadexColors.primary),
+              const Icon(
+                LucideIcons.graduationCap,
+                size: 18,
+                color: AcadexColors.primary,
+              ),
               const SizedBox(width: 8),
-              Text('Academic Context & Scope', style: AcadexTypography.heading3),
+              Text(
+                'Academic Context & Scope',
+                style: AcadexTypography.heading3,
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -858,7 +985,12 @@ class _HistoricalAttendanceScreenState
                       hint: 'Select Year',
                       value: _selectedAcademicYearId,
                       items: academicYears
-                          .map((y) => DropdownMenuItem(value: y.id, child: Text(y.name)))
+                          .map(
+                            (y) => DropdownMenuItem(
+                              value: y.id,
+                              child: Text(y.name),
+                            ),
+                          )
                           .toList(),
                       onChanged: (val) {
                         setState(() {
@@ -876,7 +1008,12 @@ class _HistoricalAttendanceScreenState
                       hint: 'Select Semester',
                       value: _selectedSemesterId,
                       items: filteredSemesters
-                          .map((s) => DropdownMenuItem(value: s.id, child: Text(s.name)))
+                          .map(
+                            (s) => DropdownMenuItem(
+                              value: s.id,
+                              child: Text(s.name),
+                            ),
+                          )
                           .toList(),
                       onChanged: (val) {
                         setState(() {
@@ -897,7 +1034,12 @@ class _HistoricalAttendanceScreenState
                       hint: 'Select Section',
                       value: _selectedSectionId,
                       items: filteredSections
-                          .map((sec) => DropdownMenuItem(value: sec.id, child: Text(sec.name)))
+                          .map(
+                            (sec) => DropdownMenuItem(
+                              value: sec.id,
+                              child: Text(sec.name),
+                            ),
+                          )
                           .toList(),
                       onChanged: (val) {
                         setState(() => _selectedSectionId = val);
@@ -911,10 +1053,15 @@ class _HistoricalAttendanceScreenState
                       hint: 'Select Subject',
                       value: _selectedSubjectId,
                       items: subjects
-                          .map((sub) => DropdownMenuItem(
-                                value: sub.id,
-                                child: Text('${sub.code} - ${sub.name}', overflow: TextOverflow.ellipsis),
-                              ))
+                          .map(
+                            (sub) => DropdownMenuItem(
+                              value: sub.id,
+                              child: Text(
+                                '${sub.code} - ${sub.name}',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          )
                           .toList(),
                       onChanged: (val) {
                         setState(() => _selectedSubjectId = val);
@@ -929,7 +1076,9 @@ class _HistoricalAttendanceScreenState
           Align(
             alignment: Alignment.centerRight,
             child: AcadexButton(
-              label: _isLoadingRoster ? 'Resolving Roster...' : 'Load Historical Roster',
+              label: _isLoadingRoster
+                  ? 'Resolving Roster...'
+                  : 'Load Historical Roster',
               icon: LucideIcons.users,
               variant: AcadexButtonVariant.secondary,
               onPressed: _isLoadingRoster ? null : _fetchRoster,
@@ -993,9 +1142,16 @@ class _HistoricalAttendanceScreenState
             children: [
               Row(
                 children: [
-                  const Icon(LucideIcons.calendarClock, size: 18, color: AcadexColors.primary),
+                  const Icon(
+                    LucideIcons.calendarClock,
+                    size: 18,
+                    color: AcadexColors.primary,
+                  ),
                   const SizedBox(width: 8),
-                  Text('Session Date & Period', style: AcadexTypography.heading3),
+                  Text(
+                    'Session Date & Period',
+                    style: AcadexTypography.heading3,
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -1007,7 +1163,9 @@ class _HistoricalAttendanceScreenState
                       children: [
                         Text(
                           'Historical Date (Past Only)',
-                          style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+                          style: AcadexTypography.caption().copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         const SizedBox(height: 6),
                         InkWell(
@@ -1024,21 +1182,34 @@ class _HistoricalAttendanceScreenState
                             }
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
                             decoration: BoxDecoration(
-                              color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                              color: isDark
+                                  ? AcadexColors.darkSurface
+                                  : AcadexColors.surface,
                               borderRadius: AcadexRadius.borderRadiusMd,
                               border: Border.all(
-                                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                color: isDark
+                                    ? AcadexColors.darkHairline
+                                    : AcadexColors.hairline,
                               ),
                             ),
                             child: Row(
                               children: [
-                                const Icon(LucideIcons.calendar, size: 16, color: AcadexColors.primary),
+                                const Icon(
+                                  LucideIcons.calendar,
+                                  size: 16,
+                                  color: AcadexColors.primary,
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    DateFormat('EEEE, MMM d, yyyy').format(_selectedDate),
+                                    DateFormat(
+                                      'EEEE, MMM d, yyyy',
+                                    ).format(_selectedDate),
                                     style: AcadexTypography.body(),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -1056,7 +1227,9 @@ class _HistoricalAttendanceScreenState
                       label: 'Class Period / Time Slot',
                       value: _selectedPeriod,
                       items: _standardPeriods
-                          .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                          .map(
+                            (p) => DropdownMenuItem(value: p, child: Text(p)),
+                          )
                           .toList(),
                       onChanged: (val) {
                         if (val != null) setState(() => _selectedPeriod = val);
@@ -1077,7 +1250,8 @@ class _HistoricalAttendanceScreenState
               AcadexTextField(
                 controller: _sessionRemarksController,
                 label: 'Session Remarks / Archival Note (Optional)',
-                hint: 'e.g., Recorded from historical attendance register Book #4, Page 22',
+                hint:
+                    'e.g., Recorded from historical attendance register Book #4, Page 22',
               ),
             ],
           ),
@@ -1092,7 +1266,8 @@ class _HistoricalAttendanceScreenState
               padding: EdgeInsets.symmetric(vertical: 32),
               child: AcadexEmptyState(
                 title: 'No Historical Roster Loaded',
-                subtitle: 'Select the academic context above and click "Load Historical Roster" to view enrolled students.',
+                subtitle:
+                    'Select the academic context above and click "Load Historical Roster" to view enrolled students.',
                 icon: LucideIcons.users,
               ),
             ),
@@ -1106,7 +1281,10 @@ class _HistoricalAttendanceScreenState
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Student Attendance Register (${_roster.length})', style: AcadexTypography.heading3),
+                    Text(
+                      'Student Attendance Register (${_roster.length})',
+                      style: AcadexTypography.heading3,
+                    ),
                     Wrap(
                       spacing: 8,
                       children: [
@@ -1136,9 +1314,17 @@ class _HistoricalAttendanceScreenState
                     _buildStatPill('Present', '$present', AcadexColors.success),
                     _buildStatPill('Absent', '$absent', AcadexColors.error),
                     _buildStatPill('Late', '$late', AcadexColors.warning),
-                    _buildStatPill('Excused', '$excused', const Color(0xFF6366F1)),
+                    _buildStatPill(
+                      'Excused',
+                      '$excused',
+                      const Color(0xFF6366F1),
+                    ),
                     if (unmarked > 0)
-                      _buildStatPill('Unmarked', '$unmarked', AcadexColors.inkMuted),
+                      _buildStatPill(
+                        'Unmarked',
+                        '$unmarked',
+                        AcadexColors.inkMuted,
+                      ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -1157,7 +1343,9 @@ class _HistoricalAttendanceScreenState
                   itemCount: filteredRoster.length,
                   separatorBuilder: (_, __) => Divider(
                     height: 1,
-                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
                   ),
                   itemBuilder: (ctx, idx) {
                     final s = filteredRoster[idx];
@@ -1169,16 +1357,23 @@ class _HistoricalAttendanceScreenState
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: isDark ? AcadexColors.darkSurface : const Color(0xFFF1F5F9),
+                              color: isDark
+                                  ? AcadexColors.darkSurface
+                                  : const Color(0xFFF1F5F9),
                               borderRadius: AcadexRadius.borderRadiusSm,
                             ),
                             child: Text(
                               s['rollNumber']?.toString().isNotEmpty == true
                                   ? s['rollNumber'].toString()
                                   : 'No Roll #',
-                              style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w700),
+                              style: AcadexTypography.caption().copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -1187,13 +1382,18 @@ class _HistoricalAttendanceScreenState
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  s['studentName']?.toString() ?? 'Unknown Student',
-                                  style: AcadexTypography.body().copyWith(fontWeight: FontWeight.w600),
+                                  s['studentName']?.toString() ??
+                                      'Unknown Student',
+                                  style: AcadexTypography.body().copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                                 Text(
                                   'Enrollment: $enrollmentId',
                                   style: AcadexTypography.caption(
-                                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
                                   ),
                                 ),
                               ],
@@ -1201,13 +1401,33 @@ class _HistoricalAttendanceScreenState
                           ),
                           const SizedBox(width: 8),
                           // Status Buttons
-                          _buildStatusButton(enrollmentId, AttendanceStatus.present, 'P', currentStatus),
+                          _buildStatusButton(
+                            enrollmentId,
+                            AttendanceStatus.present,
+                            'P',
+                            currentStatus,
+                          ),
                           const SizedBox(width: 4),
-                          _buildStatusButton(enrollmentId, AttendanceStatus.absent, 'A', currentStatus),
+                          _buildStatusButton(
+                            enrollmentId,
+                            AttendanceStatus.absent,
+                            'A',
+                            currentStatus,
+                          ),
                           const SizedBox(width: 4),
-                          _buildStatusButton(enrollmentId, AttendanceStatus.late, 'L', currentStatus),
+                          _buildStatusButton(
+                            enrollmentId,
+                            AttendanceStatus.late,
+                            'L',
+                            currentStatus,
+                          ),
                           const SizedBox(width: 4),
-                          _buildStatusButton(enrollmentId, AttendanceStatus.excused, 'E', currentStatus),
+                          _buildStatusButton(
+                            enrollmentId,
+                            AttendanceStatus.excused,
+                            'E',
+                            currentStatus,
+                          ),
                         ],
                       ),
                     );
@@ -1218,10 +1438,14 @@ class _HistoricalAttendanceScreenState
                 Align(
                   alignment: Alignment.centerRight,
                   child: AcadexButton(
-                    label: _isSavingDetailed ? 'Saving Session...' : 'Confirm & Save Historical Session',
+                    label: _isSavingDetailed
+                        ? 'Saving Session...'
+                        : 'Confirm & Save Historical Session',
                     icon: LucideIcons.save,
                     variant: AcadexButtonVariant.primary,
-                    onPressed: _isSavingDetailed ? null : _submitDetailedSession,
+                    onPressed: _isSavingDetailed
+                        ? null
+                        : _submitDetailedSession,
                   ),
                 ),
               ],
@@ -1289,9 +1513,16 @@ class _HistoricalAttendanceScreenState
             children: [
               Row(
                 children: [
-                  const Icon(LucideIcons.barChart2, size: 18, color: AcadexColors.primary),
+                  const Icon(
+                    LucideIcons.barChart2,
+                    size: 18,
+                    color: AcadexColors.primary,
+                  ),
                   const SizedBox(width: 8),
-                  Text('Summary Aggregation Specification', style: AcadexTypography.heading3),
+                  Text(
+                    'Summary Aggregation Specification',
+                    style: AcadexTypography.heading3,
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -1309,7 +1540,12 @@ class _HistoricalAttendanceScreenState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Entry Precision Mode', style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600)),
+                        Text(
+                          'Entry Precision Mode',
+                          style: AcadexTypography.caption().copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         const SizedBox(height: 6),
                         Wrap(
                           spacing: 8,
@@ -1319,14 +1555,16 @@ class _HistoricalAttendanceScreenState
                               label: const Text('Classes Count'),
                               selected: !_isPercentageOnlyMode,
                               onSelected: (val) {
-                                if (val) setState(() => _isPercentageOnlyMode = false);
+                                if (val)
+                                  setState(() => _isPercentageOnlyMode = false);
                               },
                             ),
                             ChoiceChip(
                               label: const Text('Percentage Only (%)'),
                               selected: _isPercentageOnlyMode,
                               onSelected: (val) {
-                                if (val) setState(() => _isPercentageOnlyMode = true);
+                                if (val)
+                                  setState(() => _isPercentageOnlyMode = true);
                               },
                             ),
                           ],
@@ -1373,7 +1611,8 @@ class _HistoricalAttendanceScreenState
               padding: EdgeInsets.symmetric(vertical: 32),
               child: AcadexEmptyState(
                 title: 'No Historical Roster Loaded',
-                subtitle: 'Select the academic context above and load the roster to record accumulated totals.',
+                subtitle:
+                    'Select the academic context above and load the roster to record accumulated totals.',
                 icon: LucideIcons.calculator,
               ),
             ),
@@ -1383,7 +1622,10 @@ class _HistoricalAttendanceScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Student Summary Records (${_roster.length})', style: AcadexTypography.heading3),
+                Text(
+                  'Student Summary Records (${_roster.length})',
+                  style: AcadexTypography.heading3,
+                ),
                 const SizedBox(height: 12),
                 ListView.separated(
                   shrinkWrap: true,
@@ -1391,7 +1633,9 @@ class _HistoricalAttendanceScreenState
                   itemCount: _roster.length,
                   separatorBuilder: (_, __) => Divider(
                     height: 1,
-                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
                   ),
                   itemBuilder: (ctx, idx) {
                     final s = _roster[idx];
@@ -1408,7 +1652,9 @@ class _HistoricalAttendanceScreenState
                               children: [
                                 Text(
                                   s['studentName']?.toString() ?? 'Student',
-                                  style: AcadexTypography.body().copyWith(fontWeight: FontWeight.w600),
+                                  style: AcadexTypography.body().copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                                 Text(
                                   'Roll: ${s['rollNumber'] ?? 'N/A'}',
@@ -1456,7 +1702,9 @@ class _HistoricalAttendanceScreenState
                 Align(
                   alignment: Alignment.centerRight,
                   child: AcadexButton(
-                    label: _isSavingSummaries ? 'Saving Summaries...' : 'Save Historical Summaries',
+                    label: _isSavingSummaries
+                        ? 'Saving Summaries...'
+                        : 'Save Historical Summaries',
                     icon: LucideIcons.save,
                     variant: AcadexButtonVariant.primary,
                     onPressed: _isSavingSummaries ? null : _submitSummaries,
@@ -1484,16 +1732,25 @@ class _HistoricalAttendanceScreenState
             children: [
               Row(
                 children: [
-                  const Icon(LucideIcons.userCog, size: 20, color: AcadexColors.primary),
+                  const Icon(
+                    LucideIcons.userCog,
+                    size: 20,
+                    color: AcadexColors.primary,
+                  ),
                   const SizedBox(width: 8),
-                  Text('Student-Specific Historical Correction', style: AcadexTypography.heading3),
+                  Text(
+                    'Student-Specific Historical Correction',
+                    style: AcadexTypography.heading3,
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
                 'Correct an individual student attendance record from a past session. This operation requires an explicit justification reason and is recorded in the immutable audit log.',
                 style: AcadexTypography.body(
-                  color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                  color: isDark
+                      ? AcadexColors.darkInkSecondary
+                      : AcadexColors.inkSecondary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -1517,7 +1774,12 @@ class _HistoricalAttendanceScreenState
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('New Attendance Status', style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600)),
+                  Text(
+                    'New Attendance Status',
+                    style: AcadexTypography.caption().copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   Wrap(
                     spacing: 8,
@@ -1535,7 +1797,8 @@ class _HistoricalAttendanceScreenState
               AcadexTextField(
                 controller: _correctionReasonController,
                 label: 'Audit Justification Reason (Mandatory)',
-                hint: 'e.g., Medical exemption certificate submitted & verified by HOD',
+                hint:
+                    'e.g., Medical exemption certificate submitted & verified by HOD',
                 maxLines: 2,
                 prefixIcon: LucideIcons.fileText,
               ),
@@ -1544,7 +1807,9 @@ class _HistoricalAttendanceScreenState
               Align(
                 alignment: Alignment.centerRight,
                 child: AcadexButton(
-                  label: _isSubmittingCorrection ? 'Applying Correction...' : 'Submit Audited Correction',
+                  label: _isSubmittingCorrection
+                      ? 'Applying Correction...'
+                      : 'Submit Audited Correction',
                   icon: LucideIcons.shieldCheck,
                   variant: AcadexButtonVariant.primary,
                   onPressed: _isSubmittingCorrection ? null : _submitCorrection,
@@ -1587,7 +1852,12 @@ class _HistoricalAttendanceScreenState
         mainAxisSize: MainAxisSize.min,
         children: [
           Text('$label: ', style: AcadexTypography.caption(color: color)),
-          Text(value, style: AcadexTypography.caption(color: color).copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            value,
+            style: AcadexTypography.caption(
+              color: color,
+            ).copyWith(fontWeight: FontWeight.w700),
+          ),
         ],
       ),
     );
@@ -1601,7 +1871,12 @@ class _HistoricalAttendanceScreenState
         children: [
           Expanded(child: Text(label, style: AcadexTypography.caption())),
           const SizedBox(width: 8),
-          Text(value, style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600)),
+          Text(
+            value,
+            style: AcadexTypography.caption().copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );

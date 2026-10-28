@@ -6,7 +6,7 @@ import '../../../../core/presentation/widgets/acadex_button.dart';
 class AttendanceFilterBar extends StatelessWidget {
   final ValueChanged<String> onSearch;
   final VoidCallback onMarkAllPresent;
-  
+
   const AttendanceFilterBar({
     super.key,
     required this.onSearch,
@@ -25,10 +25,14 @@ class AttendanceFilterBar extends StatelessWidget {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
+                color: isDark
+                    ? AcadexColors.darkSurfaceCard
+                    : AcadexColors.canvasSoft,
                 borderRadius: AcadexRadius.borderRadiusMd,
                 border: Border.all(
-                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
                 ),
               ),
               child: TextField(
@@ -38,15 +42,22 @@ class AttendanceFilterBar extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: "Search by Name or Roll No...",
                   hintStyle: AcadexTypography.body(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                   prefixIcon: Icon(
                     LucideIcons.search,
                     size: 18,
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                 ),
                 onChanged: onSearch,
               ),

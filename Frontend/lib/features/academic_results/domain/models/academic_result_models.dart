@@ -198,7 +198,9 @@ class ResultSummaryModel {
       percentage: (json['percentage'] as num?)?.toDouble() ?? 0.0,
       gpa: (json['gpa'] as num?)?.toDouble(),
       cgpa: (json['cgpa'] as num?)?.toDouble(),
-      overallStatus: OverallResultStatus.fromValue(json['overallStatus']?.toString()),
+      overallStatus: OverallResultStatus.fromValue(
+        json['overallStatus']?.toString(),
+      ),
       failedSubjectCount: (json['failedSubjectCount'] as num?)?.toInt() ?? 0,
     );
   }
@@ -244,7 +246,11 @@ class PublicationSnapshotModel {
         Map<String, dynamic>.from((json['summary'] as Map?) ?? {}),
       ),
       subjectResults: rawSubjects
-          .map((s) => SubjectResultModel.fromJson(Map<String, dynamic>.from(s as Map)))
+          .map(
+            (s) => SubjectResultModel.fromJson(
+              Map<String, dynamic>.from(s as Map),
+            ),
+          )
           .toList(),
     );
   }
@@ -335,15 +341,25 @@ class AcademicResultModel {
         Map<String, dynamic>.from((json['summary'] as Map?) ?? {}),
       ),
       subjectResults: rawSubjects
-          .map((s) => SubjectResultModel.fromJson(Map<String, dynamic>.from(s as Map)))
+          .map(
+            (s) => SubjectResultModel.fromJson(
+              Map<String, dynamic>.from(s as Map),
+            ),
+          )
           .toList(),
       currentPublishedSnapshot: json['currentPublishedSnapshot'] != null
           ? PublicationSnapshotModel.fromJson(
-              Map<String, dynamic>.from(json['currentPublishedSnapshot'] as Map),
+              Map<String, dynamic>.from(
+                json['currentPublishedSnapshot'] as Map,
+              ),
             )
           : null,
       publicationHistory: rawPubHistory
-          .map((p) => PublicationSnapshotModel.fromJson(Map<String, dynamic>.from(p as Map)))
+          .map(
+            (p) => PublicationSnapshotModel.fromJson(
+              Map<String, dynamic>.from(p as Map),
+            ),
+          )
           .toList(),
       reopenHistory: rawReopenHistory
           .map((r) => Map<String, dynamic>.from(r as Map))
@@ -417,7 +433,11 @@ class StudentOfficialResultModel {
         Map<String, dynamic>.from((json['summary'] as Map?) ?? {}),
       ),
       subjectResults: rawSubjects
-          .map((s) => SubjectResultModel.fromJson(Map<String, dynamic>.from(s as Map)))
+          .map(
+            (s) => SubjectResultModel.fromJson(
+              Map<String, dynamic>.from(s as Map),
+            ),
+          )
           .toList(),
     );
   }

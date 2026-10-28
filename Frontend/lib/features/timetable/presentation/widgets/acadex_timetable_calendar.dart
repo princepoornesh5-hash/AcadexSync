@@ -10,17 +10,15 @@ class AcadexTimetableCalendar extends ConsumerStatefulWidget {
   final AppRole? role;
   final VoidCallback? onCalendarAction;
 
-  const AcadexTimetableCalendar({
-    super.key,
-    this.role,
-    this.onCalendarAction,
-  });
+  const AcadexTimetableCalendar({super.key, this.role, this.onCalendarAction});
 
   @override
-  ConsumerState<AcadexTimetableCalendar> createState() => _AcadexTimetableCalendarState();
+  ConsumerState<AcadexTimetableCalendar> createState() =>
+      _AcadexTimetableCalendarState();
 }
 
-class _AcadexTimetableCalendarState extends ConsumerState<AcadexTimetableCalendar> {
+class _AcadexTimetableCalendarState
+    extends ConsumerState<AcadexTimetableCalendar> {
   late DateTime _currentMonth;
   bool _isExpanded = false;
 
@@ -44,7 +42,11 @@ class _AcadexTimetableCalendarState extends ConsumerState<AcadexTimetableCalenda
   }
 
   void _onSelectDate(DateTime date) {
-    ref.read(timetableSelectedDateProvider.notifier).state = DateTime(date.year, date.month, date.day);
+    ref.read(timetableSelectedDateProvider.notifier).state = DateTime(
+      date.year,
+      date.month,
+      date.day,
+    );
     if (date.month != _currentMonth.month || date.year != _currentMonth.year) {
       setState(() {
         _currentMonth = DateTime(date.year, date.month, 1);
@@ -94,159 +96,196 @@ class _AcadexTimetableCalendarState extends ConsumerState<AcadexTimetableCalenda
         decoration: BoxDecoration(
           color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
           borderRadius: AcadexRadius.borderRadiusLg,
-          border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.6)),
+          border: Border.all(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.6),
+          ),
           boxShadow: isDark ? null : AcadexShadows.lightSm,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Month Header Row: < August '26 > | Legend / Calendar Icon
-          Row(
-            children: [
-              // Previous Month Button (approx 48dp touch target)
-              Semantics(
-                label: 'Previous Month',
-                button: true,
-                child: IconButton(
-                  icon: const Icon(LucideIcons.chevronLeft, size: 20),
-                  tooltip: 'Previous Month',
-                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                  onPressed: _onPreviousMonth,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Month Header Row: < August '26 > | Legend / Calendar Icon
+            Row(
+              children: [
+                // Previous Month Button (approx 48dp touch target)
+                Semantics(
+                  label: 'Previous Month',
+                  button: true,
+                  child: IconButton(
+                    icon: const Icon(LucideIcons.chevronLeft, size: 20),
+                    tooltip: 'Previous Month',
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
+                    onPressed: _onPreviousMonth,
+                  ),
                 ),
-              ),
 
-              // Month & Year title
-              Text(
-                monthTitle,
-                style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface).copyWith(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16,
-                  letterSpacing: -0.2,
+                // Month & Year title
+                Text(
+                  monthTitle,
+                  style:
+                      AcadexTypography.title(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ).copyWith(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                        letterSpacing: -0.2,
+                      ),
                 ),
-              ),
 
-              // Next Month Button (approx 48dp touch target)
-              Semantics(
-                label: 'Next Month',
-                button: true,
-                child: IconButton(
-                  icon: const Icon(LucideIcons.chevronRight, size: 20),
-                  tooltip: 'Next Month',
-                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                  onPressed: _onNextMonth,
+                // Next Month Button (approx 48dp touch target)
+                Semantics(
+                  label: 'Next Month',
+                  button: true,
+                  child: IconButton(
+                    icon: const Icon(LucideIcons.chevronRight, size: 20),
+                    tooltip: 'Next Month',
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
+                    onPressed: _onNextMonth,
+                  ),
                 ),
-              ),
 
-              const Spacer(),
+                const Spacer(),
 
-              // Legend (for Student view)
-              if (isStudent) ...[
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: AcadexColors.success,
-                        shape: BoxShape.circle,
+                // Legend (for Student view)
+                if (isStudent) ...[
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: AcadexColors.success,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Present',
+                        style: AcadexTypography.caption(
+                          color:
+                              Theme.of(context).textTheme.bodySmall?.color ??
+                              AcadexColors.inkMuted,
+                        ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(width: 10),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: AcadexColors.error,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Absent',
+                        style: AcadexTypography.caption(
+                          color:
+                              Theme.of(context).textTheme.bodySmall?.color ??
+                              AcadexColors.inkMuted,
+                        ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 8),
+                ],
+
+                // Return to Today / Calendar action button (approx 48dp touch target)
+                Semantics(
+                  label: 'Choose Date',
+                  button: true,
+                  child: IconButton(
+                    icon: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AcadexColors.primary.withValues(alpha: 0.1),
+                        borderRadius: AcadexRadius.borderRadiusSm,
+                        border: Border.all(
+                          color: AcadexColors.primary.withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: const Icon(
+                        LucideIcons.calendar,
+                        size: 16,
+                        color: AcadexColors.primary,
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Present',
-                      style: AcadexTypography.caption(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)
-                          .copyWith(fontSize: 11, fontWeight: FontWeight.w600),
+                    tooltip: 'Choose Date',
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
                     ),
-                    const SizedBox(width: 10),
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: AcadexColors.error,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Absent',
-                      style: AcadexTypography.caption(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)
-                          .copyWith(fontSize: 11, fontWeight: FontWeight.w600),
-                    ),
-                  ],
+                    onPressed: widget.onCalendarAction ?? _pickDate,
+                  ),
                 ),
-                const SizedBox(width: 8),
               ],
+            ),
 
-              // Return to Today / Calendar action button (approx 48dp touch target)
-              Semantics(
-                label: 'Choose Date',
+            const SizedBox(height: 8),
+
+            // Weekday Labels Row (Sun, Mon, Tue, Wed, Thu, Fri, Sat)
+            _buildWeekdayLabelsRow(context),
+
+            const SizedBox(height: 6),
+
+            // Days Row or Month Grid (AnimatedSwitcher keeps tree clean)
+            AnimatedSwitcher(
+              duration: AcadexMotion.resolveDuration(
+                context,
+                AcadexMotion.fast,
+              ),
+              child: KeyedSubtree(
+                key: ValueKey(_isExpanded),
+                child: _isExpanded
+                    ? _buildMonthGrid(context, selectedDate)
+                    : _buildWeekStrip(context, selectedDate),
+              ),
+            ),
+
+            // Expand / Collapse Chevron Toggle
+            Center(
+              child: Semantics(
+                label: _isExpanded ? 'Collapse calendar' : 'Expand calendar',
                 button: true,
-                child: IconButton(
-                  icon: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AcadexColors.primary.withValues(alpha: 0.1),
-                      borderRadius: AcadexRadius.borderRadiusSm,
-                      border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.25)),
+                child: InkWell(
+                  onTap: () => setState(() => _isExpanded = !_isExpanded),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
                     ),
-                    child: const Icon(LucideIcons.calendar, size: 16, color: AcadexColors.primary),
-                  ),
-                  tooltip: 'Choose Date',
-                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                  onPressed: widget.onCalendarAction ?? _pickDate,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-
-          // Weekday Labels Row (Sun, Mon, Tue, Wed, Thu, Fri, Sat)
-          _buildWeekdayLabelsRow(context),
-
-          const SizedBox(height: 6),
-
-          // Days Row or Month Grid (AnimatedSwitcher keeps tree clean)
-          AnimatedSwitcher(
-            duration: AcadexMotion.resolveDuration(context, AcadexMotion.fast),
-            child: KeyedSubtree(
-              key: ValueKey(_isExpanded),
-              child: _isExpanded
-                  ? _buildMonthGrid(context, selectedDate)
-                  : _buildWeekStrip(context, selectedDate),
-            ),
-          ),
-
-          // Expand / Collapse Chevron Toggle
-          Center(
-            child: Semantics(
-              label: _isExpanded ? 'Collapse calendar' : 'Expand calendar',
-              button: true,
-              child: InkWell(
-                onTap: () => setState(() => _isExpanded = !_isExpanded),
-                borderRadius: BorderRadius.circular(16),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: Icon(
-                    _isExpanded ? LucideIcons.chevronUp : LucideIcons.chevronDown,
-                    size: 18,
-                    color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                    child: Icon(
+                      _isExpanded
+                          ? LucideIcons.chevronUp
+                          : LucideIcons.chevronDown,
+                      size: 18,
+                      color:
+                          Theme.of(context).textTheme.bodySmall?.color ??
+                          AcadexColors.inkMuted,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
     );
   }
 
   Widget _buildWeekdayLabelsRow(BuildContext context) {
     const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    final mutedColor = Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted;
+    final mutedColor =
+        Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted;
 
     return Row(
       children: weekdays.map((day) {
@@ -272,17 +311,29 @@ class _AcadexTimetableCalendarState extends ConsumerState<AcadexTimetableCalenda
     final weekDays = List.generate(7, (i) => sunday.add(Duration(days: i)));
 
     return Row(
-      children: weekDays.map((date) => Expanded(child: _buildDayCell(context, date, selectedDate))).toList(),
+      children: weekDays
+          .map(
+            (date) =>
+                Expanded(child: _buildDayCell(context, date, selectedDate)),
+          )
+          .toList(),
     );
   }
 
   Widget _buildMonthGrid(BuildContext context, DateTime selectedDate) {
-    final firstDayOfMonth = DateTime(_currentMonth.year, _currentMonth.month, 1);
+    final firstDayOfMonth = DateTime(
+      _currentMonth.year,
+      _currentMonth.month,
+      1,
+    );
     final daysFromSunday = firstDayOfMonth.weekday % 7;
     final startDate = firstDayOfMonth.subtract(Duration(days: daysFromSunday));
 
     const totalDays = 35; // 5 weeks
-    final days = List.generate(totalDays, (i) => startDate.add(Duration(days: i)));
+    final days = List.generate(
+      totalDays,
+      (i) => startDate.add(Duration(days: i)),
+    );
 
     return Column(
       children: List.generate(5, (weekIndex) {
@@ -290,28 +341,47 @@ class _AcadexTimetableCalendarState extends ConsumerState<AcadexTimetableCalenda
         return Padding(
           padding: const EdgeInsets.only(bottom: 4),
           child: Row(
-            children: weekDays.map((date) => Expanded(child: _buildDayCell(context, date, selectedDate))).toList(),
+            children: weekDays
+                .map(
+                  (date) => Expanded(
+                    child: _buildDayCell(context, date, selectedDate),
+                  ),
+                )
+                .toList(),
           ),
         );
       }),
     );
   }
 
-  Widget _buildDayCell(BuildContext context, DateTime date, DateTime selectedDate) {
+  Widget _buildDayCell(
+    BuildContext context,
+    DateTime date,
+    DateTime selectedDate,
+  ) {
     final now = DateTime.now();
-    final isSelected = date.year == selectedDate.year && date.month == selectedDate.month && date.day == selectedDate.day;
-    final isToday = date.year == now.year && date.month == now.month && date.day == now.day;
+    final isSelected =
+        date.year == selectedDate.year &&
+        date.month == selectedDate.month &&
+        date.day == selectedDate.day;
+    final isToday =
+        date.year == now.year && date.month == now.month && date.day == now.day;
     final isCurrentMonth = date.month == _currentMonth.month;
 
     final cellColor = isSelected ? AcadexColors.primary : Colors.transparent;
     final textColor = isSelected
         ? Colors.white
         : (!isCurrentMonth
-            ? (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted).withValues(alpha: 0.4)
-            : (isToday ? AcadexColors.primary : (Theme.of(context).colorScheme.onSurface)));
+              ? (Theme.of(context).textTheme.bodySmall?.color ??
+                        AcadexColors.inkMuted)
+                    .withValues(alpha: 0.4)
+              : (isToday
+                    ? AcadexColors.primary
+                    : (Theme.of(context).colorScheme.onSurface)));
 
     return Semantics(
-      label: '${date.day}, ${isToday ? "Today, " : ""}${isSelected ? "Selected" : ""}',
+      label:
+          '${date.day}, ${isToday ? "Today, " : ""}${isSelected ? "Selected" : ""}',
       selected: isSelected,
       button: true,
       child: InkWell(
@@ -324,7 +394,10 @@ class _AcadexTimetableCalendarState extends ConsumerState<AcadexTimetableCalenda
             children: [
               // Circular Day Pill
               AnimatedContainer(
-                duration: AcadexMotion.resolveDuration(context, AcadexMotion.fast),
+                duration: AcadexMotion.resolveDuration(
+                  context,
+                  AcadexMotion.fast,
+                ),
                 curve: AcadexMotion.curveStandard,
                 width: 36,
                 height: 36,
@@ -340,7 +413,9 @@ class _AcadexTimetableCalendarState extends ConsumerState<AcadexTimetableCalenda
                   '${date.day}',
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: isSelected || isToday ? FontWeight.w800 : FontWeight.w500,
+                    fontWeight: isSelected || isToday
+                        ? FontWeight.w800
+                        : FontWeight.w500,
                     color: textColor,
                   ),
                 ),

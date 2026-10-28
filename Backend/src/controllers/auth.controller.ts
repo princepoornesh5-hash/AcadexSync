@@ -204,4 +204,130 @@ export class AuthController {
 
     return ApiResponse.success(res, result, 'Development session established successfully');
   });
+
+  /**
+   * POST /api/v1/auth/login/request-otp
+   * Request email OTP challenge for login.
+   */
+  static requestLoginOtp = asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    if (!email || typeof email !== 'string') {
+      throw ApiError.badRequest('Email is required');
+    }
+
+    const result = await AuthService.requestLoginOtp(email.trim());
+
+    return ApiResponse.success(res, null, result.message);
+  });
+
+  /**
+   * POST /api/v1/auth/login/verify-otp
+   * Verify email OTP and establish authenticated session.
+   */
+  static loginWithOtp = asyncHandler(async (req: Request, res: Response) => {
+    const { email, otp, collegeId, preferredWorkspaceId } = req.body;
+
+    if (!email || typeof email !== 'string') {
+      throw ApiError.badRequest('Email is required');
+    }
+
+    if (otp === undefined || otp === null) {
+      throw ApiError.badRequest('Verification code is required');
+    }
+
+    const rawHeaderWorkspaceId = req.headers['x-workspace-id'];
+    const headerWorkspaceId = (
+      Array.isArray(rawHeaderWorkspaceId) ? rawHeaderWorkspaceId[0] : rawHeaderWorkspaceId
+    )?.trim();
+
+    const metadata = {
+      userAgent: req.headers['user-agent'],
+      ipAddress: req.ip || req.socket.remoteAddress,
+      preferredWorkspaceId: preferredWorkspaceId || collegeId || headerWorkspaceId,
+      collegeId: collegeId || preferredWorkspaceId || headerWorkspaceId,
+    };
+
+    const rawOtp = typeof otp === 'number' ? String(otp) : otp;
+    const result = await AuthService.loginWithOtp(email.trim(), rawOtp.trim(), metadata);
+
+    return ApiResponse.success(res, result, 'Login successful');
+  });
+
+  /**
+   * POST /api/v1/auth/register/request-otp
+   * Request email OTP for self-registration.
+   */
+  static registerRequestOtp = asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    if (!email || typeof email !== 'string') {
+      throw ApiError.badRequest('Email is required');
+    }
+
+    const result = await AuthService.registerRequestOtp(email.trim());
+
+    return ApiResponse.success(res, null, result.message);
+  });
+
+  /**
+   * POST /api/v1/auth/register/verify-otp
+   * Verify email OTP and issue registrationToken for self-registration.
+   */
+  static registerVerifyOtp = asyncHandler(async (req: Request, res: Response) => {
+    const { email, otp } = req.body;
+
+    if (!email || typeof email !== 'string') {
+      throw ApiError.badRequest('Email is required');
+    }
+
+    if (otp === undefined || otp === null) {
+      throw ApiError.badRequest('Verification code is required');
+    }
+
+    const rawOtp = typeof otp === 'number' ? String(otp) : otp;
+    const result = await AuthService.registerVerifyOtp(email.trim(), rawOtp.trim());
+
+    return ApiResponse.success(
+      res,
+      { registrationToken: result.registrationToken },
+      result.message
+    );
+  });
+
+  /**
+   * POST /api/v1/auth/register/complete
+   * Complete registration with registrationToken and password.
+   */
+  static registerComplete = asyncHandler(async (req: Request, res: Response) => {
+    const { registrationToken, password, confirmPassword, name } = req.body;
+
+    if (!registrationToken || typeof registrationToken !== 'string') {
+      throw ApiError.badRequest('registrationToken is required');
+    }
+
+    if (!password || typeof password !== 'string') {
+      throw ApiError.badRequest('Password is required');
+    }
+
+    if (!confirmPassword || typeof confirmPassword !== 'string') {
+      throw ApiError.badRequest('Confirm Password is required');
+    }
+
+    const metadata = {
+      userAgent: req.headers['user-agent'],
+      ipAddress: req.ip || req.socket.remoteAddress,
+    };
+
+    const result = await AuthService.registerComplete(
+      registrationToken.trim(),
+      password,
+      confirmPassword,
+      name,
+      metadata
+    );
+
+    return ApiResponse.success(res, result, 'Account created successfully');
+  });
 }
+

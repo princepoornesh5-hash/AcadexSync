@@ -11,7 +11,9 @@ class SuperAdminInsightCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = insight.isPositive ? AcadexColors.success : AcadexColors.warning;
+    final color = insight.isPositive
+        ? AcadexColors.success
+        : AcadexColors.warning;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -36,7 +38,9 @@ class SuperAdminInsightCard extends StatelessWidget {
                 borderRadius: AcadexRadius.borderRadiusMd,
               ),
               child: Icon(
-                insight.isPositive ? LucideIcons.sparkles : LucideIcons.alertCircle,
+                insight.isPositive
+                    ? LucideIcons.sparkles
+                    : LucideIcons.alertCircle,
                 color: color,
                 size: 20,
               ),
@@ -49,7 +53,9 @@ class SuperAdminInsightCard extends StatelessWidget {
                   Text(
                     insight.title,
                     style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -63,7 +69,9 @@ class SuperAdminInsightCard extends StatelessWidget {
                   Text(
                     insight.subtitle,
                     style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
                 ],

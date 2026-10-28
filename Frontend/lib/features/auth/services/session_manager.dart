@@ -4,13 +4,16 @@ import '../domain/models/user_model.dart';
 
 class SessionManager {
   final FlutterSecureStorage _storage;
-  
+
   static const String _keyToken = 'auth_token';
   static const String _keyUser = 'auth_user';
 
   SessionManager(this._storage);
 
-  Future<void> saveSession({required String token, required UserModel user}) async {
+  Future<void> saveSession({
+    required String token,
+    required UserModel user,
+  }) async {
     await _storage.write(key: _keyToken, value: token);
     await _storage.write(key: _keyUser, value: jsonEncode(user.toJson()));
   }

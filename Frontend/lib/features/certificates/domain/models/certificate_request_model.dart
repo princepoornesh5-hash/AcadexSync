@@ -7,7 +7,7 @@ enum CertificateRequestStatus {
   rejected,
   ready,
   completed,
-  cancelled
+  cancelled,
 }
 
 extension CertificateRequestStatusExtension on CertificateRequestStatus {
@@ -15,13 +15,20 @@ extension CertificateRequestStatusExtension on CertificateRequestStatus {
 
   String get displayName {
     switch (this) {
-      case CertificateRequestStatus.pending: return 'Pending';
-      case CertificateRequestStatus.underReview: return 'Under Review';
-      case CertificateRequestStatus.approved: return 'Approved';
-      case CertificateRequestStatus.rejected: return 'Rejected';
-      case CertificateRequestStatus.ready: return 'Ready';
-      case CertificateRequestStatus.completed: return 'Completed';
-      case CertificateRequestStatus.cancelled: return 'Cancelled';
+      case CertificateRequestStatus.pending:
+        return 'Pending';
+      case CertificateRequestStatus.underReview:
+        return 'Under Review';
+      case CertificateRequestStatus.approved:
+        return 'Approved';
+      case CertificateRequestStatus.rejected:
+        return 'Rejected';
+      case CertificateRequestStatus.ready:
+        return 'Ready';
+      case CertificateRequestStatus.completed:
+        return 'Completed';
+      case CertificateRequestStatus.cancelled:
+        return 'Cancelled';
     }
   }
 
@@ -73,28 +80,28 @@ class ConfiguredCertificateType {
 
 class CertificateRequest {
   final String id;
-  
+
   // Student Context
   final String studentId;
   final String studentUserId;
-  
+
   // Academic Context
   final String collegeId;
   final String departmentId;
   final String courseId;
   final String academicYearId;
-  
+
   // Certificate Info
   final String certificateTypeId;
   final String certificateTypeName;
   final String? reason;
   final String? purpose;
-  
+
   // State
   final CertificateRequestStatus status;
   final String? rejectionReason;
   final String? documentUrl;
-  
+
   // Timestamps & Audit
   final DateTime requestedAt;
   final DateTime updatedAt;
@@ -137,14 +144,18 @@ class CertificateRequest {
       certificateTypeName: json['certificateTypeName'] as String,
       reason: json['reason'] as String?,
       purpose: json['purpose'] as String?,
-      status: json['status'] != null 
-          ? CertificateRequestStatusExtension.fromString(json['status'] as String) 
+      status: json['status'] != null
+          ? CertificateRequestStatusExtension.fromString(
+              json['status'] as String,
+            )
           : CertificateRequestStatus.pending,
       rejectionReason: json['rejectionReason'] as String?,
       documentUrl: json['documentUrl'] as String?,
       requestedAt: _parseDate(json['requestedAt']) ?? DateTime.now(),
       updatedAt: _parseDate(json['updatedAt']) ?? DateTime.now(),
-      reviewedAt: json['reviewedAt'] != null ? _parseDate(json['reviewedAt']) : null,
+      reviewedAt: json['reviewedAt'] != null
+          ? _parseDate(json['reviewedAt'])
+          : null,
       reviewedBy: json['reviewedBy'] as String?,
       createdAt: _parseDate(json['createdAt']) ?? DateTime.now(),
     );

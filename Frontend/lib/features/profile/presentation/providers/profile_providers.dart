@@ -18,29 +18,32 @@ final profileProvider = FutureProvider<ComposedProfileModel>((ref) async {
 /// Parameterized provider to inspect a scoped profile by user ID.
 final userProfileByIdProvider =
     FutureProvider.family<ComposedProfileModel, String>((ref, userId) async {
-  final repo = ref.watch(profileRepositoryProvider);
-  return repo.getProfileById(userId);
-});
+      final repo = ref.watch(profileRepositoryProvider);
+      return repo.getProfileById(userId);
+    });
 
 /// Parameterized provider for directory queries.
 final profileDirectoryProvider =
-    FutureProvider.family<Map<String, dynamic>, Map<String, dynamic>>((ref, params) async {
-  final repo = ref.watch(profileRepositoryProvider);
-  return repo.getDirectory(
-    search: params['search'] as String?,
-    role: params['role'] as String?,
-    departmentId: params['departmentId'] as String?,
-    page: (params['page'] as num?)?.toInt() ?? 1,
-    limit: (params['limit'] as num?)?.toInt() ?? 20,
-  );
-});
+    FutureProvider.family<Map<String, dynamic>, Map<String, dynamic>>((
+      ref,
+      params,
+    ) async {
+      final repo = ref.watch(profileRepositoryProvider);
+      return repo.getDirectory(
+        search: params['search'] as String?,
+        role: params['role'] as String?,
+        departmentId: params['departmentId'] as String?,
+        page: (params['page'] as num?)?.toInt() ?? 1,
+        limit: (params['limit'] as num?)?.toInt() ?? 20,
+      );
+    });
 
 class ProfileActionNotifier extends StateNotifier<AsyncValue<void>> {
   final ProfileRepository _repository;
   final Ref _ref;
 
   ProfileActionNotifier(this._repository, this._ref)
-      : super(const AsyncValue.data(null));
+    : super(const AsyncValue.data(null));
 
   Future<ComposedProfileModel> updateProfile(Map<String, dynamic> data) async {
     state = const AsyncValue.loading();
@@ -71,9 +74,9 @@ class ProfileActionNotifier extends StateNotifier<AsyncValue<void>> {
 
 final profileActionNotifierProvider =
     StateNotifierProvider<ProfileActionNotifier, AsyncValue<void>>((ref) {
-  final repo = ref.watch(profileRepositoryProvider);
-  return ProfileActionNotifier(repo, ref);
-});
+      final repo = ref.watch(profileRepositoryProvider);
+      return ProfileActionNotifier(repo, ref);
+    });
 
 class ProfileImageUploadState {
   final bool isUploading;
@@ -103,12 +106,13 @@ class ProfileImageUploadState {
   }
 }
 
-class ProfileImageUploadNotifier extends StateNotifier<ProfileImageUploadState> {
+class ProfileImageUploadNotifier
+    extends StateNotifier<ProfileImageUploadState> {
   final ProfileRepository _repository;
   final Ref _ref;
 
   ProfileImageUploadNotifier(this._repository, this._ref)
-      : super(const ProfileImageUploadState());
+    : super(const ProfileImageUploadState());
 
   Future<String?> uploadProfileImage({
     required String fileName,
@@ -150,7 +154,9 @@ class ProfileImageUploadNotifier extends StateNotifier<ProfileImageUploadState> 
 }
 
 final profileImageUploadProvider =
-    StateNotifierProvider<ProfileImageUploadNotifier, ProfileImageUploadState>((ref) {
-  final repo = ref.watch(profileRepositoryProvider);
-  return ProfileImageUploadNotifier(repo, ref);
-});
+    StateNotifierProvider<ProfileImageUploadNotifier, ProfileImageUploadState>((
+      ref,
+    ) {
+      final repo = ref.watch(profileRepositoryProvider);
+      return ProfileImageUploadNotifier(repo, ref);
+    });

@@ -132,12 +132,18 @@ class OfficialRequirementCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: req.required
                       ? AcadexColors.primary.withValues(alpha: 0.1)
-                      : (isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft),
+                      : (isDark
+                            ? AcadexColors.darkSurfaceCard
+                            : AcadexColors.canvasSoft),
                   borderRadius: BorderRadius.circular(AcadexRadius.md),
                 ),
                 child: Icon(
                   req.required ? LucideIcons.fileCheck2 : LucideIcons.fileText,
-                  color: req.required ? AcadexColors.primary : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                  color: req.required
+                      ? AcadexColors.primary
+                      : (isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted),
                   size: 22,
                 ),
               ),
@@ -152,11 +158,15 @@ class OfficialRequirementCard extends StatelessWidget {
                           child: Text(
                             req.name,
                             style: AcadexTypography.heading3(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ),
                           ),
                         ),
-                        OfficialCertificateStatusBadge(calculatedStatus: status),
+                        OfficialCertificateStatusBadge(
+                          calculatedStatus: status,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -165,10 +175,15 @@ class OfficialRequirementCard extends StatelessWidget {
                         if (req.required)
                           Container(
                             margin: const EdgeInsets.only(right: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: AcadexColors.error.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                              borderRadius: BorderRadius.circular(
+                                AcadexRadius.xs,
+                              ),
                             ),
                             child: Text(
                               'Required',
@@ -182,15 +197,24 @@ class OfficialRequirementCard extends StatelessWidget {
                         else
                           Container(
                             margin: const EdgeInsets.only(right: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
-                              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
-                              borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                              color: isDark
+                                  ? AcadexColors.darkSurfaceCard
+                                  : AcadexColors.canvasSoft,
+                              borderRadius: BorderRadius.circular(
+                                AcadexRadius.xs,
+                              ),
                             ),
                             child: Text(
                               'Optional',
                               style: TextStyle(
-                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
                                 fontWeight: FontWeight.w500,
                                 fontSize: 11,
                               ),
@@ -199,14 +223,18 @@ class OfficialRequirementCard extends StatelessWidget {
                         Text(
                           'Scope: ${req.targetScopeDisplay}',
                           style: AcadexTypography.bodySmall(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           '•  Category: ${req.category}',
                           style: AcadexTypography.bodySmall(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                         ),
                       ],
@@ -221,21 +249,27 @@ class OfficialRequirementCard extends StatelessWidget {
             Text(
               req.description,
               style: AcadexTypography.body(
-                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                color: isDark
+                    ? AcadexColors.darkInkSecondary
+                    : AcadexColors.inkSecondary,
               ),
             ),
           ],
-          if (sub != null && sub.rejectionReason != null && sub.rejectionReason!.isNotEmpty) ...[
+          if (sub != null &&
+              sub.rejectionReason != null &&
+              sub.rejectionReason!.isNotEmpty) ...[
             const SizedBox(height: AcadexSpacing.space16),
             Container(
               padding: const EdgeInsets.all(AcadexSpacing.space16),
               decoration: BoxDecoration(
-                color: status == RequirementSubmissionStatus.resubmissionRequired
+                color:
+                    status == RequirementSubmissionStatus.resubmissionRequired
                     ? AcadexColors.warning.withValues(alpha: 0.1)
                     : AcadexColors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AcadexRadius.sm),
                 border: Border.all(
-                  color: status == RequirementSubmissionStatus.resubmissionRequired
+                  color:
+                      status == RequirementSubmissionStatus.resubmissionRequired
                       ? AcadexColors.warning.withValues(alpha: 0.3)
                       : AcadexColors.error.withValues(alpha: 0.3),
                 ),
@@ -247,7 +281,9 @@ class OfficialRequirementCard extends StatelessWidget {
                         ? LucideIcons.alertTriangle
                         : LucideIcons.xCircle,
                     size: 18,
-                    color: status == RequirementSubmissionStatus.resubmissionRequired
+                    color:
+                        status ==
+                            RequirementSubmissionStatus.resubmissionRequired
                         ? AcadexColors.warning
                         : AcadexColors.error,
                   ),
@@ -276,13 +312,17 @@ class OfficialRequirementCard extends StatelessWidget {
                     Icon(
                       LucideIcons.paperclip,
                       size: 14,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       '${sub.fileName} (${sub.fileSizeDisplay})',
                       style: AcadexTypography.bodySmall(
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                     ),
                   ],
@@ -291,7 +331,9 @@ class OfficialRequirementCard extends StatelessWidget {
                 Text(
                   'Accepted: ${req.allowedFileTypes.join(', ').toUpperCase()} (Max 10MB)',
                   style: AcadexTypography.bodySmall(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                 ),
               Row(
@@ -367,7 +409,9 @@ class OfficialCertificateMetricCard extends StatelessWidget {
               Text(
                 label,
                 style: AcadexTypography.caption(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
               Container(
@@ -393,7 +437,9 @@ class OfficialCertificateMetricCard extends StatelessWidget {
             Text(
               subtitle!,
               style: AcadexTypography.bodySmall(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
             ),
           ],

@@ -26,18 +26,29 @@ class UserHeader extends StatelessWidget {
             backgroundColor: DashboardColors.primaryLight,
             child: Text(
               user.name.substring(0, 1).toUpperCase(),
-              style: GoogleFonts.inter(fontSize: 32, color: DashboardColors.primary, fontWeight: FontWeight.bold),
+              style: GoogleFonts.inter(
+                fontSize: 32,
+                color: DashboardColors.primary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           const SizedBox(height: 16),
           Text(
             user.name,
-            style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700, color: DashboardColors.textPrimary),
+            style: GoogleFonts.inter(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: DashboardColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             user.email,
-            style: GoogleFonts.inter(fontSize: 15, color: DashboardColors.textSecondary),
+            style: GoogleFonts.inter(
+              fontSize: 15,
+              color: DashboardColors.textSecondary,
+            ),
           ),
           const SizedBox(height: 16),
           Row(

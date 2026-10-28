@@ -37,7 +37,7 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
   final NotificationService? notificationService;
 
   FirebaseAttendanceRepository(
-    this._firestoreService, 
+    this._firestoreService,
     this._currentUser, {
     this.notificationService,
   });
@@ -45,14 +45,26 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
   void _debugLog(String operation, Map<String, dynamic> metadata) {
     if (kDebugMode) {
       final safeMetadata = Map<String, dynamic>.from(metadata)
-        ..removeWhere((key, _) => key.toLowerCase().contains('password') || key.toLowerCase().contains('secret'));
-      final formatted = safeMetadata.entries.map((e) => '${e.key}=${e.value}').join(', ');
-      developer.log('[Attendance] $operation: $formatted', name: 'Acadex.Attendance');
+        ..removeWhere(
+          (key, _) =>
+              key.toLowerCase().contains('password') ||
+              key.toLowerCase().contains('secret'),
+        );
+      final formatted = safeMetadata.entries
+          .map((e) => '${e.key}=${e.value}')
+          .join(', ');
+      developer.log(
+        '[Attendance] $operation: $formatted',
+        name: 'Acadex.Attendance',
+      );
     }
   }
 
   @override
-  Future<List<AssignedClass>> getAssignedClasses(String facultyId, DateTime date) async {
+  Future<List<AssignedClass>> getAssignedClasses(
+    String facultyId,
+    DateTime date,
+  ) async {
     final userCollegeId = _currentUser?.collegeId;
     _debugLog('getAssignedClasses', {
       'facultyId': facultyId,
@@ -71,13 +83,17 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
         'collegeId': userCollegeId,
     };
 
-    final timetableDocs = await _firestoreService.queryCollection('timetable', filters);
+    final timetableDocs = await _firestoreService.queryCollection(
+      'timetable',
+      filters,
+    );
 
     final assignedClasses = <AssignedClass>[];
     final subjectCache = <String, Map<String, dynamic>?>{};
     final sectionCache = <String, Map<String, dynamic>?>{};
 
-    final dateKey = '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
+    final dateKey =
+        '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
 
     for (var doc in timetableDocs) {
       final subjectId = doc['subjectId'] as String? ?? '';
@@ -89,10 +105,16 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
       if (subjectId.isEmpty || sectionId.isEmpty) continue;
 
       if (!subjectCache.containsKey(subjectId)) {
-        subjectCache[subjectId] = await _firestoreService.getDocument('subjects', subjectId);
+        subjectCache[subjectId] = await _firestoreService.getDocument(
+          'subjects',
+          subjectId,
+        );
       }
       if (!sectionCache.containsKey(sectionId)) {
-        sectionCache[sectionId] = await _firestoreService.getDocument('sections', sectionId);
+        sectionCache[sectionId] = await _firestoreService.getDocument(
+          'sections',
+          sectionId,
+        );
       }
 
       final subjectDoc = subjectCache[subjectId];
@@ -102,27 +124,39 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
       final slotKey = entryId.replaceAll('pub_', '');
       final extendedSessionId = '${sectionId}_${subjectId}_${dateKey}_$slotKey';
       final legacySessionId = '${sectionId}_${subjectId}_$dateKey';
-      
-      final sessionDoc = (await _firestoreService.getDocument('attendanceSessions', extendedSessionId)) ??
-                         (await _firestoreService.getDocument('attendanceSessions', legacySessionId));
 
-      assignedClasses.add(AssignedClass(
-        id: entryId,
-        timetableEntryId: entryId,
-        facultyId: facultyId,
-        subjectId: subjectId,
-        subjectName: subjectDoc?['name'] ?? subjectId,
-        sectionId: sectionId,
-        sectionName: sectionDoc?['name'] ?? sectionId,
-        semester: doc['semesterId'] ?? '',
-        timeSlot: startTime.isNotEmpty && endTime.isNotEmpty ? '$startTime - $endTime' : '',
-        startTime: startTime,
-        endTime: endTime,
-        roomNumber: doc['roomNumber'] as String?,
-        building: doc['building'] as String?,
-        date: date,
-        isAttendanceMarked: sessionDoc != null && (sessionDoc['isSubmitted'] == true),
-      ));
+      final sessionDoc =
+          (await _firestoreService.getDocument(
+            'attendanceSessions',
+            extendedSessionId,
+          )) ??
+          (await _firestoreService.getDocument(
+            'attendanceSessions',
+            legacySessionId,
+          ));
+
+      assignedClasses.add(
+        AssignedClass(
+          id: entryId,
+          timetableEntryId: entryId,
+          facultyId: facultyId,
+          subjectId: subjectId,
+          subjectName: subjectDoc?['name'] ?? subjectId,
+          sectionId: sectionId,
+          sectionName: sectionDoc?['name'] ?? sectionId,
+          semester: doc['semesterId'] ?? '',
+          timeSlot: startTime.isNotEmpty && endTime.isNotEmpty
+              ? '$startTime - $endTime'
+              : '',
+          startTime: startTime,
+          endTime: endTime,
+          roomNumber: doc['roomNumber'] as String?,
+          building: doc['building'] as String?,
+          date: date,
+          isAttendanceMarked:
+              sessionDoc != null && (sessionDoc['isSubmitted'] == true),
+        ),
+      );
     }
 
     // Sort classes chronologically by startTime
@@ -136,7 +170,10 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
   }
 
   @override
-  Stream<List<AssignedClass>> watchAssignedClasses(String facultyId, DateTime date) {
+  Stream<List<AssignedClass>> watchAssignedClasses(
+    String facultyId,
+    DateTime date,
+  ) {
     return Stream.fromFuture(getAssignedClasses(facultyId, date));
   }
 
@@ -147,20 +184,30 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
     DateTime date, {
     String? timetableEntryId,
   }) async {
-    final dateKey = '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
+    final dateKey =
+        '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
     final userCollegeId = _currentUser?.collegeId;
 
     // Check with extended ID first, then fallback to shortKey and legacy ID
     Map<String, dynamic>? doc;
     if (timetableEntryId != null && timetableEntryId.isNotEmpty) {
       final slotKey = timetableEntryId.replaceAll('pub_', '');
-      doc = await _firestoreService.getDocument('attendanceSessions', '${sectionId}_${subjectId}_${dateKey}_$slotKey');
+      doc = await _firestoreService.getDocument(
+        'attendanceSessions',
+        '${sectionId}_${subjectId}_${dateKey}_$slotKey',
+      );
       if (doc == null && slotKey.contains('_')) {
         final shortKey = slotKey.split('_').last;
-        doc = await _firestoreService.getDocument('attendanceSessions', '${sectionId}_${subjectId}_${dateKey}_$shortKey');
+        doc = await _firestoreService.getDocument(
+          'attendanceSessions',
+          '${sectionId}_${subjectId}_${dateKey}_$shortKey',
+        );
       }
     }
-    doc ??= await _firestoreService.getDocument('attendanceSessions', '${sectionId}_${subjectId}_$dateKey');
+    doc ??= await _firestoreService.getDocument(
+      'attendanceSessions',
+      '${sectionId}_${subjectId}_$dateKey',
+    );
 
     _debugLog('getStudentsForSection', {
       'sectionId': sectionId,
@@ -176,39 +223,49 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
     }
 
     final filters = <String, dynamic>{
-      'sectionId': sectionId, 
+      'sectionId': sectionId,
       'isActive': true,
       if (userCollegeId != null && userCollegeId.isNotEmpty)
         'collegeId': userCollegeId,
     };
 
-    final studentDocs = await _firestoreService.queryCollection('students', filters);
-    
-    return studentDocs.map((doc) => AttendanceRecord(
-      id: doc['id'] as String,
-      studentId: doc['id'] as String,
-      studentName: doc['name'] as String,
-      rollNumber: doc['rollNumber'] as String,
-      sectionId: sectionId,
-    )).toList();
+    final studentDocs = await _firestoreService.queryCollection(
+      'students',
+      filters,
+    );
+
+    return studentDocs
+        .map(
+          (doc) => AttendanceRecord(
+            id: doc['id'] as String,
+            studentId: doc['id'] as String,
+            studentName: doc['name'] as String,
+            rollNumber: doc['rollNumber'] as String,
+            sectionId: sectionId,
+          ),
+        )
+        .toList();
   }
 
   @override
   Future<bool> saveSession(AttendanceSession session) async {
-    final dateKey = '${session.date.year}${session.date.month.toString().padLeft(2, '0')}${session.date.day.toString().padLeft(2, '0')}';
+    final dateKey =
+        '${session.date.year}${session.date.month.toString().padLeft(2, '0')}${session.date.day.toString().padLeft(2, '0')}';
     final sessionId = (session.id.isNotEmpty && session.id.contains(dateKey))
         ? session.id
         : '${session.sectionId}_${session.subjectId}_$dateKey';
     final now = DateTime.now();
 
-    final collegeId = session.collegeId.isNotEmpty 
-        ? session.collegeId 
-        : (_currentUser?.collegeId ?? (FirebaseInitializer.shouldUseMock ? 'col-1' : ''));
-    final departmentId = session.departmentId.isNotEmpty 
-        ? session.departmentId 
-        : (_currentUser?.departmentId ?? (FirebaseInitializer.shouldUseMock ? 'dept-1' : ''));
-    final facultyId = session.facultyId.isNotEmpty 
-        ? session.facultyId 
+    final collegeId = session.collegeId.isNotEmpty
+        ? session.collegeId
+        : (_currentUser?.collegeId ??
+              (FirebaseInitializer.shouldUseMock ? 'col-1' : ''));
+    final departmentId = session.departmentId.isNotEmpty
+        ? session.departmentId
+        : (_currentUser?.departmentId ??
+              (FirebaseInitializer.shouldUseMock ? 'dept-1' : ''));
+    final facultyId = session.facultyId.isNotEmpty
+        ? session.facultyId
         : (_currentUser?.id ?? '');
 
     if (!FirebaseInitializer.shouldUseMock) {
@@ -251,7 +308,9 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
           'studentId': record.studentId,
           'studentName': record.studentName,
           'rollNumber': record.rollNumber,
-          'sectionId': record.sectionId.isNotEmpty ? record.sectionId : session.sectionId,
+          'sectionId': record.sectionId.isNotEmpty
+              ? record.sectionId
+              : session.sectionId,
           'subjectId': session.subjectId,
           'facultyId': facultyId,
           'collegeId': collegeId,
@@ -270,7 +329,9 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
       try {
         await notificationService!.notifyAttendanceMarked(
           sectionId: updatedSession.sectionId,
-          subjectName: updatedSession.subjectName.isNotEmpty ? updatedSession.subjectName : updatedSession.subjectId,
+          subjectName: updatedSession.subjectName.isNotEmpty
+              ? updatedSession.subjectName
+              : updatedSession.subjectId,
           sessionDate: updatedSession.date,
         );
       } catch (e) {
@@ -295,8 +356,13 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
         'collegeId': userCollegeId,
     };
 
-    final docs = await _firestoreService.queryCollection('attendanceSessions', filters);
-    final sessions = docs.map((doc) => AttendanceSession.fromJson(doc)).toList();
+    final docs = await _firestoreService.queryCollection(
+      'attendanceSessions',
+      filters,
+    );
+    final sessions = docs
+        .map((doc) => AttendanceSession.fromJson(doc))
+        .toList();
     sessions.sort((a, b) => b.date.compareTo(a.date));
     return sessions;
   }
@@ -308,7 +374,10 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
 
   @override
   Future<AttendanceSession> getSessionById(String sessionId) async {
-    final doc = await _firestoreService.getDocument('attendanceSessions', sessionId);
+    final doc = await _firestoreService.getDocument(
+      'attendanceSessions',
+      sessionId,
+    );
     if (doc != null) return AttendanceSession.fromJson(doc);
     throw StateError('Session not found');
   }
@@ -332,7 +401,10 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
       if (facultyId != null) 'facultyId': facultyId,
       if (status != null) 'status': status,
     };
-    final docs = await _firestoreService.queryCollection('attendanceSessions', filters);
+    final docs = await _firestoreService.queryCollection(
+      'attendanceSessions',
+      filters,
+    );
     return docs.map((doc) => AttendanceSession.fromJson(doc)).toList();
   }
 
@@ -380,7 +452,9 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
   }
 
   @override
-  Future<List<SubjectAttendance>> getStudentSubjectAttendance(String studentId) async {
+  Future<List<SubjectAttendance>> getStudentSubjectAttendance(
+    String studentId,
+  ) async {
     final userCollegeId = _currentUser?.collegeId;
     _debugLog('getStudentSubjectAttendance', {
       'studentId': studentId,
@@ -394,55 +468,69 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
     };
 
     final docs = await _firestoreService.queryCollection('attendance', filters);
-    
+
     final Map<String, int> totalClasses = {};
     final Map<String, int> attendedClasses = {};
-    
+
     for (var doc in docs) {
       final subjectId = doc['subjectId'] as String;
       final status = doc['status'] as String;
-      
+
       totalClasses[subjectId] = (totalClasses[subjectId] ?? 0) + 1;
-      if (status == AttendanceStatus.present.name || status == AttendanceStatus.late.name) {
+      if (status == AttendanceStatus.present.name ||
+          status == AttendanceStatus.late.name) {
         attendedClasses[subjectId] = (attendedClasses[subjectId] ?? 0) + 1;
       }
     }
 
     final result = <SubjectAttendance>[];
     for (final subjectId in totalClasses.keys) {
-      final subjectDoc = await _firestoreService.getDocument('subjects', subjectId);
+      final subjectDoc = await _firestoreService.getDocument(
+        'subjects',
+        subjectId,
+      );
       final total = totalClasses[subjectId]!;
       final attended = attendedClasses[subjectId] ?? 0;
-      
-      result.add(SubjectAttendance(
-        subjectId: subjectId,
-        subjectName: subjectDoc?['name'] ?? subjectId,
-        subjectCode: subjectDoc?['code'] ?? '',
-        facultyName: 'Assigned Faculty',
-        totalClasses: total,
-        attendedClasses: attended,
-        missedClasses: total - attended,
-      ));
+
+      result.add(
+        SubjectAttendance(
+          subjectId: subjectId,
+          subjectName: subjectDoc?['name'] ?? subjectId,
+          subjectCode: subjectDoc?['code'] ?? '',
+          facultyName: 'Assigned Faculty',
+          totalClasses: total,
+          attendedClasses: attended,
+          missedClasses: total - attended,
+        ),
+      );
     }
     return result;
   }
 
   @override
-  Future<StudentAttendanceOverview> getStudentAttendanceOverview(String studentId) async {
+  Future<StudentAttendanceOverview> getStudentAttendanceOverview(
+    String studentId,
+  ) async {
     final stats = await getStudentSubjectAttendance(studentId);
     if (stats.isEmpty) return StudentAttendanceOverview(overallPercentage: 0.0);
-    
+
     int total = 0;
     int attended = 0;
     for (var stat in stats) {
       total += stat.totalClasses;
       attended += stat.attendedClasses;
     }
-    return StudentAttendanceOverview(overallPercentage: total > 0 ? (attended / total) * 100 : 0.0);
+    return StudentAttendanceOverview(
+      overallPercentage: total > 0 ? (attended / total) * 100 : 0.0,
+    );
   }
 
   @override
-  Future<List<AttendanceHistoryRecord>> getStudentAttendanceHistory(String studentId, {DateTime? startDate, DateTime? endDate}) async {
+  Future<List<AttendanceHistoryRecord>> getStudentAttendanceHistory(
+    String studentId, {
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     final userCollegeId = _currentUser?.collegeId;
     _debugLog('getStudentAttendanceHistory', {
       'studentId': studentId,
@@ -456,48 +544,75 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
     };
 
     final docs = await _firestoreService.queryCollection('attendance', filters);
-    
+
     final records = <AttendanceHistoryRecord>[];
     for (var doc in docs) {
       final dateStr = doc['date'] as String;
       final date = DateTime.parse(dateStr);
-      
+
       if (startDate != null && date.isBefore(startDate)) continue;
       if (endDate != null && date.isAfter(endDate)) continue;
-      
-      final subjectId = doc['subjectId'] as String;
-      final subjectDoc = await _firestoreService.getDocument('subjects', subjectId);
-      final facultyId = doc['facultyId'] as String;
-      final facultyDoc = await _firestoreService.getDocument('faculty', facultyId);
-      
-      final statusStr = doc['status'] as String;
-      final status = AttendanceStatus.values.firstWhere((e) => e.name == statusStr, orElse: () => AttendanceStatus.absent);
 
-      records.add(AttendanceHistoryRecord(
-        id: doc['attendanceId'] as String,
-        date: date,
-        subjectId: subjectId,
-        subjectName: subjectDoc?['name'] ?? subjectId,
-        facultyName: facultyDoc?['name'] ?? 'Faculty',
-        status: status,
-        timeSlot: 'Regular Class',
-      ));
+      final subjectId = doc['subjectId'] as String;
+      final subjectDoc = await _firestoreService.getDocument(
+        'subjects',
+        subjectId,
+      );
+      final facultyId = doc['facultyId'] as String;
+      final facultyDoc = await _firestoreService.getDocument(
+        'faculty',
+        facultyId,
+      );
+
+      final statusStr = doc['status'] as String;
+      final status = AttendanceStatus.values.firstWhere(
+        (e) => e.name == statusStr,
+        orElse: () => AttendanceStatus.absent,
+      );
+
+      records.add(
+        AttendanceHistoryRecord(
+          id: doc['attendanceId'] as String,
+          date: date,
+          subjectId: subjectId,
+          subjectName: subjectDoc?['name'] ?? subjectId,
+          facultyName: facultyDoc?['name'] ?? 'Faculty',
+          status: status,
+          timeSlot: 'Regular Class',
+        ),
+      );
     }
-    
+
     records.sort((a, b) => b.date.compareTo(a.date));
     return records;
   }
 
   @override
-  Future<List<MonthlyAttendanceSummary>> getStudentMonthlySummary(String studentId) async {
+  Future<List<MonthlyAttendanceSummary>> getStudentMonthlySummary(
+    String studentId,
+  ) async {
     return [
-      MonthlyAttendanceSummary(month: 8, year: 2026, classesConducted: 40, classesAttended: 32, classesMissed: 8),
-      MonthlyAttendanceSummary(month: 7, year: 2026, classesConducted: 55, classesAttended: 50, classesMissed: 5),
+      MonthlyAttendanceSummary(
+        month: 8,
+        year: 2026,
+        classesConducted: 40,
+        classesAttended: 32,
+        classesMissed: 8,
+      ),
+      MonthlyAttendanceSummary(
+        month: 7,
+        year: 2026,
+        classesConducted: 55,
+        classesAttended: 50,
+        classesMissed: 5,
+      ),
     ];
   }
 
   @override
-  Future<DepartmentAttendanceSummary> getDepartmentSummary(String departmentId) async {
+  Future<DepartmentAttendanceSummary> getDepartmentSummary(
+    String departmentId,
+  ) async {
     return DepartmentAttendanceSummary(
       overallPercentage: 78.5,
       studentsBelow75: 24,
@@ -510,31 +625,87 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
   }
 
   @override
-  Stream<DepartmentAttendanceSummary> watchDepartmentSummary(String departmentId) {
+  Stream<DepartmentAttendanceSummary> watchDepartmentSummary(
+    String departmentId,
+  ) {
     return Stream.fromFuture(getDepartmentSummary(departmentId));
   }
 
   @override
-  Future<List<FacultyAttendanceCompletion>> getFacultyCompletionStatus(String departmentId, DateTime date) async {
+  Future<List<FacultyAttendanceCompletion>> getFacultyCompletionStatus(
+    String departmentId,
+    DateTime date,
+  ) async {
     return [
-      FacultyAttendanceCompletion(facultyId: 'f1', facultyName: 'Prof. Alan Turing', assignedSubjects: ['Java Programming'], completedClasses: 2, pendingClasses: 0, lastCompletionTime: DateTime.now().subtract(const Duration(minutes: 30))),
-      FacultyAttendanceCompletion(facultyId: 'f2', facultyName: 'Dr. Grace Hopper', assignedSubjects: ['Operating Systems'], completedClasses: 1, pendingClasses: 1, lastCompletionTime: DateTime.now().subtract(const Duration(hours: 1))),
+      FacultyAttendanceCompletion(
+        facultyId: 'f1',
+        facultyName: 'Prof. Alan Turing',
+        assignedSubjects: ['Java Programming'],
+        completedClasses: 2,
+        pendingClasses: 0,
+        lastCompletionTime: DateTime.now().subtract(
+          const Duration(minutes: 30),
+        ),
+      ),
+      FacultyAttendanceCompletion(
+        facultyId: 'f2',
+        facultyName: 'Dr. Grace Hopper',
+        assignedSubjects: ['Operating Systems'],
+        completedClasses: 1,
+        pendingClasses: 1,
+        lastCompletionTime: DateTime.now().subtract(const Duration(hours: 1)),
+      ),
     ];
   }
 
   @override
   Future<List<StudentShortage>> getStudentShortages(String departmentId) async {
     return [
-      StudentShortage(studentId: 's10', studentName: 'Peter Parker', rollNumber: 'CS2025010', semester: 'Semester 3', section: 'DCME 3-A', currentPercentage: 62.4),
-      StudentShortage(studentId: 's11', studentName: 'Clark Kent', rollNumber: 'CS2025011', semester: 'Semester 5', section: 'DCME 5-A', currentPercentage: 72.1),
+      StudentShortage(
+        studentId: 's10',
+        studentName: 'Peter Parker',
+        rollNumber: 'CS2025010',
+        semester: 'Semester 3',
+        section: 'DCME 3-A',
+        currentPercentage: 62.4,
+      ),
+      StudentShortage(
+        studentId: 's11',
+        studentName: 'Clark Kent',
+        rollNumber: 'CS2025011',
+        semester: 'Semester 5',
+        section: 'DCME 5-A',
+        currentPercentage: 72.1,
+      ),
     ];
   }
 
   @override
-  Future<List<SectionAttendanceSummary>> getSectionAttendance(String departmentId, DateTime date) async {
+  Future<List<SectionAttendanceSummary>> getSectionAttendance(
+    String departmentId,
+    DateTime date,
+  ) async {
     return [
-      SectionAttendanceSummary(sectionId: 'sec1', sectionName: 'DCME 3-A', semester: 'Semester 3', attendancePercentage: 85.2, present: 52, absent: 8, late: 2, totalStudents: 60),
-      SectionAttendanceSummary(sectionId: 'sec2', sectionName: 'DCME 3-B', semester: 'Semester 3', attendancePercentage: 79.5, present: 48, absent: 12, late: 5, totalStudents: 60),
+      SectionAttendanceSummary(
+        sectionId: 'sec1',
+        sectionName: 'DCME 3-A',
+        semester: 'Semester 3',
+        attendancePercentage: 85.2,
+        present: 52,
+        absent: 8,
+        late: 2,
+        totalStudents: 60,
+      ),
+      SectionAttendanceSummary(
+        sectionId: 'sec2',
+        sectionName: 'DCME 3-B',
+        semester: 'Semester 3',
+        attendancePercentage: 79.5,
+        present: 48,
+        absent: 12,
+        late: 5,
+        totalStudents: 60,
+      ),
     ];
   }
 
@@ -557,31 +728,73 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
   }
 
   @override
-  Future<List<DepartmentAttendanceComparison>> getDepartmentComparisons() async {
+  Future<List<DepartmentAttendanceComparison>>
+  getDepartmentComparisons() async {
     return [
-      DepartmentAttendanceComparison(departmentId: 'd1', departmentName: 'Computer Engineering', attendancePercentage: 84.5, studentCount: 850, facultyCount: 35, todayCompletionPercentage: 95.0, trend: TrendDirection.up),
-      DepartmentAttendanceComparison(departmentId: 'd2', departmentName: 'ECE', attendancePercentage: 82.1, studentCount: 720, facultyCount: 30, todayCompletionPercentage: 88.5, trend: TrendDirection.up),
+      DepartmentAttendanceComparison(
+        departmentId: 'd1',
+        departmentName: 'Computer Engineering',
+        attendancePercentage: 84.5,
+        studentCount: 850,
+        facultyCount: 35,
+        todayCompletionPercentage: 95.0,
+        trend: TrendDirection.up,
+      ),
+      DepartmentAttendanceComparison(
+        departmentId: 'd2',
+        departmentName: 'ECE',
+        attendancePercentage: 82.1,
+        studentCount: 720,
+        facultyCount: 30,
+        todayCompletionPercentage: 88.5,
+        trend: TrendDirection.up,
+      ),
     ];
   }
 
   @override
-  Future<List<CollegeFacultyCompletion>> getCollegeFacultyCompletion(DateTime date) async {
+  Future<List<CollegeFacultyCompletion>> getCollegeFacultyCompletion(
+    DateTime date,
+  ) async {
     return [
-      CollegeFacultyCompletion(facultyId: 'f1', facultyName: 'Dr. Emily Chen', departmentName: 'Computer Engineering', assignedSubjects: ['Data Structures'], completedClasses: 2, pendingClasses: 0, lastCompletionTime: DateTime.now().subtract(const Duration(minutes: 15))),
+      CollegeFacultyCompletion(
+        facultyId: 'f1',
+        facultyName: 'Dr. Emily Chen',
+        departmentName: 'Computer Engineering',
+        assignedSubjects: ['Data Structures'],
+        completedClasses: 2,
+        pendingClasses: 0,
+        lastCompletionTime: DateTime.now().subtract(
+          const Duration(minutes: 15),
+        ),
+      ),
     ];
   }
 
   @override
   Future<List<CollegeStudentShortage>> getCollegeStudentShortages() async {
     return [
-      CollegeStudentShortage(studentId: 's20', studentName: 'Tom Holland', rollNumber: 'ME2025020', departmentName: 'Mechanical', semester: 'Semester 5', currentPercentage: 55.2, status: ShortageStatus.critical),
+      CollegeStudentShortage(
+        studentId: 's20',
+        studentName: 'Tom Holland',
+        rollNumber: 'ME2025020',
+        departmentName: 'Mechanical',
+        semester: 'Semester 5',
+        currentPercentage: 55.2,
+        status: ShortageStatus.critical,
+      ),
     ];
   }
 
   @override
   Future<List<CollegeInsight>> getCollegeInsights() async {
     return [
-      CollegeInsight(title: 'Highest Attendance', value: 'Computer Engineering', subtitle: '84.5% Overall', isPositive: true),
+      CollegeInsight(
+        title: 'Highest Attendance',
+        value: 'Computer Engineering',
+        subtitle: '84.5% Overall',
+        isPositive: true,
+      ),
     ];
   }
 
@@ -605,28 +818,66 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
   @override
   Future<List<CollegeAttendanceComparison>> getCollegeComparisons() async {
     return [
-      CollegeAttendanceComparison(collegeId: 'c1', collegeName: 'Acadex Institute of Technology', collegeCode: 'AIT', attendancePercentage: 88.2, studentCount: 4500, facultyCount: 320, departmentCount: 8, completionRate: 98.0, trend: TrendDirection.up),
+      CollegeAttendanceComparison(
+        collegeId: 'c1',
+        collegeName: 'Acadex Institute of Technology',
+        collegeCode: 'AIT',
+        attendancePercentage: 88.2,
+        studentCount: 4500,
+        facultyCount: 320,
+        departmentCount: 8,
+        completionRate: 98.0,
+        trend: TrendDirection.up,
+      ),
     ];
   }
 
   @override
-  Future<List<SuperAdminFacultyCompletion>> getSuperAdminFacultyCompletion(DateTime date) async {
+  Future<List<SuperAdminFacultyCompletion>> getSuperAdminFacultyCompletion(
+    DateTime date,
+  ) async {
     return [
-      SuperAdminFacultyCompletion(facultyId: 'f1', facultyName: 'Dr. Emily Chen', collegeName: 'AIT', departmentName: 'Computer Engineering', assignedSubjects: ['Data Structures'], completedClasses: 2, pendingClasses: 0, lastCompletionTime: DateTime.now().subtract(const Duration(minutes: 15))),
+      SuperAdminFacultyCompletion(
+        facultyId: 'f1',
+        facultyName: 'Dr. Emily Chen',
+        collegeName: 'AIT',
+        departmentName: 'Computer Engineering',
+        assignedSubjects: ['Data Structures'],
+        completedClasses: 2,
+        pendingClasses: 0,
+        lastCompletionTime: DateTime.now().subtract(
+          const Duration(minutes: 15),
+        ),
+      ),
     ];
   }
 
   @override
-  Future<List<SuperAdminStudentShortage>> getSuperAdminStudentShortages() async {
+  Future<List<SuperAdminStudentShortage>>
+  getSuperAdminStudentShortages() async {
     return [
-      SuperAdminStudentShortage(studentId: 's20', studentName: 'Tom Holland', rollNumber: 'ME2025020', collegeName: 'AIT', departmentName: 'Mechanical', semester: 'Semester 5', currentPercentage: 55.2, status: ShortageStatus.critical),
+      SuperAdminStudentShortage(
+        studentId: 's20',
+        studentName: 'Tom Holland',
+        rollNumber: 'ME2025020',
+        collegeName: 'AIT',
+        departmentName: 'Mechanical',
+        semester: 'Semester 5',
+        currentPercentage: 55.2,
+        status: ShortageStatus.critical,
+      ),
     ];
   }
 
   @override
   Future<List<SuperAdminInsight>> getSuperAdminInsights() async {
     return [
-      SuperAdminInsight(title: 'Top Performing College', value: 'Acadex Medical College', subtitle: '92.5% Average Attendance', isPositive: true),
+      SuperAdminInsight(
+        title: 'Top Performing College',
+        value: 'Acadex Medical College',
+        subtitle: '92.5% Average Attendance',
+        isPositive: true,
+      ),
     ];
   }
 
@@ -663,9 +914,12 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
     };
 
     final docs = await _firestoreService.queryCollection('attendance', filters);
-    
+
     // Fetch student info for name, rollNumber, sectionId
-    final studentDoc = await _firestoreService.getDocument('students', studentId);
+    final studentDoc = await _firestoreService.getDocument(
+      'students',
+      studentId,
+    );
     final studentName = studentDoc?['name'] as String? ?? '';
     final rollNumber = studentDoc?['rollNumber'] as String? ?? '';
     final sectionId = studentDoc?['sectionId'] as String? ?? '';
@@ -719,10 +973,22 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
 
     return StudentAttendanceAnalytics.compute(
       studentId: studentId,
-      studentName: studentName.isNotEmpty ? studentName : (docs.isNotEmpty ? (docs.first['studentName'] as String? ?? '') : ''),
-      rollNumber: rollNumber.isNotEmpty ? rollNumber : (docs.isNotEmpty ? (docs.first['rollNumber'] as String? ?? '') : ''),
-      sectionId: sectionId.isNotEmpty ? sectionId : (docs.isNotEmpty ? (docs.first['sectionId'] as String? ?? '') : ''),
-      totalSessions: seenSessions.isNotEmpty ? seenSessions.length : (present + absent + late + excused + unmarked),
+      studentName: studentName.isNotEmpty
+          ? studentName
+          : (docs.isNotEmpty
+                ? (docs.first['studentName'] as String? ?? '')
+                : ''),
+      rollNumber: rollNumber.isNotEmpty
+          ? rollNumber
+          : (docs.isNotEmpty
+                ? (docs.first['rollNumber'] as String? ?? '')
+                : ''),
+      sectionId: sectionId.isNotEmpty
+          ? sectionId
+          : (docs.isNotEmpty ? (docs.first['sectionId'] as String? ?? '') : ''),
+      totalSessions: seenSessions.isNotEmpty
+          ? seenSessions.length
+          : (present + absent + late + excused + unmarked),
       presentCount: present,
       absentCount: absent,
       lateCount: late,
@@ -753,8 +1019,14 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
         'collegeId': userCollegeId,
     };
 
-    final docs = await _firestoreService.queryCollection('attendanceSessions', filters);
-    final subjectDoc = await _firestoreService.getDocument('subjects', subjectId);
+    final docs = await _firestoreService.queryCollection(
+      'attendanceSessions',
+      filters,
+    );
+    final subjectDoc = await _firestoreService.getDocument(
+      'subjects',
+      subjectId,
+    );
     final subjectName = subjectDoc?['name'] as String? ?? '';
 
     int present = 0;
@@ -800,7 +1072,11 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
 
     return SubjectAttendanceAnalytics.compute(
       subjectId: subjectId,
-      subjectName: subjectName.isNotEmpty ? subjectName : (docs.isNotEmpty ? (docs.first['subjectName'] as String? ?? '') : ''),
+      subjectName: subjectName.isNotEmpty
+          ? subjectName
+          : (docs.isNotEmpty
+                ? (docs.first['subjectName'] as String? ?? '')
+                : ''),
       sectionId: sectionId,
       totalSessions: matchingSessions,
       totalStudentRecords: totalRecords,
@@ -831,8 +1107,14 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
         'collegeId': userCollegeId,
     };
 
-    final sessionDocs = await _firestoreService.queryCollection('attendanceSessions', filters);
-    final sectionDoc = await _firestoreService.getDocument('sections', sectionId);
+    final sessionDocs = await _firestoreService.queryCollection(
+      'attendanceSessions',
+      filters,
+    );
+    final sectionDoc = await _firestoreService.getDocument(
+      'sections',
+      sectionId,
+    );
     final sectionName = sectionDoc?['name'] as String? ?? '';
 
     final studentDocs = await _firestoreService.queryCollection('students', {
@@ -935,9 +1217,15 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
 
     return SectionAttendanceAnalytics.compute(
       sectionId: sectionId,
-      sectionName: sectionName.isNotEmpty ? sectionName : (sessionDocs.isNotEmpty ? (sessionDocs.first['sectionName'] as String? ?? '') : ''),
+      sectionName: sectionName.isNotEmpty
+          ? sectionName
+          : (sessionDocs.isNotEmpty
+                ? (sessionDocs.first['sectionName'] as String? ?? '')
+                : ''),
       totalSessions: matchingSessions,
-      totalStudents: studentMap.isNotEmpty ? studentMap.length : perStudentCounts.length,
+      totalStudents: studentMap.isNotEmpty
+          ? studentMap.length
+          : perStudentCounts.length,
       presentCount: present,
       absentCount: absent,
       lateCount: late,
@@ -966,7 +1254,10 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
         'collegeId': userCollegeId,
     };
 
-    final docs = await _firestoreService.queryCollection('attendanceSessions', filters);
+    final docs = await _firestoreService.queryCollection(
+      'attendanceSessions',
+      filters,
+    );
     final facultyDoc = await _firestoreService.getDocument('users', facultyId);
     final facultyName = facultyDoc?['name'] as String? ?? '';
 
@@ -1042,13 +1333,17 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
     });
 
     final filters = <String, dynamic>{
-      if (departmentId != null && departmentId.isNotEmpty) 'departmentId': departmentId,
+      if (departmentId != null && departmentId.isNotEmpty)
+        'departmentId': departmentId,
       if (sectionId != null && sectionId.isNotEmpty) 'sectionId': sectionId,
       if (userCollegeId != null && userCollegeId.isNotEmpty)
         'collegeId': userCollegeId,
     };
 
-    final docs = await _firestoreService.queryCollection('attendanceSessions', filters);
+    final docs = await _firestoreService.queryCollection(
+      'attendanceSessions',
+      filters,
+    );
 
     int present = 0;
     int absent = 0;

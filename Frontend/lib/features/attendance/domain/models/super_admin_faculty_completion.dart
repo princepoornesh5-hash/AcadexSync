@@ -18,6 +18,8 @@ class SuperAdminFacultyCompletion {
     required this.pendingClasses,
     this.lastCompletionTime,
   });
-  
-  double get progress => (completedClasses + pendingClasses) == 0 ? 0 : completedClasses / (completedClasses + pendingClasses);
+
+  double get progress => (completedClasses + pendingClasses) == 0
+      ? 0
+      : completedClasses / (completedClasses + pendingClasses);
 }

@@ -26,7 +26,8 @@ class AchievementFormScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<AchievementFormScreen> createState() => _AchievementFormScreenState();
+  ConsumerState<AchievementFormScreen> createState() =>
+      _AchievementFormScreenState();
 }
 
 class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
@@ -122,7 +123,8 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
         final file = result.files.first;
         if (file.size > 10 * 1024 * 1024) {
           setState(() {
-            _errorMessage = 'Selected file is too large (${(file.size / (1024 * 1024)).toStringAsFixed(1)} MB). Maximum allowed size is 10 MB.';
+            _errorMessage =
+                'Selected file is too large (${(file.size / (1024 * 1024)).toStringAsFixed(1)} MB). Maximum allowed size is 10 MB.';
           });
           return;
         }
@@ -142,13 +144,17 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
 
     final authState = ref.read(authProvider);
     if (authState is! AuthAuthenticated) {
-      setState(() => _errorMessage = 'You must be logged in to save an achievement.');
+      setState(
+        () => _errorMessage = 'You must be logged in to save an achievement.',
+      );
       return;
     }
 
     final user = authState.user;
     final isEditing = widget.achievement != null;
-    final achievementId = isEditing ? widget.achievement!.id : const Uuid().v4();
+    final achievementId = isEditing
+        ? widget.achievement!.id
+        : const Uuid().v4();
 
     setState(() {
       _isSubmitting = true;
@@ -166,7 +172,8 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
 
       if (_selectedFile != null) {
         storageFileName = '${achievementId}_${_selectedFile!.name}';
-        storagePath = '/colleges/${user.collegeId ?? 'default'}/students/${user.id}/achievements/$storageFileName';
+        storagePath =
+            '/colleges/${user.collegeId ?? 'default'}/students/${user.id}/achievements/$storageFileName';
         fileUrl = 'https://firebasestorage.googleapis.com/mock$storagePath';
         fileType = _selectedFile!.extension ?? 'pdf';
         fileSizeBytes = _selectedFile!.size;
@@ -183,11 +190,21 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
         studentUid: isEditing ? widget.achievement!.studentUid : user.id,
         studentId: isEditing ? widget.achievement!.studentId : user.id,
         studentName: isEditing ? widget.achievement!.studentName : user.name,
-        collegeId: isEditing ? widget.achievement!.collegeId : (user.collegeId ?? 'default'),
-        departmentId: isEditing ? widget.achievement!.departmentId : (user.departmentId ?? ''),
-        courseId: isEditing ? widget.achievement!.courseId : (user.semesterId ?? ''),
-        semesterId: isEditing ? widget.achievement!.semesterId : (user.semesterId ?? ''),
-        sectionId: isEditing ? widget.achievement!.sectionId : (user.sectionId ?? ''),
+        collegeId: isEditing
+            ? widget.achievement!.collegeId
+            : (user.collegeId ?? 'default'),
+        departmentId: isEditing
+            ? widget.achievement!.departmentId
+            : (user.departmentId ?? ''),
+        courseId: isEditing
+            ? widget.achievement!.courseId
+            : (user.semesterId ?? ''),
+        semesterId: isEditing
+            ? widget.achievement!.semesterId
+            : (user.semesterId ?? ''),
+        sectionId: isEditing
+            ? widget.achievement!.sectionId
+            : (user.sectionId ?? ''),
         academicYearId: isEditing ? widget.achievement!.academicYearId : '',
         category: _category,
         title: _titleController.text.trim(),
@@ -200,21 +217,25 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
         fileSizeBytes: fileSizeBytes,
         storagePath: storagePath,
         fileUrl: fileUrl,
-        status: isEditing ? widget.achievement!.status : AchievementStatus.active,
+        status: isEditing
+            ? widget.achievement!.status
+            : AchievementStatus.active,
         createdAt: isEditing ? widget.achievement!.createdAt : DateTime.now(),
         updatedAt: isEditing ? DateTime.now() : null,
         createdBy: isEditing ? widget.achievement!.createdBy : user.name,
         isVerificationRequested: _requestVerification,
         verificationStatus: isEditing
             ? (_requestVerification && widget.achievement!.isUnverified
-                ? AchievementVerificationStatus.pending
-                : widget.achievement!.verificationStatus)
+                  ? AchievementVerificationStatus.pending
+                  : widget.achievement!.verificationStatus)
             : (_requestVerification
-                ? AchievementVerificationStatus.pending
-                : AchievementVerificationStatus.unverified),
+                  ? AchievementVerificationStatus.pending
+                  : AchievementVerificationStatus.unverified),
         verifiedBy: isEditing ? widget.achievement!.verifiedBy : null,
         verifiedAt: isEditing ? widget.achievement!.verifiedAt : null,
-        verificationNote: isEditing ? widget.achievement!.verificationNote : null,
+        verificationNote: isEditing
+            ? widget.achievement!.verificationNote
+            : null,
       );
 
       if (isEditing) {
@@ -233,7 +254,11 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isEditing ? 'Achievement updated!' : 'Achievement added successfully!'),
+            content: Text(
+              isEditing
+                  ? 'Achievement updated!'
+                  : 'Achievement added successfully!',
+            ),
             backgroundColor: AcadexColors.success,
           ),
         );
@@ -268,7 +293,8 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
                 // Header
                 AcadexPageHeader(
                   title: isEditing ? 'Edit Achievement' : 'Add Achievement',
-                  subtitle: 'Showcase your accomplishments, awards, projects, and skills.',
+                  subtitle:
+                      'Showcase your accomplishments, awards, projects, and skills.',
                 ),
                 const SizedBox(height: AcadexSpacing.space16),
 
@@ -279,16 +305,24 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
                     decoration: BoxDecoration(
                       color: AcadexColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(AcadexRadius.md),
-                      border: Border.all(color: AcadexColors.error.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: AcadexColors.error.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 20),
+                        const Icon(
+                          LucideIcons.alertCircle,
+                          color: AcadexColors.error,
+                          size: 20,
+                        ),
                         const SizedBox(width: AcadexSpacing.space8),
                         Expanded(
                           child: Text(
                             _errorMessage!,
-                            style: AcadexTypography.bodyMedium(color: AcadexColors.error),
+                            style: AcadexTypography.bodyMedium(
+                              color: AcadexColors.error,
+                            ),
                           ),
                         ),
                       ],
@@ -307,21 +341,31 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
                       Text(
                         'Achievement Category *',
                         style: AcadexTypography.title(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       const SizedBox(height: AcadexSpacing.space8),
                       DropdownButtonFormField<AchievementCategory>(
                         value: _category,
                         decoration: InputDecoration(
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                              AcadexRadius.md,
+                            ),
+                          ),
                         ),
                         items: AchievementCategory.values.map((cat) {
                           return DropdownMenuItem(
                             value: cat,
                             child: Row(
                               children: [
-                                Icon(cat.icon, size: 16, color: AcadexColors.primary),
+                                Icon(
+                                  cat.icon,
+                                  size: 16,
+                                  color: AcadexColors.primary,
+                                ),
                                 const SizedBox(width: 8),
                                 Text(cat.displayName),
                               ],
@@ -338,17 +382,26 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
                       Text(
                         'Achievement Title *',
                         style: AcadexTypography.title(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       const SizedBox(height: AcadexSpacing.space8),
                       TextFormField(
                         controller: _titleController,
                         decoration: InputDecoration(
-                          hintText: 'e.g. National Hackathon Winner, AWS Solutions Architect',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                          hintText:
+                              'e.g. National Hackathon Winner, AWS Solutions Architect',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                              AcadexRadius.md,
+                            ),
+                          ),
                         ),
-                        validator: (val) => val == null || val.trim().isEmpty ? 'Title is required' : null,
+                        validator: (val) => val == null || val.trim().isEmpty
+                            ? 'Title is required'
+                            : null,
                       ),
                       const SizedBox(height: AcadexSpacing.space20),
 
@@ -363,18 +416,27 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
                                 Text(
                                   'Issuer / Organization *',
                                   style: AcadexTypography.title(
-                                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                    color: isDark
+                                        ? AcadexColors.darkInk
+                                        : AcadexColors.ink,
                                   ),
                                 ),
                                 const SizedBox(height: AcadexSpacing.space8),
                                 TextFormField(
                                   controller: _issuerController,
                                   decoration: InputDecoration(
-                                    hintText: 'e.g. IEEE, Google, State University',
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                                    hintText:
+                                        'e.g. IEEE, Google, State University',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        AcadexRadius.md,
+                                      ),
+                                    ),
                                   ),
                                   validator: (val) =>
-                                      val == null || val.trim().isEmpty ? 'Issuer is required' : null,
+                                      val == null || val.trim().isEmpty
+                                      ? 'Issuer is required'
+                                      : null,
                                 ),
                               ],
                             ),
@@ -387,32 +449,48 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
                                 Text(
                                   'Date of Achievement *',
                                   style: AcadexTypography.title(
-                                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                    color: isDark
+                                        ? AcadexColors.darkInk
+                                        : AcadexColors.ink,
                                   ),
                                 ),
                                 const SizedBox(height: AcadexSpacing.space8),
                                 InkWell(
                                   onTap: _pickDate,
-                                  borderRadius: BorderRadius.circular(AcadexRadius.md),
+                                  borderRadius: BorderRadius.circular(
+                                    AcadexRadius.md,
+                                  ),
                                   child: Container(
                                     height: 48,
-                                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                    ),
                                     decoration: BoxDecoration(
                                       border: Border.all(
-                                        color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                        color: isDark
+                                            ? AcadexColors.darkHairline
+                                            : AcadexColors.hairline,
                                       ),
-                                      borderRadius: BorderRadius.circular(AcadexRadius.md),
+                                      borderRadius: BorderRadius.circular(
+                                        AcadexRadius.md,
+                                      ),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
                                           '${_achievementDate.day}/${_achievementDate.month}/${_achievementDate.year}',
                                           style: AcadexTypography.bodyMedium(
-                                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                            color: isDark
+                                                ? AcadexColors.darkInk
+                                                : AcadexColors.ink,
                                           ),
                                         ),
-                                        const Icon(LucideIcons.calendar, size: 18),
+                                        const Icon(
+                                          LucideIcons.calendar,
+                                          size: 18,
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -428,7 +506,9 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
                       Text(
                         'Description',
                         style: AcadexTypography.title(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       const SizedBox(height: AcadexSpacing.space8),
@@ -436,8 +516,13 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
                         controller: _descController,
                         maxLines: 3,
                         decoration: InputDecoration(
-                          hintText: 'Describe your role, accomplishment, project details, or impact...',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                          hintText:
+                              'Describe your role, accomplishment, project details, or impact...',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                              AcadexRadius.md,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: AcadexSpacing.space20),
@@ -446,7 +531,9 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
                       Text(
                         'Skills & Tags (Optional)',
                         style: AcadexTypography.title(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       const SizedBox(height: AcadexSpacing.space8),
@@ -456,9 +543,17 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
                             child: TextField(
                               controller: _skillInputController,
                               decoration: InputDecoration(
-                                hintText: 'Type a skill (e.g. Flutter, Machine Learning) and click Add',
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                hintText:
+                                    'Type a skill (e.g. Flutter, Machine Learning) and click Add',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    AcadexRadius.md,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 10,
+                                ),
                               ),
                               onSubmitted: (_) => _addSkill(),
                             ),
@@ -483,7 +578,9 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
                               label: Text(skill),
                               deleteIcon: const Icon(LucideIcons.x, size: 14),
                               onDeleted: () => _removeSkill(skill),
-                              backgroundColor: AcadexColors.primary.withValues(alpha: 0.1),
+                              backgroundColor: AcadexColors.primary.withValues(
+                                alpha: 0.1,
+                              ),
                             );
                           }).toList(),
                         ),
@@ -494,7 +591,9 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
                       Text(
                         'Certificate / Proof Document (Optional)',
                         style: AcadexTypography.title(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       const SizedBox(height: AcadexSpacing.space8),
@@ -505,29 +604,46 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
                           borderRadius: BorderRadius.circular(AcadexRadius.md),
                           child: Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 28,
+                              horizontal: 20,
+                            ),
                             decoration: BoxDecoration(
-                              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
-                              borderRadius: BorderRadius.circular(AcadexRadius.md),
+                              color: isDark
+                                  ? AcadexColors.darkSurfaceCard
+                                  : AcadexColors.canvasSoft,
+                              borderRadius: BorderRadius.circular(
+                                AcadexRadius.md,
+                              ),
                               border: Border.all(
-                                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                color: isDark
+                                    ? AcadexColors.darkHairline
+                                    : AcadexColors.hairline,
                               ),
                             ),
                             child: Column(
                               children: [
-                                const Icon(LucideIcons.uploadCloud, color: AcadexColors.primary, size: 28),
+                                const Icon(
+                                  LucideIcons.uploadCloud,
+                                  color: AcadexColors.primary,
+                                  size: 28,
+                                ),
                                 const SizedBox(height: 8),
                                 Text(
                                   'Upload proof document (PDF, JPG, PNG, DOC, DOCX)',
                                   style: AcadexTypography.bodyMedium(
-                                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                    color: isDark
+                                        ? AcadexColors.darkInk
+                                        : AcadexColors.ink,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   'Maximum file size: 10 MB',
                                   style: AcadexTypography.caption(
-                                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
                                   ),
                                 ),
                               ],
@@ -539,18 +655,32 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
                           padding: const EdgeInsets.all(AcadexSpacing.space16),
                           decoration: BoxDecoration(
                             color: AcadexColors.success.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(AcadexRadius.md),
-                            border: Border.all(color: AcadexColors.success.withValues(alpha: 0.3)),
+                            borderRadius: BorderRadius.circular(
+                              AcadexRadius.md,
+                            ),
+                            border: Border.all(
+                              color: AcadexColors.success.withValues(
+                                alpha: 0.3,
+                              ),
+                            ),
                           ),
                           child: Row(
                             children: [
-                              const Icon(LucideIcons.fileCheck, color: AcadexColors.success, size: 22),
+                              const Icon(
+                                LucideIcons.fileCheck,
+                                color: AcadexColors.success,
+                                size: 22,
+                              ),
                               const SizedBox(width: AcadexSpacing.space12),
                               Expanded(
                                 child: Text(
-                                  _selectedFile?.name ?? _existingFileName ?? 'Document',
+                                  _selectedFile?.name ??
+                                      _existingFileName ??
+                                      'Document',
                                   style: AcadexTypography.bodyMedium(
-                                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                    color: isDark
+                                        ? AcadexColors.darkInk
+                                        : AcadexColors.ink,
                                   ),
                                 ),
                               ),
@@ -569,13 +699,16 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
                       // Verification Request Switch
                       CheckboxListTile(
                         value: _requestVerification,
-                        title: const Text('Request Verification from Faculty / HOD'),
+                        title: const Text(
+                          'Request Verification from Faculty / HOD',
+                        ),
                         subtitle: const Text(
                           'Submits this achievement for official institutional review and badge verification.',
                         ),
                         activeColor: AcadexColors.primary,
                         contentPadding: EdgeInsets.zero,
-                        onChanged: (val) => setState(() => _requestVerification = val ?? false),
+                        onChanged: (val) =>
+                            setState(() => _requestVerification = val ?? false),
                       ),
                       const SizedBox(height: AcadexSpacing.space32),
 
@@ -586,13 +719,19 @@ class _AchievementFormScreenState extends ConsumerState<AchievementFormScreen> {
                           AcadexButton(
                             label: 'Cancel',
                             variant: AcadexButtonVariant.secondary,
-                            onPressed: _isSubmitting ? null : () => context.safePop(fallbackRoute: '/achievements'),
+                            onPressed: _isSubmitting
+                                ? null
+                                : () => context.safePop(
+                                    fallbackRoute: '/achievements',
+                                  ),
                           ),
                           const SizedBox(width: AcadexSpacing.space16),
                           AcadexButton(
                             label: _isSubmitting
                                 ? 'Saving...'
-                                : (isEditing ? 'Update Achievement' : 'Save Achievement'),
+                                : (isEditing
+                                      ? 'Update Achievement'
+                                      : 'Save Achievement'),
                             icon: LucideIcons.check,
                             variant: AcadexButtonVariant.primary,
                             onPressed: _isSubmitting ? null : _save,

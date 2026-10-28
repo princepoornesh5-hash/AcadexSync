@@ -8,7 +8,7 @@ class ApiAssignmentsRepository implements AssignmentsRepository {
   final ApiClient _apiClient;
 
   ApiAssignmentsRepository({ApiClient? apiClient})
-      : _apiClient = apiClient ?? apiClientInstance;
+    : _apiClient = apiClient ?? apiClientInstance;
 
   static ApiClient get apiClientInstance => apiClient;
 
@@ -33,7 +33,11 @@ class ApiAssignmentsRepository implements AssignmentsRepository {
       if (response.data != null && response.data['data'] != null) {
         final list = response.data['data'] as List;
         return list
-            .map((item) => AssignmentModel.fromJson(Map<String, dynamic>.from(item as Map)))
+            .map(
+              (item) => AssignmentModel.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
             .toList();
       }
       return [];
@@ -50,12 +54,19 @@ class ApiAssignmentsRepository implements AssignmentsRepository {
       if (response.data != null && response.data['data'] != null) {
         final list = response.data['data'] as List;
         return list
-            .map((item) => AssignmentModel.fromJson(Map<String, dynamic>.from(item as Map)))
+            .map(
+              (item) => AssignmentModel.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
             .toList();
       }
       return [];
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load your assignments');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load your assignments',
+      );
     }
   }
 
@@ -75,7 +86,10 @@ class ApiAssignmentsRepository implements AssignmentsRepository {
         userMessage: 'Assignment not found',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load assignment details');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load assignment details',
+      );
     }
   }
 
@@ -104,10 +118,13 @@ class ApiAssignmentsRepository implements AssignmentsRepository {
         if (facultyAssignmentId != null && facultyAssignmentId.isNotEmpty)
           'facultyAssignmentId': facultyAssignmentId,
         if (scope != null && scope.isNotEmpty) 'scope': scope,
-        if (departmentId != null && departmentId.isNotEmpty) 'departmentId': departmentId,
+        if (departmentId != null && departmentId.isNotEmpty)
+          'departmentId': departmentId,
         if (courseId != null && courseId.isNotEmpty) 'courseId': courseId,
-        if (academicYearId != null && academicYearId.isNotEmpty) 'academicYearId': academicYearId,
-        if (semesterId != null && semesterId.isNotEmpty) 'semesterId': semesterId,
+        if (academicYearId != null && academicYearId.isNotEmpty)
+          'academicYearId': academicYearId,
+        if (semesterId != null && semesterId.isNotEmpty)
+          'semesterId': semesterId,
         if (sectionId != null && sectionId.isNotEmpty) 'sectionId': sectionId,
         if (subjectId != null && subjectId.isNotEmpty) 'subjectId': subjectId,
         'title': title,
@@ -121,10 +138,7 @@ class ApiAssignmentsRepository implements AssignmentsRepository {
         'status': (status ?? AssignmentStatus.draft).name.toUpperCase(),
       };
 
-      final response = await _apiClient.dio.post(
-        '/assignments',
-        data: payload,
-      );
+      final response = await _apiClient.dio.post('/assignments', data: payload);
 
       if (response.data != null && response.data['data'] != null) {
         return AssignmentModel.fromJson(
@@ -137,7 +151,10 @@ class ApiAssignmentsRepository implements AssignmentsRepository {
         userMessage: "Couldn't publish the assignment. Please try again.",
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: "Couldn't publish the assignment. Please try again.");
+      throw AcadexException.fromDio(
+        e,
+        context: "Couldn't publish the assignment. Please try again.",
+      );
     }
   }
 
@@ -186,12 +203,17 @@ class ApiAssignmentsRepository implements AssignmentsRepository {
     try {
       await _apiClient.dio.post('/assignments/$id/complete');
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to mark assignment as done');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to mark assignment as done',
+      );
     }
   }
 
   @override
-  Future<AssignmentActivityResponseModel> getAssignmentActivity(String id) async {
+  Future<AssignmentActivityResponseModel> getAssignmentActivity(
+    String id,
+  ) async {
     try {
       final response = await _apiClient.dio.get('/assignments/$id/activity');
 
@@ -206,7 +228,10 @@ class ApiAssignmentsRepository implements AssignmentsRepository {
         userMessage: 'Failed to load assignment activity',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load assignment activity');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load assignment activity',
+      );
     }
   }
 
@@ -306,14 +331,19 @@ class ApiAssignmentsRepository implements AssignmentsRepository {
     try {
       await _apiClient.dio.delete('/assignments/$id');
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to delete draft assignment');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to delete draft assignment',
+      );
     }
   }
 
   @override
   Future<SubmissionModel?> getMySubmission(String assignmentId) async {
     try {
-      final response = await _apiClient.dio.get('/assignments/$assignmentId/submission');
+      final response = await _apiClient.dio.get(
+        '/assignments/$assignmentId/submission',
+      );
       if (response.data != null && response.data['data'] != null) {
         return SubmissionModel.fromJson(
           Map<String, dynamic>.from(response.data['data'] as Map),
@@ -337,10 +367,7 @@ class ApiAssignmentsRepository implements AssignmentsRepository {
     try {
       final response = await _apiClient.dio.post(
         '/assignments/$assignmentId/submission/upload-auth',
-        data: {
-          'fileName': fileName,
-          'fileType': fileType,
-        },
+        data: {'fileName': fileName, 'fileType': fileType},
       );
       if (response.data != null && response.data['data'] != null) {
         return SubmissionUploadAuthModel.fromJson(
@@ -353,7 +380,10 @@ class ApiAssignmentsRepository implements AssignmentsRepository {
         userMessage: 'Upload authorization failed',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to authorize file upload');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to authorize file upload',
+      );
     }
   }
 
@@ -384,7 +414,10 @@ class ApiAssignmentsRepository implements AssignmentsRepository {
         userMessage: 'Failed to save draft',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to save draft submission');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to save draft submission',
+      );
     }
   }
 
@@ -437,7 +470,10 @@ class ApiAssignmentsRepository implements AssignmentsRepository {
         userMessage: 'Could not access file',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to obtain download URL');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to obtain download URL',
+      );
     }
   }
 
@@ -477,4 +513,3 @@ class ApiAssignmentsRepository implements AssignmentsRepository {
     }
   }
 }
-

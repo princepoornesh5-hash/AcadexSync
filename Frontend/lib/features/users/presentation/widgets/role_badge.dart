@@ -5,14 +5,14 @@ import '../../../auth/domain/models/role_enum.dart';
 
 class RoleBadge extends StatelessWidget {
   final AppRole role;
-  
+
   const RoleBadge({super.key, required this.role});
 
   @override
   Widget build(BuildContext context) {
     Color bgColor;
     Color textColor;
-    
+
     switch (role) {
       case AppRole.superAdmin:
         bgColor = DashboardColors.errorLight;

@@ -9,7 +9,8 @@ import 'acadex_assistant_types.dart';
 /// wipe, write, appear, disappear), and clean disposal.
 class AcadexAssistantController extends ChangeNotifier {
   AcadexAssistantPose _pose = AcadexAssistantPose.idle;
-  AcadexAssistantExpression _expression = AcadexAssistantExpression.defaultExpression;
+  AcadexAssistantExpression _expression =
+      AcadexAssistantExpression.defaultExpression;
   Offset _gazeDirection = Offset.zero;
   double _poseProgress = 0.0;
   double _visibility = 1.0;
@@ -31,13 +32,14 @@ class AcadexAssistantController extends ChangeNotifier {
 
   AcadexAssistantController({
     AcadexAssistantPose initialPose = AcadexAssistantPose.idle,
-    AcadexAssistantExpression initialExpression = AcadexAssistantExpression.defaultExpression,
+    AcadexAssistantExpression initialExpression =
+        AcadexAssistantExpression.defaultExpression,
     double initialVisibility = 1.0,
     Offset? initialStylusTarget,
-  })  : _pose = initialPose,
-        _expression = initialExpression,
-        _visibility = initialVisibility,
-        _stylusTarget = initialStylusTarget;
+  }) : _pose = initialPose,
+       _expression = initialExpression,
+       _visibility = initialVisibility,
+       _stylusTarget = initialStylusTarget;
 
   /// Sets the active handwriting/wiping stylus target in local assistant coordinates.
   void setStylusTarget(Offset? target, {bool notify = false}) {
@@ -73,7 +75,9 @@ class AcadexAssistantController extends ChangeNotifier {
     if (resetProgress) {
       _poseProgress = 0.0;
     }
-    _magicSparkleProgress = (newPose == AcadexAssistantPose.magic) ? _magicSparkleProgress : 0.0;
+    _magicSparkleProgress = (newPose == AcadexAssistantPose.magic)
+        ? _magicSparkleProgress
+        : 0.0;
     notifyListeners();
   }
 

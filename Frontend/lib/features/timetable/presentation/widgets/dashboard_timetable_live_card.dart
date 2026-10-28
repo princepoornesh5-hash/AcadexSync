@@ -18,10 +18,7 @@ import 'timetable_widgets.dart';
 class DashboardTimetableLiveCard extends ConsumerWidget {
   final AppRole role;
 
-  const DashboardTimetableLiveCard({
-    super.key,
-    required this.role,
-  });
+  const DashboardTimetableLiveCard({super.key, required this.role});
 
   void _onMarkAttendance(
     BuildContext context,
@@ -33,10 +30,13 @@ class DashboardTimetableLiveCard extends ConsumerWidget {
     String? resolvedFaId = entry.facultyAssignmentId;
     if (resolvedFaId == null || resolvedFaId.isEmpty) {
       final myAssignments = ref.read(myFacultyAssignmentsProvider);
-      final match = myAssignments.where((a) =>
-        a.subjectId == entry.subjectId &&
-        (a.sectionId == null || a.sectionId == entry.sectionId)
-      ).firstOrNull;
+      final match = myAssignments
+          .where(
+            (a) =>
+                a.subjectId == entry.subjectId &&
+                (a.sectionId == null || a.sectionId == entry.sectionId),
+          )
+          .firstOrNull;
       if (match != null) {
         resolvedFaId = match.id;
       }
@@ -45,7 +45,9 @@ class DashboardTimetableLiveCard extends ConsumerWidget {
     if (resolvedFaId == null || resolvedFaId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Cannot mark attendance: This timetable entry is not associated with an authorized teaching assignment.'),
+          content: Text(
+            'Cannot mark attendance: This timetable entry is not associated with an authorized teaching assignment.',
+          ),
           backgroundColor: AcadexColors.error,
         ),
       );
@@ -92,7 +94,9 @@ class DashboardTimetableLiveCard extends ConsumerWidget {
         decoration: BoxDecoration(
           color: AcadexColors.warning.withValues(alpha: 0.1),
           borderRadius: AcadexRadius.borderRadiusLg,
-          border: Border.all(color: AcadexColors.warning.withValues(alpha: 0.3)),
+          border: Border.all(
+            color: AcadexColors.warning.withValues(alpha: 0.3),
+          ),
         ),
         child: Row(
           children: [
@@ -102,7 +106,11 @@ class DashboardTimetableLiveCard extends ConsumerWidget {
                 color: AcadexColors.warning.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(LucideIcons.calendarOff, size: 20, color: AcadexColors.warning),
+              child: const Icon(
+                LucideIcons.calendarOff,
+                size: 20,
+                color: AcadexColors.warning,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -123,15 +131,16 @@ class DashboardTimetableLiveCard extends ConsumerWidget {
                     holidayReason != null && holidayReason.isNotEmpty
                         ? holidayReason
                         : 'Institutional Holiday',
-                    style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface).copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                    ),
+                    style: AcadexTypography.title(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ).copyWith(fontWeight: FontWeight.w700, fontSize: 15),
                   ),
                   Text(
                     'No regular classes scheduled today.',
                     style: AcadexTypography.caption(
-                      color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                      color:
+                          Theme.of(context).textTheme.bodySmall?.color ??
+                          AcadexColors.inkMuted,
                     ),
                   ),
                 ],
@@ -187,7 +196,9 @@ class DashboardTimetableLiveCard extends ConsumerWidget {
         color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
         borderRadius: AcadexRadius.borderRadiusLg,
         border: Border.all(
-          color: isLive ? AcadexColors.error.withValues(alpha: 0.5) : AcadexColors.primary.withValues(alpha: 0.3),
+          color: isLive
+              ? AcadexColors.error.withValues(alpha: 0.5)
+              : AcadexColors.primary.withValues(alpha: 0.3),
           width: 1.5,
         ),
         boxShadow: isDark ? null : AcadexShadows.lightSm,
@@ -231,7 +242,9 @@ class DashboardTimetableLiveCard extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
-                        color: isLive ? AcadexColors.error : AcadexColors.primary,
+                        color: isLive
+                            ? AcadexColors.error
+                            : AcadexColors.primary,
                         letterSpacing: 0.4,
                       ),
                     ),
@@ -269,11 +282,14 @@ class DashboardTimetableLiveCard extends ConsumerWidget {
           // Subject Name
           Text(
             subjectName,
-            style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface).copyWith(
-              fontWeight: FontWeight.w800,
-              fontSize: 17,
-              letterSpacing: -0.2,
-            ),
+            style:
+                AcadexTypography.title(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ).copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 17,
+                  letterSpacing: -0.2,
+                ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -294,7 +310,9 @@ class DashboardTimetableLiveCard extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                    color:
+                        Theme.of(context).textTheme.bodySmall?.color ??
+                        AcadexColors.inkMuted,
                   ),
                 ),
               ),
@@ -303,16 +321,21 @@ class DashboardTimetableLiveCard extends ConsumerWidget {
                 Icon(
                   LucideIcons.mapPin,
                   size: 13,
-                  color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                  color:
+                      Theme.of(context).textTheme.bodySmall?.color ??
+                      AcadexColors.inkMuted,
                 ),
                 const SizedBox(width: 3),
                 Flexible(
                   child: Text(
-                    activeEntry.building != null && activeEntry.building!.isNotEmpty
+                    activeEntry.building != null &&
+                            activeEntry.building!.isNotEmpty
                         ? '${activeEntry.building} · Room ${activeEntry.roomNumber}'
                         : 'Room ${activeEntry.roomNumber}',
                     style: AcadexTypography.caption(
-                      color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                      color:
+                          Theme.of(context).textTheme.bodySmall?.color ??
+                          AcadexColors.inkMuted,
                     ).copyWith(fontSize: 12),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -323,14 +346,18 @@ class DashboardTimetableLiveCard extends ConsumerWidget {
                 Icon(
                   LucideIcons.user,
                   size: 13,
-                  color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                  color:
+                      Theme.of(context).textTheme.bodySmall?.color ??
+                      AcadexColors.inkMuted,
                 ),
                 const SizedBox(width: 3),
                 Flexible(
                   child: Text(
                     facultyName,
                     style: AcadexTypography.caption(
-                      color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                      color:
+                          Theme.of(context).textTheme.bodySmall?.color ??
+                          AcadexColors.inkMuted,
                     ).copyWith(fontSize: 12),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -346,7 +373,13 @@ class DashboardTimetableLiveCard extends ConsumerWidget {
             children: [
               if (role == AppRole.faculty) ...[
                 ElevatedButton.icon(
-                  onPressed: () => _onMarkAttendance(context, ref, activeEntry, subjectName, sectionName),
+                  onPressed: () => _onMarkAttendance(
+                    context,
+                    ref,
+                    activeEntry,
+                    subjectName,
+                    sectionName,
+                  ),
                   icon: const Icon(LucideIcons.clipboardCheck, size: 15),
                   label: const Text('Mark Attendance'),
                   style: ElevatedButton.styleFrom(
@@ -354,20 +387,31 @@ class DashboardTimetableLiveCard extends ConsumerWidget {
                     foregroundColor: Colors.white,
                     elevation: 0,
                     visualDensity: VisualDensity.compact,
-                    shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
               ],
               OutlinedButton.icon(
-                onPressed: () => TimetableEntryDetailSheet.show(context, activeEntry),
+                onPressed: () =>
+                    TimetableEntryDetailSheet.show(context, activeEntry),
                 icon: const Icon(LucideIcons.info, size: 14),
                 label: const Text('View Details'),
                 style: OutlinedButton.styleFrom(
                   visualDensity: VisualDensity.compact,
-                  shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AcadexRadius.borderRadiusMd,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                 ),
               ),
             ],

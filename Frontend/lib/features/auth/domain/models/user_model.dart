@@ -1,6 +1,12 @@
 import 'role_enum.dart';
 
-enum AccountStatus { active, pendingActivation, inactive, deactivated, suspended }
+enum AccountStatus {
+  active,
+  pendingActivation,
+  inactive,
+  deactivated,
+  suspended,
+}
 
 extension AccountStatusExtension on AccountStatus {
   String get value {
@@ -113,9 +119,15 @@ class UserModel {
           ? AccountStatusExtension.fromString(json['accountStatus'] as String)
           : AccountStatus.active,
       activationStatus: json['activationStatus'] as String?,
-      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'].toString()) : null,
-      lastLoginAt: json['lastLoginAt'] != null ? DateTime.tryParse(json['lastLoginAt'].toString()) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'].toString())
+          : null,
+      lastLoginAt: json['lastLoginAt'] != null
+          ? DateTime.tryParse(json['lastLoginAt'].toString())
+          : null,
     );
   }
 

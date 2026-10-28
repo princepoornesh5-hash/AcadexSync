@@ -2,24 +2,32 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/academic_records_repository.dart';
 import '../../domain/models/academic_record_models.dart';
 
-final academicRecordsRepositoryProvider = Provider<AcademicRecordsRepository>((ref) {
+final academicRecordsRepositoryProvider = Provider<AcademicRecordsRepository>((
+  ref,
+) {
   return ApiAcademicRecordsRepository();
 });
 
 /// Fetches chronological academic history for a student.
 /// If `studentId` is null, fetches authenticated student's own history.
 final studentAcademicRecordsHistoryProvider =
-    FutureProvider.family<List<AcademicHistoryItemModel>, String?>((ref, studentId) async {
-  final repo = ref.watch(academicRecordsRepositoryProvider);
-  return repo.getStudentHistory(studentId: studentId);
-});
+    FutureProvider.family<List<AcademicHistoryItemModel>, String?>((
+      ref,
+      studentId,
+    ) async {
+      final repo = ref.watch(academicRecordsRepositoryProvider);
+      return repo.getStudentHistory(studentId: studentId);
+    });
 
 /// Fetches full structured detail for a single academic record.
 final academicRecordDetailProvider =
-    FutureProvider.family<AcademicRecordDetailModel, String>((ref, recordId) async {
-  final repo = ref.watch(academicRecordsRepositoryProvider);
-  return repo.getRecordDetail(recordId);
-});
+    FutureProvider.family<AcademicRecordDetailModel, String>((
+      ref,
+      recordId,
+    ) async {
+      final repo = ref.watch(academicRecordsRepositoryProvider);
+      return repo.getRecordDetail(recordId);
+    });
 
 /// Filter state for department/college academic records list.
 class DepartmentRecordsFilter {
@@ -85,24 +93,29 @@ class DepartmentRecordsFilter {
   }
 }
 
-final departmentRecordsFilterProvider = StateProvider<DepartmentRecordsFilter>((ref) {
+final departmentRecordsFilterProvider = StateProvider<DepartmentRecordsFilter>((
+  ref,
+) {
   return const DepartmentRecordsFilter();
 });
 
 /// Department records list provider watching current filter state.
 final departmentAcademicRecordsProvider =
-    FutureProvider.family<PaginatedAcademicRecordsModel, DepartmentRecordsFilter>((ref, filter) async {
-  final repo = ref.watch(academicRecordsRepositoryProvider);
-  return repo.getDepartmentRecords(
-    departmentId: filter.departmentId,
-    courseId: filter.courseId,
-    semesterId: filter.semesterId,
-    academicYearId: filter.academicYearId,
-    progressionStatus: filter.progressionStatus,
-    page: filter.page,
-    limit: filter.limit,
-  );
-});
+    FutureProvider.family<
+      PaginatedAcademicRecordsModel,
+      DepartmentRecordsFilter
+    >((ref, filter) async {
+      final repo = ref.watch(academicRecordsRepositoryProvider);
+      return repo.getDepartmentRecords(
+        departmentId: filter.departmentId,
+        courseId: filter.courseId,
+        semesterId: filter.semesterId,
+        academicYearId: filter.academicYearId,
+        progressionStatus: filter.progressionStatus,
+        page: filter.page,
+        limit: filter.limit,
+      );
+    });
 
 /// Controller for mutating academic progression status & subject status.
 class AcademicRecordActionController extends StateNotifier<AsyncValue<void>> {
@@ -110,7 +123,7 @@ class AcademicRecordActionController extends StateNotifier<AsyncValue<void>> {
   final Ref _ref;
 
   AcademicRecordActionController(this._repository, this._ref)
-      : super(const AsyncValue.data(null));
+    : super(const AsyncValue.data(null));
 
   Future<bool> updateProgression(
     String recordId, {
@@ -119,7 +132,11 @@ class AcademicRecordActionController extends StateNotifier<AsyncValue<void>> {
   }) async {
     state = const AsyncValue.loading();
     try {
-      await _repository.updateProgressionStatus(recordId, status: status, remarks: remarks);
+      await _repository.updateProgressionStatus(
+        recordId,
+        status: status,
+        remarks: remarks,
+      );
       // Invalidate relevant providers to trigger immediate reactive refresh
       _ref.invalidate(academicRecordDetailProvider(recordId));
       _ref.invalidate(studentAcademicRecordsHistoryProvider(null));
@@ -139,7 +156,11 @@ class AcademicRecordActionController extends StateNotifier<AsyncValue<void>> {
   }) async {
     state = const AsyncValue.loading();
     try {
-      await _repository.updateSubjectStatus(subjectRecordId, status: status, remarks: remarks);
+      await _repository.updateSubjectStatus(
+        subjectRecordId,
+        status: status,
+        remarks: remarks,
+      );
       if (parentRecordId != null) {
         _ref.invalidate(academicRecordDetailProvider(parentRecordId));
       }
@@ -153,7 +174,9 @@ class AcademicRecordActionController extends StateNotifier<AsyncValue<void>> {
 }
 
 final academicRecordActionControllerProvider =
-    StateNotifierProvider<AcademicRecordActionController, AsyncValue<void>>((ref) {
-  final repo = ref.watch(academicRecordsRepositoryProvider);
-  return AcademicRecordActionController(repo, ref);
-});
+    StateNotifierProvider<AcademicRecordActionController, AsyncValue<void>>((
+      ref,
+    ) {
+      final repo = ref.watch(academicRecordsRepositoryProvider);
+      return AcademicRecordActionController(repo, ref);
+    });

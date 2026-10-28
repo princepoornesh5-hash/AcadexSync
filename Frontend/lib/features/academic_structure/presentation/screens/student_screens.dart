@@ -78,7 +78,9 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
   void _showBulkPromotionDialog() async {
     if (_selectedIds.isEmpty) return;
     final allStudents = ref.read(filteredStudentsProvider).valueOrNull ?? [];
-    final selectedStudents = allStudents.where((s) => _selectedIds.contains(s.id)).toList();
+    final selectedStudents = allStudents
+        .where((s) => _selectedIds.contains(s.id))
+        .toList();
     final result = await StudentPromotionStepperDialog.show(
       context,
       students: selectedStudents,
@@ -109,7 +111,8 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
     if (_selectedIds.isEmpty) return;
     final result = await showDialog(
       context: context,
-      builder: (ctx) => StudentTransferDialog(studentIds: _selectedIds.toList()),
+      builder: (ctx) =>
+          StudentTransferDialog(studentIds: _selectedIds.toList()),
     );
     if (result == true) {
       setState(() => _selectedIds.clear());
@@ -122,7 +125,8 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
     if (_selectedIds.isEmpty) return;
     final result = await showDialog(
       context: context,
-      builder: (ctx) => StudentGraduationDialog(studentIds: _selectedIds.toList()),
+      builder: (ctx) =>
+          StudentGraduationDialog(studentIds: _selectedIds.toList()),
     );
     if (result == true) {
       setState(() => _selectedIds.clear());
@@ -132,7 +136,10 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
   }
 
   void _showImportDialog() {
-    showDialog(context: context, builder: (ctx) => const ImportDataDialog(entityName: 'Students'));
+    showDialog(
+      context: context,
+      builder: (ctx) => const ImportDataDialog(entityName: 'Students'),
+    );
   }
 
   AcadexBadgeVariant _getBadgeVariant(Student student) {
@@ -168,7 +175,8 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
     final isHod = currentUser?.role == AppRole.hod;
     // isStaff controls bulk-action visibility and the checkbox column.
     // Faculty does NOT have bulk-action rights on the student directory.
-    final isStaff = currentUser?.role == AppRole.superAdmin ||
+    final isStaff =
+        currentUser?.role == AppRole.superAdmin ||
         currentUser?.role == AppRole.collegeAdmin ||
         currentUser?.role == AppRole.hod;
 
@@ -179,18 +187,23 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
     final allSections = ref.watch(sectionsProvider).valueOrNull ?? [];
 
     final availableCourses = _departmentId != null
-        ? allCourses.where((c) => c.departmentId == _departmentId && c.isActive).toList()
+        ? allCourses
+              .where((c) => c.departmentId == _departmentId && c.isActive)
+              .toList()
         : allCourses.where((c) => c.isActive).toList();
 
     final availableSemesters = allSemesters.where((s) {
       if (!s.isActive) return false;
       if (_courseId != null && s.courseId != _courseId) return false;
-      if (_academicYearId != null && s.academicYearId != _academicYearId) return false;
+      if (_academicYearId != null && s.academicYearId != _academicYearId)
+        return false;
       return true;
     }).toList();
 
     final availableSections = _semesterId != null
-        ? allSections.where((sec) => sec.semesterId == _semesterId && sec.isActive).toList()
+        ? allSections
+              .where((sec) => sec.semesterId == _semesterId && sec.isActive)
+              .toList()
         : allSections.where((sec) => sec.isActive).toList();
 
     final studentsAsync = ref.watch(filteredStudentsProvider);
@@ -227,7 +240,8 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                 const Expanded(
                   child: AcadexPageHeader(
                     title: "Students Directory",
-                    subtitle: "Filter and locate students across active academic hierarchy contexts.",
+                    subtitle:
+                        "Filter and locate students across active academic hierarchy contexts.",
                   ),
                 ),
                 if (isStaff) ...[
@@ -247,17 +261,49 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                       if (_selectedIds.isNotEmpty) ...[
                         const SizedBox(width: 12),
                         DropdownButton<String>(
-                          dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                          dropdownColor: isDark
+                              ? AcadexColors.darkSurfaceCard
+                              : AcadexColors.surface,
                           hint: Text(
                             "${_selectedIds.length} Selected",
-                            style: const TextStyle(color: AcadexColors.primary, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: AcadexColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           underline: const SizedBox(),
-                          icon: const Icon(LucideIcons.chevronDown, color: AcadexColors.primary),
+                          icon: const Icon(
+                            LucideIcons.chevronDown,
+                            color: AcadexColors.primary,
+                          ),
                           items: [
-                            DropdownMenuItem(value: 'promote', child: Text("Promote Students", style: AcadexTypography.body(color: theme.colorScheme.onSurface))),
-                            DropdownMenuItem(value: 'transfer', child: Text("Transfer Section", style: AcadexTypography.body(color: theme.colorScheme.onSurface))),
-                            DropdownMenuItem(value: 'graduate', child: Text("Graduate Cohort", style: AcadexTypography.body(color: theme.colorScheme.onSurface))),
+                            DropdownMenuItem(
+                              value: 'promote',
+                              child: Text(
+                                "Promote Students",
+                                style: AcadexTypography.body(
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                            DropdownMenuItem(
+                              value: 'transfer',
+                              child: Text(
+                                "Transfer Section",
+                                style: AcadexTypography.body(
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                            DropdownMenuItem(
+                              value: 'graduate',
+                              child: Text(
+                                "Graduate Cohort",
+                                style: AcadexTypography.body(
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
                           ],
                           onChanged: (val) {
                             if (val == 'promote') _showBulkPromotionDialog();
@@ -292,10 +338,17 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                 hintText: "Search by name or roll number...",
                 prefixIcon: const Icon(LucideIcons.search, size: 18),
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: AcadexRadius.borderRadiusMd,
-                  borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                  borderSide: BorderSide(
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
+                  ),
                 ),
               ),
               onChanged: (v) {
@@ -312,28 +365,45 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                   initialValue: _statusFilter,
                   onSelected: (val) => setState(() => _statusFilter = val),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                      color: isDark
+                          ? AcadexColors.darkSurfaceCard
+                          : AcadexColors.surface,
                       borderRadius: AcadexRadius.borderRadiusMd,
-                      border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                      border: Border.all(
+                        color: isDark
+                            ? AcadexColors.darkHairline
+                            : AcadexColors.hairline,
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(LucideIcons.filter, size: 16, color: _statusFilter != null ? AcadexColors.primary : AcadexColors.inkMuted),
+                        Icon(
+                          LucideIcons.filter,
+                          size: 16,
+                          color: _statusFilter != null
+                              ? AcadexColors.primary
+                              : AcadexColors.inkMuted,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           _statusFilter == null
                               ? "All Status"
                               : _statusFilter == 'active'
-                                  ? "Active"
-                                  : _statusFilter == 'pending_activation'
-                                      ? "Pending"
-                                      : _statusFilter == 'on_leave'
-                                          ? "On Leave"
-                                          : "Alumni",
-                          style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+                              ? "Active"
+                              : _statusFilter == 'pending_activation'
+                              ? "Pending"
+                              : _statusFilter == 'on_leave'
+                              ? "On Leave"
+                              : "Alumni",
+                          style: AcadexTypography.caption().copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
@@ -341,9 +411,18 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                   itemBuilder: (ctx) => [
                     const PopupMenuItem(value: null, child: Text("All Status")),
                     const PopupMenuItem(value: 'active', child: Text("Active")),
-                    const PopupMenuItem(value: 'pending_activation', child: Text("Pending Activation")),
-                    const PopupMenuItem(value: 'on_leave', child: Text("On Leave")),
-                    const PopupMenuItem(value: 'alumni', child: Text("Alumni / Graduated")),
+                    const PopupMenuItem(
+                      value: 'pending_activation',
+                      child: Text("Pending Activation"),
+                    ),
+                    const PopupMenuItem(
+                      value: 'on_leave',
+                      child: Text("On Leave"),
+                    ),
+                    const PopupMenuItem(
+                      value: 'alumni',
+                      child: Text("Alumni / Graduated"),
+                    ),
                   ],
                 ),
                 const Spacer(),
@@ -352,7 +431,10 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AcadexColors.primary,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
                     ),
                     onPressed: () => context.push('/academics/students/new'),
                     icon: const Icon(LucideIcons.plus, size: 16),
@@ -370,10 +452,17 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                       hintText: "Search students by name or roll number...",
                       prefixIcon: const Icon(LucideIcons.search, size: 18),
                       isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: AcadexRadius.borderRadiusMd,
-                        borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? AcadexColors.darkHairline
+                              : AcadexColors.hairline,
+                        ),
                       ),
                     ),
                     onChanged: (v) {
@@ -389,27 +478,44 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                   initialValue: _statusFilter,
                   onSelected: (val) => setState(() => _statusFilter = val),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                      color: isDark
+                          ? AcadexColors.darkSurfaceCard
+                          : AcadexColors.surface,
                       borderRadius: AcadexRadius.borderRadiusMd,
-                      border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                      border: Border.all(
+                        color: isDark
+                            ? AcadexColors.darkHairline
+                            : AcadexColors.hairline,
+                      ),
                     ),
                     child: Row(
                       children: [
-                        Icon(LucideIcons.filter, size: 16, color: _statusFilter != null ? AcadexColors.primary : AcadexColors.inkMuted),
+                        Icon(
+                          LucideIcons.filter,
+                          size: 16,
+                          color: _statusFilter != null
+                              ? AcadexColors.primary
+                              : AcadexColors.inkMuted,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           _statusFilter == null
                               ? "All Status"
                               : _statusFilter == 'active'
-                                  ? "Active"
-                                  : _statusFilter == 'pending_activation'
-                                      ? "Pending"
-                                      : _statusFilter == 'on_leave'
-                                          ? "On Leave"
-                                          : "Alumni",
-                          style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+                              ? "Active"
+                              : _statusFilter == 'pending_activation'
+                              ? "Pending"
+                              : _statusFilter == 'on_leave'
+                              ? "On Leave"
+                              : "Alumni",
+                          style: AcadexTypography.caption().copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
@@ -417,9 +523,18 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                   itemBuilder: (ctx) => [
                     const PopupMenuItem(value: null, child: Text("All Status")),
                     const PopupMenuItem(value: 'active', child: Text("Active")),
-                    const PopupMenuItem(value: 'pending_activation', child: Text("Pending Activation")),
-                    const PopupMenuItem(value: 'on_leave', child: Text("On Leave")),
-                    const PopupMenuItem(value: 'alumni', child: Text("Alumni / Graduated")),
+                    const PopupMenuItem(
+                      value: 'pending_activation',
+                      child: Text("Pending Activation"),
+                    ),
+                    const PopupMenuItem(
+                      value: 'on_leave',
+                      child: Text("On Leave"),
+                    ),
+                    const PopupMenuItem(
+                      value: 'alumni',
+                      child: Text("Alumni / Graduated"),
+                    ),
                   ],
                 ),
                 if (isStaff) ...[
@@ -428,7 +543,10 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AcadexColors.primary,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
                     ),
                     onPressed: () => context.push('/academics/students/new'),
                     icon: const Icon(LucideIcons.plus, size: 16),
@@ -443,7 +561,9 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
           // Clean Row-Based Student List
           Expanded(
             child: studentsAsync.when(
-              loading: () => const Center(child: AcadexLoadingState(message: "Loading student roster...")),
+              loading: () => const Center(
+                child: AcadexLoadingState(message: "Loading student roster..."),
+              ),
               error: (err, _) => AcadexErrorState.fromError(
                 error: err,
                 title: "Unable to load students",
@@ -453,15 +573,19 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                 final filtered = students.where((s) {
                   if (_statusFilter != null) {
                     if (_statusFilter == 'pending_activation') {
-                      if (s.accountStatus != AccountStatus.pendingActivation) return false;
+                      if (s.accountStatus != AccountStatus.pendingActivation)
+                        return false;
                     } else if (_statusFilter == 'active') {
-                      if (s.accountStatus != AccountStatus.active || s.lifecycleState != StudentLifecycleState.active) {
+                      if (s.accountStatus != AccountStatus.active ||
+                          s.lifecycleState != StudentLifecycleState.active) {
                         return false;
                       }
                     } else if (_statusFilter == 'on_leave') {
-                      if (s.lifecycleState != StudentLifecycleState.onLeave) return false;
+                      if (s.lifecycleState != StudentLifecycleState.onLeave)
+                        return false;
                     } else if (_statusFilter == 'alumni') {
-                      if (s.lifecycleState != StudentLifecycleState.alumni && s.lifecycleState != StudentLifecycleState.graduated) {
+                      if (s.lifecycleState != StudentLifecycleState.alumni &&
+                          s.lifecycleState != StudentLifecycleState.graduated) {
                         return false;
                       }
                     }
@@ -477,19 +601,26 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                 final staleIds = _selectedIds.difference(visibleIds);
                 if (staleIds.isNotEmpty) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted) setState(() => _selectedIds.removeAll(staleIds));
+                    if (mounted)
+                      setState(() => _selectedIds.removeAll(staleIds));
                   });
                 }
 
                 if (filtered.isEmpty) {
                   return AcadexEmptyState(
                     title: "No students found",
-                    subtitle: _searchQuery.isNotEmpty || _courseId != null || _semesterId != null || _sectionId != null
+                    subtitle:
+                        _searchQuery.isNotEmpty ||
+                            _courseId != null ||
+                            _semesterId != null ||
+                            _sectionId != null
                         ? "Try clearing filters or search to view students in this context."
                         : "No students are enrolled in this scope.",
                     icon: LucideIcons.users,
                     actionLabel: isStaff ? "Enroll Student" : null,
-                    onActionTap: isStaff ? () => context.push('/academics/students/new') : null,
+                    onActionTap: isStaff
+                        ? () => context.push('/academics/students/new')
+                        : null,
                   );
                 }
 
@@ -513,7 +644,8 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
     required List<Semester> sems,
     required List<Section> secs,
   }) {
-    final hasActiveFilter = (!isHod && _departmentId != null) ||
+    final hasActiveFilter =
+        (!isHod && _departmentId != null) ||
         _courseId != null ||
         _academicYearId != null ||
         _semesterId != null ||
@@ -550,11 +682,27 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                     decoration: const InputDecoration(
                       labelText: "Department",
                       border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
                     ),
                     items: [
-                      const DropdownMenuItem(value: null, child: Text("All Departments")),
-                      ...depts.where((d) => d.isActive).map((d) => DropdownMenuItem(value: d.id, child: Text(d.name, overflow: TextOverflow.ellipsis))),
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text("All Departments"),
+                      ),
+                      ...depts
+                          .where((d) => d.isActive)
+                          .map(
+                            (d) => DropdownMenuItem(
+                              value: d.id,
+                              child: Text(
+                                d.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
                     ],
                     onChanged: (val) {
                       setState(() {
@@ -578,11 +726,22 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                   decoration: const InputDecoration(
                     labelText: "Course",
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
                   ),
                   items: [
-                    const DropdownMenuItem(value: null, child: Text("All Courses")),
-                    ...courses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name, overflow: TextOverflow.ellipsis))),
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text("All Courses"),
+                    ),
+                    ...courses.map(
+                      (c) => DropdownMenuItem(
+                        value: c.id,
+                        child: Text(c.name, overflow: TextOverflow.ellipsis),
+                      ),
+                    ),
                   ],
                   onChanged: (val) {
                     setState(() {
@@ -605,11 +764,27 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                   decoration: const InputDecoration(
                     labelText: "Academic Year",
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
                   ),
                   items: [
-                    const DropdownMenuItem(value: null, child: Text("All Years")),
-                    ...years.where((y) => y.isActive).map((y) => DropdownMenuItem(value: y.id, child: Text(y.name, overflow: TextOverflow.ellipsis))),
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text("All Years"),
+                    ),
+                    ...years
+                        .where((y) => y.isActive)
+                        .map(
+                          (y) => DropdownMenuItem(
+                            value: y.id,
+                            child: Text(
+                              y.name,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
                   ],
                   onChanged: (val) {
                     setState(() {
@@ -632,11 +807,22 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                   decoration: const InputDecoration(
                     labelText: "Semester",
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
                   ),
                   items: [
-                    const DropdownMenuItem(value: null, child: Text("All Semesters")),
-                    ...sems.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis))),
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text("All Semesters"),
+                    ),
+                    ...sems.map(
+                      (s) => DropdownMenuItem(
+                        value: s.id,
+                        child: Text(s.name, overflow: TextOverflow.ellipsis),
+                      ),
+                    ),
                   ],
                   onChanged: (val) {
                     setState(() {
@@ -658,11 +844,22 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                   decoration: const InputDecoration(
                     labelText: "Section",
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
                   ),
                   items: [
-                    const DropdownMenuItem(value: null, child: Text("All Sections")),
-                    ...secs.map((sec) => DropdownMenuItem(value: sec.id, child: Text(sec.name, overflow: TextOverflow.ellipsis))),
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text("All Sections"),
+                    ),
+                    ...secs.map(
+                      (sec) => DropdownMenuItem(
+                        value: sec.id,
+                        child: Text(sec.name, overflow: TextOverflow.ellipsis),
+                      ),
+                    ),
                   ],
                   onChanged: (val) {
                     setState(() {
@@ -677,7 +874,11 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
               if (hasActiveFilter)
                 IconButton(
                   tooltip: "Reset All Filters",
-                  icon: const Icon(LucideIcons.xCircle, size: 20, color: AcadexColors.inkMuted),
+                  icon: const Icon(
+                    LucideIcons.xCircle,
+                    size: 20,
+                    color: AcadexColors.inkMuted,
+                  ),
                   onPressed: () {
                     setState(() {
                       if (!isHod) _departmentId = null;
@@ -714,12 +915,16 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+              color: isDark
+                  ? AcadexColors.darkSurfaceCard
+                  : AcadexColors.surface,
               borderRadius: AcadexRadius.borderRadiusMd,
               border: Border.all(
                 color: isSelected
                     ? AcadexColors.primary
-                    : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                    : (isDark
+                          ? AcadexColors.darkHairline
+                          : AcadexColors.hairline),
                 width: isSelected ? 1.5 : 1,
               ),
             ),
@@ -745,14 +950,18 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                       Text(
                         s.name,
                         style: AcadexTypography.body(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ).copyWith(fontWeight: FontWeight.w600),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        s.rollNumber.isNotEmpty ? s.rollNumber : (s.instituteId ?? '—'),
+                        s.rollNumber.isNotEmpty
+                            ? s.rollNumber
+                            : (s.instituteId ?? '—'),
                         style: AcadexTypography.caption(
                           color: AcadexColors.primary,
                         ).copyWith(fontWeight: FontWeight.w600),
@@ -771,7 +980,11 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(LucideIcons.chevronRight, size: 16, color: AcadexColors.inkMuted),
+                const Icon(
+                  LucideIcons.chevronRight,
+                  size: 16,
+                  color: AcadexColors.inkMuted,
+                ),
               ],
             ),
           ),
@@ -807,7 +1020,9 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                     children: [
                       CircleAvatar(
                         radius: 14,
-                        backgroundColor: AcadexColors.primary.withValues(alpha: 0.12),
+                        backgroundColor: AcadexColors.primary.withValues(
+                          alpha: 0.12,
+                        ),
                         child: Text(
                           s.name.isNotEmpty ? s.name[0].toUpperCase() : 'S',
                           style: const TextStyle(
@@ -829,29 +1044,32 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
             ),
             DataCell(
               Semantics(
-                label: 'Roll number: ${s.rollNumber.isNotEmpty ? s.rollNumber : (s.instituteId ?? 'not assigned')}',
+                label:
+                    'Roll number: ${s.rollNumber.isNotEmpty ? s.rollNumber : (s.instituteId ?? 'not assigned')}',
                 child: InkWell(
                   onTap: () => context.push('/academics/students/${s.id}'),
                   child: Text(
-                    s.rollNumber.isNotEmpty ? s.rollNumber : (s.instituteId ?? '—'),
-                    style: AcadexTypography.body(color: AcadexColors.primary).copyWith(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.3,
-                    ),
+                    s.rollNumber.isNotEmpty
+                        ? s.rollNumber
+                        : (s.instituteId ?? '—'),
+                    style: AcadexTypography.body(
+                      color: AcadexColors.primary,
+                    ).copyWith(fontWeight: FontWeight.bold, letterSpacing: 0.3),
                   ),
                 ),
               ),
             ),
             DataCell(
-              AcadexBadge(
-                label: statusLabel,
-                variant: _getBadgeVariant(s),
-              ),
+              AcadexBadge(label: statusLabel, variant: _getBadgeVariant(s)),
             ),
             DataCell(
               IconButton(
                 tooltip: 'View ${s.name}\'s profile',
-                icon: const Icon(LucideIcons.chevronRight, size: 18, color: AcadexColors.primary),
+                icon: const Icon(
+                  LucideIcons.chevronRight,
+                  size: 18,
+                  color: AcadexColors.primary,
+                ),
                 onPressed: () => context.push('/academics/students/${s.id}'),
               ),
             ),
@@ -977,7 +1195,9 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
 
   void _autoGenerateRollNumber() async {
     final authState = ref.read(authProvider);
-    final collegeId = authState is AuthAuthenticated ? (authState.user.collegeId ?? 'c1') : 'c1';
+    final collegeId = authState is AuthAuthenticated
+        ? (authState.user.collegeId ?? 'c1')
+        : 'c1';
 
     if (_selectedCourseId == null) {
       AcadexSnackBar.showWarning(context, "Please select a Course first.");
@@ -986,7 +1206,9 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
 
     setState(() => _isAutoGenerating = true);
     try {
-      final roll = await ref.read(academicRepositoryProvider).generateRollNumber(
+      final roll = await ref
+          .read(academicRepositoryProvider)
+          .generateRollNumber(
             collegeId,
             _selectedCourseId!,
             _selectedAcademicYearId ?? '',
@@ -1059,10 +1281,18 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
               : null,
           email: _emailController.text.trim(),
           phone: _phoneController.text.trim(),
-          parentName: _parentNameController.text.trim().isNotEmpty ? _parentNameController.text.trim() : null,
-          parentPhone: _parentPhoneController.text.trim().isNotEmpty ? _parentPhoneController.text.trim() : null,
-          bloodGroup: _bloodGroupController.text.trim().isNotEmpty ? _bloodGroupController.text.trim() : null,
-          address: _addressController.text.trim().isNotEmpty ? _addressController.text.trim() : null,
+          parentName: _parentNameController.text.trim().isNotEmpty
+              ? _parentNameController.text.trim()
+              : null,
+          parentPhone: _parentPhoneController.text.trim().isNotEmpty
+              ? _parentPhoneController.text.trim()
+              : null,
+          bloodGroup: _bloodGroupController.text.trim().isNotEmpty
+              ? _bloodGroupController.text.trim()
+              : null,
+          address: _addressController.text.trim().isNotEmpty
+              ? _addressController.text.trim()
+              : null,
           dateOfBirth: _dateOfBirth,
           admissionDate: _admissionDate,
           lifecycleState: _lifecycleState,
@@ -1079,7 +1309,10 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
           ref.invalidate(sectionStudentCountProvider(student.sectionId));
         }
         if (mounted) {
-          AcadexSnackBar.showSuccess(context, "Student profile updated successfully");
+          AcadexSnackBar.showSuccess(
+            context,
+            "Student profile updated successfully",
+          );
           context.safePop(fallbackRoute: '/academics/students');
         }
       } else {
@@ -1088,14 +1321,30 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
           departmentId: _selectedDeptId!,
           name: _nameController.text.trim(),
           instituteId: _instituteIdController.text.trim().toUpperCase(),
-          rollNumber: _rollNumberController.text.trim().isNotEmpty ? _rollNumberController.text.trim() : null,
-          admissionNumber: _admissionNumberController.text.trim().isNotEmpty ? _admissionNumberController.text.trim() : null,
-          email: _emailController.text.trim().isNotEmpty ? _emailController.text.trim() : null,
-          phone: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
-          parentName: _parentNameController.text.trim().isNotEmpty ? _parentNameController.text.trim() : null,
-          parentPhone: _parentPhoneController.text.trim().isNotEmpty ? _parentPhoneController.text.trim() : null,
-          bloodGroup: _bloodGroupController.text.trim().isNotEmpty ? _bloodGroupController.text.trim() : null,
-          address: _addressController.text.trim().isNotEmpty ? _addressController.text.trim() : null,
+          rollNumber: _rollNumberController.text.trim().isNotEmpty
+              ? _rollNumberController.text.trim()
+              : null,
+          admissionNumber: _admissionNumberController.text.trim().isNotEmpty
+              ? _admissionNumberController.text.trim()
+              : null,
+          email: _emailController.text.trim().isNotEmpty
+              ? _emailController.text.trim()
+              : null,
+          phone: _phoneController.text.trim().isNotEmpty
+              ? _phoneController.text.trim()
+              : null,
+          parentName: _parentNameController.text.trim().isNotEmpty
+              ? _parentNameController.text.trim()
+              : null,
+          parentPhone: _parentPhoneController.text.trim().isNotEmpty
+              ? _parentPhoneController.text.trim()
+              : null,
+          bloodGroup: _bloodGroupController.text.trim().isNotEmpty
+              ? _bloodGroupController.text.trim()
+              : null,
+          address: _addressController.text.trim().isNotEmpty
+              ? _addressController.text.trim()
+              : null,
           dateOfBirth: _dateOfBirth?.toIso8601String(),
           admissionDate: _admissionDate?.toIso8601String(),
           courseId: _selectedCourseId,
@@ -1132,7 +1381,11 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
         _errorMessage = sanitized;
       });
       if (mounted) {
-        AcadexSnackBar.showError(context, e, fallbackMessage: "Failed to save student");
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: "Failed to save student",
+        );
       }
     }
   }
@@ -1144,8 +1397,10 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
     final isEdit = widget.id != null;
 
     final authState = ref.watch(authProvider);
-    final isStaff = authState is AuthAuthenticated &&
-        (authState.user.role == AppRole.hod || authState.user.role == AppRole.faculty);
+    final isStaff =
+        authState is AuthAuthenticated &&
+        (authState.user.role == AppRole.hod ||
+            authState.user.role == AppRole.faculty);
 
     final terminology = ref.watch(terminologyProvider);
     final isSectionEnabled = terminology.isSectionEnabled;
@@ -1163,10 +1418,13 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         leading: IconButton(
           icon: const Icon(LucideIcons.arrowLeft),
-          onPressed: () => context.safePop(fallbackRoute: '/academics/students'),
+          onPressed: () =>
+              context.safePop(fallbackRoute: '/academics/students'),
         ),
         title: Text(
           isEdit ? "Edit Student" : "Add Student",
@@ -1174,7 +1432,9 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
         ),
       ),
       body: _isLoading && isEdit
-          ? const Center(child: AcadexLoadingState(message: "Loading student record..."))
+          ? const Center(
+              child: AcadexLoadingState(message: "Loading student record..."),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Center(
@@ -1190,14 +1450,31 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: AcadexColors.error.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(AcadexRadius.sm),
-                              border: Border.all(color: AcadexColors.error.withValues(alpha: 0.3)),
+                              borderRadius: BorderRadius.circular(
+                                AcadexRadius.sm,
+                              ),
+                              border: Border.all(
+                                color: AcadexColors.error.withValues(
+                                  alpha: 0.3,
+                                ),
+                              ),
                             ),
                             child: Row(
                               children: [
-                                const Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 20),
+                                const Icon(
+                                  LucideIcons.alertCircle,
+                                  color: AcadexColors.error,
+                                  size: 20,
+                                ),
                                 const SizedBox(width: 10),
-                                Expanded(child: Text(_errorMessage!, style: const TextStyle(color: AcadexColors.error))),
+                                Expanded(
+                                  child: Text(
+                                    _errorMessage!,
+                                    style: const TextStyle(
+                                      color: AcadexColors.error,
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -1217,9 +1494,13 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                       controller: _nameController,
                                       decoration: const InputDecoration(
                                         labelText: "Full Name *",
-                                        prefixIcon: Icon(LucideIcons.user, size: 18),
+                                        prefixIcon: Icon(
+                                          LucideIcons.user,
+                                          size: 18,
+                                        ),
                                       ),
-                                      validator: (v) => (v == null || v.trim().length < 2)
+                                      validator: (v) =>
+                                          (v == null || v.trim().length < 2)
                                           ? 'Name must be at least 2 characters'
                                           : null,
                                     ),
@@ -1228,13 +1509,18 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                   Expanded(
                                     child: TextFormField(
                                       controller: _instituteIdController,
-                                      textCapitalization: TextCapitalization.characters,
+                                      textCapitalization:
+                                          TextCapitalization.characters,
                                       decoration: const InputDecoration(
                                         labelText: "PIN Number *",
-                                        prefixIcon: Icon(LucideIcons.idCard, size: 18),
+                                        prefixIcon: Icon(
+                                          LucideIcons.idCard,
+                                          size: 18,
+                                        ),
                                         hintText: "e.g. 26CSE042",
                                       ),
-                                      validator: (v) => (v == null || v.trim().length < 2)
+                                      validator: (v) =>
+                                          (v == null || v.trim().length < 2)
                                           ? 'PIN Number is required (min 2 chars)'
                                           : null,
                                     ),
@@ -1250,7 +1536,10 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                       keyboardType: TextInputType.emailAddress,
                                       decoration: const InputDecoration(
                                         labelText: "Official Email Address",
-                                        prefixIcon: Icon(LucideIcons.mail, size: 18),
+                                        prefixIcon: Icon(
+                                          LucideIcons.mail,
+                                          size: 18,
+                                        ),
                                         hintText: "student@institute.edu",
                                       ),
                                     ),
@@ -1262,7 +1551,10 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                       keyboardType: TextInputType.phone,
                                       decoration: const InputDecoration(
                                         labelText: "Phone Number",
-                                        prefixIcon: Icon(LucideIcons.phone, size: 18),
+                                        prefixIcon: Icon(
+                                          LucideIcons.phone,
+                                          size: 18,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -1286,29 +1578,53 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                   Expanded(
                                     child: departmentsAsync.when(
                                       data: (departments) {
-                                        final activeDepts = departments.where((d) => d.isActive).toList();
+                                        final activeDepts = departments
+                                            .where((d) => d.isActive)
+                                            .toList();
                                         return DropdownButtonFormField<String>(
-                                          dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                          dropdownColor: isDark
+                                              ? AcadexColors.darkSurfaceCard
+                                              : AcadexColors.surface,
                                           decoration: InputDecoration(
                                             labelText: "Department *",
-                                            prefixIcon: const Icon(LucideIcons.building, size: 18),
-                                            helperText: isStaff ? "Locked to your assigned department" : null,
+                                            prefixIcon: const Icon(
+                                              LucideIcons.building,
+                                              size: 18,
+                                            ),
+                                            helperText: isStaff
+                                                ? "Locked to your assigned department"
+                                                : null,
                                           ),
                                           initialValue: _selectedDeptId,
-                                          items: activeDepts.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name))).toList(),
+                                          items: activeDepts
+                                              .map(
+                                                (d) => DropdownMenuItem(
+                                                  value: d.id,
+                                                  child: Text(d.name),
+                                                ),
+                                              )
+                                              .toList(),
                                           onChanged: isStaff
                                               ? null
                                               : (val) => setState(() {
-                                                    _selectedDeptId = val;
-                                                    _selectedCourseId = null;
-                                                    _selectedSemesterId = null;
-                                                    _selectedSectionId = null;
-                                                  }),
-                                          validator: (v) => v == null ? 'Select department' : null,
+                                                  _selectedDeptId = val;
+                                                  _selectedCourseId = null;
+                                                  _selectedSemesterId = null;
+                                                  _selectedSectionId = null;
+                                                }),
+                                          validator: (v) => v == null
+                                              ? 'Select department'
+                                              : null,
                                         );
                                       },
-                                      loading: () => const LinearProgressIndicator(),
-                                      error: (e, _) => Text('Error: $e', style: const TextStyle(color: AcadexColors.error)),
+                                      loading: () =>
+                                          const LinearProgressIndicator(),
+                                      error: (e, _) => Text(
+                                        'Error: $e',
+                                        style: const TextStyle(
+                                          color: AcadexColors.error,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 16),
@@ -1316,28 +1632,57 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                     child: coursesAsync.when(
                                       data: (courses) {
                                         final filtered = _selectedDeptId != null
-                                            ? courses.where((c) => c.departmentId == _selectedDeptId && c.isActive).toList()
+                                            ? courses
+                                                  .where(
+                                                    (c) =>
+                                                        c.departmentId ==
+                                                            _selectedDeptId &&
+                                                        c.isActive,
+                                                  )
+                                                  .toList()
                                             : <Course>[];
                                         return DropdownButtonFormField<String>(
-                                          dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                          dropdownColor: isDark
+                                              ? AcadexColors.darkSurfaceCard
+                                              : AcadexColors.surface,
                                           decoration: InputDecoration(
                                             labelText: progLabel,
-                                            prefixIcon: const Icon(LucideIcons.book, size: 18),
-                                            hintText: _selectedDeptId == null ? 'Select Department first' : 'Choose $progLabel',
+                                            prefixIcon: const Icon(
+                                              LucideIcons.book,
+                                              size: 18,
+                                            ),
+                                            hintText: _selectedDeptId == null
+                                                ? 'Select Department first'
+                                                : 'Choose $progLabel',
                                           ),
                                           initialValue: _selectedCourseId,
-                                          items: filtered.map((c) => DropdownMenuItem(value: c.id, child: Text("${c.name} (${c.code})"))).toList(),
+                                          items: filtered
+                                              .map(
+                                                (c) => DropdownMenuItem(
+                                                  value: c.id,
+                                                  child: Text(
+                                                    "${c.name} (${c.code})",
+                                                  ),
+                                                ),
+                                              )
+                                              .toList(),
                                           onChanged: _selectedDeptId == null
                                               ? null
                                               : (val) => setState(() {
-                                                    _selectedCourseId = val;
-                                                    _selectedSemesterId = null;
-                                                    _selectedSectionId = null;
-                                                  }),
+                                                  _selectedCourseId = val;
+                                                  _selectedSemesterId = null;
+                                                  _selectedSectionId = null;
+                                                }),
                                         );
                                       },
-                                      loading: () => const LinearProgressIndicator(),
-                                      error: (e, _) => Text('Error: $e', style: const TextStyle(color: AcadexColors.error)),
+                                      loading: () =>
+                                          const LinearProgressIndicator(),
+                                      error: (e, _) => Text(
+                                        'Error: $e',
+                                        style: const TextStyle(
+                                          color: AcadexColors.error,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -1350,15 +1695,29 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                   Expanded(
                                     child: academicYearsAsync.when(
                                       data: (years) {
-                                        final activeYears = years.where((y) => y.isActive).toList();
+                                        final activeYears = years
+                                            .where((y) => y.isActive)
+                                            .toList();
                                         return DropdownButtonFormField<String>(
-                                          dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                          dropdownColor: isDark
+                                              ? AcadexColors.darkSurfaceCard
+                                              : AcadexColors.surface,
                                           decoration: const InputDecoration(
                                             labelText: "Academic Year",
-                                            prefixIcon: Icon(LucideIcons.calendar, size: 18),
+                                            prefixIcon: Icon(
+                                              LucideIcons.calendar,
+                                              size: 18,
+                                            ),
                                           ),
                                           initialValue: _selectedAcademicYearId,
-                                          items: activeYears.map((y) => DropdownMenuItem(value: y.id, child: Text(y.name))).toList(),
+                                          items: activeYears
+                                              .map(
+                                                (y) => DropdownMenuItem(
+                                                  value: y.id,
+                                                  child: Text(y.name),
+                                                ),
+                                              )
+                                              .toList(),
                                           onChanged: (val) => setState(() {
                                             _selectedAcademicYearId = val;
                                             _selectedSemesterId = null;
@@ -1366,40 +1725,77 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                           }),
                                         );
                                       },
-                                      loading: () => const LinearProgressIndicator(),
-                                      error: (e, _) => Text('Error: $e', style: const TextStyle(color: AcadexColors.error)),
+                                      loading: () =>
+                                          const LinearProgressIndicator(),
+                                      error: (e, _) => Text(
+                                        'Error: $e',
+                                        style: const TextStyle(
+                                          color: AcadexColors.error,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: semestersAsync.when(
                                       data: (semesters) {
-                                        final filtered = _selectedCourseId != null
+                                        final filtered =
+                                            _selectedCourseId != null
                                             ? semesters.where((s) {
-                                                if (s.courseId != _selectedCourseId) return false;
-                                                if (_selectedAcademicYearId != null && s.academicYearId != _selectedAcademicYearId) return false;
+                                                if (s.courseId !=
+                                                    _selectedCourseId)
+                                                  return false;
+                                                if (_selectedAcademicYearId !=
+                                                        null &&
+                                                    s.academicYearId !=
+                                                        _selectedAcademicYearId)
+                                                  return false;
                                                 return s.isActive;
                                               }).toList()
                                             : <Semester>[];
                                         return DropdownButtonFormField<String>(
-                                          dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                          dropdownColor: isDark
+                                              ? AcadexColors.darkSurfaceCard
+                                              : AcadexColors.surface,
                                           decoration: InputDecoration(
                                             labelText: semLabel,
-                                            prefixIcon: const Icon(LucideIcons.layers, size: 18),
-                                            hintText: _selectedCourseId == null ? 'Select $progLabel first' : 'Choose $semLabel',
+                                            prefixIcon: const Icon(
+                                              LucideIcons.layers,
+                                              size: 18,
+                                            ),
+                                            hintText: _selectedCourseId == null
+                                                ? 'Select $progLabel first'
+                                                : 'Choose $semLabel',
                                           ),
                                           initialValue: _selectedSemesterId,
-                                          items: filtered.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name.isNotEmpty ? s.name : "$semLabel ${s.semesterNumber}"))).toList(),
+                                          items: filtered
+                                              .map(
+                                                (s) => DropdownMenuItem(
+                                                  value: s.id,
+                                                  child: Text(
+                                                    s.name.isNotEmpty
+                                                        ? s.name
+                                                        : "$semLabel ${s.semesterNumber}",
+                                                  ),
+                                                ),
+                                              )
+                                              .toList(),
                                           onChanged: _selectedCourseId == null
                                               ? null
                                               : (val) => setState(() {
-                                                    _selectedSemesterId = val;
-                                                    _selectedSectionId = null;
-                                                  }),
+                                                  _selectedSemesterId = val;
+                                                  _selectedSectionId = null;
+                                                }),
                                         );
                                       },
-                                      loading: () => const LinearProgressIndicator(),
-                                      error: (e, _) => Text('Error: $e', style: const TextStyle(color: AcadexColors.error)),
+                                      loading: () =>
+                                          const LinearProgressIndicator(),
+                                      error: (e, _) => Text(
+                                        'Error: $e',
+                                        style: const TextStyle(
+                                          color: AcadexColors.error,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -1413,28 +1809,60 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                     Expanded(
                                       child: sectionsAsync.when(
                                         data: (sections) {
-                                          final filtered = _selectedSemesterId != null
+                                          final filtered =
+                                              _selectedSemesterId != null
                                               ? sections.where((s) {
-                                                  if (s.semesterId != _selectedSemesterId) return false;
+                                                  if (s.semesterId !=
+                                                      _selectedSemesterId)
+                                                    return false;
                                                   return s.isActive;
                                                 }).toList()
                                               : <Section>[];
-                                          return DropdownButtonFormField<String>(
-                                            dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                          return DropdownButtonFormField<
+                                            String
+                                          >(
+                                            dropdownColor: isDark
+                                                ? AcadexColors.darkSurfaceCard
+                                                : AcadexColors.surface,
                                             decoration: InputDecoration(
                                               labelText: secLabel,
-                                              prefixIcon: const Icon(LucideIcons.layoutGrid, size: 18),
-                                              hintText: _selectedSemesterId == null ? 'Select $semLabel first' : 'Choose $secLabel',
+                                              prefixIcon: const Icon(
+                                                LucideIcons.layoutGrid,
+                                                size: 18,
+                                              ),
+                                              hintText:
+                                                  _selectedSemesterId == null
+                                                  ? 'Select $semLabel first'
+                                                  : 'Choose $secLabel',
                                             ),
                                             initialValue: _selectedSectionId,
-                                            items: filtered.map((s) => DropdownMenuItem(value: s.id, child: Text("$secLabel ${s.name}"))).toList(),
-                                            onChanged: _selectedSemesterId == null
+                                            items: filtered
+                                                .map(
+                                                  (s) => DropdownMenuItem(
+                                                    value: s.id,
+                                                    child: Text(
+                                                      "$secLabel ${s.name}",
+                                                    ),
+                                                  ),
+                                                )
+                                                .toList(),
+                                            onChanged:
+                                                _selectedSemesterId == null
                                                 ? null
-                                                : (val) => setState(() => _selectedSectionId = val),
+                                                : (val) => setState(
+                                                    () => _selectedSectionId =
+                                                        val,
+                                                  ),
                                           );
                                         },
-                                        loading: () => const LinearProgressIndicator(),
-                                        error: (e, _) => Text('Error: $e', style: const TextStyle(color: AcadexColors.error)),
+                                        loading: () =>
+                                            const LinearProgressIndicator(),
+                                        error: (e, _) => Text(
+                                          'Error: $e',
+                                          style: const TextStyle(
+                                            color: AcadexColors.error,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 16),
@@ -1444,13 +1872,28 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                       controller: _rollNumberController,
                                       decoration: InputDecoration(
                                         labelText: "Roll Number",
-                                        prefixIcon: const Icon(LucideIcons.hash, size: 18),
+                                        prefixIcon: const Icon(
+                                          LucideIcons.hash,
+                                          size: 18,
+                                        ),
                                         suffixIcon: IconButton(
                                           tooltip: "Auto-Generate Roll Number",
                                           icon: _isAutoGenerating
-                                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                                              : const Icon(LucideIcons.sparkles, color: AcadexColors.primary),
-                                          onPressed: _isAutoGenerating ? null : _autoGenerateRollNumber,
+                                              ? const SizedBox(
+                                                  width: 16,
+                                                  height: 16,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                        strokeWidth: 2,
+                                                      ),
+                                                )
+                                              : const Icon(
+                                                  LucideIcons.sparkles,
+                                                  color: AcadexColors.primary,
+                                                ),
+                                          onPressed: _isAutoGenerating
+                                              ? null
+                                              : _autoGenerateRollNumber,
                                         ),
                                       ),
                                     ),
@@ -1475,7 +1918,10 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                       controller: _parentNameController,
                                       decoration: const InputDecoration(
                                         labelText: "Parent / Guardian Name",
-                                        prefixIcon: Icon(LucideIcons.userCheck, size: 18),
+                                        prefixIcon: Icon(
+                                          LucideIcons.userCheck,
+                                          size: 18,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -1485,7 +1931,10 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                       controller: _parentPhoneController,
                                       decoration: const InputDecoration(
                                         labelText: "Parent Phone Number",
-                                        prefixIcon: Icon(LucideIcons.phoneCall, size: 18),
+                                        prefixIcon: Icon(
+                                          LucideIcons.phoneCall,
+                                          size: 18,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -1499,7 +1948,10 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                       controller: _admissionNumberController,
                                       decoration: const InputDecoration(
                                         labelText: "Admission Registration No.",
-                                        prefixIcon: Icon(LucideIcons.fileText, size: 18),
+                                        prefixIcon: Icon(
+                                          LucideIcons.fileText,
+                                          size: 18,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -1509,7 +1961,10 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                       controller: _bloodGroupController,
                                       decoration: const InputDecoration(
                                         labelText: "Blood Group (e.g. O+, A+)",
-                                        prefixIcon: Icon(LucideIcons.heartPulse, size: 18),
+                                        prefixIcon: Icon(
+                                          LucideIcons.heartPulse,
+                                          size: 18,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -1524,14 +1979,19 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                       child: InputDecorator(
                                         decoration: const InputDecoration(
                                           labelText: "Date of Birth",
-                                          prefixIcon: Icon(LucideIcons.calendar, size: 18),
+                                          prefixIcon: Icon(
+                                            LucideIcons.calendar,
+                                            size: 18,
+                                          ),
                                         ),
                                         child: Text(
                                           _dateOfBirth != null
                                               ? "${_dateOfBirth!.year}-${_dateOfBirth!.month.toString().padLeft(2, '0')}-${_dateOfBirth!.day.toString().padLeft(2, '0')}"
                                               : "Select Date of Birth",
                                           style: TextStyle(
-                                            color: _dateOfBirth != null ? null : theme.hintColor,
+                                            color: _dateOfBirth != null
+                                                ? null
+                                                : theme.hintColor,
                                           ),
                                         ),
                                       ),
@@ -1544,14 +2004,19 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                       child: InputDecorator(
                                         decoration: const InputDecoration(
                                           labelText: "Admission Date",
-                                          prefixIcon: Icon(LucideIcons.calendarCheck, size: 18),
+                                          prefixIcon: Icon(
+                                            LucideIcons.calendarCheck,
+                                            size: 18,
+                                          ),
                                         ),
                                         child: Text(
                                           _admissionDate != null
                                               ? "${_admissionDate!.year}-${_admissionDate!.month.toString().padLeft(2, '0')}-${_admissionDate!.day.toString().padLeft(2, '0')}"
                                               : "Select Admission Date",
                                           style: TextStyle(
-                                            color: _admissionDate != null ? null : theme.hintColor,
+                                            color: _admissionDate != null
+                                                ? null
+                                                : theme.hintColor,
                                           ),
                                         ),
                                       ),
@@ -1565,7 +2030,10 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                 maxLines: 2,
                                 decoration: const InputDecoration(
                                   labelText: "Residential Address",
-                                  prefixIcon: Icon(LucideIcons.mapPin, size: 18),
+                                  prefixIcon: Icon(
+                                    LucideIcons.mapPin,
+                                    size: 18,
+                                  ),
                                 ),
                               ),
                             ],
@@ -1578,7 +2046,9 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             OutlinedButton(
-                              onPressed: () => context.safePop(fallbackRoute: '/academics/students'),
+                              onPressed: () => context.safePop(
+                                fallbackRoute: '/academics/students',
+                              ),
                               child: const Text("Cancel"),
                             ),
                             const SizedBox(width: 16),
@@ -1588,14 +2058,27 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                   ? const SizedBox(
                                       width: 18,
                                       height: 18,
-                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
                                     )
-                                  : Icon(isEdit ? LucideIcons.save : LucideIcons.userPlus, size: 18),
-                              label: Text(isEdit ? "Save Changes" : "Add Student"),
+                                  : Icon(
+                                      isEdit
+                                          ? LucideIcons.save
+                                          : LucideIcons.userPlus,
+                                      size: 18,
+                                    ),
+                              label: Text(
+                                isEdit ? "Save Changes" : "Add Student",
+                              ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AcadexColors.primary,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 14,
+                                ),
                               ),
                             ),
                           ],
@@ -1626,7 +2109,9 @@ class StudentActivationResultDialog extends StatelessWidget {
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusLg),
-      backgroundColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+      backgroundColor: isDark
+          ? AcadexColors.darkSurfaceCard
+          : AcadexColors.surface,
       child: Container(
         padding: const EdgeInsets.all(24),
         constraints: const BoxConstraints(maxWidth: 480),
@@ -1642,7 +2127,11 @@ class StudentActivationResultDialog extends StatelessWidget {
                     color: AcadexColors.success.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(LucideIcons.checkCircle, color: AcadexColors.success, size: 24),
+                  child: const Icon(
+                    LucideIcons.checkCircle,
+                    color: AcadexColors.success,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1651,7 +2140,9 @@ class StudentActivationResultDialog extends StatelessWidget {
                     children: [
                       Text(
                         "Student Provisioned Successfully",
-                        style: AcadexTypography.heading3(color: theme.colorScheme.onSurface),
+                        style: AcadexTypography.heading3(
+                          color: theme.colorScheme.onSurface,
+                        ),
                       ),
                       Text(
                         "Single-use activation code generated",
@@ -1670,13 +2161,22 @@ class StudentActivationResultDialog extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isDark ? AcadexColors.darkSurface : AcadexColors.canvas,
                 borderRadius: AcadexRadius.borderRadiusMd,
-                border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                border: Border.all(
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
+                ),
               ),
               child: Column(
                 children: [
                   _buildSummaryRow("Student Name", result.student.name),
                   const SizedBox(height: 6),
-                  _buildSummaryRow("PIN Number", result.user.instituteId ?? result.student.instituteId ?? '—'),
+                  _buildSummaryRow(
+                    "PIN Number",
+                    result.user.instituteId ??
+                        result.student.instituteId ??
+                        '—',
+                  ),
                   const SizedBox(height: 6),
                   _buildSummaryRow("Role", "STUDENT"),
                   const SizedBox(height: 6),
@@ -1688,7 +2188,9 @@ class StudentActivationResultDialog extends StatelessWidget {
 
             Text(
               "Activation Code",
-              style: AcadexTypography.caption(color: theme.hintColor).copyWith(fontWeight: FontWeight.w600),
+              style: AcadexTypography.caption(
+                color: theme.hintColor,
+              ).copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),
 
@@ -1698,11 +2200,17 @@ class StudentActivationResultDialog extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AcadexColors.primary.withValues(alpha: 0.08),
                 borderRadius: AcadexRadius.borderRadiusMd,
-                border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: AcadexColors.primary.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.key, color: AcadexColors.primary, size: 20),
+                  const Icon(
+                    LucideIcons.key,
+                    color: AcadexColors.primary,
+                    size: 20,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: SelectableText(
@@ -1718,10 +2226,19 @@ class StudentActivationResultDialog extends StatelessWidget {
                   ),
                   IconButton(
                     tooltip: "Copy Code",
-                    icon: const Icon(LucideIcons.copy, size: 18, color: AcadexColors.primary),
+                    icon: const Icon(
+                      LucideIcons.copy,
+                      size: 18,
+                      color: AcadexColors.primary,
+                    ),
                     onPressed: () {
-                      Clipboard.setData(ClipboardData(text: result.activationCode));
-                      AcadexSnackBar.showSuccess(context, "Activation code copied to clipboard!");
+                      Clipboard.setData(
+                        ClipboardData(text: result.activationCode),
+                      );
+                      AcadexSnackBar.showSuccess(
+                        context,
+                        "Activation code copied to clipboard!",
+                      );
                     },
                   ),
                 ],
@@ -1745,12 +2262,18 @@ class StudentActivationResultDialog extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(LucideIcons.shieldAlert, color: AcadexColors.warning, size: 18),
+                  const Icon(
+                    LucideIcons.shieldAlert,
+                    color: AcadexColors.warning,
+                    size: 18,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       "Provide this activation code and PIN Number to the student. They will use it once to activate their account and set their password.",
-                      style: AcadexTypography.caption(color: theme.colorScheme.onSurface),
+                      style: AcadexTypography.caption(
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
                   ),
                 ],
@@ -1765,7 +2288,10 @@ class StudentActivationResultDialog extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AcadexColors.primary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                 ),
                 child: const Text("Done"),
               ),
@@ -1781,7 +2307,10 @@ class StudentActivationResultDialog extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
-        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
       ],
     );
   }

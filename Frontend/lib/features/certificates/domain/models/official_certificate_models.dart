@@ -132,12 +132,14 @@ class OfficialCertificateRequirement {
 
   final String name;
   final String description;
-  final String category; // e.g. 'General', 'Academic', 'Admission', 'Disciplinary'
+  final String
+  category; // e.g. 'General', 'Academic', 'Admission', 'Disciplinary'
 
   final bool required;
   final bool verificationRequired;
 
-  final List<String> allowedFileTypes; // e.g. ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx']
+  final List<String>
+  allowedFileTypes; // e.g. ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx']
   final int maxFileSizeBytes; // default: 10 * 1024 * 1024 (10MB)
 
   final RequirementApplicability applicableTo;
@@ -245,16 +247,26 @@ class OfficialCertificateRequirement {
       category: json['category'] as String? ?? 'General',
       required: json['required'] as bool? ?? true,
       verificationRequired: json['verificationRequired'] as bool? ?? true,
-      allowedFileTypes: (json['allowedFileTypes'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+      allowedFileTypes:
+          (json['allowedFileTypes'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
           const ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'],
-      maxFileSizeBytes: (json['maxFileSizeBytes'] as num?)?.toInt() ?? 10 * 1024 * 1024,
-      applicableTo: RequirementApplicability.fromString(json['applicableTo'] as String? ?? 'college'),
-      status: RequirementStatus.fromString(json['status'] as String? ?? 'active'),
+      maxFileSizeBytes:
+          (json['maxFileSizeBytes'] as num?)?.toInt() ?? 10 * 1024 * 1024,
+      applicableTo: RequirementApplicability.fromString(
+        json['applicableTo'] as String? ?? 'college',
+      ),
+      status: RequirementStatus.fromString(
+        json['status'] as String? ?? 'active',
+      ),
       createdBy: json['createdBy'] as String? ?? '',
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now()
           : DateTime.now(),
-      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'] as String) : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'] as String)
+          : null,
     );
   }
 
@@ -348,7 +360,8 @@ class OfficialCertificate {
   bool get isVerified => status == OfficialCertificateStatus.verified;
   bool get isPending => status == OfficialCertificateStatus.pending;
   bool get isRejected => status == OfficialCertificateStatus.rejected;
-  bool get needsResubmission => status == OfficialCertificateStatus.resubmissionRequired;
+  bool get needsResubmission =>
+      status == OfficialCertificateStatus.resubmissionRequired;
 
   String get fileSizeDisplay {
     if (fileSizeBytes < 1024) return '$fileSizeBytes B';
@@ -432,13 +445,19 @@ class OfficialCertificate {
       fileSizeBytes: (json['fileSizeBytes'] as num?)?.toInt() ?? 0,
       storagePath: json['storagePath'] as String? ?? '',
       fileUrl: json['fileUrl'] as String? ?? '',
-      status: OfficialCertificateStatus.fromString(json['status'] as String? ?? 'pending'),
+      status: OfficialCertificateStatus.fromString(
+        json['status'] as String? ?? 'pending',
+      ),
       uploadedAt: json['uploadedAt'] != null
           ? DateTime.tryParse(json['uploadedAt'] as String) ?? DateTime.now()
           : DateTime.now(),
-      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'] as String) : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'] as String)
+          : null,
       verifiedBy: json['verifiedBy'] as String?,
-      verifiedAt: json['verifiedAt'] != null ? DateTime.tryParse(json['verifiedAt'] as String) : null,
+      verifiedAt: json['verifiedAt'] != null
+          ? DateTime.tryParse(json['verifiedAt'] as String)
+          : null,
       rejectionReason: json['rejectionReason'] as String?,
     );
   }
@@ -479,10 +498,7 @@ class RequirementWithSubmission {
   final OfficialCertificateRequirement requirement;
   final OfficialCertificate? submission;
 
-  const RequirementWithSubmission({
-    required this.requirement,
-    this.submission,
-  });
+  const RequirementWithSubmission({required this.requirement, this.submission});
 
   RequirementSubmissionStatus get calculatedStatus {
     if (submission == null) return RequirementSubmissionStatus.notSubmitted;
@@ -505,5 +521,6 @@ class RequirementWithSubmission {
       submission != null &&
       (submission!.status == OfficialCertificateStatus.resubmissionRequired ||
           submission!.status == OfficialCertificateStatus.rejected);
-  bool get canViewDocument => submission != null && submission!.fileUrl.isNotEmpty;
+  bool get canViewDocument =>
+      submission != null && submission!.fileUrl.isNotEmpty;
 }

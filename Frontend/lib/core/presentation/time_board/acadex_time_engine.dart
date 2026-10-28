@@ -64,7 +64,8 @@ class AcadexTimeEngine with WidgetsBindingObserver {
   static String formatHours(DateTime dt) => to12Hour(dt.hour).toString();
 
   /// 2-digit minute representation with zero padding (00..59).
-  static String formatMinutes(DateTime dt) => dt.minute.toString().padLeft(2, '0');
+  static String formatMinutes(DateTime dt) =>
+      dt.minute.toString().padLeft(2, '0');
 
   /// Period string ('AM' or 'PM').
   static String formatPeriod(DateTime dt) => dt.hour < 12 ? 'AM' : 'PM';
@@ -118,7 +119,8 @@ class AcadexTimeEngine with WidgetsBindingObserver {
     if (_isDisposed) return;
 
     final realIst = nowIst();
-    if (_currentIst.minute != realIst.minute || _currentIst.hour != realIst.hour) {
+    if (_currentIst.minute != realIst.minute ||
+        _currentIst.hour != realIst.hour) {
       _currentIst = realIst;
       _scheduleNextMinute();
       onTimeReconciled?.call(realIst);

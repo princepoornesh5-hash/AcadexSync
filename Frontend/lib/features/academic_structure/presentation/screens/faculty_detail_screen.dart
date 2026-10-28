@@ -22,8 +22,15 @@ class FacultyDetailScreen extends ConsumerWidget {
 
   const FacultyDetailScreen({super.key, required this.facultyId});
 
-  void _showTransferDialog(BuildContext context, WidgetRef ref, Faculty faculty, List<Department> allDepts) {
-    final availableDepts = allDepts.where((d) => d.isActive && d.id != faculty.departmentId).toList();
+  void _showTransferDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Faculty faculty,
+    List<Department> allDepts,
+  ) {
+    final availableDepts = allDepts
+        .where((d) => d.isActive && d.id != faculty.departmentId)
+        .toList();
 
     if (availableDepts.isEmpty) {
       AcadexSnackBar.showWarning(
@@ -51,9 +58,16 @@ class FacultyDetailScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: selectedDeptId,
-                decoration: const InputDecoration(labelText: 'Destination Department'),
+                decoration: const InputDecoration(
+                  labelText: 'Destination Department',
+                ),
                 items: availableDepts
-                    .map((d) => DropdownMenuItem(value: d.id, child: Text("${d.name} (${d.code})")))
+                    .map(
+                      (d) => DropdownMenuItem(
+                        value: d.id,
+                        child: Text("${d.name} (${d.code})"),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) => setDialogState(() => selectedDeptId = v),
               ),
@@ -73,7 +87,9 @@ class FacultyDetailScreen extends ConsumerWidget {
                 if (selectedDeptId == null) return;
                 Navigator.of(ctx).pop();
                 try {
-                  await ref.read(apiAcademicRepositoryProvider).transferFacultyDepartment(facultyId, selectedDeptId!);
+                  await ref
+                      .read(apiAcademicRepositoryProvider)
+                      .transferFacultyDepartment(facultyId, selectedDeptId!);
                   ref.invalidate(facultyByIdProvider(facultyId));
                   ref.invalidate(facultySummaryProvider(facultyId));
                   ref.invalidate(facultyProvider(null));
@@ -97,7 +113,11 @@ class FacultyDetailScreen extends ConsumerWidget {
     );
   }
 
-  void _showToggleStatusDialog(BuildContext context, WidgetRef ref, Faculty faculty) {
+  void _showToggleStatusDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Faculty faculty,
+  ) {
     final willDeactivate = faculty.isActive;
     showDialog(
       context: context,
@@ -115,17 +135,21 @@ class FacultyDetailScreen extends ConsumerWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: willDeactivate ? AcadexColors.error : AcadexColors.primary,
+              backgroundColor: willDeactivate
+                  ? AcadexColors.error
+                  : AcadexColors.primary,
               foregroundColor: Colors.white,
             ),
             onPressed: () async {
               Navigator.of(ctx).pop();
               try {
-                await ref.read(facultyProvider(null).notifier).toggleFacultyStatus(
-                  faculty.id,
-                  !willDeactivate,
-                  departmentId: faculty.departmentId,
-                );
+                await ref
+                    .read(facultyProvider(null).notifier)
+                    .toggleFacultyStatus(
+                      faculty.id,
+                      !willDeactivate,
+                      departmentId: faculty.departmentId,
+                    );
                 if (context.mounted) {
                   AcadexSnackBar.showSuccess(
                     context,
@@ -162,10 +186,13 @@ class FacultyDetailScreen extends ConsumerWidget {
       userRole = authState.user.role;
       userDeptId = authState.user.departmentId;
     }
-    final canTransfer = userRole == AppRole.collegeAdmin || userRole == AppRole.superAdmin;
-    final canManageStatus = userRole == AppRole.collegeAdmin ||
+    final canTransfer =
+        userRole == AppRole.collegeAdmin || userRole == AppRole.superAdmin;
+    final canManageStatus =
+        userRole == AppRole.collegeAdmin ||
         userRole == AppRole.superAdmin ||
-        (userRole == AppRole.hod && facultyAsync.valueOrNull?.departmentId == userDeptId);
+        (userRole == AppRole.hod &&
+            facultyAsync.valueOrNull?.departmentId == userDeptId);
 
     final dateFormat = DateFormat('MMMM d, yyyy');
     final deptsList = deptsAsync.valueOrNull ?? <Department>[];
@@ -191,13 +218,15 @@ class FacultyDetailScreen extends ConsumerWidget {
               message: 'The requested faculty profile could not be found.',
               icon: LucideIcons.fileQuestion,
               actionLabel: 'Go Back',
-              onAction: () => context.safePop(fallbackRoute: '/academics/faculty'),
+              onAction: () =>
+                  context.safePop(fallbackRoute: '/academics/faculty'),
             ),
           );
         }
 
         final dept = deptsMap[faculty.departmentId];
-        final isPending = faculty.accountStatus == AccountStatus.pendingActivation;
+        final isPending =
+            faculty.accountStatus == AccountStatus.pendingActivation;
 
         return AcadexPageContainer(
           backgroundColor: Colors.white,
@@ -206,11 +235,29 @@ class FacultyDetailScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Hero Header Card ──────────────────────────────────────
-              _buildHeroCard(context, ref, isDark, isMobile, faculty, isPending, canTransfer, canManageStatus, deptsList),
+              _buildHeroCard(
+                context,
+                ref,
+                isDark,
+                isMobile,
+                faculty,
+                isPending,
+                canTransfer,
+                canManageStatus,
+                deptsList,
+              ),
               const SizedBox(height: 20),
 
               // ── Department & Leadership Card ──────────────────────────
-              _buildDepartmentCard(context, ref, isDark, faculty, dept, canTransfer, deptsList),
+              _buildDepartmentCard(
+                context,
+                ref,
+                isDark,
+                faculty,
+                dept,
+                canTransfer,
+                deptsList,
+              ),
               const SizedBox(height: 20),
 
               // ── Professional Academic Details Card ────────────────────
@@ -240,7 +287,10 @@ class FacultyDetailScreen extends ConsumerWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/academics/faculty'),
         ),
         title: Text(
@@ -289,7 +339,11 @@ class FacultyDetailScreen extends ConsumerWidget {
                   borderRadius: AcadexRadius.borderRadiusMd,
                 ),
                 child: const Center(
-                  child: Icon(LucideIcons.graduationCap, color: AcadexColors.primary, size: 28),
+                  child: Icon(
+                    LucideIcons.graduationCap,
+                    color: AcadexColors.primary,
+                    size: 28,
+                  ),
                 ),
               ),
               const SizedBox(width: 14),
@@ -310,9 +364,14 @@ class FacultyDetailScreen extends ConsumerWidget {
                       children: [
                         if (faculty.employeeId.isNotEmpty)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
-                              color: AcadexColors.primary.withValues(alpha: 0.12),
+                              color: AcadexColors.primary.withValues(
+                                alpha: 0.12,
+                              ),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -325,36 +384,52 @@ class FacultyDetailScreen extends ConsumerWidget {
                             ),
                           ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                            color: isDark
+                                ? AcadexColors.darkCanvasSoft
+                                : AcadexColors.canvasSoft,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             faculty.designation ?? 'Assistant Professor',
                             style: TextStyle(
-                              color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                              color: isDark
+                                  ? AcadexColors.darkInkSecondary
+                                  : AcadexColors.inkSecondary,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: !faculty.isActive
                                 ? AcadexColors.error.withValues(alpha: 0.12)
-                                : (isPending ? AcadexColors.warningLight : AcadexColors.successLight),
+                                : (isPending
+                                      ? AcadexColors.warningLight
+                                      : AcadexColors.successLight),
                             borderRadius: AcadexRadius.borderRadiusFull,
                           ),
                           child: Text(
                             !faculty.isActive
                                 ? 'Inactive'
-                                : (isPending ? 'Pending Activation' : 'Active Account'),
+                                : (isPending
+                                      ? 'Pending Activation'
+                                      : 'Active Account'),
                             style: TextStyle(
                               color: !faculty.isActive
                                   ? AcadexColors.error
-                                  : (isPending ? AcadexColors.warning : AcadexColors.success),
+                                  : (isPending
+                                        ? AcadexColors.warning
+                                        : AcadexColors.success),
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -380,21 +455,28 @@ class FacultyDetailScreen extends ConsumerWidget {
                   label: 'Edit Faculty',
                   icon: LucideIcons.edit,
                   variant: AcadexButtonVariant.primary,
-                  onPressed: () => context.push('/academics/faculty/edit/$facultyId'),
+                  onPressed: () =>
+                      context.push('/academics/faculty/edit/$facultyId'),
                 ),
               if (canTransfer)
                 AcadexButton(
                   label: 'Transfer Department',
                   icon: LucideIcons.arrowRightLeft,
                   variant: AcadexButtonVariant.secondary,
-                  onPressed: () => _showTransferDialog(context, ref, faculty, allDepts),
+                  onPressed: () =>
+                      _showTransferDialog(context, ref, faculty, allDepts),
                 ),
               if (canManageStatus)
                 AcadexButton(
                   label: faculty.isActive ? 'Deactivate' : 'Activate',
-                  icon: faculty.isActive ? LucideIcons.userX : LucideIcons.userCheck,
-                  variant: faculty.isActive ? AcadexButtonVariant.danger : AcadexButtonVariant.secondary,
-                  onPressed: () => _showToggleStatusDialog(context, ref, faculty),
+                  icon: faculty.isActive
+                      ? LucideIcons.userX
+                      : LucideIcons.userCheck,
+                  variant: faculty.isActive
+                      ? AcadexButtonVariant.danger
+                      : AcadexButtonVariant.secondary,
+                  onPressed: () =>
+                      _showToggleStatusDialog(context, ref, faculty),
                 ),
             ],
           ),
@@ -422,7 +504,13 @@ class FacultyDetailScreen extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  Icon(LucideIcons.building2, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                  Icon(
+                    LucideIcons.building2,
+                    size: 16,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'Assigned Academic Department',
@@ -436,7 +524,8 @@ class FacultyDetailScreen extends ConsumerWidget {
                 TextButton.icon(
                   icon: const Icon(LucideIcons.arrowRightLeft, size: 14),
                   label: const Text('Transfer', style: TextStyle(fontSize: 12)),
-                  onPressed: () => _showTransferDialog(context, ref, faculty, allDepts),
+                  onPressed: () =>
+                      _showTransferDialog(context, ref, faculty, allDepts),
                 ),
             ],
           ),
@@ -445,7 +534,9 @@ class FacultyDetailScreen extends ConsumerWidget {
             isDark,
             LucideIcons.building2,
             'Department Name',
-            dept != null ? "${dept.name} (${dept.code})" : "Unassigned Department",
+            dept != null
+                ? "${dept.name} (${dept.code})"
+                : "Unassigned Department",
           ),
           if (dept?.description.isNotEmpty == true) ...[
             const Divider(height: 16),
@@ -473,7 +564,13 @@ class FacultyDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.briefcase, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              Icon(
+                LucideIcons.briefcase,
+                size: 16,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Academic & Professional Profile',
@@ -484,25 +581,45 @@ class FacultyDetailScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 14),
-          _infoRow(isDark, LucideIcons.badgeCheck, 'Designation', faculty.designation ?? 'Assistant Professor'),
+          _infoRow(
+            isDark,
+            LucideIcons.badgeCheck,
+            'Designation',
+            faculty.designation ?? 'Assistant Professor',
+          ),
           const Divider(height: 16),
-          _infoRow(isDark, LucideIcons.bookMarked, 'Qualification', faculty.qualification?.isNotEmpty == true ? faculty.qualification! : 'Not specified'),
+          _infoRow(
+            isDark,
+            LucideIcons.bookMarked,
+            'Qualification',
+            faculty.qualification?.isNotEmpty == true
+                ? faculty.qualification!
+                : 'Not specified',
+          ),
           const Divider(height: 16),
-          _infoRow(isDark, LucideIcons.sparkles, 'Specialization', faculty.specialization?.isNotEmpty == true ? faculty.specialization! : 'Not specified'),
+          _infoRow(
+            isDark,
+            LucideIcons.sparkles,
+            'Specialization',
+            faculty.specialization?.isNotEmpty == true
+                ? faculty.specialization!
+                : 'Not specified',
+          ),
           if (faculty.joiningDate != null) ...[
             const Divider(height: 16),
-            _infoRow(isDark, LucideIcons.calendar, 'Joining Date', dateFormat.format(faculty.joiningDate!)),
+            _infoRow(
+              isDark,
+              LucideIcons.calendar,
+              'Joining Date',
+              dateFormat.format(faculty.joiningDate!),
+            ),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildContactCard(
-    bool isDark,
-    Faculty faculty,
-    bool isPending,
-  ) {
+  Widget _buildContactCard(bool isDark, Faculty faculty, bool isPending) {
     return AcadexCard(
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -510,7 +627,13 @@ class FacultyDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.idCard, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              Icon(
+                LucideIcons.idCard,
+                size: 16,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Contact & Account Credentials',
@@ -523,11 +646,26 @@ class FacultyDetailScreen extends ConsumerWidget {
           const SizedBox(height: 14),
           _infoRow(isDark, LucideIcons.mail, 'Official Email', faculty.email),
           const Divider(height: 16),
-          _infoRow(isDark, LucideIcons.phone, 'Phone Number', faculty.phone.isNotEmpty ? faculty.phone : 'Not configured'),
+          _infoRow(
+            isDark,
+            LucideIcons.phone,
+            'Phone Number',
+            faculty.phone.isNotEmpty ? faculty.phone : 'Not configured',
+          ),
           const Divider(height: 16),
-          _infoRow(isDark, LucideIcons.shieldCheck, 'Access Role', 'Faculty Member'),
+          _infoRow(
+            isDark,
+            LucideIcons.shieldCheck,
+            'Access Role',
+            'Faculty Member',
+          ),
           const Divider(height: 16),
-          _infoRow(isDark, LucideIcons.userCheck, 'Account Status', isPending ? 'Pending Activation' : 'Active'),
+          _infoRow(
+            isDark,
+            LucideIcons.userCheck,
+            'Account Status',
+            isPending ? 'Pending Activation' : 'Active',
+          ),
         ],
       ),
     );
@@ -544,7 +682,13 @@ class FacultyDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.barChart2, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              Icon(
+                LucideIcons.barChart2,
+                size: 16,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Faculty Teaching Metrics',
@@ -556,8 +700,16 @@ class FacultyDetailScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 14),
           summaryAsync.when(
-            loading: () => const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator())),
-            error: (e, _) => Text('Metrics unavailable: $e', style: const TextStyle(color: AcadexColors.error)),
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(12),
+                child: CircularProgressIndicator(),
+              ),
+            ),
+            error: (e, _) => Text(
+              'Metrics unavailable: $e',
+              style: const TextStyle(color: AcadexColors.error),
+            ),
             data: (summary) {
               final sectionCount = summary['sectionCount'] ?? 0;
               final subjectCount = summary['subjectCount'] ?? 0;
@@ -566,15 +718,30 @@ class FacultyDetailScreen extends ConsumerWidget {
               return Row(
                 children: [
                   Expanded(
-                    child: _metricBox(isDark, LucideIcons.layers, "$sectionCount", "Enrolled Sections"),
+                    child: _metricBox(
+                      isDark,
+                      LucideIcons.layers,
+                      "$sectionCount",
+                      "Enrolled Sections",
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _metricBox(isDark, LucideIcons.bookOpen, "$subjectCount", "Assigned Subjects"),
+                    child: _metricBox(
+                      isDark,
+                      LucideIcons.bookOpen,
+                      "$subjectCount",
+                      "Assigned Subjects",
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _metricBox(isDark, LucideIcons.calendarCheck, "$assignmentCount", "Active Allocations"),
+                    child: _metricBox(
+                      isDark,
+                      LucideIcons.calendarCheck,
+                      "$assignmentCount",
+                      "Active Allocations",
+                    ),
                   ),
                 ],
               );
@@ -618,7 +785,11 @@ class FacultyDetailScreen extends ConsumerWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 15, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+        Icon(
+          icon,
+          size: 15,
+          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+        ),
         const SizedBox(width: 10),
         SizedBox(
           width: 140,

@@ -22,8 +22,18 @@ class RequestDetailScreen extends ConsumerWidget {
 
   String _formatDateTime(DateTime dt) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     final hr = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
     final ampm = dt.hour >= 12 ? 'PM' : 'AM';
@@ -33,8 +43,18 @@ class RequestDetailScreen extends ConsumerWidget {
 
   String _formatDate(DateTime dt) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
@@ -82,11 +102,17 @@ class RequestDetailScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(LucideIcons.fileX, size: 40, color: AcadexColors.inkMuted),
+                  const Icon(
+                    LucideIcons.fileX,
+                    size: 40,
+                    color: AcadexColors.inkMuted,
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     'This request could not be found.',
-                    style: AcadexTypography.body(color: AcadexColors.inkSecondary),
+                    style: AcadexTypography.body(
+                      color: AcadexColors.inkSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -94,7 +120,8 @@ class RequestDetailScreen extends ConsumerWidget {
           }
 
           final isRequester = request.requesterUserId == currentUserId;
-          final isAuthorizedResponder = !isRequester &&
+          final isAuthorizedResponder =
+              !isRequester &&
               (currentUserRole == AppRole.superAdmin ||
                   currentUserRole == AppRole.collegeAdmin ||
                   currentUserRole == AppRole.hod ||
@@ -138,22 +165,25 @@ class RequestDetailScreen extends ConsumerWidget {
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         request.requestType.displayName,
-                                        style: AcadexTypography.bodySmall().copyWith(
-                                          fontWeight: FontWeight.w700,
-                                          color: AcadexColors.ink,
-                                        ),
+                                        style: AcadexTypography.bodySmall()
+                                            .copyWith(
+                                              fontWeight: FontWeight.w700,
+                                              color: AcadexColors.ink,
+                                            ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       Text(
                                         'ID: ${request.requestId}',
-                                        style: AcadexTypography.caption().copyWith(
-                                          color: AcadexColors.inkMuted,
-                                          fontSize: 11,
-                                        ),
+                                        style: AcadexTypography.caption()
+                                            .copyWith(
+                                              color: AcadexColors.inkMuted,
+                                              fontSize: 11,
+                                            ),
                                       ),
                                     ],
                                   ),
@@ -175,13 +205,16 @@ class RequestDetailScreen extends ConsumerWidget {
                           Expanded(
                             child: _MetaItem(
                               label: 'Submitted by',
-                              value: '${request.requesterName} (${request.requesterRole.displayName})',
+                              value:
+                                  '${request.requesterName} (${request.requesterRole.displayName})',
                             ),
                           ),
                           Expanded(
                             child: _MetaItem(
                               label: 'Submitted to',
-                              value: request.targetName ?? request.targetRole.displayName,
+                              value:
+                                  request.targetName ??
+                                  request.targetRole.displayName,
                             ),
                           ),
                         ],
@@ -235,7 +268,8 @@ class RequestDetailScreen extends ConsumerWidget {
                     title: 'Specific Details',
                     icon: LucideIcons.info,
                     children: [
-                      if (request.details?.startDate != null && request.details?.endDate != null)
+                      if (request.details?.startDate != null &&
+                          request.details?.endDate != null)
                         _DetailRow(
                           label: 'Date Range',
                           value:
@@ -282,7 +316,8 @@ class RequestDetailScreen extends ConsumerWidget {
                   title: 'Official Decision / Response',
                   icon: LucideIcons.checkSquare,
                   children: [
-                    if (request.responseMessage != null && request.responseMessage!.isNotEmpty) ...[
+                    if (request.responseMessage != null &&
+                        request.responseMessage!.isNotEmpty) ...[
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
@@ -297,7 +332,11 @@ class RequestDetailScreen extends ConsumerWidget {
                           children: [
                             Row(
                               children: [
-                                Icon(request.status.icon, size: 16, color: request.status.color),
+                                Icon(
+                                  request.status.icon,
+                                  size: 16,
+                                  color: request.status.color,
+                                ),
                                 const SizedBox(width: 8),
                                 Text(
                                   request.status.displayName,
@@ -330,7 +369,11 @@ class RequestDetailScreen extends ConsumerWidget {
                     ] else ...[
                       Row(
                         children: [
-                          const Icon(LucideIcons.clock, size: 16, color: AcadexColors.inkMuted),
+                          const Icon(
+                            LucideIcons.clock,
+                            size: 16,
+                            color: AcadexColors.inkMuted,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -373,9 +416,14 @@ class RequestDetailScreen extends ConsumerWidget {
                     label: 'Submit Request',
                     icon: LucideIcons.send,
                     onPressed: () async {
-                      final res = await ref.read(requestActionProvider.notifier).submitRequest(request.id);
+                      final res = await ref
+                          .read(requestActionProvider.notifier)
+                          .submitRequest(request.id);
                       if (res != null && context.mounted) {
-                        AcadexSnackBar.showSuccess(context, 'Request submitted successfully.');
+                        AcadexSnackBar.showSuccess(
+                          context,
+                          'Request submitted successfully.',
+                        );
                         ref.invalidate(requestDetailProvider(requestId));
                       }
                     },
@@ -384,7 +432,9 @@ class RequestDetailScreen extends ConsumerWidget {
                 ],
 
                 // 1. Authorized Responder Actions
-                if (isAuthorizedResponder && isOpen && request.status != RequestStatus.draft) ...[
+                if (isAuthorizedResponder &&
+                    isOpen &&
+                    request.status != RequestStatus.draft) ...[
                   if (request.status == RequestStatus.submitted ||
                       request.status == RequestStatus.received) ...[
                     AcadexButton(
@@ -392,7 +442,9 @@ class RequestDetailScreen extends ConsumerWidget {
                       icon: LucideIcons.clock,
                       variant: AcadexButtonVariant.secondary,
                       onPressed: () async {
-                        await ref.read(requestActionProvider.notifier).startReview(request.id);
+                        await ref
+                            .read(requestActionProvider.notifier)
+                            .startReview(request.id);
                         ref.invalidate(requestDetailProvider(requestId));
                       },
                     ),
@@ -452,25 +504,33 @@ class RequestDetailScreen extends ConsumerWidget {
                         message: isRequester
                             ? 'Are you sure you want to cancel this request?'
                             : 'Are you sure you want to close this request?',
-                        confirmLabel: isRequester ? 'Yes, Cancel' : 'Yes, Close',
+                        confirmLabel: isRequester
+                            ? 'Yes, Cancel'
+                            : 'Yes, Close',
                         isDestructive: true,
                       );
 
                       if (confirmed == true) {
                         final res = isRequester
-                            ? await ref.read(requestActionProvider.notifier).cancelRequest(
-                                  request.id,
-                                  reason: 'Cancelled by requester',
-                                )
-                            : await ref.read(requestActionProvider.notifier).updateStatus(
-                                  id: request.id,
-                                  status: RequestStatus.closed,
-                                  note: 'Closed by authority',
-                                );
+                            ? await ref
+                                  .read(requestActionProvider.notifier)
+                                  .cancelRequest(
+                                    request.id,
+                                    reason: 'Cancelled by requester',
+                                  )
+                            : await ref
+                                  .read(requestActionProvider.notifier)
+                                  .updateStatus(
+                                    id: request.id,
+                                    status: RequestStatus.closed,
+                                    note: 'Closed by authority',
+                                  );
                         if (res != null && context.mounted) {
                           AcadexSnackBar.showSuccess(
                             context,
-                            isRequester ? 'Request cancelled.' : 'Request closed.',
+                            isRequester
+                                ? 'Request cancelled.'
+                                : 'Request closed.',
                           );
                           ref.invalidate(requestDetailProvider(requestId));
                         }
@@ -615,8 +675,18 @@ class _TimelineItem extends StatelessWidget {
 
   String _formatTime(DateTime dt) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     final hr = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
     final ampm = dt.hour >= 12 ? 'PM' : 'AM';
@@ -640,11 +710,7 @@ class _TimelineItem extends StatelessWidget {
               ),
             ),
             if (!isLast)
-              Container(
-                width: 2,
-                height: 36,
-                color: AcadexColors.hairline,
-              ),
+              Container(width: 2, height: 36, color: AcadexColors.hairline),
           ],
         ),
         const SizedBox(width: 12),

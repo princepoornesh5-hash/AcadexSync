@@ -23,10 +23,12 @@ class AttendanceSummaryCard extends StatelessWidget {
     final absent = summary[AttendanceStatus.absent] ?? 0;
     final lateCount = summary[AttendanceStatus.late] ?? 0;
     final excused = summary[AttendanceStatus.excused] ?? 0;
-    
+
     final markedCount = present + absent + lateCount + excused;
     final progress = totalStudents > 0 ? (markedCount / totalStudents) : 0.0;
-    final attendancePct = totalStudents > 0 ? (((present + lateCount) / totalStudents) * 100).toStringAsFixed(1) : '0.0';
+    final attendancePct = totalStudents > 0
+        ? (((present + lateCount) / totalStudents) * 100).toStringAsFixed(1)
+        : '0.0';
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -51,16 +53,23 @@ class AttendanceSummaryCard extends StatelessWidget {
               Text(
                 "SESSION OVERVIEW",
                 style: AcadexTypography.eyebrow(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.25) : AcadexColors.primaryLight,
+                      color: isDark
+                          ? AcadexColors.primaryHover.withValues(alpha: 0.25)
+                          : AcadexColors.primaryLight,
                       borderRadius: AcadexRadius.borderRadiusFull,
                     ),
                     child: Text(
@@ -72,15 +81,22 @@ class AttendanceSummaryCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+                      color: isDark
+                          ? AcadexColors.darkSurfaceHover
+                          : AcadexColors.canvasSoft,
                       borderRadius: AcadexRadius.borderRadiusFull,
                     ),
                     child: Text(
                       "$totalStudents Total",
                       style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ).copyWith(fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -89,30 +105,61 @@ class AttendanceSummaryCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          
+
           // Progress bar
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: progress.clamp(0.0, 1.0),
               minHeight: 6,
-              backgroundColor: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+              backgroundColor: isDark
+                  ? AcadexColors.darkSurfaceHover
+                  : AcadexColors.canvasSoft,
               valueColor: AlwaysStoppedAnimation<Color>(
-                remainingCount == 0 ? AcadexColors.success : AcadexColors.primary,
+                remainingCount == 0
+                    ? AcadexColors.success
+                    : AcadexColors.primary,
               ),
             ),
           ),
           const SizedBox(height: 16),
 
           if (isVertical) ...[
-            _buildVerticalStatRow("Present", present, AcadexColors.success, isDark),
-            Divider(height: 16, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-            _buildVerticalStatRow("Late", lateCount, AcadexColors.warning, isDark),
-            Divider(height: 16, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-            _buildVerticalStatRow("Excused", excused, const Color(0xFF6366F1), isDark),
-            Divider(height: 16, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+            _buildVerticalStatRow(
+              "Present",
+              present,
+              AcadexColors.success,
+              isDark,
+            ),
+            Divider(
+              height: 16,
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+            ),
+            _buildVerticalStatRow(
+              "Late",
+              lateCount,
+              AcadexColors.warning,
+              isDark,
+            ),
+            Divider(
+              height: 16,
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+            ),
+            _buildVerticalStatRow(
+              "Excused",
+              excused,
+              const Color(0xFF6366F1),
+              isDark,
+            ),
+            Divider(
+              height: 16,
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+            ),
             _buildVerticalStatRow("Absent", absent, AcadexColors.error, isDark),
-            Divider(height: 16, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+            Divider(
+              height: 16,
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+            ),
             _buildVerticalStatRow(
               "Unmarked",
               remainingCount,
@@ -124,20 +171,50 @@ class AttendanceSummaryCard extends StatelessWidget {
           ] else ...[
             Row(
               children: [
-                Expanded(child: _buildMetricBlock("Present", present, AcadexColors.success, isDark)),
+                Expanded(
+                  child: _buildMetricBlock(
+                    "Present",
+                    present,
+                    AcadexColors.success,
+                    isDark,
+                  ),
+                ),
                 const SizedBox(width: 6),
-                Expanded(child: _buildMetricBlock("Late", lateCount, AcadexColors.warning, isDark)),
+                Expanded(
+                  child: _buildMetricBlock(
+                    "Late",
+                    lateCount,
+                    AcadexColors.warning,
+                    isDark,
+                  ),
+                ),
                 const SizedBox(width: 6),
-                Expanded(child: _buildMetricBlock("Excused", excused, const Color(0xFF6366F1), isDark)),
+                Expanded(
+                  child: _buildMetricBlock(
+                    "Excused",
+                    excused,
+                    const Color(0xFF6366F1),
+                    isDark,
+                  ),
+                ),
                 const SizedBox(width: 6),
-                Expanded(child: _buildMetricBlock("Absent", absent, AcadexColors.error, isDark)),
+                Expanded(
+                  child: _buildMetricBlock(
+                    "Absent",
+                    absent,
+                    AcadexColors.error,
+                    isDark,
+                  ),
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: _buildMetricBlock(
                     "Remaining",
                     remainingCount,
                     remainingCount > 0
-                        ? (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted)
+                        ? (isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted)
                         : AcadexColors.success,
                     isDark,
                   ),
@@ -177,7 +254,12 @@ class AttendanceSummaryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildVerticalStatRow(String label, int count, Color color, bool isDark) {
+  Widget _buildVerticalStatRow(
+    String label,
+    int count,
+    Color color,
+    bool isDark,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -186,10 +268,7 @@ class AttendanceSummaryCard extends StatelessWidget {
             Container(
               width: 8,
               height: 8,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
             const SizedBox(width: 10),
             Text(
@@ -200,10 +279,7 @@ class AttendanceSummaryCard extends StatelessWidget {
             ),
           ],
         ),
-        Text(
-          count.toString(),
-          style: AcadexTypography.title(color: color),
-        ),
+        Text(count.toString(), style: AcadexTypography.title(color: color)),
       ],
     );
   }

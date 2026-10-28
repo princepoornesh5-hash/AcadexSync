@@ -37,12 +37,14 @@ class ApiAcademicRecordsRepository implements AcademicRecordsRepository {
   final ApiClient _apiClient;
 
   ApiAcademicRecordsRepository({ApiClient? apiClient})
-      : _apiClient = apiClient ?? apiClientInstance;
+    : _apiClient = apiClient ?? apiClientInstance;
 
   static ApiClient get apiClientInstance => apiClient;
 
   @override
-  Future<List<AcademicHistoryItemModel>> getStudentHistory({String? studentId}) async {
+  Future<List<AcademicHistoryItemModel>> getStudentHistory({
+    String? studentId,
+  }) async {
     try {
       final queryParams = <String, dynamic>{};
       if (studentId != null && studentId.isNotEmpty) {
@@ -57,12 +59,19 @@ class ApiAcademicRecordsRepository implements AcademicRecordsRepository {
       final data = response.data;
       if (data is Map<String, dynamic> && data['data'] is List) {
         return (data['data'] as List)
-            .map((item) => AcademicHistoryItemModel.fromJson(item as Map<String, dynamic>))
+            .map(
+              (item) => AcademicHistoryItemModel.fromJson(
+                item as Map<String, dynamic>,
+              ),
+            )
             .toList();
       }
       return [];
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load student academic history');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load student academic history',
+      );
     } catch (e) {
       throw AcadexException(
         category: ErrorCategory.unknown,
@@ -75,10 +84,15 @@ class ApiAcademicRecordsRepository implements AcademicRecordsRepository {
   @override
   Future<AcademicRecordDetailModel> getRecordDetail(String recordId) async {
     try {
-      final response = await _apiClient.dio.get('/academic-records/detail/$recordId');
+      final response = await _apiClient.dio.get(
+        '/academic-records/detail/$recordId',
+      );
       final data = response.data;
-      if (data is Map<String, dynamic> && data['data'] is Map<String, dynamic>) {
-        return AcademicRecordDetailModel.fromJson(data['data'] as Map<String, dynamic>);
+      if (data is Map<String, dynamic> &&
+          data['data'] is Map<String, dynamic>) {
+        return AcademicRecordDetailModel.fromJson(
+          data['data'] as Map<String, dynamic>,
+        );
       }
       throw const AcadexException(
         category: ErrorCategory.serverError,
@@ -86,7 +100,10 @@ class ApiAcademicRecordsRepository implements AcademicRecordsRepository {
         userMessage: 'Invalid academic record response from server',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load academic record detail');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load academic record detail',
+      );
     } catch (e) {
       throw AcadexException(
         category: ErrorCategory.unknown,
@@ -107,15 +124,17 @@ class ApiAcademicRecordsRepository implements AcademicRecordsRepository {
     int limit = 20,
   }) async {
     try {
-      final queryParams = <String, dynamic>{
-        'page': page,
-        'limit': limit,
-      };
-      if (departmentId != null && departmentId.isNotEmpty) queryParams['departmentId'] = departmentId;
-      if (courseId != null && courseId.isNotEmpty) queryParams['courseId'] = courseId;
-      if (semesterId != null && semesterId.isNotEmpty) queryParams['semesterId'] = semesterId;
-      if (academicYearId != null && academicYearId.isNotEmpty) queryParams['academicYearId'] = academicYearId;
-      if (progressionStatus != null && progressionStatus.isNotEmpty) queryParams['progressionStatus'] = progressionStatus;
+      final queryParams = <String, dynamic>{'page': page, 'limit': limit};
+      if (departmentId != null && departmentId.isNotEmpty)
+        queryParams['departmentId'] = departmentId;
+      if (courseId != null && courseId.isNotEmpty)
+        queryParams['courseId'] = courseId;
+      if (semesterId != null && semesterId.isNotEmpty)
+        queryParams['semesterId'] = semesterId;
+      if (academicYearId != null && academicYearId.isNotEmpty)
+        queryParams['academicYearId'] = academicYearId;
+      if (progressionStatus != null && progressionStatus.isNotEmpty)
+        queryParams['progressionStatus'] = progressionStatus;
 
       final response = await _apiClient.dio.get(
         '/academic-records/department',
@@ -123,12 +142,18 @@ class ApiAcademicRecordsRepository implements AcademicRecordsRepository {
       );
 
       final data = response.data;
-      if (data is Map<String, dynamic> && data['data'] is Map<String, dynamic>) {
-        return PaginatedAcademicRecordsModel.fromJson(data['data'] as Map<String, dynamic>);
+      if (data is Map<String, dynamic> &&
+          data['data'] is Map<String, dynamic>) {
+        return PaginatedAcademicRecordsModel.fromJson(
+          data['data'] as Map<String, dynamic>,
+        );
       }
       return const PaginatedAcademicRecordsModel();
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load department academic records');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load department academic records',
+      );
     } catch (e) {
       throw AcadexException(
         category: ErrorCategory.unknown,
@@ -156,8 +181,11 @@ class ApiAcademicRecordsRepository implements AcademicRecordsRepository {
       );
 
       final data = response.data;
-      if (data is Map<String, dynamic> && data['data'] is Map<String, dynamic>) {
-        return AcademicRecordModel.fromJson(data['data'] as Map<String, dynamic>);
+      if (data is Map<String, dynamic> &&
+          data['data'] is Map<String, dynamic>) {
+        return AcademicRecordModel.fromJson(
+          data['data'] as Map<String, dynamic>,
+        );
       }
       throw const AcadexException(
         category: ErrorCategory.serverError,
@@ -165,7 +193,10 @@ class ApiAcademicRecordsRepository implements AcademicRecordsRepository {
         userMessage: 'Failed to update academic progression',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to update academic progression status');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to update academic progression status',
+      );
     } catch (e) {
       throw AcadexException(
         category: ErrorCategory.unknown,
@@ -192,7 +223,10 @@ class ApiAcademicRecordsRepository implements AcademicRecordsRepository {
         data: payload,
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to update subject academic status');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to update subject academic status',
+      );
     } catch (e) {
       throw AcadexException(
         category: ErrorCategory.unknown,
@@ -203,7 +237,9 @@ class ApiAcademicRecordsRepository implements AcademicRecordsRepository {
   }
 
   @override
-  Future<AcademicRecordModel> initializeRecord(String studentEnrollmentId) async {
+  Future<AcademicRecordModel> initializeRecord(
+    String studentEnrollmentId,
+  ) async {
     try {
       final response = await _apiClient.dio.post(
         '/academic-records/initialize',
@@ -211,8 +247,11 @@ class ApiAcademicRecordsRepository implements AcademicRecordsRepository {
       );
 
       final data = response.data;
-      if (data is Map<String, dynamic> && data['data'] is Map<String, dynamic>) {
-        return AcademicRecordModel.fromJson(data['data'] as Map<String, dynamic>);
+      if (data is Map<String, dynamic> &&
+          data['data'] is Map<String, dynamic>) {
+        return AcademicRecordModel.fromJson(
+          data['data'] as Map<String, dynamic>,
+        );
       }
       throw const AcadexException(
         category: ErrorCategory.serverError,
@@ -220,7 +259,10 @@ class ApiAcademicRecordsRepository implements AcademicRecordsRepository {
         userMessage: 'Failed to initialize academic record',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to initialize academic record');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to initialize academic record',
+      );
     } catch (e) {
       throw AcadexException(
         category: ErrorCategory.unknown,

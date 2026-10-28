@@ -31,17 +31,30 @@ final certificateRepositoryProvider = Provider<CertificateRepository>((ref) {
 
 // ---- Upload State ----
 
-enum UploadStage { idle, selecting, validating, uploading, saving, completed, failed }
+enum UploadStage {
+  idle,
+  selecting,
+  validating,
+  uploading,
+  saving,
+  completed,
+  failed,
+}
 
 class UploadState {
   final UploadStage stage;
   final String? errorMessage;
   const UploadState({this.stage = UploadStage.idle, this.errorMessage});
   UploadState copyWith({UploadStage? stage, String? errorMessage}) =>
-      UploadState(stage: stage ?? this.stage, errorMessage: errorMessage ?? this.errorMessage);
+      UploadState(
+        stage: stage ?? this.stage,
+        errorMessage: errorMessage ?? this.errorMessage,
+      );
 }
 
-final certificateUploadStateProvider = StateProvider<UploadState>((_) => const UploadState());
+final certificateUploadStateProvider = StateProvider<UploadState>(
+  (_) => const UploadState(),
+);
 
 // ---- Student Certificates (Real-time Stream) ----
 
@@ -60,7 +73,8 @@ final facultyCertificatesProvider = StreamProvider<List<Certificate>>((ref) {
   final authState = ref.watch(authProvider);
   if (authState is! AuthAuthenticated) return Stream.value([]);
   final user = authState.user;
-  if (user.collegeId == null || user.departmentId == null) return Stream.value([]);
+  if (user.collegeId == null || user.departmentId == null)
+    return Stream.value([]);
   final repo = ref.watch(certificateRepositoryProvider);
   return repo.watchFacultyStudentCertificates(
     facultyUid: user.firebaseUid ?? user.id,
@@ -81,59 +95,82 @@ class CertificateFilter {
   final bool? isVerified;
   const CertificateFilter({this.type, this.status, this.isVerified});
   bool get isActive => type != null || status != null || isVerified != null;
-  CertificateFilter copyWith({CertificateType? type, CertificateStatus? status, bool? isVerified}) =>
-      CertificateFilter(
-        type: type ?? this.type,
-        status: status ?? this.status,
-        isVerified: isVerified ?? this.isVerified,
-      );
+  CertificateFilter copyWith({
+    CertificateType? type,
+    CertificateStatus? status,
+    bool? isVerified,
+  }) => CertificateFilter(
+    type: type ?? this.type,
+    status: status ?? this.status,
+    isVerified: isVerified ?? this.isVerified,
+  );
 }
 
-final certificateFilterProvider = StateProvider<CertificateFilter>((_) => const CertificateFilter());
+final certificateFilterProvider = StateProvider<CertificateFilter>(
+  (_) => const CertificateFilter(),
+);
 
 // ---- Computed: Filtered + Searched Student Certs ----
 
-final filteredStudentCertificatesProvider = Provider<AsyncValue<List<Certificate>>>((ref) {
-  final certs = ref.watch(studentCertificatesProvider);
-  final query = ref.watch(certificateSearchQueryProvider).toLowerCase();
-  final filter = ref.watch(certificateFilterProvider);
+final filteredStudentCertificatesProvider =
+    Provider<AsyncValue<List<Certificate>>>((ref) {
+      final certs = ref.watch(studentCertificatesProvider);
+      final query = ref.watch(certificateSearchQueryProvider).toLowerCase();
+      final filter = ref.watch(certificateFilterProvider);
 
-  return certs.whenData((list) {
-    var result = list;
-    if (query.isNotEmpty) {
-      result = result.where((c) =>
-        c.title.toLowerCase().contains(query) ||
-        c.issuer.toLowerCase().contains(query) ||
-        c.type.displayName.toLowerCase().contains(query),
-      ).toList();
-    }
-    if (filter.type != null) result = result.where((c) => c.type == filter.type).toList();
-    if (filter.status != null) result = result.where((c) => c.status == filter.status).toList();
-    if (filter.isVerified != null) result = result.where((c) => c.isVerified == filter.isVerified).toList();
-    return result;
-  });
-});
+      return certs.whenData((list) {
+        var result = list;
+        if (query.isNotEmpty) {
+          result = result
+              .where(
+                (c) =>
+                    c.title.toLowerCase().contains(query) ||
+                    c.issuer.toLowerCase().contains(query) ||
+                    c.type.displayName.toLowerCase().contains(query),
+              )
+              .toList();
+        }
+        if (filter.type != null)
+          result = result.where((c) => c.type == filter.type).toList();
+        if (filter.status != null)
+          result = result.where((c) => c.status == filter.status).toList();
+        if (filter.isVerified != null)
+          result = result
+              .where((c) => c.isVerified == filter.isVerified)
+              .toList();
+        return result;
+      });
+    });
 
 // ---- Computed: Filtered Faculty Certs ----
 
-final filteredFacultyCertificatesProvider = Provider<AsyncValue<List<Certificate>>>((ref) {
-  final certs = ref.watch(facultyCertificatesProvider);
-  final query = ref.watch(certificateSearchQueryProvider).toLowerCase();
-  final filter = ref.watch(certificateFilterProvider);
+final filteredFacultyCertificatesProvider =
+    Provider<AsyncValue<List<Certificate>>>((ref) {
+      final certs = ref.watch(facultyCertificatesProvider);
+      final query = ref.watch(certificateSearchQueryProvider).toLowerCase();
+      final filter = ref.watch(certificateFilterProvider);
 
-  return certs.whenData((list) {
-    var result = list;
-    if (query.isNotEmpty) {
-      result = result.where((c) =>
-        c.title.toLowerCase().contains(query) ||
-        c.issuer.toLowerCase().contains(query) ||
-        c.studentName.toLowerCase().contains(query) ||
-        c.type.displayName.toLowerCase().contains(query),
-      ).toList();
-    }
-    if (filter.type != null) result = result.where((c) => c.type == filter.type).toList();
-    if (filter.status != null) result = result.where((c) => c.status == filter.status).toList();
-    if (filter.isVerified != null) result = result.where((c) => c.isVerified == filter.isVerified).toList();
-    return result;
-  });
-});
+      return certs.whenData((list) {
+        var result = list;
+        if (query.isNotEmpty) {
+          result = result
+              .where(
+                (c) =>
+                    c.title.toLowerCase().contains(query) ||
+                    c.issuer.toLowerCase().contains(query) ||
+                    c.studentName.toLowerCase().contains(query) ||
+                    c.type.displayName.toLowerCase().contains(query),
+              )
+              .toList();
+        }
+        if (filter.type != null)
+          result = result.where((c) => c.type == filter.type).toList();
+        if (filter.status != null)
+          result = result.where((c) => c.status == filter.status).toList();
+        if (filter.isVerified != null)
+          result = result
+              .where((c) => c.isVerified == filter.isVerified)
+              .toList();
+        return result;
+      });
+    });

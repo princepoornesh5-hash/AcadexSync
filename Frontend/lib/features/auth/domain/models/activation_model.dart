@@ -8,7 +8,10 @@ extension ActivationStatusExtension on ActivationStatus {
   String get value => name;
 
   static ActivationStatus fromString(String val) {
-    return ActivationStatus.values.firstWhere((e) => e.name == val, orElse: () => ActivationStatus.pending);
+    return ActivationStatus.values.firstWhere(
+      (e) => e.name == val,
+      orElse: () => ActivationStatus.pending,
+    );
   }
 }
 
@@ -46,12 +49,16 @@ class ActivationRecord {
       rollNumber: json['rollNumber'] as String?,
       facultyId: json['facultyId'] as String?,
       employeeId: json['employeeId'] as String?,
-      role: json['role'] != null ? AppRoleExtension.fromValue(json['role'] as String) : AppRole.student,
+      role: json['role'] != null
+          ? AppRoleExtension.fromValue(json['role'] as String)
+          : AppRole.student,
       codeHash: json['codeHash'] as String,
       status: ActivationStatusExtension.fromString(json['status'] as String),
       expiresAt: DateTime.parse(json['expiresAt'] as String),
       createdAt: DateTime.parse(json['createdAt'] as String),
-      usedAt: json['usedAt'] != null ? DateTime.parse(json['usedAt'] as String) : null,
+      usedAt: json['usedAt'] != null
+          ? DateTime.parse(json['usedAt'] as String)
+          : null,
     );
   }
 
@@ -112,10 +119,7 @@ class ContactOption {
   final String method; // 'email' | 'phone'
   final String maskedValue;
 
-  const ContactOption({
-    required this.method,
-    required this.maskedValue,
-  });
+  const ContactOption({required this.method, required this.maskedValue});
 
   factory ContactOption.fromJson(Map<String, dynamic> json) {
     return ContactOption(
@@ -152,16 +156,20 @@ class ActivationValidationResult {
   });
 
   factory ActivationValidationResult.fromJson(Map<String, dynamic> json) {
-    final rawOptions = json['contactOptions'] as List<dynamic>? ??
+    final rawOptions =
+        json['contactOptions'] as List<dynamic>? ??
         json['availableChannels'] as List<dynamic>? ??
         [];
     return ActivationValidationResult(
       activationFlowId: (json['activationFlowId'] ?? '') as String,
       displayName: (json['displayName'] ?? json['name'] ?? '') as String,
-      institutionName: (json['institutionName'] ?? json['collegeName'] ?? '') as String,
+      institutionName:
+          (json['institutionName'] ?? json['collegeName'] ?? '') as String,
       collegeCode: (json['collegeCode'] ?? '') as String,
       role: (json['role'] ?? '') as String,
-      isExistingUser: (json['isExistingUser'] ?? json['isExistingActiveUser'] ?? false) as bool,
+      isExistingUser:
+          (json['isExistingUser'] ?? json['isExistingActiveUser'] ?? false)
+              as bool,
       contactOptions: rawOptions
           .map((item) => ContactOption.fromJson(item as Map<String, dynamic>))
           .toList(),
@@ -228,9 +236,12 @@ class CompleteActivationResult {
     final data = json['data'] as Map<String, dynamic>? ?? json;
     return CompleteActivationResult(
       success: (json['success'] ?? true) as bool,
-      message: (data['message'] ?? json['message'] ?? 'Account activated successfully') as String,
+      message:
+          (data['message'] ??
+                  json['message'] ??
+                  'Account activated successfully')
+              as String,
       user: data['user'] as Map<String, dynamic>?,
     );
   }
 }
-

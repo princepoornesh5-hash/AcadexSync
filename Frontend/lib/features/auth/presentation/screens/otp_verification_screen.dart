@@ -21,7 +21,8 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
+  ConsumerState<OtpVerificationScreen> createState() =>
+      _OtpVerificationScreenState();
 }
 
 class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
@@ -131,7 +132,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         _startTimers();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('A new 6-digit verification code has been dispatched.'),
+            content: Text(
+              'A new 6-digit verification code has been dispatched.',
+            ),
             backgroundColor: AcadexColors.success,
           ),
         );
@@ -157,7 +160,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 28.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 28.0,
+              ),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 440),
                 child: Column(
@@ -169,7 +175,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                         icon: const Icon(LucideIcons.arrowLeft, size: 16),
                         label: const Text('Back'),
                         style: TextButton.styleFrom(
-                          foregroundColor: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                          foregroundColor: isDark
+                              ? AcadexColors.darkInkSecondary
+                              : AcadexColors.inkSecondary,
                         ),
                         onPressed: () => context.go('/forgot-password'),
                       ),
@@ -188,11 +196,17 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                                 height: 56,
                                 decoration: BoxDecoration(
                                   color: isDark
-                                      ? AcadexColors.primaryHover.withValues(alpha: 0.2)
+                                      ? AcadexColors.primaryHover.withValues(
+                                          alpha: 0.2,
+                                        )
                                       : AcadexColors.primaryLight,
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(LucideIcons.mailCheck, size: 28, color: AcadexColors.primary),
+                                child: const Icon(
+                                  LucideIcons.mailCheck,
+                                  size: 28,
+                                  color: AcadexColors.primary,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 20),
@@ -200,7 +214,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                               "Enter Verification Code",
                               textAlign: TextAlign.center,
                               style: AcadexTypography.heading2(
-                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
                               ),
                             ),
                             const SizedBox(height: 6),
@@ -208,15 +224,21 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                               textAlign: TextAlign.center,
                               text: TextSpan(
                                 style: AcadexTypography.bodySmall(
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
                                 ),
                                 children: [
-                                  const TextSpan(text: "We sent a 6-digit code to "),
+                                  const TextSpan(
+                                    text: "We sent a 6-digit code to ",
+                                  ),
                                   TextSpan(
                                     text: widget.identifier,
                                     style: TextStyle(
                                       fontWeight: FontWeight.w600,
-                                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                      color: isDark
+                                          ? AcadexColors.darkInk
+                                          : AcadexColors.ink,
                                     ),
                                   ),
                                 ],
@@ -228,19 +250,27 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: isDark ? AcadexColors.errorDarkContainer : AcadexColors.errorLight,
+                                  color: isDark
+                                      ? AcadexColors.errorDarkContainer
+                                      : AcadexColors.errorLight,
                                   borderRadius: AcadexRadius.borderRadiusMd,
                                   border: Border.all(color: AcadexColors.error),
                                 ),
                                 child: Row(
                                   children: [
-                                    const Icon(LucideIcons.circleAlert, size: 16, color: AcadexColors.error),
+                                    const Icon(
+                                      LucideIcons.circleAlert,
+                                      size: 16,
+                                      color: AcadexColors.error,
+                                    ),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
                                         _errorMessage!,
                                         style: AcadexTypography.caption(
-                                          color: isDark ? Colors.white : AcadexColors.errorDark,
+                                          color: isDark
+                                              ? Colors.white
+                                              : AcadexColors.errorDark,
                                         ),
                                       ),
                                     ),
@@ -259,8 +289,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                               keyboardType: TextInputType.number,
                               enabled: !_isLoading,
                               validator: (val) {
-                                if (val == null || val.trim().isEmpty) return "Please enter the 6-digit code";
-                                if (val.trim().length < 6) return "Code must be 6 digits";
+                                if (val == null || val.trim().isEmpty)
+                                  return "Please enter the 6-digit code";
+                                if (val.trim().length < 6)
+                                  return "Code must be 6 digits";
                                 return null;
                               },
                             ),
@@ -268,9 +300,14 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
                             // Expiry Timer Indicator
                             Container(
-                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 8,
+                                horizontal: 12,
+                              ),
                               decoration: BoxDecoration(
-                                color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                                color: isDark
+                                    ? AcadexColors.darkCanvasSoft
+                                    : AcadexColors.canvasSoft,
                                 borderRadius: AcadexRadius.borderRadiusSm,
                               ),
                               child: Row(
@@ -279,7 +316,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                                   Icon(
                                     LucideIcons.clock,
                                     size: 14,
-                                    color: _expirySeconds <= 60 ? AcadexColors.error : AcadexColors.primary,
+                                    color: _expirySeconds <= 60
+                                        ? AcadexColors.error
+                                        : AcadexColors.primary,
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
@@ -287,7 +326,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                                     style: AcadexTypography.caption(
                                       color: _expirySeconds <= 60
                                           ? AcadexColors.error
-                                          : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                                          : (isDark
+                                                ? AcadexColors.darkInkSecondary
+                                                : AcadexColors.inkSecondary),
                                     ).copyWith(fontWeight: FontWeight.w600),
                                   ),
                                 ],
@@ -296,7 +337,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                             const SizedBox(height: 24),
 
                             AcadexButton(
-                              label: _isLoading ? "Verifying..." : "Verify Code",
+                              label: _isLoading
+                                  ? "Verifying..."
+                                  : "Verify Code",
                               icon: LucideIcons.check,
                               isLoading: _isLoading,
                               isFullWidth: true,
@@ -308,7 +351,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                             // Resend Code Button
                             Center(
                               child: TextButton.icon(
-                                icon: const Icon(LucideIcons.refreshCw, size: 14),
+                                icon: const Icon(
+                                  LucideIcons.refreshCw,
+                                  size: 14,
+                                ),
                                 label: Text(
                                   _resendCooldownSeconds > 0
                                       ? "Resend Code in ${_resendCooldownSeconds}s"
@@ -316,10 +362,13 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                                 ),
                                 style: TextButton.styleFrom(
                                   foregroundColor: _resendCooldownSeconds > 0
-                                      ? (isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint)
+                                      ? (isDark
+                                            ? AcadexColors.darkInkFaint
+                                            : AcadexColors.inkFaint)
                                       : AcadexColors.primary,
                                 ),
-                                onPressed: (_resendCooldownSeconds > 0 || _isLoading)
+                                onPressed:
+                                    (_resendCooldownSeconds > 0 || _isLoading)
                                     ? null
                                     : _handleResendOtp,
                               ),

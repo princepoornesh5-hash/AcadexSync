@@ -42,23 +42,37 @@ class AcadexDrawer extends ConsumerWidget {
     final role = user?.role ?? AppRole.student;
     final activeWorkspace = ref.watch(activeWorkspaceProvider);
     final groupedItems = AcadexNavigationService.getGroupedNavItems(role);
-    final allDrawerItems = groupedItems.values.expand((items) => items).toList();
-    final activeItem = AcadexNavigationService.resolveActiveItem(activeRoute, role, candidates: allDrawerItems);
+    final allDrawerItems = groupedItems.values
+        .expand((items) => items)
+        .toList();
+    final activeItem = AcadexNavigationService.resolveActiveItem(
+      activeRoute,
+      role,
+      candidates: allDrawerItems,
+    );
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isCollapsed = !isModal && ref.watch(sidebarCollapsedProvider);
-    final drawerWidth = isModal ? math.min(290.0, screenWidth * 0.82) : (isCollapsed ? 68.0 : 240.0);
+    final drawerWidth = isModal
+        ? math.min(290.0, screenWidth * 0.82)
+        : (isCollapsed ? 68.0 : 240.0);
 
     final innerBody = SafeArea(
       child: Column(
         children: [
           // Top Brand & User Identity Area (Compact, Mobile-First)
           Padding(
-            padding: EdgeInsets.fromLTRB(isCollapsed ? 8 : 16, 12, isCollapsed ? 8 : 16, 8),
+            padding: EdgeInsets.fromLTRB(
+              isCollapsed ? 8 : 16,
+              12,
+              isCollapsed ? 8 : 16,
+              8,
+            ),
             child: isCollapsed
                 ? Center(
                     child: InkWell(
                       onTap: () {
-                        ref.read(sidebarCollapsedProvider.notifier).state = false;
+                        ref.read(sidebarCollapsedProvider.notifier).state =
+                            false;
                       },
                       borderRadius: AcadexRadius.borderRadiusMd,
                       child: Container(
@@ -102,14 +116,17 @@ class AcadexDrawer extends ConsumerWidget {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'ACADEX',
-                              style: AcadexTypography.heading3(
-                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                              ).copyWith(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 16,
-                                letterSpacing: 0.5,
-                              ),
+                              'ACADEXSYNC',
+                              style:
+                                  AcadexTypography.heading3(
+                                    color: isDark
+                                        ? AcadexColors.darkInk
+                                        : AcadexColors.ink,
+                                  ).copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 16,
+                                    letterSpacing: 0.5,
+                                  ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -118,10 +135,15 @@ class AcadexDrawer extends ConsumerWidget {
                               icon: Icon(
                                 LucideIcons.x,
                                 size: 18,
-                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
                               ),
                               padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                              constraints: const BoxConstraints(
+                                minWidth: 32,
+                                minHeight: 32,
+                              ),
                               onPressed: () => Navigator.of(context).pop(),
                               tooltip: 'Close Menu',
                             ),
@@ -139,12 +161,19 @@ class AcadexDrawer extends ConsumerWidget {
                         },
                         borderRadius: AcadexRadius.borderRadiusMd,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                            color: isDark
+                                ? AcadexColors.darkCanvasSoft
+                                : AcadexColors.canvasSoft,
                             borderRadius: AcadexRadius.borderRadiusMd,
                             border: Border.all(
-                              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                              color: isDark
+                                  ? AcadexColors.darkHairline
+                                  : AcadexColors.hairline,
                               width: 1,
                             ),
                           ),
@@ -163,9 +192,15 @@ class AcadexDrawer extends ConsumerWidget {
                                   children: [
                                     Text(
                                       user?.name ?? 'Guest User',
-                                      style: AcadexTypography.bodySmall(
-                                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                                      ).copyWith(fontWeight: FontWeight.w600, fontSize: 13),
+                                      style:
+                                          AcadexTypography.bodySmall(
+                                            color: isDark
+                                                ? AcadexColors.darkInk
+                                                : AcadexColors.ink,
+                                          ).copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 13,
+                                          ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -180,7 +215,9 @@ class AcadexDrawer extends ConsumerWidget {
                               Icon(
                                 LucideIcons.chevronRight,
                                 size: 14,
-                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
                               ),
                             ],
                           ),
@@ -198,18 +235,29 @@ class AcadexDrawer extends ConsumerWidget {
                         borderRadius: AcadexRadius.borderRadiusMd,
                         child: Container(
                           margin: const EdgeInsets.only(top: 6),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 7,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                            color: isDark
+                                ? AcadexColors.darkCanvasSoft
+                                : AcadexColors.canvasSoft,
                             borderRadius: AcadexRadius.borderRadiusMd,
                             border: Border.all(
-                              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                              color: isDark
+                                  ? AcadexColors.darkHairline
+                                  : AcadexColors.hairline,
                               width: 1,
                             ),
                           ),
                           child: Row(
                             children: [
-                              const Icon(LucideIcons.building2, size: 14, color: AcadexColors.primary),
+                              const Icon(
+                                LucideIcons.building2,
+                                size: 14,
+                                color: AcadexColors.primary,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Column(
@@ -217,21 +265,27 @@ class AcadexDrawer extends ConsumerWidget {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      activeWorkspace?.collegeName ?? 'Select Workspace',
+                                      activeWorkspace?.collegeName ??
+                                          'Select Workspace',
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
-                                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                        color: isDark
+                                            ? AcadexColors.darkInk
+                                            : AcadexColors.ink,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
-                                    if (activeWorkspace != null && activeWorkspace.collegeCode.isNotEmpty)
+                                    if (activeWorkspace != null &&
+                                        activeWorkspace.collegeCode.isNotEmpty)
                                       Text(
                                         'Code: ${activeWorkspace.collegeCode}',
                                         style: TextStyle(
                                           fontSize: 10,
-                                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                          color: isDark
+                                              ? AcadexColors.darkInkMuted
+                                              : AcadexColors.inkMuted,
                                         ),
                                       ),
                                   ],
@@ -240,7 +294,9 @@ class AcadexDrawer extends ConsumerWidget {
                               Icon(
                                 LucideIcons.arrowLeftRight,
                                 size: 13,
-                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
                               ),
                             ],
                           ),
@@ -259,7 +315,10 @@ class AcadexDrawer extends ConsumerWidget {
           // Grouped Navigation Items List
           Expanded(
             child: ListView(
-              padding: EdgeInsets.symmetric(horizontal: isCollapsed ? 6 : 10, vertical: 6),
+              padding: EdgeInsets.symmetric(
+                horizontal: isCollapsed ? 6 : 10,
+                vertical: 6,
+              ),
               children: [
                 for (final entry in groupedItems.entries) ...[
                   if (!isCollapsed)
@@ -267,13 +326,16 @@ class AcadexDrawer extends ConsumerWidget {
                       padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
                       child: Text(
                         entry.key.title,
-                        style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                        ).copyWith(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8,
-                        ),
+                        style:
+                            AcadexTypography.caption(
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
+                            ).copyWith(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.8,
+                            ),
                       ),
                     )
                   else
@@ -317,12 +379,14 @@ class AcadexDrawer extends ConsumerWidget {
                 final confirmed = await AcadexConfirmationDialog.show(
                   context: context,
                   title: 'Logout',
-                  message: 'Are you sure you want to sign out of Acadex?',
+                  message: 'Are you sure you want to sign out of ACADEXSYNC?',
                   confirmLabel: 'Sign Out',
                   isDestructive: true,
                 );
                 if (confirmed == true) {
-                  if (isModal && context.mounted && Scaffold.of(context).isDrawerOpen) {
+                  if (isModal &&
+                      context.mounted &&
+                      Scaffold.of(context).isDrawerOpen) {
                     Navigator.of(context).pop();
                   }
                   await ref.read(authProvider.notifier).logout();
@@ -356,7 +420,9 @@ class AcadexDrawer extends ConsumerWidget {
               color: isDark ? const Color(0xFF0F172A) : const Color(0xFFFFFFFF),
               border: Border(
                 right: BorderSide(
-                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                  color: isDark
+                      ? const Color(0xFF1E293B)
+                      : const Color(0xFFE2E8F0),
                   width: 1,
                 ),
               ),
@@ -383,10 +449,7 @@ class AcadexDrawer extends ConsumerWidget {
           alignment: Alignment.topLeft,
           minWidth: drawerWidth,
           maxWidth: drawerWidth,
-          child: SizedBox(
-            width: drawerWidth,
-            child: sidebarContent,
-          ),
+          child: SizedBox(width: drawerWidth, child: sidebarContent),
         ),
       ),
     );
@@ -416,7 +479,8 @@ class _DrawerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLogout = iconColor == AcadexColors.error || iconColor == const Color(0xFFDC2626);
+    final isLogout =
+        iconColor == AcadexColors.error || iconColor == const Color(0xFFDC2626);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Active state: soft primary blue surface and border
@@ -426,16 +490,24 @@ class _DrawerTile extends StatelessWidget {
     final activeBorder = isDark
         ? AcadexColors.primary.withValues(alpha: 0.4)
         : AcadexColors.primary.withValues(alpha: 0.25);
-    final activeIconColor = isDark ? const Color(0xFF60A5FA) : AcadexColors.primary;
-    final activeTextColor = isDark ? const Color(0xFF60A5FA) : AcadexColors.primary;
+    final activeIconColor = isDark
+        ? const Color(0xFF60A5FA)
+        : AcadexColors.primary;
+    final activeTextColor = isDark
+        ? const Color(0xFF60A5FA)
+        : AcadexColors.primary;
 
     // Inactive state: muted neutral colors
     final inactiveIconColor = isLogout
         ? AcadexColors.error
-        : (iconColor ?? (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted));
+        : (iconColor ??
+              (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted));
     final inactiveTextColor = isLogout
         ? AcadexColors.error
-        : (textColor ?? (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary));
+        : (textColor ??
+              (isDark
+                  ? AcadexColors.darkInkSecondary
+                  : AcadexColors.inkSecondary));
 
     final content = Container(
       margin: const EdgeInsets.only(bottom: 4),
@@ -454,7 +526,10 @@ class _DrawerTile extends StatelessWidget {
           splashColor: AcadexColors.primaryLight.withValues(alpha: 0.3),
           borderRadius: AcadexRadius.borderRadiusMd,
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: isCollapsed ? 8 : 14, vertical: 9),
+            padding: EdgeInsets.symmetric(
+              horizontal: isCollapsed ? 8 : 14,
+              vertical: 9,
+            ),
             child: isCollapsed
                 ? Center(
                     child: Stack(
@@ -475,10 +550,19 @@ class _DrawerTile extends StatelessWidget {
                                 color: AcadexColors.error,
                                 shape: BoxShape.circle,
                               ),
-                              constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                              constraints: const BoxConstraints(
+                                minWidth: 14,
+                                minHeight: 14,
+                              ),
                               child: Text(
-                                badgeCount! > 99 ? '99+' : badgeCount.toString(),
-                                style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                                badgeCount! > 99
+                                    ? '99+'
+                                    : badgeCount.toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                ),
                                 textAlign: TextAlign.center,
                               ),
                             ),
@@ -508,11 +592,16 @@ class _DrawerTile extends StatelessWidget {
                       Expanded(
                         child: Text(
                           label,
-                          style: AcadexTypography.bodySmall(
-                            color: isActive ? activeTextColor : inactiveTextColor,
-                          ).copyWith(
-                            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                          ),
+                          style:
+                              AcadexTypography.bodySmall(
+                                color: isActive
+                                    ? activeTextColor
+                                    : inactiveTextColor,
+                              ).copyWith(
+                                fontWeight: isActive
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -520,15 +609,22 @@ class _DrawerTile extends StatelessWidget {
                       if (badgeCount != null && badgeCount! > 0) ...[
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: isActive ? AcadexColors.primary : AcadexColors.primaryLight,
+                            color: isActive
+                                ? AcadexColors.primary
+                                : AcadexColors.primaryLight,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
                             badgeCount! > 99 ? '99+' : badgeCount.toString(),
                             style: TextStyle(
-                              color: isActive ? Colors.white : AcadexColors.primary,
+                              color: isActive
+                                  ? Colors.white
+                                  : AcadexColors.primary,
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
                             ),

@@ -19,19 +19,9 @@ enum NotificationCategory {
   general,
 }
 
-enum NotificationPriority {
-  low,
-  normal,
-  high,
-  critical,
-}
+enum NotificationPriority { low, normal, high, critical }
 
-enum NotificationStatus {
-  unread,
-  read,
-  archived,
-  expired,
-}
+enum NotificationStatus { unread, read, archived, expired }
 
 enum NotificationAudienceType {
   personal,
@@ -283,13 +273,14 @@ class NotificationModel {
     final rawCreatedAt = json['createdAt'] ?? json['timestamp'];
     final rawEntityType = json['entityType'] ?? json['relatedEntityType'];
     final rawEntityId = json['entityId'] ?? json['relatedEntityId'];
-    
+
     // Resolve deep link or default to related entity route
     String? rawDeepLink = json['deepLink'] ?? json['navigationTarget'];
     if (rawDeepLink == null || rawDeepLink.isEmpty) {
       final entityUpper = rawEntityType?.toString().toUpperCase();
       if (entityUpper == 'REQUEST' && rawEntityId != null) {
-        final internalId = (json['metadata'] is Map && json['metadata']['internalId'] != null)
+        final internalId =
+            (json['metadata'] is Map && json['metadata']['internalId'] != null)
             ? json['metadata']['internalId']
             : rawEntityId;
         rawDeepLink = '/requests/$internalId';
@@ -297,15 +288,21 @@ class NotificationModel {
         rawDeepLink = '/assignments/$rawEntityId';
       } else if (entityUpper == 'ASSESSMENT' && rawEntityId != null) {
         rawDeepLink = '/assessments/$rawEntityId';
-      } else if ((entityUpper == 'PRACTICAL' || entityUpper == 'PRACTICALSESSION') && rawEntityId != null) {
+      } else if ((entityUpper == 'PRACTICAL' ||
+              entityUpper == 'PRACTICALSESSION') &&
+          rawEntityId != null) {
         rawDeepLink = '/practicals/$rawEntityId';
-      } else if ((entityUpper == 'CALENDAR' || entityUpper == 'CALENDAREVENT') && rawEntityId != null) {
+      } else if ((entityUpper == 'CALENDAR' ||
+              entityUpper == 'CALENDAREVENT') &&
+          rawEntityId != null) {
         rawDeepLink = '/calendar/event/$rawEntityId';
       } else if (entityUpper == 'ACADEMICRESULT') {
         rawDeepLink = '/academic-results';
       } else if (entityUpper == 'ATTENDANCESESSION' ||
           json['category']?.toString().toLowerCase() == 'attendance') {
-        final subjectId = (json['metadata'] is Map) ? json['metadata']['subjectId']?.toString() : null;
+        final subjectId = (json['metadata'] is Map)
+            ? json['metadata']['subjectId']?.toString()
+            : null;
         if (subjectId != null && subjectId.isNotEmpty) {
           rawDeepLink = '/attendance/student/subject/$subjectId';
         } else {
@@ -322,31 +319,45 @@ class NotificationModel {
       id: rawId.toString(),
       title: rawTitle.toString(),
       message: rawMessage.toString(),
-      notificationType: rawTypeStr != null ? NotificationTypeExtension.fromString(rawTypeStr.toString()) : null,
+      notificationType: rawTypeStr != null
+          ? NotificationTypeExtension.fromString(rawTypeStr.toString())
+          : null,
       category: NotificationCategory.values.firstWhere(
-        (e) => e.name.toLowerCase() == (json['category']?.toString().toLowerCase() ?? ''),
+        (e) =>
+            e.name.toLowerCase() ==
+            (json['category']?.toString().toLowerCase() ?? ''),
         orElse: () => NotificationCategory.general,
       ),
       priority: NotificationPriority.values.firstWhere(
-        (e) => e.name.toLowerCase() == (json['priority']?.toString().toLowerCase() ?? ''),
+        (e) =>
+            e.name.toLowerCase() ==
+            (json['priority']?.toString().toLowerCase() ?? ''),
         orElse: () => NotificationPriority.normal,
       ),
       status: NotificationStatus.values.firstWhere(
         (e) => e.name == rawStatusStr,
-        orElse: () => isReadVal ? NotificationStatus.read : NotificationStatus.unread,
+        orElse: () =>
+            isReadVal ? NotificationStatus.read : NotificationStatus.unread,
       ),
       audienceType: NotificationAudienceType.values.firstWhere(
-        (e) => e.name.toLowerCase() == (json['audienceType']?.toString().toLowerCase() ?? ''),
+        (e) =>
+            e.name.toLowerCase() ==
+            (json['audienceType']?.toString().toLowerCase() ?? ''),
         orElse: () => NotificationAudienceType.personal,
       ),
-      timestamp: rawCreatedAt != null 
-          ? DateTime.tryParse(rawCreatedAt.toString()) ?? DateTime.now() 
+      timestamp: rawCreatedAt != null
+          ? DateTime.tryParse(rawCreatedAt.toString()) ?? DateTime.now()
           : DateTime.now(),
       isRead: isReadVal,
-      readAt: json['readAt'] != null ? DateTime.tryParse(json['readAt'].toString()) : null,
+      readAt: json['readAt'] != null
+          ? DateTime.tryParse(json['readAt'].toString())
+          : null,
       recipientUserId: json['recipientUserId']?.toString(),
       recipientRole: json['recipientRole'] != null
-          ? AppRole.values.firstWhere((e) => e.value == json['recipientRole'], orElse: () => AppRole.student)
+          ? AppRole.values.firstWhere(
+              (e) => e.value == json['recipientRole'],
+              orElse: () => AppRole.student,
+            )
           : null,
       collegeId: json['collegeId']?.toString(),
       departmentId: json['departmentId']?.toString(),
@@ -354,7 +365,9 @@ class NotificationModel {
       relatedEntityId: rawEntityId?.toString(),
       relatedEntityType: rawEntityType?.toString(),
       navigationTarget: rawDeepLink?.toString(),
-      metadata: json['metadata'] is Map<String, dynamic> ? json['metadata'] as Map<String, dynamic> : null,
+      metadata: json['metadata'] is Map<String, dynamic>
+          ? json['metadata'] as Map<String, dynamic>
+          : null,
     );
   }
 

@@ -37,7 +37,9 @@ class MyAssignmentsScreen extends ConsumerWidget {
     final List<FacultyAssignment> rawAssignments = syncAssignments.isNotEmpty
         ? syncAssignments
         : (assignmentsAsync.valueOrNull ?? []);
-    final myAssignments = rawAssignments.where((a) => seenIds.add(a.id)).toList();
+    final myAssignments = rawAssignments
+        .where((a) => seenIds.add(a.id))
+        .toList();
 
     final isLoading = assignmentsAsync.isLoading && myAssignments.isEmpty;
     final hasError = assignmentsAsync.hasError && myAssignments.isEmpty;
@@ -49,12 +51,17 @@ class MyAssignmentsScreen extends ConsumerWidget {
     final yearMap = ref.watch(academicYearMapProvider);
 
     // Watch students to compute enrolled student counts
-    final studentsState = ref.watch(studentsProvider((sectionId: null, departmentId: null)));
+    final studentsState = ref.watch(
+      studentsProvider((sectionId: null, departmentId: null)),
+    );
     final students = studentsState.items;
 
     final totalClasses = myAssignments.length;
     final totalStudents = myAssignments.fold<int>(0, (sum, a) {
-      return sum + students.where((s) => s.sectionId == a.sectionId && s.isActive).length;
+      return sum +
+          students
+              .where((s) => s.sectionId == a.sectionId && s.isActive)
+              .length;
     });
     final uniqueSubjects = myAssignments.map((a) => a.subjectId).toSet().length;
 
@@ -71,14 +78,18 @@ class MyAssignmentsScreen extends ConsumerWidget {
             children: [
               AcadexPageHeader(
                 title: "My Teaching Assignments",
-                subtitle: "Active courses, subjects, and sections allocated for your instruction.",
+                subtitle:
+                    "Active courses, subjects, and sections allocated for your instruction.",
               ),
 
               // Operational Snapshot Bar (Phase 6)
               if (myAssignments.isNotEmpty) ...[
                 AcadexCard(
                   isFlat: true,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   child: Row(
                     children: [
                       _buildSummaryItem(
@@ -87,14 +98,26 @@ class MyAssignmentsScreen extends ConsumerWidget {
                         value: '$totalClasses',
                         isDark: isDark,
                       ),
-                      Container(height: 24, width: 1, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                      Container(
+                        height: 24,
+                        width: 1,
+                        color: isDark
+                            ? AcadexColors.darkHairline
+                            : AcadexColors.hairline,
+                      ),
                       _buildSummaryItem(
                         icon: LucideIcons.users,
                         label: 'Total Students',
                         value: '$totalStudents',
                         isDark: isDark,
                       ),
-                      Container(height: 24, width: 1, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                      Container(
+                        height: 24,
+                        width: 1,
+                        color: isDark
+                            ? AcadexColors.darkHairline
+                            : AcadexColors.hairline,
+                      ),
                       _buildSummaryItem(
                         icon: LucideIcons.layers,
                         label: 'Subjects',
@@ -119,16 +142,28 @@ class MyAssignmentsScreen extends ConsumerWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(LucideIcons.alertTriangle, size: 48, color: AcadexColors.error),
+                        const Icon(
+                          LucideIcons.alertTriangle,
+                          size: 48,
+                          color: AcadexColors.error,
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           "Failed to Load Teaching Assignments",
-                          style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                          style: AcadexTypography.heading3(
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
+                          ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           "An error occurred while fetching your active teaching assignments. Please try again.",
-                          style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                          style: AcadexTypography.caption(
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 16),
@@ -142,7 +177,9 @@ class MyAssignmentsScreen extends ConsumerWidget {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AcadexColors.primary,
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: AcadexRadius.borderRadiusMd,
+                            ),
                           ),
                         ),
                       ],
@@ -155,7 +192,8 @@ class MyAssignmentsScreen extends ConsumerWidget {
                   child: Center(
                     child: AcadexEmptyState(
                       title: "No Active Teaching Assignments",
-                      subtitle: "You currently have no classes or subjects allocated by your Head of Department or College Admin.",
+                      subtitle:
+                          "You currently have no classes or subjects allocated by your Head of Department or College Admin.",
                       icon: LucideIcons.bookOpen,
                     ),
                   ),
@@ -175,7 +213,9 @@ class MyAssignmentsScreen extends ConsumerWidget {
                     final sem = semMap[a.semesterId];
                     final sec = secMap[a.sectionId];
                     final yr = yearMap[a.academicYearId];
-                    final studentCount = students.where((s) => s.sectionId == a.sectionId && s.isActive).length;
+                    final studentCount = students
+                        .where((s) => s.sectionId == a.sectionId && s.isActive)
+                        .length;
 
                     return _buildAssignmentCard(
                       context: context,
@@ -211,7 +251,9 @@ class MyAssignmentsScreen extends ConsumerWidget {
                     final sem = semMap[a.semesterId];
                     final sec = secMap[a.sectionId];
                     final yr = yearMap[a.academicYearId];
-                    final studentCount = students.where((s) => s.sectionId == a.sectionId && s.isActive).length;
+                    final studentCount = students
+                        .where((s) => s.sectionId == a.sectionId && s.isActive)
+                        .length;
 
                     return _buildAssignmentCard(
                       context: context,
@@ -253,7 +295,10 @@ class MyAssignmentsScreen extends ConsumerWidget {
               children: [
                 Text(
                   value,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -261,7 +306,9 @@ class MyAssignmentsScreen extends ConsumerWidget {
                   label,
                   style: TextStyle(
                     fontSize: 10,
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                     fontWeight: FontWeight.w500,
                   ),
                   maxLines: 1,
@@ -300,7 +347,9 @@ class MyAssignmentsScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                  color: isDark
+                      ? AcadexColors.primary.withValues(alpha: 0.2)
+                      : AcadexColors.primaryLight,
                   borderRadius: AcadexRadius.borderRadiusSm,
                 ),
                 child: Text(
@@ -316,13 +365,27 @@ class MyAssignmentsScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+                  color: isDark
+                      ? AcadexColors.darkSurfaceHover
+                      : AcadexColors.canvasSoft,
                   borderRadius: AcadexRadius.borderRadiusSm,
-                  border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                  border: Border.all(
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
+                  ),
                 ),
                 child: Text(
-                  AcadexEntityFormatters.formatSectionLabel(sec?.name, rawId: a.sectionId, fallback: 'Assigned Section', compact: true),
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11.5),
+                  AcadexEntityFormatters.formatSectionLabel(
+                    sec?.name,
+                    rawId: a.sectionId,
+                    fallback: 'Assigned Section',
+                    compact: true,
+                  ),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 11.5,
+                  ),
                 ),
               ),
               const Spacer(),
@@ -336,7 +399,11 @@ class MyAssignmentsScreen extends ConsumerWidget {
 
           // Subject Title
           Text(
-            AcadexEntityFormatters.formatSubjectLabel(sub?.name, code: sub?.code, rawId: a.subjectId),
+            AcadexEntityFormatters.formatSubjectLabel(
+              sub?.name,
+              code: sub?.code,
+              rawId: a.subjectId,
+            ),
             style: AcadexTypography.heading3(
               color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
             ).copyWith(fontSize: 15.5, fontWeight: FontWeight.w700),
@@ -366,17 +433,27 @@ class MyAssignmentsScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight,
+                  color: isDark
+                      ? AcadexColors.successDarkContainer
+                      : AcadexColors.successLight,
                   borderRadius: AcadexRadius.borderRadiusSm,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(LucideIcons.users, size: 12, color: AcadexColors.success),
+                    const Icon(
+                      LucideIcons.users,
+                      size: 12,
+                      color: AcadexColors.success,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       "$studentCount Students Enrolled",
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11.5, color: AcadexColors.success),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11.5,
+                        color: AcadexColors.success,
+                      ),
                     ),
                   ],
                 ),
@@ -395,13 +472,24 @@ class MyAssignmentsScreen extends ConsumerWidget {
                   alignment: Alignment.centerLeft,
                   child: TextButton.icon(
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 0,
+                      ),
                       visualDensity: VisualDensity.compact,
                     ),
-                    icon: const Icon(LucideIcons.clipboardCheck, size: 15, color: AcadexColors.primary),
+                    icon: const Icon(
+                      LucideIcons.clipboardCheck,
+                      size: 15,
+                      color: AcadexColors.primary,
+                    ),
                     label: const Text(
                       'Take Attendance',
-                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AcadexColors.primary),
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: AcadexColors.primary,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -410,16 +498,30 @@ class MyAssignmentsScreen extends ConsumerWidget {
                         id: a.id,
                         facultyAssignmentId: a.id,
                         subjectId: a.subjectId,
-                        subjectName: AcadexEntityFormatters.formatSubjectLabel(sub?.name, code: sub?.code, rawId: a.subjectId),
+                        subjectName: AcadexEntityFormatters.formatSubjectLabel(
+                          sub?.name,
+                          code: sub?.code,
+                          rawId: a.subjectId,
+                        ),
                         sectionId: a.sectionId ?? '',
-                        sectionName: AcadexEntityFormatters.formatSectionLabel(sec?.name, rawId: a.sectionId, fallback: 'Assigned Section', prefix: false),
-                        semester: AcadexEntityFormatters.formatSemesterLabel(sem?.name, semesterNumber: sem?.semesterNumber, rawId: a.semesterId),
+                        sectionName: AcadexEntityFormatters.formatSectionLabel(
+                          sec?.name,
+                          rawId: a.sectionId,
+                          fallback: 'Assigned Section',
+                          prefix: false,
+                        ),
+                        semester: AcadexEntityFormatters.formatSemesterLabel(
+                          sem?.name,
+                          semesterNumber: sem?.semesterNumber,
+                          rawId: a.semesterId,
+                        ),
                         cohort: a.cohort,
                         academicStage: a.academicStage,
                         timeSlot: 'Regular Session',
                         date: DateTime.now(),
                       );
-                      ref.read(activeClassProvider.notifier).state = assignedClass;
+                      ref.read(activeClassProvider.notifier).state =
+                          assignedClass;
                       context.push('/attendance/mark');
                     },
                   ),
@@ -429,28 +531,46 @@ class MyAssignmentsScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(4),
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 tooltip: "Internal Assessment Marks",
-                icon: const Icon(LucideIcons.award, size: 16, color: AcadexColors.primary),
-                onPressed: () => context.push('/assessments/entry?sectionId=${a.sectionId}&subjectId=${a.subjectId}'),
+                icon: const Icon(
+                  LucideIcons.award,
+                  size: 16,
+                  color: AcadexColors.primary,
+                ),
+                onPressed: () => context.push(
+                  '/assessments/entry?sectionId=${a.sectionId}&subjectId=${a.subjectId}',
+                ),
               ),
               IconButton(
                 padding: const EdgeInsets.all(4),
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 tooltip: "Coursework Assignments",
-                icon: const Icon(LucideIcons.fileSpreadsheet, size: 16, color: AcadexColors.accentOrange),
+                icon: const Icon(
+                  LucideIcons.fileSpreadsheet,
+                  size: 16,
+                  color: AcadexColors.accentOrange,
+                ),
                 onPressed: () => context.push('/assignments'),
               ),
               IconButton(
                 padding: const EdgeInsets.all(4),
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 tooltip: "View Timetable",
-                icon: const Icon(LucideIcons.calendarDays, size: 16, color: AcadexColors.accentPurple),
+                icon: const Icon(
+                  LucideIcons.calendarDays,
+                  size: 16,
+                  color: AcadexColors.accentPurple,
+                ),
                 onPressed: () => context.push('/timetable'),
               ),
               IconButton(
                 padding: const EdgeInsets.all(4),
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 tooltip: "Course Notes",
-                icon: const Icon(LucideIcons.fileText, size: 16, color: AcadexColors.accentTeal),
+                icon: const Icon(
+                  LucideIcons.fileText,
+                  size: 16,
+                  color: AcadexColors.accentTeal,
+                ),
                 onPressed: () => context.push('/notes'),
               ),
             ],

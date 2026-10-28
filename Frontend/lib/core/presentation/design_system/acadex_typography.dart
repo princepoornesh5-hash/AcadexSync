@@ -69,7 +69,6 @@ class AcadexTextStyle extends TextStyle {
       fontFamilyFallback: style.fontFamilyFallback,
       overflow: style.overflow,
     );
-
   }
 
   /// Callable invocation: allows `AcadexTypography.caption(...)` or `AcadexTypography.caption()`
@@ -334,10 +333,12 @@ class AcadexTypography {
   static AcadexTextStyle get h1 => heading1;
   static AcadexTextStyle get h2 => heading2;
   static AcadexTextStyle get h3 => heading3;
-  static AcadexTextStyle get subtitle => title.call(color: AcadexColors.inkSecondary);
+  static AcadexTextStyle get subtitle =>
+      title.call(color: AcadexColors.inkSecondary);
   static AcadexTextStyle get bodyLarge => body;
   static AcadexTextStyle get labelLarge => button.call(color: AcadexColors.ink);
-  static AcadexTextStyle get labelMedium => bodySmall.call(color: AcadexColors.inkSecondary);
+  static AcadexTextStyle get labelMedium =>
+      bodySmall.call(color: AcadexColors.inkSecondary);
   static AcadexTextStyle get labelSmall => eyebrow;
   static AcadexTextStyle get statHero => display2;
   static AcadexTextStyle get statLarge => heading1;
@@ -345,7 +346,10 @@ class AcadexTypography {
   static AcadexTextStyle get captionText => caption;
 
   /// Accessibility safety helper: prevents text scaling from overflowing mobile bounds
-  static TextScaler clampedTextScaler(BuildContext context, {double max = 1.25}) {
+  static TextScaler clampedTextScaler(
+    BuildContext context, {
+    double max = 1.25,
+  }) {
     return MediaQuery.textScalerOf(context).clamp(maxScaleFactor: max);
   }
 }

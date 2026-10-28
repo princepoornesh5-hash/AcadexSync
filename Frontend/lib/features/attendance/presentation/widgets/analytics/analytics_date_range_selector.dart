@@ -30,9 +30,9 @@ class AnalyticsDateRangeSelector extends StatelessWidget {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: AcadexColors.primary,
-                  onPrimary: Colors.white,
-                ),
+              primary: AcadexColors.primary,
+              onPrimary: Colors.white,
+            ),
           ),
           child: child!,
         );
@@ -58,7 +58,9 @@ class AnalyticsDateRangeSelector extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
         borderRadius: AcadexRadius.borderRadiusMd,
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -69,7 +71,8 @@ class AnalyticsDateRangeSelector extends StatelessWidget {
               context,
               label: 'Today',
               icon: LucideIcons.calendar,
-              isSelected: selectedRange.preset == AttendanceDateRangePreset.today,
+              isSelected:
+                  selectedRange.preset == AttendanceDateRangePreset.today,
               onTap: () => onRangeChanged(AttendanceDateRange.today()),
             ),
             const SizedBox(width: 4),
@@ -77,7 +80,8 @@ class AnalyticsDateRangeSelector extends StatelessWidget {
               context,
               label: 'This Week',
               icon: LucideIcons.calendarDays,
-              isSelected: selectedRange.preset == AttendanceDateRangePreset.thisWeek,
+              isSelected:
+                  selectedRange.preset == AttendanceDateRangePreset.thisWeek,
               onTap: () => onRangeChanged(AttendanceDateRange.thisWeek()),
             ),
             const SizedBox(width: 4),
@@ -85,7 +89,8 @@ class AnalyticsDateRangeSelector extends StatelessWidget {
               context,
               label: 'This Month',
               icon: LucideIcons.calendarRange,
-              isSelected: selectedRange.preset == AttendanceDateRangePreset.thisMonth,
+              isSelected:
+                  selectedRange.preset == AttendanceDateRangePreset.thisMonth,
               onTap: () => onRangeChanged(AttendanceDateRange.thisMonth()),
             ),
             const SizedBox(width: 4),
@@ -95,7 +100,8 @@ class AnalyticsDateRangeSelector extends StatelessWidget {
                   ? '${selectedRange.startDate.day}/${selectedRange.startDate.month} - ${selectedRange.endDate.day}/${selectedRange.endDate.month}'
                   : 'Custom',
               icon: LucideIcons.calendarCheck2,
-              isSelected: selectedRange.preset == AttendanceDateRangePreset.custom,
+              isSelected:
+                  selectedRange.preset == AttendanceDateRangePreset.custom,
               onTap: () => _pickCustomRange(context),
             ),
           ],
@@ -122,9 +128,7 @@ class AnalyticsDateRangeSelector extends StatelessWidget {
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected
-                ? AcadexColors.primary
-                : Colors.transparent,
+            color: isSelected ? AcadexColors.primary : Colors.transparent,
             borderRadius: AcadexRadius.borderRadiusSm,
           ),
           child: Row(
@@ -135,18 +139,25 @@ class AnalyticsDateRangeSelector extends StatelessWidget {
                 size: 14,
                 color: isSelected
                     ? Colors.white
-                    : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                    : (isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted),
               ),
               const SizedBox(width: 6),
               Text(
                 label,
-                style: AcadexTypography.caption(
-                  color: isSelected
-                      ? Colors.white
-                      : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
-                ).copyWith(
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                ),
+                style:
+                    AcadexTypography.caption(
+                      color: isSelected
+                          ? Colors.white
+                          : (isDark
+                                ? AcadexColors.darkInkSecondary
+                                : AcadexColors.inkSecondary),
+                    ).copyWith(
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                    ),
               ),
             ],
           ),

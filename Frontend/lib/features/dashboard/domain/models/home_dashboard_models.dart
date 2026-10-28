@@ -119,7 +119,8 @@ class DashboardContextModel {
       departmentName: json['departmentName'] as String?,
       designation: json['designation'] as String?,
       employeeId: json['employeeId'] as String?,
-      activeTeachingAssignmentsCount: (json['activeTeachingAssignmentsCount'] as num?)?.toInt() ?? 0,
+      activeTeachingAssignmentsCount:
+          (json['activeTeachingAssignmentsCount'] as num?)?.toInt() ?? 0,
       departmentCode: json['departmentCode'] as String?,
       managedScope: json['managedScope'] as String?,
       collegeId: json['collegeId'] as String?,
@@ -216,32 +217,44 @@ class DashboardSummaryModel {
 
     return DashboardSummaryModel(
       attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble(),
-      assignmentsCompleted: (json['assignmentsCompleted'] as num?)?.toInt() ?? 0,
+      assignmentsCompleted:
+          (json['assignmentsCompleted'] as num?)?.toInt() ?? 0,
       assignmentsPending: (json['assignmentsPending'] as num?)?.toInt() ?? 0,
       practicalsCompleted: (json['practicalsCompleted'] as num?)?.toInt() ?? 0,
       practicalsScheduled: (json['practicalsScheduled'] as num?)?.toInt() ?? 0,
-      publishedAssessmentsCount: (json['publishedAssessmentsCount'] as num?)?.toInt() ?? 0,
+      publishedAssessmentsCount:
+          (json['publishedAssessmentsCount'] as num?)?.toInt() ?? 0,
       latestResultStatus: json['latestResultStatus'] as String?,
-      assignedClassesCount: (json['assignedClassesCount'] as num?)?.toInt() ?? 0,
-      pendingAttendanceSessions: (json['pendingAttendanceSessions'] as num?)?.toInt() ?? 0,
-      submissionsAwaitingReview: (json['submissionsAwaitingReview'] as num?)?.toInt() ?? 0,
-      pendingAssessmentMarks: (json['pendingAssessmentMarks'] as num?)?.toInt() ?? 0,
+      assignedClassesCount:
+          (json['assignedClassesCount'] as num?)?.toInt() ?? 0,
+      pendingAttendanceSessions:
+          (json['pendingAttendanceSessions'] as num?)?.toInt() ?? 0,
+      submissionsAwaitingReview:
+          (json['submissionsAwaitingReview'] as num?)?.toInt() ?? 0,
+      pendingAssessmentMarks:
+          (json['pendingAssessmentMarks'] as num?)?.toInt() ?? 0,
       openPracticalsCount: (json['openPracticalsCount'] as num?)?.toInt() ?? 0,
       activeFacultyCount: (json['activeFacultyCount'] as num?)?.toInt() ?? 0,
       activeStudentsCount: (json['activeStudentsCount'] as num?)?.toInt() ?? 0,
       todayClassesCount: (json['todayClassesCount'] as num?)?.toInt() ?? 0,
-      pendingDepartmentRequests: (json['pendingDepartmentRequests'] as num?)?.toInt() ?? 0,
-      pendingAssessmentsCount: (json['pendingAssessmentsCount'] as num?)?.toInt() ?? 0,
-      pendingAttendanceCount: (json['pendingAttendanceCount'] as num?)?.toInt() ?? 0,
+      pendingDepartmentRequests:
+          (json['pendingDepartmentRequests'] as num?)?.toInt() ?? 0,
+      pendingAssessmentsCount:
+          (json['pendingAssessmentsCount'] as num?)?.toInt() ?? 0,
+      pendingAttendanceCount:
+          (json['pendingAttendanceCount'] as num?)?.toInt() ?? 0,
       coursesCount: (json['coursesCount'] as num?)?.toInt() ?? 0,
       sectionsCount: (json['sectionsCount'] as num?)?.toInt() ?? 0,
       subjectsCount: (json['subjectsCount'] as num?)?.toInt() ?? 0,
       departmentsCount: (json['departmentsCount'] as num?)?.toInt() ?? 0,
       facultyCount: (json['facultyCount'] as num?)?.toInt() ?? 0,
       studentsCount: (json['studentsCount'] as num?)?.toInt() ?? 0,
-      pendingRequestsCount: (json['pendingRequestsCount'] as num?)?.toInt() ?? 0,
-      activeAnnouncementsCount: (json['activeAnnouncementsCount'] as num?)?.toInt() ?? 0,
-      activeAcademicYearsCount: (json['activeAcademicYearsCount'] as num?)?.toInt() ?? 0,
+      pendingRequestsCount:
+          (json['pendingRequestsCount'] as num?)?.toInt() ?? 0,
+      activeAnnouncementsCount:
+          (json['activeAnnouncementsCount'] as num?)?.toInt() ?? 0,
+      activeAcademicYearsCount:
+          (json['activeAcademicYearsCount'] as num?)?.toInt() ?? 0,
       collegesCount: (json['collegesCount'] as num?)?.toInt() ?? 0,
       usersCount: (json['usersCount'] as num?)?.toInt() ?? 0,
       activeCollegesCount: (json['activeCollegesCount'] as num?)?.toInt() ?? 0,
@@ -355,7 +368,8 @@ class DashboardPendingActionModel {
 @immutable
 class DashboardRecentActivityModel {
   final String id;
-  final String type; // ANNOUNCEMENT, SUBMISSION, RESULT, REQUEST, ASSESSMENT, PRACTICAL
+  final String
+  type; // ANNOUNCEMENT, SUBMISSION, RESULT, REQUEST, ASSESSMENT, PRACTICAL
   final String title;
   final String? description;
   final String timestamp;
@@ -449,24 +463,42 @@ class HomeDashboardModel {
       greeting: DashboardGreetingModel.fromJson(_asMap(json['greeting'])),
       context: DashboardContextModel.fromJson(_asMap(json['context'])),
       summary: DashboardSummaryModel.fromJson(_asMap(json['summary'])),
-      alerts: (json['alerts'] as List<dynamic>?)
+      alerts:
+          (json['alerts'] as List<dynamic>?)
               ?.map((e) => DashboardAlertModel.fromJson(_asMap(e) ?? const {}))
               .toList() ??
           [],
-      upcoming: (json['upcoming'] as List<dynamic>?)
-              ?.map((e) => DashboardUpcomingItemModel.fromJson(_asMap(e) ?? const {}))
+      upcoming:
+          (json['upcoming'] as List<dynamic>?)
+              ?.map(
+                (e) =>
+                    DashboardUpcomingItemModel.fromJson(_asMap(e) ?? const {}),
+              )
               .toList() ??
           [],
-      pendingActions: (json['pendingActions'] as List<dynamic>?)
-              ?.map((e) => DashboardPendingActionModel.fromJson(_asMap(e) ?? const {}))
+      pendingActions:
+          (json['pendingActions'] as List<dynamic>?)
+              ?.map(
+                (e) =>
+                    DashboardPendingActionModel.fromJson(_asMap(e) ?? const {}),
+              )
               .toList() ??
           [],
-      recent: (json['recent'] as List<dynamic>?)
-              ?.map((e) => DashboardRecentActivityModel.fromJson(_asMap(e) ?? const {}))
+      recent:
+          (json['recent'] as List<dynamic>?)
+              ?.map(
+                (e) => DashboardRecentActivityModel.fromJson(
+                  _asMap(e) ?? const {},
+                ),
+              )
               .toList() ??
           [],
-      quickActions: (json['quickActions'] as List<dynamic>?)
-              ?.map((e) => DashboardQuickActionModel.fromJson(_asMap(e) ?? const {}))
+      quickActions:
+          (json['quickActions'] as List<dynamic>?)
+              ?.map(
+                (e) =>
+                    DashboardQuickActionModel.fromJson(_asMap(e) ?? const {}),
+              )
               .toList() ??
           [],
     );

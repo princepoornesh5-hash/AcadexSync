@@ -7,7 +7,8 @@ class DashboardStatModel {
   final IconData icon;
   final Color iconColor;
   final Color iconBackground;
-  final double? changePercent; // positive = up, negative = down, null = no change
+  final double?
+  changePercent; // positive = up, negative = down, null = no change
 
   const DashboardStatModel({
     required this.title,

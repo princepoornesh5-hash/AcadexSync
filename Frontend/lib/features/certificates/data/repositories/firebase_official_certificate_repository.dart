@@ -8,11 +8,13 @@ import '../../../../features/storage/domain/repositories/file_storage_repository
 import '../../domain/models/official_certificate_models.dart';
 import '../../domain/repositories/official_certificate_repository.dart';
 
-class FirebaseOfficialCertificateRepository implements OfficialCertificateRepository {
+class FirebaseOfficialCertificateRepository
+    implements OfficialCertificateRepository {
   final FirestoreService _firestoreService;
   final FileStorageRepository? _fileStorageRepository;
 
-  static const String _requirementsCollection = 'officialCertificateRequirements';
+  static const String _requirementsCollection =
+      'officialCertificateRequirements';
   static const String _certificatesCollection = 'officialCertificates';
 
   FirebaseOfficialCertificateRepository(
@@ -53,18 +55,25 @@ class FirebaseOfficialCertificateRepository implements OfficialCertificateReposi
       filters,
       limit: 100,
     );
-    return result.data.map((d) => OfficialCertificateRequirement.fromJson(d)).toList();
+    return result.data
+        .map((d) => OfficialCertificateRequirement.fromJson(d))
+        .toList();
   }
 
   @override
   Future<OfficialCertificateRequirement?> getRequirementById(String id) async {
-    final doc = await _firestoreService.getDocument(_requirementsCollection, id);
+    final doc = await _firestoreService.getDocument(
+      _requirementsCollection,
+      id,
+    );
     if (doc == null) return null;
     return OfficialCertificateRequirement.fromJson(doc);
   }
 
   @override
-  Future<void> createRequirement(OfficialCertificateRequirement requirement) async {
+  Future<void> createRequirement(
+    OfficialCertificateRequirement requirement,
+  ) async {
     await _firestoreService.setDocument(
       _requirementsCollection,
       requirement.id,
@@ -73,7 +82,9 @@ class FirebaseOfficialCertificateRepository implements OfficialCertificateReposi
   }
 
   @override
-  Future<void> updateRequirement(OfficialCertificateRequirement requirement) async {
+  Future<void> updateRequirement(
+    OfficialCertificateRequirement requirement,
+  ) async {
     await _firestoreService.setDocument(
       _requirementsCollection,
       requirement.id,
@@ -95,8 +106,12 @@ class FirebaseOfficialCertificateRepository implements OfficialCertificateReposi
     if (departmentId != null) {
       filters['departmentId'] = departmentId;
     }
-    return _firestoreService.watchQuery(_requirementsCollection, filters).map(
-          (docs) => docs.map((d) => OfficialCertificateRequirement.fromJson(d)).toList(),
+    return _firestoreService
+        .watchQuery(_requirementsCollection, filters)
+        .map(
+          (docs) => docs
+              .map((d) => OfficialCertificateRequirement.fromJson(d))
+              .toList(),
         );
   }
 
@@ -132,7 +147,10 @@ class FirebaseOfficialCertificateRepository implements OfficialCertificateReposi
 
   @override
   Future<OfficialCertificate?> getSubmissionById(String id) async {
-    final doc = await _firestoreService.getDocument(_certificatesCollection, id);
+    final doc = await _firestoreService.getDocument(
+      _certificatesCollection,
+      id,
+    );
     if (doc == null) return null;
     return OfficialCertificate.fromJson(doc);
   }
@@ -145,7 +163,9 @@ class FirebaseOfficialCertificateRepository implements OfficialCertificateReposi
   }) async {
     // 1. Validation
     if (certificate.fileSizeBytes > 10 * 1024 * 1024) {
-      throw const BackendValidationException('File size exceeds the 10MB limit');
+      throw const BackendValidationException(
+        'File size exceeds the 10MB limit',
+      );
     }
 
     String finalFileUrl = certificate.fileUrl;
@@ -249,7 +269,10 @@ class FirebaseOfficialCertificateRepository implements OfficialCertificateReposi
     required String submissionId,
     required String storagePath,
   }) async {
-    await _firestoreService.deleteDocument(_certificatesCollection, submissionId);
+    await _firestoreService.deleteDocument(
+      _certificatesCollection,
+      submissionId,
+    );
 
     if (storagePath.isNotEmpty && _fileStorageRepository != null) {
       try {
@@ -260,7 +283,9 @@ class FirebaseOfficialCertificateRepository implements OfficialCertificateReposi
 
   @override
   Stream<List<OfficialCertificate>> watchStudentSubmissions(String studentUid) {
-    return _firestoreService.watchQuery(_certificatesCollection, {'studentUid': studentUid}).map(
+    return _firestoreService
+        .watchQuery(_certificatesCollection, {'studentUid': studentUid})
+        .map(
           (docs) => docs.map((d) => OfficialCertificate.fromJson(d)).toList(),
         );
   }
@@ -273,15 +298,16 @@ class FirebaseOfficialCertificateRepository implements OfficialCertificateReposi
     final filters = <String, dynamic>{'collegeId': collegeId};
     if (departmentId != null) filters['departmentId'] = departmentId;
 
-    return _firestoreService.watchQuery(_certificatesCollection, filters).map(
+    return _firestoreService
+        .watchQuery(_certificatesCollection, filters)
+        .map(
           (docs) => docs.map((d) => OfficialCertificate.fromJson(d)).toList(),
         );
   }
 
   @override
-  Future<List<RequirementWithSubmission>> getRequirementsWithSubmissionsForStudent({
-    required UserModel student,
-  }) async {
+  Future<List<RequirementWithSubmission>>
+  getRequirementsWithSubmissionsForStudent({required UserModel student}) async {
     final collegeId = student.collegeId ?? '';
     final allRequirements = await getRequirements(
       collegeId: collegeId,
@@ -293,11 +319,13 @@ class FirebaseOfficialCertificateRepository implements OfficialCertificateReposi
         case RequirementApplicability.college:
           return true;
         case RequirementApplicability.department:
-          return student.departmentId != null && r.departmentId == student.departmentId;
+          return student.departmentId != null &&
+              r.departmentId == student.departmentId;
         case RequirementApplicability.course:
           return true;
         case RequirementApplicability.semester:
-          return student.semesterId != null && r.semesterId == student.semesterId;
+          return student.semesterId != null &&
+              r.semesterId == student.semesterId;
         case RequirementApplicability.section:
           return student.sectionId != null && r.sectionId == student.sectionId;
       }
@@ -318,9 +346,8 @@ class FirebaseOfficialCertificateRepository implements OfficialCertificateReposi
   }
 
   @override
-  Stream<List<RequirementWithSubmission>> watchRequirementsWithSubmissionsForStudent({
-    required UserModel student,
-  }) {
+  Stream<List<RequirementWithSubmission>>
+  watchRequirementsWithSubmissionsForStudent({required UserModel student}) {
     late StreamController<List<RequirementWithSubmission>> controller;
     StreamSubscription? reqsSub;
     StreamSubscription? subsSub;
@@ -329,7 +356,8 @@ class FirebaseOfficialCertificateRepository implements OfficialCertificateReposi
     List<OfficialCertificate>? latestSubs;
 
     void emitIfReady() {
-      if (latestReqs == null || latestSubs == null || controller.isClosed) return;
+      if (latestReqs == null || latestSubs == null || controller.isClosed)
+        return;
 
       final applicableReqs = latestReqs!.where((r) {
         if (!r.isActive) return false;
@@ -337,13 +365,16 @@ class FirebaseOfficialCertificateRepository implements OfficialCertificateReposi
           case RequirementApplicability.college:
             return true;
           case RequirementApplicability.department:
-            return student.departmentId != null && r.departmentId == student.departmentId;
+            return student.departmentId != null &&
+                r.departmentId == student.departmentId;
           case RequirementApplicability.course:
             return true;
           case RequirementApplicability.semester:
-            return student.semesterId != null && r.semesterId == student.semesterId;
+            return student.semesterId != null &&
+                r.semesterId == student.semesterId;
           case RequirementApplicability.section:
-            return student.sectionId != null && r.sectionId == student.sectionId;
+            return student.sectionId != null &&
+                r.sectionId == student.sectionId;
         }
       }).toList();
 
@@ -361,21 +392,15 @@ class FirebaseOfficialCertificateRepository implements OfficialCertificateReposi
 
     controller = StreamController<List<RequirementWithSubmission>>.broadcast(
       onListen: () {
-        reqsSub = watchRequirements(student.collegeId ?? '').listen(
-          (reqs) {
-            latestReqs = reqs;
-            emitIfReady();
-          },
-          onError: controller.addError,
-        );
+        reqsSub = watchRequirements(student.collegeId ?? '').listen((reqs) {
+          latestReqs = reqs;
+          emitIfReady();
+        }, onError: controller.addError);
 
-        subsSub = watchStudentSubmissions(student.id).listen(
-          (subs) {
-            latestSubs = subs;
-            emitIfReady();
-          },
-          onError: controller.addError,
-        );
+        subsSub = watchStudentSubmissions(student.id).listen((subs) {
+          latestSubs = subs;
+          emitIfReady();
+        }, onError: controller.addError);
       },
       onCancel: () {
         reqsSub?.cancel();

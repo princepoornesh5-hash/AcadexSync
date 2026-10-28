@@ -45,7 +45,8 @@ class AcadexEmptyState extends ConsumerWidget {
     return AcadexEmptyState(
       key: key,
       title: title,
-      subtitle: subtitle ??
+      subtitle:
+          subtitle ??
           (filterSummary != null
               ? 'No records match $filterSummary.'
               : 'No records match the current filter criteria.'),
@@ -62,17 +63,29 @@ class AcadexEmptyState extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final effectiveSubtitle = subtitle ?? description ?? '';
     final effectiveOnAction = onActionTap ?? onAction;
-    final effectiveIcon = isFilterEmpty && icon == LucideIcons.inbox ? LucideIcons.filterX : icon;
+    final effectiveIcon = isFilterEmpty && icon == LucideIcons.inbox
+        ? LucideIcons.filterX
+        : icon;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final iconBoxSize = isCompact ? 38.0 : 52.0;
     final iconGlyphSize = isCompact ? 18.0 : 24.0;
     final titleStyle = isCompact
-        ? AcadexTypography.title(color: isDark ? AcadexColors.darkInk : AcadexColors.ink)
-        : AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink);
+        ? AcadexTypography.title(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          )
+        : AcadexTypography.heading3(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          );
     final subtitleStyle = isCompact
-        ? AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted)
-        : AcadexTypography.body(color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary);
+        ? AcadexTypography.caption(
+            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          )
+        : AcadexTypography.body(
+            color: isDark
+                ? AcadexColors.darkInkSecondary
+                : AcadexColors.inkSecondary,
+          );
 
     final content = ConstrainedBox(
       constraints: BoxConstraints(maxWidth: isCompact ? 320 : 400),
@@ -85,10 +98,16 @@ class AcadexEmptyState extends ConsumerWidget {
             width: iconBoxSize,
             height: iconBoxSize,
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
-              borderRadius: isCompact ? AcadexRadius.borderRadiusMd : AcadexRadius.borderRadiusLg,
+              color: isDark
+                  ? AcadexColors.darkSurfaceCard
+                  : AcadexColors.canvasSoft,
+              borderRadius: isCompact
+                  ? AcadexRadius.borderRadiusMd
+                  : AcadexRadius.borderRadiusLg,
               border: Border.all(
-                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
                 width: 1,
               ),
             ),
@@ -99,11 +118,7 @@ class AcadexEmptyState extends ConsumerWidget {
             ),
           ),
           SizedBox(height: isCompact ? 10 : 16),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: titleStyle,
-          ),
+          Text(title, textAlign: TextAlign.center, style: titleStyle),
           if (effectiveSubtitle.isNotEmpty) ...[
             SizedBox(height: isCompact ? 4 : 6),
             Text(
@@ -131,9 +146,7 @@ class AcadexEmptyState extends ConsumerWidget {
         vertical: isCompact ? AcadexSpacing.space12 : AcadexSpacing.space20,
         horizontal: AcadexSpacing.space16,
       ),
-      child: Center(
-        child: content,
-      ),
+      child: Center(child: content),
     );
   }
 }
@@ -179,7 +192,9 @@ class AcadexErrorState extends ConsumerWidget {
         defaultIcon = LucideIcons.shieldAlert;
         break;
       case ErrorCategory.notFound:
-        defaultTitle = context != null ? '$context Not Found' : 'Resource Not Found';
+        defaultTitle = context != null
+            ? '$context Not Found'
+            : 'Resource Not Found';
         defaultIcon = LucideIcons.fileQuestion;
         break;
       case ErrorCategory.offline:
@@ -192,7 +207,9 @@ class AcadexErrorState extends ConsumerWidget {
         defaultIcon = LucideIcons.alertCircle;
         break;
       default:
-        defaultTitle = context != null ? 'Unable to load $context' : 'Unable to load data';
+        defaultTitle = context != null
+            ? 'Unable to load $context'
+            : 'Unable to load data';
         defaultIcon = LucideIcons.alertTriangle;
     }
 
@@ -211,7 +228,10 @@ class AcadexErrorState extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final sanitizedMessage = AcadexException.sanitizedMessage(message, fallback: message);
+    final sanitizedMessage = AcadexException.sanitizedMessage(
+      message,
+      fallback: message,
+    );
 
     final content = ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 400),
@@ -224,10 +244,14 @@ class AcadexErrorState extends ConsumerWidget {
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.errorDarkContainer : AcadexColors.errorLight,
+              color: isDark
+                  ? AcadexColors.errorDarkContainer
+                  : AcadexColors.errorLight,
               borderRadius: AcadexRadius.borderRadiusLg,
               border: Border.all(
-                color: isDark ? AcadexColors.errorDark : const Color(0xFFFECACA),
+                color: isDark
+                    ? AcadexColors.errorDark
+                    : const Color(0xFFFECACA),
                 width: 1,
               ),
             ),
@@ -250,7 +274,9 @@ class AcadexErrorState extends ConsumerWidget {
             sanitizedMessage,
             textAlign: TextAlign.center,
             style: AcadexTypography.body(
-              color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+              color: isDark
+                  ? AcadexColors.darkInkSecondary
+                  : AcadexColors.inkSecondary,
             ),
           ),
           if (onRetry != null || onAction != null) ...[
@@ -283,9 +309,7 @@ class AcadexErrorState extends ConsumerWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-      child: Center(
-        child: content,
-      ),
+      child: Center(child: content),
     );
   }
 }
@@ -304,26 +328,20 @@ class AcadexLoadingState extends StatelessWidget {
     this.isCompact = false,
   });
 
-  const AcadexLoadingState.inline({
-    super.key,
-    this.message,
-    this.size = 20.0,
-  })  : useCharacter = false,
-        isCompact = true;
+  const AcadexLoadingState.inline({super.key, this.message, this.size = 20.0})
+    : useCharacter = false,
+      isCompact = true;
 
-  const AcadexLoadingState.spinner({
-    super.key,
-    this.message,
-    this.size = 28.0,
-  })  : useCharacter = false,
-        isCompact = false;
+  const AcadexLoadingState.spinner({super.key, this.message, this.size = 28.0})
+    : useCharacter = false,
+      isCompact = false;
 
   const AcadexLoadingState.character({
     super.key,
     this.message,
     this.size = 76.0,
     this.isCompact = false,
-  })  : useCharacter = true;
+  }) : useCharacter = true;
 
   @override
   Widget build(BuildContext context) {
@@ -371,10 +389,7 @@ class AcadexLoadingState extends StatelessWidget {
     );
 
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: content,
-      ),
+      child: Padding(padding: const EdgeInsets.all(16.0), child: content),
     );
   }
 }
@@ -396,7 +411,8 @@ class AcadexSkeleton extends StatefulWidget {
   State<AcadexSkeleton> createState() => _AcadexSkeletonState();
 }
 
-class _AcadexSkeletonState extends State<AcadexSkeleton> with SingleTickerProviderStateMixin {
+class _AcadexSkeletonState extends State<AcadexSkeleton>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<double> _opacityAnim;
 
@@ -422,7 +438,9 @@ class _AcadexSkeletonState extends State<AcadexSkeleton> with SingleTickerProvid
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
+    final baseColor = isDark
+        ? const Color(0xFF1E293B)
+        : const Color(0xFFE2E8F0);
 
     return AnimatedBuilder(
       animation: _opacityAnim,
@@ -469,11 +487,7 @@ class AcadexSkeletonCard extends StatelessWidget {
   final double height;
   final EdgeInsetsGeometry? padding;
 
-  const AcadexSkeletonCard({
-    super.key,
-    this.height = 80.0,
-    this.padding,
-  });
+  const AcadexSkeletonCard({super.key, this.height = 80.0, this.padding});
 
   @override
   Widget build(BuildContext context) {
@@ -489,7 +503,11 @@ class AcadexSkeletonCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const AcadexSkeleton(width: 38, height: 38, borderRadius: AcadexRadius.smBorder),
+          const AcadexSkeleton(
+            width: 38,
+            height: 38,
+            borderRadius: AcadexRadius.smBorder,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

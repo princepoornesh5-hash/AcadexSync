@@ -41,10 +41,7 @@ class AcadexReadableSurface extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor ?? const Color.fromRGBO(255, 255, 255, 0.85),
         borderRadius: borderRadius ?? BorderRadius.circular(14),
-        border: border ?? Border.all(
-          color: AcadexColors.hairline,
-          width: 1,
-        ),
+        border: border ?? Border.all(color: AcadexColors.hairline, width: 1),
         boxShadow: const [
           BoxShadow(
             color: Color.fromRGBO(0, 0, 0, 0.04),

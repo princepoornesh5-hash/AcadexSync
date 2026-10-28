@@ -35,7 +35,10 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
   String _filter = 'all'; // 'all' | 'active' | 'pending'
 
   void _showImportDialog() {
-    showDialog(context: context, builder: (ctx) => const ImportDataDialog(entityName: 'Faculty'));
+    showDialog(
+      context: context,
+      builder: (ctx) => const ImportDataDialog(entityName: 'Faculty'),
+    );
   }
 
   void _showAssignmentDialog(Faculty? faculty) {
@@ -53,7 +56,9 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
 
     final filteredItems = facultyAsync.items.where((f) {
       if (_filter == 'active' && !f.isActive) return false;
-      if (_filter == 'pending' && f.accountStatus != AccountStatus.pendingActivation) return false;
+      if (_filter == 'pending' &&
+          f.accountStatus != AccountStatus.pendingActivation)
+        return false;
 
       if (_searchQuery.isEmpty) return true;
       final q = _searchQuery.toLowerCase();
@@ -76,14 +81,16 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
                 const Expanded(
                   child: AcadexPageHeader(
                     title: "Faculty",
-                    subtitle: "Manage faculty members and teaching allocations.",
+                    subtitle:
+                        "Manage faculty members and teaching allocations.",
                   ),
                 ),
                 PopupMenuButton<String>(
                   icon: const Icon(LucideIcons.moreVertical, size: 20),
                   onSelected: (val) {
                     if (val == 'assign') _showAssignmentDialog(null);
-                    if (val == 'all_assign') context.push('/faculty-assignments');
+                    if (val == 'all_assign')
+                      context.push('/faculty-assignments');
                     if (val == 'import') _showImportDialog();
                   },
                   itemBuilder: (ctx) => [
@@ -128,7 +135,8 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
                 const Expanded(
                   child: AcadexPageHeader(
                     title: "Faculty",
-                    subtitle: "Manage faculty members and teaching assignments.",
+                    subtitle:
+                        "Manage faculty members and teaching assignments.",
                   ),
                 ),
                 Wrap(
@@ -149,7 +157,9 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
                       icon: const Icon(LucideIcons.userCheck, size: 16),
                       label: const Text("All Assignments"),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Theme.of(context).colorScheme.onSurface,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onSurface,
                       ),
                     ),
                     OutlinedButton.icon(
@@ -157,7 +167,9 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
                       icon: const Icon(LucideIcons.uploadCloud, size: 16),
                       label: const Text("Import CSV"),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Theme.of(context).colorScheme.onSurface,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -189,15 +201,27 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
                       label: Text(f.$2),
                       selected: _filter == f.$1,
                       onSelected: (_) => setState(() => _filter = f.$1),
-                      selectedColor: AcadexColors.primary.withValues(alpha: 0.15),
+                      selectedColor: AcadexColors.primary.withValues(
+                        alpha: 0.15,
+                      ),
                       checkmarkColor: AcadexColors.primary,
                       labelStyle: TextStyle(
-                        color: _filter == f.$1 ? AcadexColors.primary : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                        fontWeight: _filter == f.$1 ? FontWeight.w600 : FontWeight.w400,
+                        color: _filter == f.$1
+                            ? AcadexColors.primary
+                            : (isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted),
+                        fontWeight: _filter == f.$1
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                         fontSize: 12,
                       ),
                       side: BorderSide(
-                        color: _filter == f.$1 ? AcadexColors.primary : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                        color: _filter == f.$1
+                            ? AcadexColors.primary
+                            : (isDark
+                                  ? AcadexColors.darkHairline
+                                  : AcadexColors.hairline),
                       ),
                     ),
                   ),
@@ -209,32 +233,42 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
             child: (facultyAsync.isLoading && facultyAsync.items.isEmpty)
                 ? const Center(child: CircularProgressIndicator())
                 : facultyAsync.error != null
-                    ? Center(
-                        child: AcadexErrorState.fromError(
-                          error: facultyAsync.error,
-                          title: "Unable to load faculty",
-                          onRetry: () => ref.read(facultyProvider(null).notifier).refresh(),
-                        ),
-                      )
-                    : filteredItems.isEmpty
-                        ? (facultyAsync.items.isEmpty
-                            ? AcadexEmptyState(
-                                title: "No faculty members have been added yet.",
-                                subtitle: "Add faculty members to allocate courses and manage teaching assignments.",
-                                icon: LucideIcons.graduationCap,
-                                actionLabel: "+ Add Faculty",
-                                onActionTap: () => context.push('/academics/faculty/new'),
-                              )
-                            : AcadexEmptyState.filterEmpty(
-                                filterSummary: _searchQuery.isNotEmpty ? "query '$_searchQuery'" : "selected filter",
-                                onClearFilters: () => setState(() {
-                                  _searchQuery = '';
-                                  _filter = 'all';
-                                }),
-                              ))
-                        : isMobile
-                            ? _buildMobileList(filteredItems, deptMap, allAssignments, isDark)
-                            : _buildDesktopTable(filteredItems, deptMap, allAssignments),
+                ? Center(
+                    child: AcadexErrorState.fromError(
+                      error: facultyAsync.error,
+                      title: "Unable to load faculty",
+                      onRetry: () =>
+                          ref.read(facultyProvider(null).notifier).refresh(),
+                    ),
+                  )
+                : filteredItems.isEmpty
+                ? (facultyAsync.items.isEmpty
+                      ? AcadexEmptyState(
+                          title: "No faculty members have been added yet.",
+                          subtitle:
+                              "Add faculty members to allocate courses and manage teaching assignments.",
+                          icon: LucideIcons.graduationCap,
+                          actionLabel: "+ Add Faculty",
+                          onActionTap: () =>
+                              context.push('/academics/faculty/new'),
+                        )
+                      : AcadexEmptyState.filterEmpty(
+                          filterSummary: _searchQuery.isNotEmpty
+                              ? "query '$_searchQuery'"
+                              : "selected filter",
+                          onClearFilters: () => setState(() {
+                            _searchQuery = '';
+                            _filter = 'all';
+                          }),
+                        ))
+                : isMobile
+                ? _buildMobileList(
+                    filteredItems,
+                    deptMap,
+                    allAssignments,
+                    isDark,
+                  )
+                : _buildDesktopTable(filteredItems, deptMap, allAssignments),
           ),
         ],
       ),
@@ -253,17 +287,31 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final f = items[index];
-        final deptName = deptMap[f.departmentId]?.name ?? (f.departmentId.isNotEmpty ? f.departmentId : 'Unassigned');
+        final deptName =
+            deptMap[f.departmentId]?.name ??
+            (f.departmentId.isNotEmpty ? f.departmentId : 'Unassigned');
         final isPending = f.accountStatus == AccountStatus.pendingActivation;
 
         // Extract clean initials
-        final cleanName = f.name.replaceAll(RegExp(r'^(Dr\.|Prof\.|Mr\.|Mrs\.|Ms\.)\s*', caseSensitive: false), '').trim();
+        final cleanName = f.name
+            .replaceAll(
+              RegExp(
+                r'^(Dr\.|Prof\.|Mr\.|Mrs\.|Ms\.)\s*',
+                caseSensitive: false,
+              ),
+              '',
+            )
+            .trim();
         final nameParts = cleanName.split(RegExp(r'\s+'));
         final initials = nameParts.length > 1
             ? '${nameParts.first[0]}${nameParts.last[0]}'.toUpperCase()
-            : (cleanName.isNotEmpty ? cleanName.substring(0, 1).toUpperCase() : 'F');
+            : (cleanName.isNotEmpty
+                  ? cleanName.substring(0, 1).toUpperCase()
+                  : 'F');
 
-        final designation = f.designation?.isNotEmpty == true ? f.designation! : 'Faculty Member';
+        final designation = f.designation?.isNotEmpty == true
+            ? f.designation!
+            : 'Faculty Member';
 
         return InkWell(
           onTap: () => context.push('/academics/faculty/${f.id}'),
@@ -271,10 +319,14 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+              color: isDark
+                  ? AcadexColors.darkSurfaceCard
+                  : AcadexColors.surface,
               borderRadius: AcadexRadius.borderRadiusLg,
               border: Border.all(
-                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
               ),
               boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
             ),
@@ -314,7 +366,9 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
                       Text(
                         f.name,
                         style: AcadexTypography.body(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ).copyWith(fontWeight: FontWeight.w700),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -323,7 +377,9 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
                       Text(
                         designation,
                         style: TextStyle(
-                          color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                          color: isDark
+                              ? AcadexColors.darkInkSecondary
+                              : AcadexColors.inkSecondary,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -334,7 +390,9 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
                       Text(
                         deptName,
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -350,19 +408,32 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: isPending
                             ? AcadexColors.warningLight
                             : (f.isActive
-                                ? (isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight)
-                                : (isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft)),
+                                  ? (isDark
+                                        ? AcadexColors.successDarkContainer
+                                        : AcadexColors.successLight)
+                                  : (isDark
+                                        ? AcadexColors.darkSurfaceHover
+                                        : AcadexColors.canvasSoft)),
                         borderRadius: AcadexRadius.borderRadiusFull,
                       ),
                       child: Text(
-                        isPending ? "Pending" : (f.isActive ? "Active" : "Inactive"),
+                        isPending
+                            ? "Pending"
+                            : (f.isActive ? "Active" : "Inactive"),
                         style: TextStyle(
-                          color: isPending ? AcadexColors.warning : (f.isActive ? AcadexColors.success : AcadexColors.inkMuted),
+                          color: isPending
+                              ? AcadexColors.warning
+                              : (f.isActive
+                                    ? AcadexColors.success
+                                    : AcadexColors.inkMuted),
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
@@ -372,7 +443,9 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
                     Icon(
                       LucideIcons.chevronRight,
                       size: 16,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ],
                 ),
@@ -390,12 +463,29 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
     List<FacultyAssignment> allAssignments,
   ) {
     return AcadexDataTable(
-      columns: const ["Employee ID", "Faculty Name", "Department", "Designation", "Teaching Assignments", "Status", "Actions"],
+      columns: const [
+        "Employee ID",
+        "Faculty Name",
+        "Department",
+        "Designation",
+        "Teaching Assignments",
+        "Status",
+        "Actions",
+      ],
       rows: items.map((f) {
-        final deptName = deptMap[f.departmentId]?.name ?? (f.departmentId.isNotEmpty ? f.departmentId : 'Unassigned');
-        final facultyAssignments = allAssignments.where((a) => a.facultyId == f.id).toList();
-        final hasAssignments = facultyAssignments.isNotEmpty || f.subjectIds.isNotEmpty || f.sectionIds.isNotEmpty;
-        final assignmentCount = facultyAssignments.isNotEmpty ? facultyAssignments.length : (f.subjectIds.length);
+        final deptName =
+            deptMap[f.departmentId]?.name ??
+            (f.departmentId.isNotEmpty ? f.departmentId : 'Unassigned');
+        final facultyAssignments = allAssignments
+            .where((a) => a.facultyId == f.id)
+            .toList();
+        final hasAssignments =
+            facultyAssignments.isNotEmpty ||
+            f.subjectIds.isNotEmpty ||
+            f.sectionIds.isNotEmpty;
+        final assignmentCount = facultyAssignments.isNotEmpty
+            ? facultyAssignments.length
+            : (f.subjectIds.length);
         final isPending = f.accountStatus == AccountStatus.pendingActivation;
 
         return DataRow(
@@ -409,26 +499,47 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  f.employeeId.isNotEmpty ? f.employeeId : (f.instituteId ?? '—'),
-                  style: const TextStyle(color: AcadexColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
+                  f.employeeId.isNotEmpty
+                      ? f.employeeId
+                      : (f.instituteId ?? '—'),
+                  style: const TextStyle(
+                    color: AcadexColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ),
-            DataCell(Text(f.name, style: const TextStyle(fontWeight: FontWeight.bold))),
+            DataCell(
+              Text(f.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+            ),
             DataCell(Text(deptName)),
             DataCell(Text(f.designation ?? 'Assistant Professor')),
             DataCell(
               !hasAssignments
-                  ? const Text("Unassigned", style: TextStyle(color: AcadexColors.warning, fontStyle: FontStyle.italic))
+                  ? const Text(
+                      "Unassigned",
+                      style: TextStyle(
+                        color: AcadexColors.warning,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    )
                   : Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AcadexColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         "$assignmentCount Active Class${assignmentCount == 1 ? '' : 'es'}",
-                        style: const TextStyle(color: AcadexColors.primary, fontWeight: FontWeight.w600, fontSize: 12),
+                        style: const TextStyle(
+                          color: AcadexColors.primary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
             ),
@@ -438,13 +549,21 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
                 decoration: BoxDecoration(
                   color: isPending
                       ? AcadexColors.warningLight
-                      : (f.isActive ? AcadexColors.successLight : AcadexColors.canvasSoft),
+                      : (f.isActive
+                            ? AcadexColors.successLight
+                            : AcadexColors.canvasSoft),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  isPending ? "Pending Activation" : (f.isActive ? "Active" : "Inactive"),
+                  isPending
+                      ? "Pending Activation"
+                      : (f.isActive ? "Active" : "Inactive"),
                   style: TextStyle(
-                    color: isPending ? AcadexColors.warning : (f.isActive ? AcadexColors.success : AcadexColors.inkMuted),
+                    color: isPending
+                        ? AcadexColors.warning
+                        : (f.isActive
+                              ? AcadexColors.success
+                              : AcadexColors.inkMuted),
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
@@ -462,7 +581,8 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
                   IconButton(
                     icon: const Icon(LucideIcons.edit, size: 18),
                     tooltip: "Edit Profile",
-                    onPressed: () => context.push('/academics/faculty/edit/${f.id}'),
+                    onPressed: () =>
+                        context.push('/academics/faculty/edit/${f.id}'),
                   ),
                 ],
               ),
@@ -526,7 +646,11 @@ class FacultyActivationResultDialog extends StatelessWidget {
                     color: AcadexColors.success.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(LucideIcons.circleCheck, color: AcadexColors.success, size: 24),
+                  child: const Icon(
+                    LucideIcons.circleCheck,
+                    color: AcadexColors.success,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -535,12 +659,16 @@ class FacultyActivationResultDialog extends StatelessWidget {
                     children: [
                       Text(
                         'Faculty Account Provisioned',
-                        style: AcadexTypography.heading3(color: theme.colorScheme.onSurface),
+                        style: AcadexTypography.heading3(
+                          color: theme.colorScheme.onSurface,
+                        ),
                       ),
                       Text(
                         'Activation credentials generated successfully',
                         style: AcadexTypography.caption(
-                          color: theme.textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                          color:
+                              theme.textTheme.bodySmall?.color ??
+                              AcadexColors.inkMuted,
                         ),
                       ),
                     ],
@@ -552,21 +680,35 @@ class FacultyActivationResultDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                color: isDark
+                    ? const Color(0xFF0F172A)
+                    : const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFE2E8F0),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildDetailRow(context, 'Faculty Name', result.user.name),
                   const SizedBox(height: 8),
-                  _buildDetailRow(context, 'PIN Number', result.user.instituteId ?? result.faculty.employeeId),
+                  _buildDetailRow(
+                    context,
+                    'PIN Number',
+                    result.user.instituteId ?? result.faculty.employeeId,
+                  ),
                   const SizedBox(height: 8),
                   _buildDetailRow(context, 'Email Address', result.user.email),
                   if (result.faculty.employeeId.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    _buildDetailRow(context, 'Employee ID', result.faculty.employeeId),
+                    _buildDetailRow(
+                      context,
+                      'Employee ID',
+                      result.faculty.employeeId,
+                    ),
                   ],
                   const SizedBox(height: 8),
                   _buildDetailRow(context, 'Department', departmentName),
@@ -586,16 +728,17 @@ class FacultyActivationResultDialog extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AcadexColors.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: AcadexColors.primary.withValues(alpha: 0.3),
+                ),
               ),
               child: Column(
                 children: [
                   Text(
                     'SINGLE-USE ACTIVATION CODE',
-                    style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                    ),
+                    style: AcadexTypography.caption(
+                      color: AcadexColors.primary,
+                    ).copyWith(fontWeight: FontWeight.bold, letterSpacing: 1.2),
                   ),
                   const SizedBox(height: 8),
                   SelectableText(
@@ -605,19 +748,27 @@ class FacultyActivationResultDialog extends StatelessWidget {
                       fontSize: 26,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 3.0,
-                      color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E40AF),
+                      color: isDark
+                          ? const Color(0xFF60A5FA)
+                          : const Color(0xFF1E40AF),
                     ),
                   ),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(LucideIcons.clock, size: 14, color: AcadexColors.warning),
+                      const Icon(
+                        LucideIcons.clock,
+                        size: 14,
+                        color: AcadexColors.warning,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         'Expires: $expiryFormatted',
                         style: AcadexTypography.caption(
-                          color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+                          color: isDark
+                              ? const Color(0xFFCBD5E1)
+                              : const Color(0xFF475569),
                         ),
                       ),
                     ],
@@ -631,17 +782,25 @@ class FacultyActivationResultDialog extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AcadexColors.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AcadexColors.warning.withValues(alpha: 0.25)),
+                border: Border.all(
+                  color: AcadexColors.warning.withValues(alpha: 0.25),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.triangleAlert, color: AcadexColors.warning, size: 18),
+                  const Icon(
+                    LucideIcons.triangleAlert,
+                    color: AcadexColors.warning,
+                    size: 18,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'Save this activation code securely. It will not be shown again after leaving this screen.',
                       style: AcadexTypography.caption(
-                        color: isDark ? Colors.white70 : const Color(0xFF7C2D12),
+                        color: isDark
+                            ? Colors.white70
+                            : const Color(0xFF7C2D12),
                       ),
                     ),
                   ),
@@ -654,7 +813,9 @@ class FacultyActivationResultDialog extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      Clipboard.setData(ClipboardData(text: result.activationCode));
+                      Clipboard.setData(
+                        ClipboardData(text: result.activationCode),
+                      );
                       AcadexSnackBar.showSuccess(
                         context,
                         'Activation code copied to clipboard',
@@ -664,7 +825,9 @@ class FacultyActivationResultDialog extends StatelessWidget {
                     label: const Text('Copy Activation Code'),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: BorderSide(color: AcadexColors.primary.withValues(alpha: 0.5)),
+                      side: BorderSide(
+                        color: AcadexColors.primary.withValues(alpha: 0.5),
+                      ),
                     ),
                   ),
                 ),
@@ -690,14 +853,21 @@ class FacultyActivationResultDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(BuildContext context, String label, String value, {Color? badgeColor}) {
+  Widget _buildDetailRow(
+    BuildContext context,
+    String label,
+    String value, {
+    Color? badgeColor,
+  }) {
     final theme = Theme.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
-          style: AcadexTypography.caption(color: theme.textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+          style: AcadexTypography.caption(
+            color: theme.textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+          ),
         ),
         if (badgeColor != null)
           Container(
@@ -708,13 +878,19 @@ class FacultyActivationResultDialog extends StatelessWidget {
             ),
             child: Text(
               value,
-              style: TextStyle(color: badgeColor, fontSize: 11, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: badgeColor,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           )
         else
           Text(
             value,
-            style: AcadexTypography.body(color: theme.colorScheme.onSurface).copyWith(fontWeight: FontWeight.w600),
+            style: AcadexTypography.body(
+              color: theme.colorScheme.onSurface,
+            ).copyWith(fontWeight: FontWeight.w600),
           ),
       ],
     );
@@ -764,8 +940,10 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final authState = ref.read(authProvider);
-        if (authState is AuthAuthenticated && authState.user.role == AppRole.hod) {
-          if (authState.user.departmentId != null && authState.user.departmentId!.isNotEmpty) {
+        if (authState is AuthAuthenticated &&
+            authState.user.role == AppRole.hod) {
+          if (authState.user.departmentId != null &&
+              authState.user.departmentId!.isNotEmpty) {
             setState(() {
               _selectedDepartmentId = authState.user.departmentId;
             });
@@ -791,7 +969,9 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
   Future<void> _loadExistingFaculty() async {
     setState(() => _isLoading = true);
     try {
-      final faculty = await ref.read(academicRepositoryProvider).getFacultyById(widget.id!);
+      final faculty = await ref
+          .read(academicRepositoryProvider)
+          .getFacultyById(widget.id!);
       if (faculty != null && mounted) {
         _nameCtrl.text = faculty.name;
         _instituteIdCtrl.text = faculty.employeeId;
@@ -836,21 +1016,42 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
           name: _nameCtrl.text.trim(),
           instituteId: _instituteIdCtrl.text.trim().toUpperCase(),
           email: _emailCtrl.text.trim().toLowerCase(),
-          phone: _phoneCtrl.text.trim().isNotEmpty ? _phoneCtrl.text.trim() : null,
-          employeeId: _employeeIdCtrl.text.trim().isNotEmpty ? _employeeIdCtrl.text.trim() : null,
-          designation: _designationCtrl.text.trim().isNotEmpty ? _designationCtrl.text.trim() : 'Assistant Professor',
-          qualification: _qualificationCtrl.text.trim().isNotEmpty ? _qualificationCtrl.text.trim() : null,
-          specialization: _specializationCtrl.text.trim().isNotEmpty ? _specializationCtrl.text.trim() : null,
+          phone: _phoneCtrl.text.trim().isNotEmpty
+              ? _phoneCtrl.text.trim()
+              : null,
+          employeeId: _employeeIdCtrl.text.trim().isNotEmpty
+              ? _employeeIdCtrl.text.trim()
+              : null,
+          designation: _designationCtrl.text.trim().isNotEmpty
+              ? _designationCtrl.text.trim()
+              : 'Assistant Professor',
+          qualification: _qualificationCtrl.text.trim().isNotEmpty
+              ? _qualificationCtrl.text.trim()
+              : null,
+          specialization: _specializationCtrl.text.trim().isNotEmpty
+              ? _specializationCtrl.text.trim()
+              : null,
         );
 
-        final result = await ref.read(facultyProvisionProvider.notifier).provisionFaculty(request);
+        final result = await ref
+            .read(facultyProvisionProvider.notifier)
+            .provisionFaculty(request);
 
         if (mounted) {
           final depts = ref.read(departmentsProvider).valueOrNull ?? [];
-          final deptName = depts.firstWhere(
-            (d) => d.id == _selectedDepartmentId,
-            orElse: () => Department(id: '', collegeId: '', name: 'Department', code: '', hodId: '', description: ''),
-          ).name;
+          final deptName = depts
+              .firstWhere(
+                (d) => d.id == _selectedDepartmentId,
+                orElse: () => Department(
+                  id: '',
+                  collegeId: '',
+                  name: 'Department',
+                  code: '',
+                  hodId: '',
+                  description: '',
+                ),
+              )
+              .name;
 
           await FacultyActivationResultDialog.show(
             context,
@@ -877,7 +1078,9 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
           specialization: _specializationCtrl.text.trim(),
         );
 
-        await ref.read(academicRepositoryProvider).updateFaculty(updatedFaculty);
+        await ref
+            .read(academicRepositoryProvider)
+            .updateFaculty(updatedFaculty);
         ref.invalidate(facultyProvider(null));
         ref.invalidate(facultyByIdProvider(widget.id!));
         ref.invalidate(facultySummaryProvider(widget.id!));
@@ -887,7 +1090,10 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
         }
 
         if (mounted) {
-          AcadexSnackBar.showSuccess(context, 'Faculty profile updated successfully.');
+          AcadexSnackBar.showSuccess(
+            context,
+            'Faculty profile updated successfully.',
+          );
           context.safePop(fallbackRoute: '/academics/faculty');
         }
       }
@@ -909,19 +1115,30 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/academics/faculty'),
         ),
         title: Text(
           isEdit ? "Edit Faculty" : "Add Faculty",
-          style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontWeight: FontWeight.bold),
+          style: AcadexTypography.body(
+            color: Theme.of(context).colorScheme.onSurface,
+          ).copyWith(fontWeight: FontWeight.bold),
         ),
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor))
+          ? Center(
+              child: CircularProgressIndicator(
+                color: Theme.of(context).primaryColor,
+              ),
+            )
           : AcadexPageContainer(
               maxWidth: AcadexLayout.formMaxWidth,
               child: Form(
@@ -957,7 +1174,8 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
                                     hintText: "e.g. FAC-CSE-014",
                                     prefixIcon: Icon(LucideIcons.fingerprint),
                                   ),
-                                  validator: (v) => (v == null || v.trim().length < 2)
+                                  validator: (v) =>
+                                      (v == null || v.trim().length < 2)
                                       ? 'PIN Number is required (min 2 chars)'
                                       : null,
                                 ),
@@ -987,9 +1205,13 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
                                     prefixIcon: Icon(LucideIcons.mail),
                                   ),
                                   validator: (v) {
-                                    if (v == null || v.trim().isEmpty) return 'Email address is required';
-                                    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-                                    if (!emailRegex.hasMatch(v.trim())) return 'Enter a valid email address';
+                                    if (v == null || v.trim().isEmpty)
+                                      return 'Email address is required';
+                                    final emailRegex = RegExp(
+                                      r'^[^@]+@[^@]+\.[^@]+$',
+                                    );
+                                    if (!emailRegex.hasMatch(v.trim()))
+                                      return 'Enter a valid email address';
                                     return null;
                                   },
                                 ),
@@ -1018,38 +1240,62 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
                         children: [
                           departmentsAsync.when(
                             loading: () => const LinearProgressIndicator(),
-                            error: (err, _) => Text('Failed to load departments: $err', style: const TextStyle(color: AcadexColors.warning)),
+                            error: (err, _) => Text(
+                              'Failed to load departments: $err',
+                              style: const TextStyle(
+                                color: AcadexColors.warning,
+                              ),
+                            ),
                             data: (depts) {
                               final authState = ref.watch(authProvider);
-                              final isHod = authState is AuthAuthenticated && authState.user.role == AppRole.hod;
-                              final hodDeptId = authState is AuthAuthenticated ? authState.user.departmentId : null;
+                              final isHod =
+                                  authState is AuthAuthenticated &&
+                                  authState.user.role == AppRole.hod;
+                              final hodDeptId = authState is AuthAuthenticated
+                                  ? authState.user.departmentId
+                                  : null;
 
-                              if (isHod && hodDeptId != null && _selectedDepartmentId != hodDeptId) {
+                              if (isHod &&
+                                  hodDeptId != null &&
+                                  _selectedDepartmentId != hodDeptId) {
                                 _selectedDepartmentId = hodDeptId;
                               }
 
                               final availableDepts = isHod && hodDeptId != null
-                                  ? depts.where((d) => d.id == hodDeptId).toList()
+                                  ? depts
+                                        .where((d) => d.id == hodDeptId)
+                                        .toList()
                                   : depts.where((d) => d.isActive).toList();
 
-                              if (_selectedDepartmentId == null && availableDepts.isNotEmpty) {
+                              if (_selectedDepartmentId == null &&
+                                  availableDepts.isNotEmpty) {
                                 _selectedDepartmentId = availableDepts.first.id;
                               }
 
                               return DropdownButtonFormField<String>(
                                 decoration: InputDecoration(
-                                  labelText: isHod ? "Assigned Department (HOD)" : "Department *",
+                                  labelText: isHod
+                                      ? "Assigned Department (HOD)"
+                                      : "Department *",
                                   prefixIcon: const Icon(LucideIcons.building),
                                 ),
                                 value: _selectedDepartmentId,
                                 items: availableDepts
-                                    .map((d) => DropdownMenuItem(
-                                          value: d.id,
-                                          child: Text('${d.name} (${d.code})'),
-                                        ))
+                                    .map(
+                                      (d) => DropdownMenuItem(
+                                        value: d.id,
+                                        child: Text('${d.name} (${d.code})'),
+                                      ),
+                                    )
                                     .toList(),
-                                onChanged: (isHod || isEdit) ? null : (v) => setState(() => _selectedDepartmentId = v),
-                                validator: (v) => (v == null || v.isEmpty) ? 'Please select a department' : null,
+                                onChanged: (isHod || isEdit)
+                                    ? null
+                                    : (v) => setState(
+                                        () => _selectedDepartmentId = v,
+                                      ),
+                                validator: (v) => (v == null || v.isEmpty)
+                                    ? 'Please select a department'
+                                    : null,
                               );
                             },
                           ),
@@ -1084,7 +1330,8 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
                             controller: _specializationCtrl,
                             decoration: const InputDecoration(
                               labelText: "Specialization / Domain",
-                              hintText: "e.g. Machine Learning, Distributed Algorithms",
+                              hintText:
+                                  "e.g. Machine Learning, Distributed Algorithms",
                               prefixIcon: Icon(LucideIcons.bookOpen),
                             ),
                           ),
@@ -1096,11 +1343,17 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         TextButton(
-                          onPressed: _isSubmitting ? null : () => context.safePop(fallbackRoute: '/academics/faculty'),
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => context.safePop(
+                                  fallbackRoute: '/academics/faculty',
+                                ),
                           child: Text(
                             "Cancel",
                             style: AcadexTypography.body(
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                         ),
@@ -1109,22 +1362,28 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AcadexColors.primary,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 28,
+                              vertical: 14,
+                            ),
                           ),
                           onPressed: _isSubmitting ? null : _handleSubmit,
                           icon: _isSubmitting
                               ? const SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
                                 )
                               : const Icon(LucideIcons.userPlus, size: 18),
                           label: Text(
                             _isSubmitting
                                 ? (isEdit ? "Saving..." : "Adding Faculty...")
                                 : isEdit
-                                    ? "Save Changes"
-                                    : "Add Faculty",
+                                ? "Save Changes"
+                                : "Add Faculty",
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),

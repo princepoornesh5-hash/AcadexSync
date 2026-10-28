@@ -17,7 +17,8 @@ class DepartmentAnalyticsScreen extends ConsumerStatefulWidget {
       _DepartmentAnalyticsScreenState();
 }
 
-class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsScreen>
+class _DepartmentAnalyticsScreenState
+    extends ConsumerState<DepartmentAnalyticsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
@@ -41,7 +42,9 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
     final overviewAsync = ref.watch(departmentOverviewProvider);
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth >= AcadexBreakpoints.desktopMin;
-    final horizontalPadding = screenWidth < 400 ? 12.0 : (isDesktop ? 24.0 : 16.0);
+    final horizontalPadding = screenWidth < 400
+        ? 12.0
+        : (isDesktop ? 24.0 : 16.0);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -53,7 +56,12 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
             children: [
               // 1. Header
               Padding(
-                padding: EdgeInsets.fromLTRB(horizontalPadding, 16, horizontalPadding, 8),
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  16,
+                  horizontalPadding,
+                  8,
+                ),
                 child: const AcadexPageHeader(
                   title: 'Department Analytics',
                   subtitle:
@@ -86,8 +94,14 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                     unselectedLabelColor: AcadexColors.inkMuted,
                     indicatorColor: AcadexColors.primary,
                     indicatorWeight: 3,
-                    labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                    unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 13),
+                    labelStyle: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                    unselectedLabelStyle: const TextStyle(
+                      fontWeight: FontWeight.normal,
+                      fontSize: 13,
+                    ),
                     tabs: const [
                       Tab(text: 'Overview'),
                       Tab(text: 'Courses'),
@@ -106,7 +120,11 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    _buildOverviewTab(context, overviewAsync, horizontalPadding),
+                    _buildOverviewTab(
+                      context,
+                      overviewAsync,
+                      horizontalPadding,
+                    ),
                     _buildCoursesTab(context, horizontalPadding),
                     _buildSectionsTab(context, horizontalPadding),
                     _buildSubjectsTab(context, horizontalPadding),
@@ -125,13 +143,17 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
   // =========================================================================
   // FILTER BAR (Section 6)
   // =========================================================================
-  Widget _buildFilterBar(BuildContext context, DepartmentAnalyticsFilter filter) {
+  Widget _buildFilterBar(
+    BuildContext context,
+    DepartmentAnalyticsFilter filter,
+  ) {
     final courses = ref.watch(availableCoursesFilterProvider);
     final semesters = ref.watch(availableSemestersFilterProvider);
     final sections = ref.watch(availableSectionsFilterProvider);
     final subjects = ref.watch(availableSubjectsFilterProvider);
 
-    final hasActiveFilters = filter.courseId != null ||
+    final hasActiveFilters =
+        filter.courseId != null ||
         filter.semesterId != null ||
         filter.sectionId != null ||
         filter.subjectId != null ||
@@ -144,9 +166,16 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            const Icon(LucideIcons.filter, size: 16, color: AcadexColors.inkMuted),
+            const Icon(
+              LucideIcons.filter,
+              size: 16,
+              color: AcadexColors.inkMuted,
+            ),
             const SizedBox(width: 8),
-            Text('Filters:', style: AcadexTypography.caption(color: AcadexColors.inkMuted)),
+            Text(
+              'Filters:',
+              style: AcadexTypography.caption(color: AcadexColors.inkMuted),
+            ),
             const SizedBox(width: 8),
 
             // Course Dropdown
@@ -156,11 +185,18 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                 hint: const Text('All Courses', style: TextStyle(fontSize: 12)),
                 style: const TextStyle(fontSize: 12, color: AcadexColors.ink),
                 items: [
-                  const DropdownMenuItem(value: null, child: Text('All Courses')),
-                  ...courses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))),
+                  const DropdownMenuItem(
+                    value: null,
+                    child: Text('All Courses'),
+                  ),
+                  ...courses.map(
+                    (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
+                  ),
                 ],
                 onChanged: (val) {
-                  ref.read(departmentAnalyticsFilterProvider.notifier).update(
+                  ref
+                      .read(departmentAnalyticsFilterProvider.notifier)
+                      .update(
                         (f) => f.copyWith(
                           courseId: () => val,
                           semesterId: () => null,
@@ -177,16 +213,27 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
             DropdownButtonHideUnderline(
               child: DropdownButton<String?>(
                 value: filter.semesterId,
-                hint: const Text('All Semesters', style: TextStyle(fontSize: 12)),
+                hint: const Text(
+                  'All Semesters',
+                  style: TextStyle(fontSize: 12),
+                ),
                 style: const TextStyle(fontSize: 12, color: AcadexColors.ink),
                 items: [
-                  const DropdownMenuItem(value: null, child: Text('All Semesters')),
+                  const DropdownMenuItem(
+                    value: null,
+                    child: Text('All Semesters'),
+                  ),
                   ...semesters.map(
-                    (s) => DropdownMenuItem(value: s.id, child: Text('Sem ${s.number}')),
+                    (s) => DropdownMenuItem(
+                      value: s.id,
+                      child: Text('Sem ${s.number}'),
+                    ),
                   ),
                 ],
                 onChanged: (val) {
-                  ref.read(departmentAnalyticsFilterProvider.notifier).update(
+                  ref
+                      .read(departmentAnalyticsFilterProvider.notifier)
+                      .update(
                         (f) => f.copyWith(
                           semesterId: () => val,
                           sectionId: () => null,
@@ -202,16 +249,24 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
             DropdownButtonHideUnderline(
               child: DropdownButton<String?>(
                 value: filter.sectionId,
-                hint: const Text('All Sections', style: TextStyle(fontSize: 12)),
+                hint: const Text(
+                  'All Sections',
+                  style: TextStyle(fontSize: 12),
+                ),
                 style: const TextStyle(fontSize: 12, color: AcadexColors.ink),
                 items: [
-                  const DropdownMenuItem(value: null, child: Text('All Sections')),
-                  ...sections.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))),
+                  const DropdownMenuItem(
+                    value: null,
+                    child: Text('All Sections'),
+                  ),
+                  ...sections.map(
+                    (s) => DropdownMenuItem(value: s.id, child: Text(s.name)),
+                  ),
                 ],
                 onChanged: (val) {
-                  ref.read(departmentAnalyticsFilterProvider.notifier).update(
-                        (f) => f.copyWith(sectionId: () => val),
-                      );
+                  ref
+                      .read(departmentAnalyticsFilterProvider.notifier)
+                      .update((f) => f.copyWith(sectionId: () => val));
                 },
               ),
             ),
@@ -221,16 +276,24 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
             DropdownButtonHideUnderline(
               child: DropdownButton<String?>(
                 value: filter.subjectId,
-                hint: const Text('All Subjects', style: TextStyle(fontSize: 12)),
+                hint: const Text(
+                  'All Subjects',
+                  style: TextStyle(fontSize: 12),
+                ),
                 style: const TextStyle(fontSize: 12, color: AcadexColors.ink),
                 items: [
-                  const DropdownMenuItem(value: null, child: Text('All Subjects')),
-                  ...subjects.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))),
+                  const DropdownMenuItem(
+                    value: null,
+                    child: Text('All Subjects'),
+                  ),
+                  ...subjects.map(
+                    (s) => DropdownMenuItem(value: s.id, child: Text(s.name)),
+                  ),
                 ],
                 onChanged: (val) {
-                  ref.read(departmentAnalyticsFilterProvider.notifier).update(
-                        (f) => f.copyWith(subjectId: () => val),
-                      );
+                  ref
+                      .read(departmentAnalyticsFilterProvider.notifier)
+                      .update((f) => f.copyWith(subjectId: () => val));
                 },
               ),
             ),
@@ -243,12 +306,18 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                   context: context,
                   firstDate: DateTime(2025, 1, 1),
                   lastDate: DateTime(2030, 12, 31),
-                  initialDateRange: filter.startDate != null && filter.endDate != null
-                      ? DateTimeRange(start: filter.startDate!, end: filter.endDate!)
+                  initialDateRange:
+                      filter.startDate != null && filter.endDate != null
+                      ? DateTimeRange(
+                          start: filter.startDate!,
+                          end: filter.endDate!,
+                        )
                       : null,
                 );
                 if (range != null) {
-                  ref.read(departmentAnalyticsFilterProvider.notifier).update(
+                  ref
+                      .read(departmentAnalyticsFilterProvider.notifier)
+                      .update(
                         (f) => f.copyWith(
                           startDate: () => range.start,
                           endDate: () => range.end,
@@ -264,13 +333,20 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                 ),
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.calendar, size: 14, color: AcadexColors.inkMuted),
+                    const Icon(
+                      LucideIcons.calendar,
+                      size: 14,
+                      color: AcadexColors.inkMuted,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       filter.startDate != null && filter.endDate != null
                           ? '${DateFormat('MM/dd').format(filter.startDate!)} - ${DateFormat('MM/dd').format(filter.endDate!)}'
                           : 'Date Range',
-                      style: const TextStyle(fontSize: 12, color: AcadexColors.ink),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AcadexColors.ink,
+                      ),
                     ),
                   ],
                 ),
@@ -286,7 +362,10 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                   _searchController.clear();
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.red.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(AcadexRadius.sm),
@@ -295,7 +374,10 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                     children: [
                       Icon(LucideIcons.x, size: 14, color: Colors.red),
                       SizedBox(width: 4),
-                      Text('Reset', style: TextStyle(fontSize: 12, color: Colors.red)),
+                      Text(
+                        'Reset',
+                        style: TextStyle(fontSize: 12, color: Colors.red),
+                      ),
                     ],
                   ),
                 ),
@@ -330,7 +412,10 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
       ),
       data: (overview) {
         return SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 12),
+          padding: EdgeInsets.symmetric(
+            horizontal: horizontalPadding,
+            vertical: 12,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -354,7 +439,9 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                   subtitle: 'No courses found for this department.',
                 )
               else
-                ...overview.courseBreakdown.map((c) => _buildCourseBreakdownTile(c)),
+                ...overview.courseBreakdown.map(
+                  (c) => _buildCourseBreakdownTile(c),
+                ),
               const SizedBox(height: 20),
 
               // Section Breakdown Summary
@@ -367,7 +454,9 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                   subtitle: 'No sections found for this department.',
                 )
               else
-                ...overview.sectionBreakdown.map((s) => _buildSectionBreakdownTile(s)),
+                ...overview.sectionBreakdown.map(
+                  (s) => _buildSectionBreakdownTile(s),
+                ),
               const SizedBox(height: 24),
             ],
           ),
@@ -376,9 +465,13 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
     );
   }
 
-  Widget _buildOverviewKpiGrid(BuildContext context, DepartmentOverviewModel overview) {
+  Widget _buildOverviewKpiGrid(
+    BuildContext context,
+    DepartmentOverviewModel overview,
+  ) {
     final width = MediaQuery.of(context).size.width;
-    final isHealthy = overview.overallAttendancePercentage >= overview.atRiskThreshold;
+    final isHealthy =
+        overview.overallAttendancePercentage >= overview.atRiskThreshold;
 
     final kpis = [
       _KpiItem(
@@ -460,7 +553,9 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                   children: [
                     Text(
                       kpi.label,
-                      style: AcadexTypography.caption(color: AcadexColors.inkMuted),
+                      style: AcadexTypography.caption(
+                        color: AcadexColors.inkMuted,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -473,8 +568,9 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                       const SizedBox(height: 2),
                       Text(
                         kpi.caption!,
-                        style: AcadexTypography.caption(color: AcadexColors.inkMuted)
-                            .copyWith(fontSize: 10),
+                        style: AcadexTypography.caption(
+                          color: AcadexColors.inkMuted,
+                        ).copyWith(fontSize: 10),
                       ),
                     ],
                   ],
@@ -497,13 +593,15 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
           child: CircularProgressIndicator(),
         ),
       ),
-      error: (err, _) => AcadexErrorState(message: 'Failed to load trend timeline: $err'),
+      error: (err, _) =>
+          AcadexErrorState(message: 'Failed to load trend timeline: $err'),
       data: (trends) {
         if (trends.isEmpty) {
           return const AcadexEmptyState(
             icon: LucideIcons.trendingUp,
             title: 'No Trend Data',
-            subtitle: 'No attendance sessions recorded for the selected scope or period.',
+            subtitle:
+                'No attendance sessions recorded for the selected scope or period.',
           );
         }
 
@@ -540,20 +638,31 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(t.label, style: const TextStyle(fontSize: 11, color: AcadexColors.inkMuted)),
+                          Text(
+                            t.label,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AcadexColors.inkMuted,
+                            ),
+                          ),
                           const SizedBox(height: 4),
                           Text(
                             '${pct.toStringAsFixed(1)}%',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: isGood ? AcadexColors.primary : Colors.orange,
+                              color: isGood
+                                  ? AcadexColors.primary
+                                  : Colors.orange,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             '${t.present}P / ${t.absent}A',
-                            style: const TextStyle(fontSize: 10, color: AcadexColors.inkMuted),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: AcadexColors.inkMuted,
+                            ),
                           ),
                         ],
                       ),
@@ -581,11 +690,18 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(c.courseName, style: AcadexTypography.body(color: AcadexColors.ink).copyWith(fontWeight: FontWeight.w600)),
+                  Text(
+                    c.courseName,
+                    style: AcadexTypography.body(
+                      color: AcadexColors.ink,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     '${c.studentCount} students • ${c.sessionCount} sessions',
-                    style: AcadexTypography.caption(color: AcadexColors.inkMuted),
+                    style: AcadexTypography.caption(
+                      color: AcadexColors.inkMuted,
+                    ),
                   ),
                 ],
               ),
@@ -604,7 +720,11 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                 if (c.atRiskCount > 0)
                   Text(
                     '${c.atRiskCount} at risk',
-                    style: const TextStyle(fontSize: 11, color: Colors.orange, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.orange,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
               ],
             ),
@@ -627,11 +747,18 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(s.sectionName, style: AcadexTypography.body(color: AcadexColors.ink).copyWith(fontWeight: FontWeight.w600)),
+                  Text(
+                    s.sectionName,
+                    style: AcadexTypography.body(
+                      color: AcadexColors.ink,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     '${s.studentCount} enrolled • ${s.sessionCount} sessions',
-                    style: AcadexTypography.caption(color: AcadexColors.inkMuted),
+                    style: AcadexTypography.caption(
+                      color: AcadexColors.inkMuted,
+                    ),
                   ),
                 ],
               ),
@@ -650,7 +777,11 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                 if (s.atRiskCount > 0)
                   Text(
                     '${s.atRiskCount} at risk',
-                    style: const TextStyle(fontSize: 11, color: Colors.orange, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.orange,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
               ],
             ),
@@ -668,7 +799,9 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
 
     return coursesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: AcadexErrorState(message: 'Error loading courses: $err')),
+      error: (err, _) => Center(
+        child: AcadexErrorState(message: 'Error loading courses: $err'),
+      ),
       data: (courses) {
         if (courses.isEmpty) {
           return const AcadexEmptyState(
@@ -679,7 +812,10 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
         }
 
         return ListView.builder(
-          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 12),
+          padding: EdgeInsets.symmetric(
+            horizontal: horizontalPadding,
+            vertical: 12,
+          ),
           itemCount: courses.length,
           itemBuilder: (context, index) {
             final c = courses[index];
@@ -698,16 +834,23 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                         Expanded(
                           child: Text(
                             c.courseName,
-                            style: AcadexTypography.title(color: AcadexColors.ink),
+                            style: AcadexTypography.title(
+                              color: AcadexColors.ink,
+                            ),
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: isGood
                                 ? AcadexColors.primary.withValues(alpha: 0.1)
                                 : Colors.red.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(AcadexRadius.sm),
+                            borderRadius: BorderRadius.circular(
+                              AcadexRadius.sm,
+                            ),
                           ),
                           child: Text(
                             '${c.attendancePercentage.toStringAsFixed(1)}%',
@@ -725,15 +868,44 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                       spacing: 12,
                       runSpacing: 6,
                       children: [
-                        Text('Code: ${c.courseCode}', style: AcadexTypography.caption(color: AcadexColors.inkMuted)),
-                        Text('Students: ${c.studentCount}', style: AcadexTypography.caption(color: AcadexColors.inkMuted)),
-                        Text('Sessions: ${c.sessionCount}', style: AcadexTypography.caption(color: AcadexColors.inkMuted)),
-                        Text('Present: ${c.present}', style: AcadexTypography.caption(color: AcadexColors.inkMuted)),
-                        Text('Absent: ${c.absent}', style: AcadexTypography.caption(color: AcadexColors.inkMuted)),
+                        Text(
+                          'Code: ${c.courseCode}',
+                          style: AcadexTypography.caption(
+                            color: AcadexColors.inkMuted,
+                          ),
+                        ),
+                        Text(
+                          'Students: ${c.studentCount}',
+                          style: AcadexTypography.caption(
+                            color: AcadexColors.inkMuted,
+                          ),
+                        ),
+                        Text(
+                          'Sessions: ${c.sessionCount}',
+                          style: AcadexTypography.caption(
+                            color: AcadexColors.inkMuted,
+                          ),
+                        ),
+                        Text(
+                          'Present: ${c.present}',
+                          style: AcadexTypography.caption(
+                            color: AcadexColors.inkMuted,
+                          ),
+                        ),
+                        Text(
+                          'Absent: ${c.absent}',
+                          style: AcadexTypography.caption(
+                            color: AcadexColors.inkMuted,
+                          ),
+                        ),
                         if (c.atRiskCount > 0)
                           Text(
                             'At Risk: ${c.atRiskCount}',
-                            style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 11),
+                            style: const TextStyle(
+                              color: Colors.orange,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
                           ),
                       ],
                     ),
@@ -743,7 +915,9 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                       child: OutlinedButton.icon(
                         onPressed: () {
                           // Filter to this course and jump to Sections tab
-                          ref.read(departmentAnalyticsFilterProvider.notifier).update(
+                          ref
+                              .read(departmentAnalyticsFilterProvider.notifier)
+                              .update(
                                 (f) => f.copyWith(
                                   courseId: () => c.courseId,
                                   semesterId: () => null,
@@ -754,7 +928,10 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                           _tabController.animateTo(2); // Sections tab
                         },
                         icon: const Icon(LucideIcons.arrowRight, size: 14),
-                        label: const Text('Drill into Sections', style: TextStyle(fontSize: 12)),
+                        label: const Text(
+                          'Drill into Sections',
+                          style: TextStyle(fontSize: 12),
+                        ),
                       ),
                     ),
                   ],
@@ -775,7 +952,9 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
 
     return sectionsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: AcadexErrorState(message: 'Error loading sections: $err')),
+      error: (err, _) => Center(
+        child: AcadexErrorState(message: 'Error loading sections: $err'),
+      ),
       data: (sections) {
         if (sections.isEmpty) {
           return const AcadexEmptyState(
@@ -786,7 +965,10 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
         }
 
         return ListView.builder(
-          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 12),
+          padding: EdgeInsets.symmetric(
+            horizontal: horizontalPadding,
+            vertical: 12,
+          ),
           itemCount: sections.length,
           itemBuilder: (context, index) {
             final s = sections[index];
@@ -806,22 +988,36 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(s.sectionName, style: AcadexTypography.title(color: AcadexColors.ink)),
+                              Text(
+                                s.sectionName,
+                                style: AcadexTypography.title(
+                                  color: AcadexColors.ink,
+                                ),
+                              ),
                               if (s.courseName.isNotEmpty) ...[
                                 const SizedBox(height: 2),
-                                Text('${s.courseName} • Sem ${s.semesterNumber}',
-                                    style: AcadexTypography.caption(color: AcadexColors.inkMuted)),
+                                Text(
+                                  '${s.courseName} • Sem ${s.semesterNumber}',
+                                  style: AcadexTypography.caption(
+                                    color: AcadexColors.inkMuted,
+                                  ),
+                                ),
                               ],
                             ],
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: isGood
                                 ? AcadexColors.primary.withValues(alpha: 0.1)
                                 : Colors.red.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(AcadexRadius.sm),
+                            borderRadius: BorderRadius.circular(
+                              AcadexRadius.sm,
+                            ),
                           ),
                           child: Text(
                             '${s.attendancePercentage.toStringAsFixed(1)}%',
@@ -839,15 +1035,44 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                       spacing: 12,
                       runSpacing: 6,
                       children: [
-                        Text('Enrolled: ${s.enrolledStudents}', style: AcadexTypography.caption(color: AcadexColors.inkMuted)),
-                        Text('Sessions: ${s.totalSessions}', style: AcadexTypography.caption(color: AcadexColors.inkMuted)),
-                        Text('Present: ${s.present}', style: AcadexTypography.caption(color: AcadexColors.inkMuted)),
-                        Text('Absent: ${s.absent}', style: AcadexTypography.caption(color: AcadexColors.inkMuted)),
-                        Text('Late: ${s.late}', style: AcadexTypography.caption(color: AcadexColors.inkMuted)),
+                        Text(
+                          'Enrolled: ${s.enrolledStudents}',
+                          style: AcadexTypography.caption(
+                            color: AcadexColors.inkMuted,
+                          ),
+                        ),
+                        Text(
+                          'Sessions: ${s.totalSessions}',
+                          style: AcadexTypography.caption(
+                            color: AcadexColors.inkMuted,
+                          ),
+                        ),
+                        Text(
+                          'Present: ${s.present}',
+                          style: AcadexTypography.caption(
+                            color: AcadexColors.inkMuted,
+                          ),
+                        ),
+                        Text(
+                          'Absent: ${s.absent}',
+                          style: AcadexTypography.caption(
+                            color: AcadexColors.inkMuted,
+                          ),
+                        ),
+                        Text(
+                          'Late: ${s.late}',
+                          style: AcadexTypography.caption(
+                            color: AcadexColors.inkMuted,
+                          ),
+                        ),
                         if (s.atRiskStudents > 0)
                           Text(
                             'At Risk: ${s.atRiskStudents}',
-                            style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 11),
+                            style: const TextStyle(
+                              color: Colors.orange,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
                           ),
                       ],
                     ),
@@ -857,15 +1082,18 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                       child: OutlinedButton.icon(
                         onPressed: () {
                           // Filter to this section and jump to Students tab
-                          ref.read(departmentAnalyticsFilterProvider.notifier).update(
-                                (f) => f.copyWith(
-                                  sectionId: () => s.sectionId,
-                                ),
+                          ref
+                              .read(departmentAnalyticsFilterProvider.notifier)
+                              .update(
+                                (f) => f.copyWith(sectionId: () => s.sectionId),
                               );
                           _tabController.animateTo(4); // Students tab
                         },
                         icon: const Icon(LucideIcons.users, size: 14),
-                        label: const Text('View Student Roster', style: TextStyle(fontSize: 12)),
+                        label: const Text(
+                          'View Student Roster',
+                          style: TextStyle(fontSize: 12),
+                        ),
                       ),
                     ),
                   ],
@@ -886,7 +1114,9 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
 
     return subjectsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: AcadexErrorState(message: 'Error loading subjects: $err')),
+      error: (err, _) => Center(
+        child: AcadexErrorState(message: 'Error loading subjects: $err'),
+      ),
       data: (subjects) {
         if (subjects.isEmpty) {
           return const AcadexEmptyState(
@@ -897,7 +1127,10 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
         }
 
         return ListView.builder(
-          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 12),
+          padding: EdgeInsets.symmetric(
+            horizontal: horizontalPadding,
+            vertical: 12,
+          ),
           itemCount: subjects.length,
           itemBuilder: (context, index) {
             final sub = subjects[index];
@@ -917,20 +1150,34 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(sub.subjectName, style: AcadexTypography.title(color: AcadexColors.ink)),
+                              Text(
+                                sub.subjectName,
+                                style: AcadexTypography.title(
+                                  color: AcadexColors.ink,
+                                ),
+                              ),
                               const SizedBox(height: 2),
-                              Text('Code: ${sub.subjectCode} • ${sub.courseName}',
-                                  style: AcadexTypography.caption(color: AcadexColors.inkMuted)),
+                              Text(
+                                'Code: ${sub.subjectCode} • ${sub.courseName}',
+                                style: AcadexTypography.caption(
+                                  color: AcadexColors.inkMuted,
+                                ),
+                              ),
                             ],
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: isGood
                                 ? AcadexColors.primary.withValues(alpha: 0.1)
                                 : Colors.red.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(AcadexRadius.sm),
+                            borderRadius: BorderRadius.circular(
+                              AcadexRadius.sm,
+                            ),
                           ),
                           child: Text(
                             '${sub.attendancePercentage.toStringAsFixed(1)}%',
@@ -948,13 +1195,30 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                       spacing: 12,
                       runSpacing: 6,
                       children: [
-                        Text('Sessions: ${sub.sessionCount}', style: AcadexTypography.caption(color: AcadexColors.inkMuted)),
-                        Text('Present: ${sub.present}', style: AcadexTypography.caption(color: AcadexColors.inkMuted)),
-                        Text('Absent: ${sub.absent}', style: AcadexTypography.caption(color: AcadexColors.inkMuted)),
+                        Text(
+                          'Sessions: ${sub.sessionCount}',
+                          style: AcadexTypography.caption(
+                            color: AcadexColors.inkMuted,
+                          ),
+                        ),
+                        Text(
+                          'Present: ${sub.present}',
+                          style: AcadexTypography.caption(
+                            color: AcadexColors.inkMuted,
+                          ),
+                        ),
+                        Text(
+                          'Absent: ${sub.absent}',
+                          style: AcadexTypography.caption(
+                            color: AcadexColors.inkMuted,
+                          ),
+                        ),
                         if (sub.assignedSections.isNotEmpty)
                           Text(
                             'Sections: ${sub.assignedSections.join(", ")}',
-                            style: AcadexTypography.caption(color: AcadexColors.inkMuted),
+                            style: AcadexTypography.caption(
+                              color: AcadexColors.inkMuted,
+                            ),
                           ),
                       ],
                     ),
@@ -978,7 +1242,12 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
       children: [
         // Search & Filter controls
         Padding(
-          padding: EdgeInsets.fromLTRB(horizontalPadding, 8, horizontalPadding, 8),
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            8,
+            horizontalPadding,
+            8,
+          ),
           child: Row(
             children: [
               Expanded(
@@ -987,16 +1256,25 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                   decoration: InputDecoration(
                     hintText: 'Search by student name, roll number...',
                     prefixIcon: const Icon(LucideIcons.search, size: 16),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AcadexRadius.sm),
-                      borderSide: const BorderSide(color: AcadexColors.hairline),
+                      borderSide: const BorderSide(
+                        color: AcadexColors.hairline,
+                      ),
                     ),
                     isDense: true,
                   ),
                   onSubmitted: (val) {
-                    ref.read(departmentAnalyticsFilterProvider.notifier).update(
-                          (f) => f.copyWith(search: () => val.isEmpty ? null : val),
+                    ref
+                        .read(departmentAnalyticsFilterProvider.notifier)
+                        .update(
+                          (f) => f.copyWith(
+                            search: () => val.isEmpty ? null : val,
+                          ),
                         );
                   },
                 ),
@@ -1008,18 +1286,24 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
         Expanded(
           child: studentsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, _) => Center(child: AcadexErrorState(message: 'Error loading students: $err')),
+            error: (err, _) => Center(
+              child: AcadexErrorState(message: 'Error loading students: $err'),
+            ),
             data: (result) {
               if (result.students.isEmpty) {
                 return const AcadexEmptyState(
                   icon: LucideIcons.userX,
                   title: 'No Students Found',
-                  subtitle: 'No enrolled students match the active department filters.',
+                  subtitle:
+                      'No enrolled students match the active department filters.',
                 );
               }
 
               return ListView.builder(
-                padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 8),
+                padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                  vertical: 8,
+                ),
                 itemCount: result.students.length,
                 itemBuilder: (context, index) {
                   final s = result.students[index];
@@ -1041,10 +1325,17 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
 
     return atRiskStudentsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: AcadexErrorState(message: 'Error loading at-risk students: $err')),
+      error: (err, _) => Center(
+        child: AcadexErrorState(
+          message: 'Error loading at-risk students: $err',
+        ),
+      ),
       data: (result) {
         return SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 12),
+          padding: EdgeInsets.symmetric(
+            horizontal: horizontalPadding,
+            vertical: 12,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1054,11 +1345,17 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                 decoration: BoxDecoration(
                   color: Colors.orange.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(AcadexRadius.md),
-                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: Colors.orange.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.alertTriangle, color: Colors.orange, size: 24),
+                    const Icon(
+                      LucideIcons.alertTriangle,
+                      color: Colors.orange,
+                      size: 24,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -1066,12 +1363,16 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                         children: [
                           Text(
                             'Student Attendance Shortage Warnings',
-                            style: AcadexTypography.title(color: Colors.orange.shade900),
+                            style: AcadexTypography.title(
+                              color: Colors.orange.shade900,
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             'Students below institutional threshold of ${result.threshold.toInt()}%. Immediate counseling or intervention recommended.',
-                            style: AcadexTypography.caption(color: Colors.orange.shade800),
+                            style: AcadexTypography.caption(
+                              color: Colors.orange.shade800,
+                            ),
                           ),
                         ],
                       ),
@@ -1085,7 +1386,8 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                 const AcadexEmptyState(
                   icon: LucideIcons.checkCircle2,
                   title: 'No At-Risk Students',
-                  subtitle: 'All enrolled students meet or exceed the attendance threshold!',
+                  subtitle:
+                      'All enrolled students meet or exceed the attendance threshold!',
                 )
               else
                 ...result.students.map((s) => _buildStudentAnalyticsCard(s)),
@@ -1113,17 +1415,27 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(s.studentName, style: AcadexTypography.body(color: AcadexColors.ink).copyWith(fontWeight: FontWeight.w600)),
+                      Text(
+                        s.studentName,
+                        style: AcadexTypography.body(
+                          color: AcadexColors.ink,
+                        ).copyWith(fontWeight: FontWeight.w600),
+                      ),
                       const SizedBox(height: 2),
                       Text(
                         'Roll: ${s.rollNumber.isNotEmpty ? s.rollNumber : "N/A"} • Adm: ${s.admissionNumber.isNotEmpty ? s.admissionNumber : "N/A"}',
-                        style: AcadexTypography.caption(color: AcadexColors.inkMuted),
+                        style: AcadexTypography.caption(
+                          color: AcadexColors.inkMuted,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: isAtRisk
                         ? Colors.red.withValues(alpha: 0.12)
@@ -1151,15 +1463,42 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
               spacing: 10,
               runSpacing: 4,
               children: [
-                Text('Present: ${s.present}', style: const TextStyle(fontSize: 11, color: Color(0xFF16A34A))),
-                Text('Absent: ${s.absent}', style: const TextStyle(fontSize: 11, color: Colors.red)),
+                Text(
+                  'Present: ${s.present}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF16A34A),
+                  ),
+                ),
+                Text(
+                  'Absent: ${s.absent}',
+                  style: const TextStyle(fontSize: 11, color: Colors.red),
+                ),
                 if (s.late > 0)
-                  Text('Late: ${s.late}', style: const TextStyle(fontSize: 11, color: Colors.orange)),
+                  Text(
+                    'Late: ${s.late}',
+                    style: const TextStyle(fontSize: 11, color: Colors.orange),
+                  ),
                 if (s.excused > 0)
-                  Text('Excused: ${s.excused}', style: const TextStyle(fontSize: 11, color: Colors.blueGrey)),
+                  Text(
+                    'Excused: ${s.excused}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.blueGrey,
+                    ),
+                  ),
                 if (s.onDuty > 0)
-                  Text('On Duty: ${s.onDuty}', style: const TextStyle(fontSize: 11, color: Colors.teal)),
-                Text('Sessions: ${s.sessionsConsidered}', style: const TextStyle(fontSize: 11, color: AcadexColors.inkMuted)),
+                  Text(
+                    'On Duty: ${s.onDuty}',
+                    style: const TextStyle(fontSize: 11, color: Colors.teal),
+                  ),
+                Text(
+                  'Sessions: ${s.sessionsConsidered}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AcadexColors.inkMuted,
+                  ),
+                ),
               ],
             ),
           ],

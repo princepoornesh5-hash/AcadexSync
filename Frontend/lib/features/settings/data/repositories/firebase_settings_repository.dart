@@ -21,17 +21,27 @@ class FirebaseSettingsRepository implements SettingsRepository {
     try {
       final jsonStr = await _storage.read(key: _keySettings);
       if (jsonStr != null) {
-        return AppSettings.fromJson(jsonDecode(jsonStr) as Map<String, dynamic>);
+        return AppSettings.fromJson(
+          jsonDecode(jsonStr) as Map<String, dynamic>,
+        );
       }
     } catch (_) {}
 
     // 2. If logged in, fetch from Firestore
     if (_userId != null) {
       try {
-        final doc = await _firestoreService.getDocument('userSettings', _userId!);
+        final doc = await _firestoreService.getDocument(
+          'userSettings',
+          _userId!,
+        );
         if (doc != null && doc.containsKey('appSettings')) {
-          final settings = AppSettings.fromJson(doc['appSettings'] as Map<String, dynamic>);
-          await _storage.write(key: _keySettings, value: jsonEncode(settings.toJson()));
+          final settings = AppSettings.fromJson(
+            doc['appSettings'] as Map<String, dynamic>,
+          );
+          await _storage.write(
+            key: _keySettings,
+            value: jsonEncode(settings.toJson()),
+          );
           return settings;
         }
       } catch (_) {}
@@ -44,7 +54,10 @@ class FirebaseSettingsRepository implements SettingsRepository {
   Future<void> updateAppSettings(AppSettings newSettings) async {
     // Save locally
     try {
-      await _storage.write(key: _keySettings, value: jsonEncode(newSettings.toJson()));
+      await _storage.write(
+        key: _keySettings,
+        value: jsonEncode(newSettings.toJson()),
+      );
     } catch (_) {}
 
     // Save to Firestore if authenticated
@@ -61,9 +74,14 @@ class FirebaseSettingsRepository implements SettingsRepository {
   Future<NotificationPreferences> getNotificationPreferences() async {
     if (_userId != null) {
       try {
-        final doc = await _firestoreService.getDocument('userSettings', _userId!);
+        final doc = await _firestoreService.getDocument(
+          'userSettings',
+          _userId!,
+        );
         if (doc != null && doc.containsKey('notificationPreferences')) {
-          return NotificationPreferences.fromJson(doc['notificationPreferences'] as Map<String, dynamic>);
+          return NotificationPreferences.fromJson(
+            doc['notificationPreferences'] as Map<String, dynamic>,
+          );
         }
       } catch (_) {}
     }
@@ -71,7 +89,9 @@ class FirebaseSettingsRepository implements SettingsRepository {
   }
 
   @override
-  Future<void> updateNotificationPreferences(NotificationPreferences newPrefs) async {
+  Future<void> updateNotificationPreferences(
+    NotificationPreferences newPrefs,
+  ) async {
     if (_userId != null) {
       try {
         await _firestoreService.setDocument('userSettings', _userId!, {

@@ -9,7 +9,10 @@ class FirebaseAnalyticsRepository implements AnalyticsRepository {
 
   FirebaseAnalyticsRepository(this._firestoreService);
 
-  Future<List<Map<String, dynamic>>> _getScopedRecords(AppRole role, String userId) async {
+  Future<List<Map<String, dynamic>>> _getScopedRecords(
+    AppRole role,
+    String userId,
+  ) async {
     // 1. Get user profile for college/department scoping
     final userProfile = await _firestoreService.getDocument('users', userId);
     final collegeId = userProfile?['collegeId'] as String? ?? '';
@@ -17,35 +20,45 @@ class FirebaseAnalyticsRepository implements AnalyticsRepository {
 
     // 2. Fetch records scoped by role
     if (role == AppRole.student) {
-      return await _firestoreService.queryCollection('attendance', {'studentId': userId});
+      return await _firestoreService.queryCollection('attendance', {
+        'studentId': userId,
+      });
     } else if (role == AppRole.faculty) {
-      return await _firestoreService.queryCollection('attendance', {'facultyId': userId});
+      return await _firestoreService.queryCollection('attendance', {
+        'facultyId': userId,
+      });
     } else if (role == AppRole.hod || role == AppRole.collegeAdmin) {
-      final Map<String, dynamic> studentQuery = {
-        'collegeId': collegeId,
-      };
+      final Map<String, dynamic> studentQuery = {'collegeId': collegeId};
       if (role == AppRole.hod) {
         studentQuery['departmentId'] = departmentId;
       }
-      
-      final students = await _firestoreService.queryCollection('students', studentQuery);
+
+      final students = await _firestoreService.queryCollection(
+        'students',
+        studentQuery,
+      );
       final studentIds = students.map((s) => s['id'] as String).toList();
-      
+
       if (studentIds.isEmpty) return [];
 
       final List<Map<String, dynamic>> scopedAttendance = [];
-      
+
       // Firestore 'whereIn' supports up to 30 items per query.
       for (var i = 0; i < studentIds.length; i += 30) {
-        final chunk = studentIds.sublist(i, i + 30 > studentIds.length ? studentIds.length : i + 30);
-        
+        final chunk = studentIds.sublist(
+          i,
+          i + 30 > studentIds.length ? studentIds.length : i + 30,
+        );
+
         final chunkDocs = await _firestoreService.queryCollection(
           'attendance',
-          {'studentId': {'\$in': chunk}}, // Assuming _firestoreService supports '$in' or we can just use the underlying firebase SDK
+          {
+            'studentId': {'\$in': chunk},
+          }, // Assuming _firestoreService supports '$in' or we can just use the underlying firebase SDK
         );
         scopedAttendance.addAll(chunkDocs);
       }
-      
+
       return scopedAttendance;
     } else {
       // Super Admin
@@ -56,9 +69,12 @@ class FirebaseAnalyticsRepository implements AnalyticsRepository {
   // --- Summary Metrics ---
 
   @override
-  Future<Map<String, String>> getSummaryMetrics(AppRole role, String userId) async {
+  Future<Map<String, String>> getSummaryMetrics(
+    AppRole role,
+    String userId,
+  ) async {
     final records = await _getScopedRecords(role, userId);
-    
+
     if (records.isEmpty) {
       switch (role) {
         case AppRole.student:
@@ -101,15 +117,20 @@ class FirebaseAnalyticsRepository implements AnalyticsRepository {
 
     // Process statistics
     final eligible = records.where((r) => r['status'] != 'holiday').toList();
-    final attended = eligible.where((r) => 
-      r['status'] == 'present' || 
-      r['status'] == 'late' || 
-      r['status'] == 'onDuty' || 
-      r['status'] == 'medicalLeave'
-    ).toList();
-    
-    final overallPercentage = eligible.isEmpty ? 100.0 : (attended.length / eligible.length) * 100;
-    
+    final attended = eligible
+        .where(
+          (r) =>
+              r['status'] == 'present' ||
+              r['status'] == 'late' ||
+              r['status'] == 'onDuty' ||
+              r['status'] == 'medicalLeave',
+        )
+        .toList();
+
+    final overallPercentage = eligible.isEmpty
+        ? 100.0
+        : (attended.length / eligible.length) * 100;
+
     switch (role) {
       case AppRole.student:
         return {
@@ -127,21 +148,28 @@ class FirebaseAnalyticsRepository implements AnalyticsRepository {
         }
         int atRiskCount = 0;
         studentMap.forEach((sId, recs) {
-          final att = recs.where((r) => 
-            r['status'] == 'present' || 
-            r['status'] == 'late' || 
-            r['status'] == 'onDuty' || 
-            r['status'] == 'medicalLeave'
-          ).length;
+          final att = recs
+              .where(
+                (r) =>
+                    r['status'] == 'present' ||
+                    r['status'] == 'late' ||
+                    r['status'] == 'onDuty' ||
+                    r['status'] == 'medicalLeave',
+              )
+              .length;
           if ((att / recs.length) * 100 < 75.0) {
             atRiskCount++;
           }
         });
-        
-        final uniqueSessions = records.map((r) => r['sessionId'] as String).toSet().length;
-        
+
+        final uniqueSessions = records
+            .map((r) => r['sessionId'] as String)
+            .toSet()
+            .length;
+
         return {
-          'Average Class Attendance': '${overallPercentage.toStringAsFixed(1)}%',
+          'Average Class Attendance':
+              '${overallPercentage.toStringAsFixed(1)}%',
           'Students At Risk': '$atRiskCount',
           'Attendance Completion': '100%',
           'Classes Conducted': '$uniqueSessions',
@@ -154,12 +182,15 @@ class FirebaseAnalyticsRepository implements AnalyticsRepository {
         }
         int atRiskCount = 0;
         studentMap.forEach((sId, recs) {
-          final att = recs.where((r) => 
-            r['status'] == 'present' || 
-            r['status'] == 'late' || 
-            r['status'] == 'onDuty' || 
-            r['status'] == 'medicalLeave'
-          ).length;
+          final att = recs
+              .where(
+                (r) =>
+                    r['status'] == 'present' ||
+                    r['status'] == 'late' ||
+                    r['status'] == 'onDuty' ||
+                    r['status'] == 'medicalLeave',
+              )
+              .length;
           if ((att / recs.length) * 100 < 75.0) {
             atRiskCount++;
           }
@@ -190,7 +221,10 @@ class FirebaseAnalyticsRepository implements AnalyticsRepository {
   // --- Charts ---
 
   @override
-  Future<List<ChartDataPoint>> getTrendChartData(AppRole role, String userId) async {
+  Future<List<ChartDataPoint>> getTrendChartData(
+    AppRole role,
+    String userId,
+  ) async {
     final records = await _getScopedRecords(role, userId);
     if (records.isEmpty) return [];
 
@@ -209,20 +243,28 @@ class FirebaseAnalyticsRepository implements AnalyticsRepository {
     for (final month in sortedMonths) {
       final recs = monthlyData[month]!;
       final eligible = recs.where((r) => r['status'] != 'holiday').toList();
-      final attended = eligible.where((r) => 
-        r['status'] == 'present' || 
-        r['status'] == 'late' || 
-        r['status'] == 'onDuty' || 
-        r['status'] == 'medicalLeave'
-      ).toList();
-      final percentage = eligible.isEmpty ? 100.0 : (attended.length / eligible.length) * 100;
+      final attended = eligible
+          .where(
+            (r) =>
+                r['status'] == 'present' ||
+                r['status'] == 'late' ||
+                r['status'] == 'onDuty' ||
+                r['status'] == 'medicalLeave',
+          )
+          .toList();
+      final percentage = eligible.isEmpty
+          ? 100.0
+          : (attended.length / eligible.length) * 100;
       points.add(ChartDataPoint(label: month, value: percentage));
     }
     return points;
   }
 
   @override
-  Future<List<ChartDataPoint>> getComparisonChartData(AppRole role, String userId) async {
+  Future<List<ChartDataPoint>> getComparisonChartData(
+    AppRole role,
+    String userId,
+  ) async {
     final records = await _getScopedRecords(role, userId);
     if (records.isEmpty) return [];
 
@@ -238,13 +280,18 @@ class FirebaseAnalyticsRepository implements AnalyticsRepository {
     final points = <ChartDataPoint>[];
     groupedData.forEach((key, recs) {
       final eligible = recs.where((r) => r['status'] != 'holiday').toList();
-      final attended = eligible.where((r) => 
-        r['status'] == 'present' || 
-        r['status'] == 'late' || 
-        r['status'] == 'onDuty' || 
-        r['status'] == 'medicalLeave'
-      ).toList();
-      final percentage = eligible.isEmpty ? 100.0 : (attended.length / eligible.length) * 100;
+      final attended = eligible
+          .where(
+            (r) =>
+                r['status'] == 'present' ||
+                r['status'] == 'late' ||
+                r['status'] == 'onDuty' ||
+                r['status'] == 'medicalLeave',
+          )
+          .toList();
+      final percentage = eligible.isEmpty
+          ? 100.0
+          : (attended.length / eligible.length) * 100;
       points.add(ChartDataPoint(label: key, value: percentage));
     });
     return points;
@@ -253,39 +300,59 @@ class FirebaseAnalyticsRepository implements AnalyticsRepository {
   // --- Insights ---
 
   @override
-  Future<List<AttendanceInsight>> getInsights(AppRole role, String userId) async {
+  Future<List<AttendanceInsight>> getInsights(
+    AppRole role,
+    String userId,
+  ) async {
     final metrics = await getSummaryMetrics(role, userId);
-    final pctStr = metrics[role == AppRole.student ? 'Overall Attendance' : (role == AppRole.faculty ? 'Average Class Attendance' : 'Department Attendance')] ?? '';
+    final pctStr =
+        metrics[role == AppRole.student
+            ? 'Overall Attendance'
+            : (role == AppRole.faculty
+                  ? 'Average Class Attendance'
+                  : 'Department Attendance')] ??
+        '';
     final pct = double.tryParse(pctStr.replaceAll('%', '')) ?? 100.0;
 
     final insights = <AttendanceInsight>[];
 
     if (role == AppRole.student) {
       if (pct < 75.0) {
-        insights.add(const AttendanceInsight(
-          id: 'i1',
-          title: 'Below Threshold Warning',
-          description: 'Your overall attendance is below the 75% required target. Please make sure to attend subsequent sessions.',
-          severity: InsightSeverity.negative,
-          icon: LucideIcons.alertTriangle,
-        ));
+        insights.add(
+          const AttendanceInsight(
+            id: 'i1',
+            title: 'Below Threshold Warning',
+            description:
+                'Your overall attendance is below the 75% required target. Please make sure to attend subsequent sessions.',
+            severity: InsightSeverity.negative,
+            icon: LucideIcons.alertTriangle,
+          ),
+        );
       } else {
-        insights.add(const AttendanceInsight(
-          id: 'i1',
-          title: 'Good Standing',
-          description: 'Your overall attendance is safely above the 75% target. Keep up the consistent attendance!',
-          severity: InsightSeverity.positive,
-          icon: LucideIcons.checkCircle2,
-        ));
+        insights.add(
+          const AttendanceInsight(
+            id: 'i1',
+            title: 'Good Standing',
+            description:
+                'Your overall attendance is safely above the 75% target. Keep up the consistent attendance!',
+            severity: InsightSeverity.positive,
+            icon: LucideIcons.checkCircle2,
+          ),
+        );
       }
     } else {
-      insights.add(AttendanceInsight(
-        id: 'i2',
-        title: 'Attendance Standing',
-        description: 'Overall active metric stands at ${pct.toStringAsFixed(1)}%. Ensure consistent tracking across classes.',
-        severity: pct >= 75.0 ? InsightSeverity.positive : InsightSeverity.negative,
-        icon: LucideIcons.activity,
-      ));
+      insights.add(
+        AttendanceInsight(
+          id: 'i2',
+          title: 'Attendance Standing',
+          description:
+              'Overall active metric stands at ${pct.toStringAsFixed(1)}%. Ensure consistent tracking across classes.',
+          severity: pct >= 75.0
+              ? InsightSeverity.positive
+              : InsightSeverity.negative,
+          icon: LucideIcons.activity,
+        ),
+      );
     }
 
     return insights;
@@ -303,7 +370,8 @@ class FirebaseAnalyticsRepository implements AnalyticsRepository {
         generatedAt: DateTime.now(),
         generatedBy: role,
         filtersApplied: {'Status': 'Active'},
-        summary: 'Calculated directly from live Firestore attendance logs. All metrics are synced to the primary academic structure.',
+        summary:
+            'Calculated directly from live Firestore attendance logs. All metrics are synced to the primary academic structure.',
       ),
     ];
   }

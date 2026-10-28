@@ -6,7 +6,8 @@ class AiMessage {
   final bool isAi;
   final DateTime timestamp;
   final Map<String, dynamic>? proposal;
-  final String? actionStatus; // 'PENDING', 'CONFIRMING', 'EXECUTED', 'CANCELLED', 'FAILED', 'EXPIRED', 'UNCERTAIN', 'RECONCILING'
+  final String?
+  actionStatus; // 'PENDING', 'CONFIRMING', 'EXECUTED', 'CANCELLED', 'FAILED', 'EXPIRED', 'UNCERTAIN', 'RECONCILING'
   final String? executionResultSummary;
   final bool isStreaming;
   final bool isInterrupted;
@@ -23,8 +24,8 @@ class AiMessage {
     this.isStreaming = false,
     this.isInterrupted = false,
     this.correlationId,
-  })  : id = id ?? const Uuid().v4(),
-        timestamp = timestamp ?? DateTime.now();
+  }) : id = id ?? const Uuid().v4(),
+       timestamp = timestamp ?? DateTime.now();
 
   AiMessage copyWith({
     String? id,
@@ -45,7 +46,8 @@ class AiMessage {
       timestamp: timestamp ?? this.timestamp,
       proposal: proposal ?? this.proposal,
       actionStatus: actionStatus ?? this.actionStatus,
-      executionResultSummary: executionResultSummary ?? this.executionResultSummary,
+      executionResultSummary:
+          executionResultSummary ?? this.executionResultSummary,
       isStreaming: isStreaming ?? this.isStreaming,
       isInterrupted: isInterrupted ?? this.isInterrupted,
       correlationId: correlationId ?? this.correlationId,

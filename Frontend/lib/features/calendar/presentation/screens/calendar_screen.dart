@@ -22,7 +22,15 @@ class CalendarScreen extends ConsumerStatefulWidget {
 }
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
-  static const List<String> _weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  static const List<String> _weekDays = [
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
+  ];
 
   static const List<String> _monthNames = [
     '',
@@ -58,7 +66,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final now = DateTime.now();
     final month = DateTime(now.year, now.month, 1);
     ref.read(currentMonthProvider.notifier).state = month;
-    ref.read(selectedCalendarDateProvider.notifier).state = DateTime(now.year, now.month, now.day);
+    ref.read(selectedCalendarDateProvider.notifier).state = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    );
     ref.read(calendarEventsProvider.notifier).loadEvents(month);
   }
 
@@ -74,7 +86,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final authState = ref.watch(authProvider);
     final user = authState is AuthAuthenticated ? authState.user : null;
     final role = user?.role ?? AppRole.student;
-    final canCreate = role == AppRole.collegeAdmin ||
+    final canCreate =
+        role == AppRole.collegeAdmin ||
         role == AppRole.superAdmin ||
         role == AppRole.hod ||
         role == AppRole.faculty;
@@ -87,7 +100,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.20 : 0.03),
@@ -103,18 +118,22 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: _weekDays
-                .map((d) => SizedBox(
-                      width: 36,
-                      child: Text(
-                        d,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: d == 'Sun' ? Colors.red.shade400 : const Color(0xFF64748B),
-                        ),
+                .map(
+                  (d) => SizedBox(
+                    width: 36,
+                    child: Text(
+                      d,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: d == 'Sun'
+                            ? Colors.red.shade400
+                            : const Color(0xFF64748B),
                       ),
-                    ))
+                    ),
+                  ),
+                )
                 .toList(),
           ),
           const SizedBox(height: 6),
@@ -149,7 +168,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     tooltip: 'Previous Month',
                     visualDensity: VisualDensity.compact,
                     padding: const EdgeInsets.all(4),
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
                   ),
                   const SizedBox(width: 4),
                   Flexible(
@@ -170,7 +192,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     tooltip: 'Next Month',
                     visualDensity: VisualDensity.compact,
                     padding: const EdgeInsets.all(4),
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
                   ),
                 ],
               ),
@@ -183,7 +208,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 foregroundColor: AcadexColors.primary,
                 visualDensity: VisualDensity.compact,
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
               ),
             ),
           ],
@@ -225,7 +253,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         // Selected Day Events Header
         Row(
           children: [
-            const Icon(LucideIcons.calendarDays, size: 17, color: AcadexColors.primary),
+            const Icon(
+              LucideIcons.calendarDays,
+              size: 17,
+              color: AcadexColors.primary,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -233,7 +265,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? AcadexColors.darkInk : const Color(0xFF0F172A),
+                  color: isDark
+                      ? AcadexColors.darkInk
+                      : const Color(0xFF0F172A),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -267,9 +301,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkSurfaceCard : const Color(0xFFF8FAFC),
+              color: isDark
+                  ? AcadexColors.darkSurfaceCard
+                  : const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+              border: Border.all(
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
+              ),
             ),
             child: const Center(
               child: Row(
@@ -294,13 +334,23 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkSurfaceCard : const Color(0xFFF8FAFC),
+              color: isDark
+                  ? AcadexColors.darkSurfaceCard
+                  : const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+              border: Border.all(
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
+              ),
             ),
             child: Row(
               children: [
-                const Icon(LucideIcons.alertCircle, size: 18, color: AcadexColors.warning),
+                const Icon(
+                  LucideIcons.alertCircle,
+                  size: 18,
+                  color: AcadexColors.warning,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -311,7 +361,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -319,7 +371,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         'Check your connection and try again.',
                         style: TextStyle(
                           fontSize: 11.5,
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                       ),
                     ],
@@ -343,41 +397,61 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkSurfaceCard : const Color(0xFFF8FAFC),
+              color: isDark
+                  ? AcadexColors.darkSurfaceCard
+                  : const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+              border: Border.all(
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(LucideIcons.calendarX, size: 16, color: isDark ? AcadexColors.darkInkMuted : Colors.grey.shade400),
+                Icon(
+                  LucideIcons.calendarX,
+                  size: 16,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : Colors.grey.shade400,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'No events for this day.',
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,
-                    color: isDark ? AcadexColors.darkInkMuted : Colors.grey.shade600,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : Colors.grey.shade600,
                   ),
                 ),
               ],
             ),
           )
         else
-          ...selectedDayEvents.map((ev) => CalendarEventCard(
-                key: ValueKey(ev.id),
-                event: ev,
-                onRefresh: () => ref
-                    .read(calendarEventsProvider.notifier)
-                    .loadEvents(currentMonth, force: true),
-              )),
+          ...selectedDayEvents.map(
+            (ev) => CalendarEventCard(
+              key: ValueKey(ev.id),
+              event: ev,
+              onRefresh: () => ref
+                  .read(calendarEventsProvider.notifier)
+                  .loadEvents(currentMonth, force: true),
+            ),
+          ),
 
         const SizedBox(height: 20),
 
         // Upcoming Events Section
         Row(
           children: [
-            const Icon(LucideIcons.sparkles, size: 17, color: Color(0xFF8B5CF6)),
+            const Icon(
+              LucideIcons.sparkles,
+              size: 17,
+              color: Color(0xFF8B5CF6),
+            ),
             const SizedBox(width: 8),
             Text(
               'UPCOMING EVENTS',
@@ -400,17 +474,34 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkSurfaceCard : const Color(0xFFF8FAFC),
+              color: isDark
+                  ? AcadexColors.darkSurfaceCard
+                  : const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+              border: Border.all(
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
+              ),
             ),
             child: Row(
               children: [
-                Icon(LucideIcons.calendarCheck, size: 16, color: isDark ? AcadexColors.darkInkMuted : Colors.grey.shade400),
+                Icon(
+                  LucideIcons.calendarCheck,
+                  size: 16,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : Colors.grey.shade400,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'No upcoming events.',
-                  style: TextStyle(fontSize: 12.5, color: isDark ? AcadexColors.darkInkMuted : Colors.grey.shade600),
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : Colors.grey.shade600,
+                  ),
                 ),
               ],
             ),
@@ -418,9 +509,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         else
           Builder(
             builder: (context) {
-              final Map<DateTime, List<CalendarEventModel>> groupedUpcoming = {};
+              final Map<DateTime, List<CalendarEventModel>> groupedUpcoming =
+                  {};
               for (final ev in upcomingEvents.take(10)) {
-                final parsed = DateTime.tryParse(ev.startDate) ?? DateTime.now();
+                final parsed =
+                    DateTime.tryParse(ev.startDate) ?? DateTime.now();
                 final dateKey = DateTime(parsed.year, parsed.month, parsed.day);
                 groupedUpcoming.putIfAbsent(dateKey, () => []).add(ev);
               }
@@ -446,7 +539,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          const Divider(height: 1, color: AcadexColors.hairline),
+                          const Divider(
+                            height: 1,
+                            color: AcadexColors.hairline,
+                          ),
                         ],
                       ),
                     ),
@@ -454,7 +550,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       CalendarEventCard(
                         key: ValueKey('upcoming_${ev.id}'),
                         event: ev,
-                        dateLabel: DateFormat('EEE, MMM d').format(d).toUpperCase(),
+                        dateLabel: DateFormat(
+                          'EEE, MMM d',
+                        ).format(d).toUpperCase(),
                         onRefresh: () => ref
                             .read(calendarEventsProvider.notifier)
                             .loadEvents(currentMonth, force: true),
@@ -481,7 +579,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               icon: const Icon(LucideIcons.plus, color: Colors.white, size: 18),
               label: const Text(
                 'Add Event',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             )
           : null,
@@ -489,14 +590,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         scrollable: true,
         bottomPadding: !isWide ? 16.0 : null,
         onRefresh: () async {
-          await ref.read(calendarEventsProvider.notifier).loadEvents(currentMonth, force: true);
+          await ref
+              .read(calendarEventsProvider.notifier)
+              .loadEvents(currentMonth, force: true);
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AcadexPageHeader(
               title: 'Academic Calendar',
-              subtitle: 'Institutional schedule, exams, holidays, and academic milestones',
+              subtitle:
+                  'Institutional schedule, exams, holidays, and academic milestones',
               actions: [
                 if (canCreate && isWide)
                   AcadexButton(
@@ -615,11 +719,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               cellDateStr.compareTo(e.endDate) <= 0;
         }).toList();
 
-        final isSelected = cellDate.year == selectedDate.year &&
+        final isSelected =
+            cellDate.year == selectedDate.year &&
             cellDate.month == selectedDate.month &&
             cellDate.day == selectedDate.day;
 
-        final isToday = DateTime.now().year == cellDate.year &&
+        final isToday =
+            DateTime.now().year == cellDate.year &&
             DateTime.now().month == cellDate.month &&
             DateTime.now().day == cellDate.day;
 
@@ -638,7 +744,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             decoration: BoxDecoration(
               color: isSelected
                   ? AcadexColors.primary
-                  : (isToday ? AcadexColors.primary.withValues(alpha: 0.08) : Colors.transparent),
+                  : (isToday
+                        ? AcadexColors.primary.withValues(alpha: 0.08)
+                        : Colors.transparent),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Column(
@@ -648,12 +756,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   '$dayNum',
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: isSelected || isToday ? FontWeight.w700 : FontWeight.w500,
+                    fontWeight: isSelected || isToday
+                        ? FontWeight.w700
+                        : FontWeight.w500,
                     color: isSelected
                         ? Colors.white
                         : (isCurrentMonth
-                            ? const Color(0xFF1E293B)
-                            : Colors.grey.shade400),
+                              ? const Color(0xFF1E293B)
+                              : Colors.grey.shade400),
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -666,23 +776,28 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       Color dotColor = const Color(0xFFF59E0B);
                       if (ev.eventType == CalendarEventType.holiday ||
                           ev.eventType == CalendarEventType.publicHoliday ||
-                          ev.eventType == CalendarEventType.institutionHoliday) {
+                          ev.eventType ==
+                              CalendarEventType.institutionHoliday) {
                         dotColor = const Color(0xFF10B981);
                       } else if (ev.eventType == CalendarEventType.exam ||
                           ev.eventType == CalendarEventType.examination) {
                         dotColor = const Color(0xFF8B5CF6);
                       } else if (ev.eventType == CalendarEventType.deadline ||
-                          ev.eventType == CalendarEventType.assignmentDeadline) {
+                          ev.eventType ==
+                              CalendarEventType.assignmentDeadline) {
                         dotColor = const Color(0xFF3B82F6);
-                      } else if (ev.eventType == CalendarEventType.internalAssessment ||
+                      } else if (ev.eventType ==
+                              CalendarEventType.internalAssessment ||
                           ev.eventType == CalendarEventType.classTest) {
                         dotColor = const Color(0xFFE11D48);
                       } else if (ev.eventType == CalendarEventType.practical ||
                           ev.eventType == CalendarEventType.labViva) {
                         dotColor = const Color(0xFFD97706);
-                      } else if (ev.eventType == CalendarEventType.timetableClass) {
+                      } else if (ev.eventType ==
+                          CalendarEventType.timetableClass) {
                         dotColor = const Color(0xFF0284C7);
-                      } else if (ev.eventType == CalendarEventType.resultPublication) {
+                      } else if (ev.eventType ==
+                          CalendarEventType.resultPublication) {
                         dotColor = const Color(0xFF7C3AED);
                       }
                       return Container(

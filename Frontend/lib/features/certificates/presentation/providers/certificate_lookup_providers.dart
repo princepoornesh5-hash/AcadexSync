@@ -3,7 +3,9 @@ import '../../../academic_structure/domain/models/academic_models.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
 
 /// Memoized provider for Department lookup by ID in Certificates.
-final certificateDepartmentMapProvider = Provider<Map<String, Department>>((ref) {
+final certificateDepartmentMapProvider = Provider<Map<String, Department>>((
+  ref,
+) {
   final async = ref.watch(departmentsProvider);
   return async.maybeWhen(
     data: (list) => {for (var item in list) item.id: item},
@@ -30,7 +32,9 @@ final certificateSectionMapProvider = Provider<Map<String, Section>>((ref) {
 });
 
 /// Memoized provider for Academic Year lookup by ID in Certificates.
-final certificateAcademicYearMapProvider = Provider<Map<String, AcademicYear>>((ref) {
+final certificateAcademicYearMapProvider = Provider<Map<String, AcademicYear>>((
+  ref,
+) {
   final async = ref.watch(academicYearsProvider);
   return async.maybeWhen(
     data: (list) => {for (var item in list) item.id: item},

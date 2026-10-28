@@ -1,12 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-enum DateRangePreset {
-  today,
-  thisWeek,
-  thisMonth,
-  currentSemester,
-  custom,
-}
+enum DateRangePreset { today, thisWeek, thisMonth, currentSemester, custom }
 
 extension DateRangePresetExtension on DateRangePreset {
   String toApiValue() {
@@ -223,14 +217,26 @@ class StudentAttendanceReportModel {
 
   factory StudentAttendanceReportModel.fromJson(Map<String, dynamic> json) {
     return StudentAttendanceReportModel(
-      student: ReportStudentInfo.fromJson(json['student'] as Map<String, dynamic>? ?? {}),
-      summary: ReportAttendanceSummary.fromJson(json['summary'] as Map<String, dynamic>? ?? {}),
+      student: ReportStudentInfo.fromJson(
+        json['student'] as Map<String, dynamic>? ?? {},
+      ),
+      summary: ReportAttendanceSummary.fromJson(
+        json['summary'] as Map<String, dynamic>? ?? {},
+      ),
       subjects: (json['subjects'] as List<dynamic>? ?? [])
-          .map((e) => ReportSubjectAttendanceItem.fromJson(e as Map<String, dynamic>))
+          .map(
+            (e) =>
+                ReportSubjectAttendanceItem.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
-      riskProfile: ReportRiskProfile.fromJson(json['riskProfile'] as Map<String, dynamic>? ?? {}),
+      riskProfile: ReportRiskProfile.fromJson(
+        json['riskProfile'] as Map<String, dynamic>? ?? {},
+      ),
       recentTrends: (json['recentTrends'] as List<dynamic>? ?? [])
-          .map((e) => ReportAttendanceTrendItem.fromJson(e as Map<String, dynamic>))
+          .map(
+            (e) =>
+                ReportAttendanceTrendItem.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
     );
   }
@@ -266,7 +272,8 @@ class ReportStudentRankingItem {
       rollNumber: json['rollNumber'] as String? ?? '',
       totalClasses: (json['totalClasses'] as num?)?.toInt() ?? 0,
       attendedClasses: (json['attendedClasses'] as num?)?.toInt() ?? 0,
-      attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      attendancePercentage:
+          (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
       isLowAttendance: json['isLowAttendance'] as bool? ?? false,
       rank: (json['rank'] as num?)?.toInt() ?? 0,
     );
@@ -290,13 +297,16 @@ class ReportSectionSubjectBreakdownItem {
     required this.attendancePercentage,
   });
 
-  factory ReportSectionSubjectBreakdownItem.fromJson(Map<String, dynamic> json) {
+  factory ReportSectionSubjectBreakdownItem.fromJson(
+    Map<String, dynamic> json,
+  ) {
     return ReportSectionSubjectBreakdownItem(
       subjectId: json['subjectId'] as String? ?? '',
       subjectName: json['subjectName'] as String? ?? '',
       subjectCode: json['subjectCode'] as String? ?? '',
       totalSessions: (json['totalSessions'] as num?)?.toInt() ?? 0,
-      attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      attendancePercentage:
+          (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
@@ -321,12 +331,20 @@ class SectionAttendanceReportModel {
   factory SectionAttendanceReportModel.fromJson(Map<String, dynamic> json) {
     return SectionAttendanceReportModel(
       section: json['section'] as Map<String, dynamic>? ?? {},
-      summary: ReportAttendanceSummary.fromJson(json['summary'] as Map<String, dynamic>? ?? {}),
+      summary: ReportAttendanceSummary.fromJson(
+        json['summary'] as Map<String, dynamic>? ?? {},
+      ),
       subjectBreakdown: (json['subjectBreakdown'] as List<dynamic>? ?? [])
-          .map((e) => ReportSectionSubjectBreakdownItem.fromJson(e as Map<String, dynamic>))
+          .map(
+            (e) => ReportSectionSubjectBreakdownItem.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
           .toList(),
       students: (json['students'] as List<dynamic>? ?? [])
-          .map((e) => ReportStudentRankingItem.fromJson(e as Map<String, dynamic>))
+          .map(
+            (e) => ReportStudentRankingItem.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
       lowAttendanceCount: (json['lowAttendanceCount'] as num?)?.toInt() ?? 0,
     );
@@ -353,7 +371,8 @@ class ReportDepartmentSectionItem {
       sectionId: json['sectionId'] as String? ?? '',
       sectionName: json['sectionName'] as String? ?? '',
       totalStudents: (json['totalStudents'] as num?)?.toInt() ?? 0,
-      attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      attendancePercentage:
+          (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
@@ -378,7 +397,8 @@ class ReportDepartmentSubjectItem {
       subjectId: json['subjectId'] as String? ?? '',
       subjectName: json['subjectName'] as String? ?? '',
       subjectCode: json['subjectCode'] as String? ?? '',
-      attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      attendancePercentage:
+          (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
@@ -403,14 +423,23 @@ class DepartmentAttendanceReportModel {
   factory DepartmentAttendanceReportModel.fromJson(Map<String, dynamic> json) {
     return DepartmentAttendanceReportModel(
       department: json['department'] as Map<String, dynamic>? ?? {},
-      summary: ReportAttendanceSummary.fromJson(json['summary'] as Map<String, dynamic>? ?? {}),
+      summary: ReportAttendanceSummary.fromJson(
+        json['summary'] as Map<String, dynamic>? ?? {},
+      ),
       sectionsComparison: (json['sectionsComparison'] as List<dynamic>? ?? [])
-          .map((e) => ReportDepartmentSectionItem.fromJson(e as Map<String, dynamic>))
+          .map(
+            (e) =>
+                ReportDepartmentSectionItem.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
       subjectsComparison: (json['subjectsComparison'] as List<dynamic>? ?? [])
-          .map((e) => ReportDepartmentSubjectItem.fromJson(e as Map<String, dynamic>))
+          .map(
+            (e) =>
+                ReportDepartmentSubjectItem.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
-      lowAttendanceStudentsCount: (json['lowAttendanceStudentsCount'] as num?)?.toInt() ?? 0,
+      lowAttendanceStudentsCount:
+          (json['lowAttendanceStudentsCount'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -438,7 +467,8 @@ class ReportCollegeDepartmentItem {
       departmentName: json['departmentName'] as String? ?? '',
       departmentCode: json['departmentCode'] as String? ?? '',
       totalStudents: (json['totalStudents'] as num?)?.toInt() ?? 0,
-      attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      attendancePercentage:
+          (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
@@ -461,13 +491,21 @@ class CollegeAttendanceReportModel {
   factory CollegeAttendanceReportModel.fromJson(Map<String, dynamic> json) {
     return CollegeAttendanceReportModel(
       college: json['college'] as Map<String, dynamic>? ?? {},
-      summary: ReportAttendanceSummary.fromJson(json['summary'] as Map<String, dynamic>? ?? {}),
-      departmentComparison: (json['departmentComparison'] as List<dynamic>? ?? [])
-          .map((e) => ReportCollegeDepartmentItem.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      lowAttendanceDepartments: (json['lowAttendanceDepartments'] as List<dynamic>? ?? [])
-          .map((e) => e.toString())
-          .toList(),
+      summary: ReportAttendanceSummary.fromJson(
+        json['summary'] as Map<String, dynamic>? ?? {},
+      ),
+      departmentComparison:
+          (json['departmentComparison'] as List<dynamic>? ?? [])
+              .map(
+                (e) => ReportCollegeDepartmentItem.fromJson(
+                  e as Map<String, dynamic>,
+                ),
+              )
+              .toList(),
+      lowAttendanceDepartments:
+          (json['lowAttendanceDepartments'] as List<dynamic>? ?? [])
+              .map((e) => e.toString())
+              .toList(),
     );
   }
 }
@@ -491,8 +529,10 @@ class AcademicHierarchyReportModel {
     return AcademicHierarchyReportModel(
       collegeId: json['collegeId'] as String?,
       summary: json['summary'] as Map<String, dynamic>? ?? {},
-      enrollmentCapacity: json['enrollmentCapacity'] as Map<String, dynamic>? ?? {},
-      timetableCoverage: json['timetableCoverage'] as Map<String, dynamic>? ?? {},
+      enrollmentCapacity:
+          json['enrollmentCapacity'] as Map<String, dynamic>? ?? {},
+      timetableCoverage:
+          json['timetableCoverage'] as Map<String, dynamic>? ?? {},
     );
   }
 }
@@ -525,7 +565,8 @@ class NotesAnalyticsReportModel {
       publishedNotes: (json['publishedNotes'] as num?)?.toInt() ?? 0,
       totalSizeBytes: (json['totalSizeBytes'] as num?)?.toInt() ?? 0,
       totalSizeMB: (json['totalSizeMB'] as num?)?.toDouble() ?? 0.0,
-      departmentDistribution: json['departmentDistribution'] as List<dynamic>? ?? [],
+      departmentDistribution:
+          json['departmentDistribution'] as List<dynamic>? ?? [],
       subjectDistribution: json['subjectDistribution'] as List<dynamic>? ?? [],
     );
   }

@@ -10,10 +10,7 @@ import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 class AssignHodDialog extends ConsumerStatefulWidget {
   final Department department;
 
-  const AssignHodDialog({
-    super.key,
-    required this.department,
-  });
+  const AssignHodDialog({super.key, required this.department});
 
   static Future<void> show(BuildContext context, Department department) {
     return showDialog(
@@ -34,21 +31,25 @@ class _AssignHodDialogState extends ConsumerState<AssignHodDialog> {
   @override
   void initState() {
     super.initState();
-    _selectedFacultyId = widget.department.hodId.isNotEmpty ? widget.department.hodId : null;
+    _selectedFacultyId = widget.department.hodId.isNotEmpty
+        ? widget.department.hodId
+        : null;
   }
 
   Future<void> _handleSave() async {
     if (_selectedFacultyId == null) {
-      AcadexSnackBar.showWarning(context, 'Please select a faculty member to assign as HOD');
+      AcadexSnackBar.showWarning(
+        context,
+        'Please select a faculty member to assign as HOD',
+      );
       return;
     }
 
     setState(() => _isSubmitting = true);
     try {
-      await ref.read(departmentsProvider.notifier).assignHod(
-        widget.department.id,
-        _selectedFacultyId!,
-      );
+      await ref
+          .read(departmentsProvider.notifier)
+          .assignHod(widget.department.id, _selectedFacultyId!);
 
       if (mounted) {
         AcadexSnackBar.showSuccess(context, 'HOD assigned successfully');
@@ -74,7 +75,9 @@ class _AssignHodDialogState extends ConsumerState<AssignHodDialog> {
     final facultyState = ref.watch(facultyProvider(widget.department.id));
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.lg)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AcadexRadius.lg),
+      ),
       backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
       child: Container(
         width: 480,
@@ -94,14 +97,30 @@ class _AssignHodDialogState extends ConsumerState<AssignHodDialog> {
                         color: AcadexColors.primary.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(AcadexRadius.md),
                       ),
-                      child: const Icon(LucideIcons.shieldCheck, color: AcadexColors.primary, size: 20),
+                      child: const Icon(
+                        LucideIcons.shieldCheck,
+                        color: AcadexColors.primary,
+                        size: 20,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Assign Head of Dept (HOD)', style: AcadexTypography.heading3(color: theme.colorScheme.onSurface)),
-                        Text(widget.department.name, style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+                        Text(
+                          'Assign Head of Dept (HOD)',
+                          style: AcadexTypography.heading3(
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        Text(
+                          widget.department.name,
+                          style: AcadexTypography.caption(
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.7,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -123,24 +142,40 @@ class _AssignHodDialogState extends ConsumerState<AssignHodDialog> {
             const SizedBox(height: 16),
 
             if (facultyState.isLoading)
-              const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()))
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
+              )
             else if (facultyState.error != null)
-              Text('Error loading faculty: ${facultyState.error}', style: const TextStyle(color: AcadexColors.warning))
+              Text(
+                'Error loading faculty: ${facultyState.error}',
+                style: const TextStyle(color: AcadexColors.warning),
+              )
             else if (facultyState.items.isEmpty)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkSurfaceCard : Colors.grey.shade100,
+                  color: isDark
+                      ? AcadexColors.darkSurfaceCard
+                      : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(AcadexRadius.md),
                 ),
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.info, size: 18, color: AcadexColors.warning),
+                    const Icon(
+                      LucideIcons.info,
+                      size: 18,
+                      color: AcadexColors.warning,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'No faculty found in this department. Please create faculty first.',
-                        style: AcadexTypography.caption(color: theme.colorScheme.onSurface),
+                        style: AcadexTypography.caption(
+                          color: theme.colorScheme.onSurface,
+                        ),
                       ),
                     ),
                   ],
@@ -148,16 +183,22 @@ class _AssignHodDialogState extends ConsumerState<AssignHodDialog> {
               )
             else
               DropdownButtonFormField<String>(
-                dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                dropdownColor: isDark
+                    ? AcadexColors.darkSurfaceCard
+                    : Colors.white,
                 initialValue: _selectedFacultyId,
                 decoration: const InputDecoration(
                   labelText: 'Select Faculty Member *',
                   hintText: 'Choose from department faculty',
                 ),
-                items: facultyState.items.map((f) => DropdownMenuItem(
-                  value: f.id,
-                  child: Text('${f.name} (${f.employeeId})'),
-                )).toList(),
+                items: facultyState.items
+                    .map(
+                      (f) => DropdownMenuItem(
+                        value: f.id,
+                        child: Text('${f.name} (${f.employeeId})'),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (val) => setState(() => _selectedFacultyId = val),
               ),
 

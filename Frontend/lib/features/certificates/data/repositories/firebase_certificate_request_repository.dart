@@ -2,16 +2,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/models/certificate_request_model.dart';
 import 'certificate_request_repository.dart';
 
-class FirebaseCertificateRequestRepository implements CertificateRequestRepository {
+class FirebaseCertificateRequestRepository
+    implements CertificateRequestRepository {
   FirebaseCertificateRequestRepository();
 
-  CollectionReference get _collection => FirebaseFirestore.instance.collection('certificateRequests');
-  CollectionReference get _typesCollection => FirebaseFirestore.instance.collection('certificateTypes');
+  CollectionReference get _collection =>
+      FirebaseFirestore.instance.collection('certificateRequests');
+  CollectionReference get _typesCollection =>
+      FirebaseFirestore.instance.collection('certificateTypes');
 
   @override
   Future<List<ConfiguredCertificateType>> getCertificateTypes() async {
-    final snapshot = await _typesCollection.where('isActive', isEqualTo: true).get();
-    
+    final snapshot = await _typesCollection
+        .where('isActive', isEqualTo: true)
+        .get();
+
     // If the database has no types configured yet, we can return a fallback list or just the results
     if (snapshot.docs.isEmpty) {
       // In a real scenario, an admin would set these up. For safety during migration, we can return defaults
@@ -37,9 +42,13 @@ class FirebaseCertificateRequestRepository implements CertificateRequestReposito
         ),
       ];
     }
-    
+
     return snapshot.docs
-        .map((doc) => ConfiguredCertificateType.fromJson(doc.data() as Map<String, dynamic>))
+        .map(
+          (doc) => ConfiguredCertificateType.fromJson(
+            doc.data() as Map<String, dynamic>,
+          ),
+        )
         .toList();
   }
 
@@ -49,11 +58,15 @@ class FirebaseCertificateRequestRepository implements CertificateRequestReposito
         .where('studentUserId', isEqualTo: studentUserId)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => CertificateRequest.fromJson(doc.data() as Map<String, dynamic>))
-          .toList()
-        ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-    });
+          return snapshot.docs
+              .map(
+                (doc) => CertificateRequest.fromJson(
+                  doc.data() as Map<String, dynamic>,
+                ),
+              )
+              .toList()
+            ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+        });
   }
 
   @override
@@ -72,7 +85,10 @@ class FirebaseCertificateRequestRepository implements CertificateRequestReposito
 
     return query.snapshots().map((snapshot) {
       return snapshot.docs
-          .map((doc) => CertificateRequest.fromJson(doc.data() as Map<String, dynamic>))
+          .map(
+            (doc) =>
+                CertificateRequest.fromJson(doc.data() as Map<String, dynamic>),
+          )
           .toList()
         ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     });
@@ -98,7 +114,7 @@ class FirebaseCertificateRequestRepository implements CertificateRequestReposito
     String? reviewedBy,
   }) async {
     final docRef = _collection.doc(requestId);
-    
+
     final updates = <String, dynamic>{
       'status': status.value,
       'updatedAt': DateTime.now().toIso8601String(),
@@ -107,7 +123,7 @@ class FirebaseCertificateRequestRepository implements CertificateRequestReposito
     if (rejectionReason != null) {
       updates['rejectionReason'] = rejectionReason;
     }
-    
+
     if (reviewedBy != null) {
       updates['reviewedBy'] = reviewedBy;
       updates['reviewedAt'] = DateTime.now().toIso8601String();

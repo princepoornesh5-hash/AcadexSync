@@ -36,7 +36,7 @@ class AcadexAssistant extends StatefulWidget {
     this.enableBlinking = true,
     this.enableShadow = true,
     this.onTap,
-    this.semanticLabel = 'ACADEX Assistant',
+    this.semanticLabel = 'ACADEXSYNC Assistant',
   });
 
   @override
@@ -63,7 +63,9 @@ class _AcadexAssistantState extends State<AcadexAssistant>
     } else {
       _controller = AcadexAssistantController(
         initialPose: widget.initialPose ?? AcadexAssistantPose.idle,
-        initialExpression: widget.initialExpression ?? AcadexAssistantExpression.defaultExpression,
+        initialExpression:
+            widget.initialExpression ??
+            AcadexAssistantExpression.defaultExpression,
       );
       _internalController = true;
     }
@@ -81,7 +83,9 @@ class _AcadexAssistantState extends State<AcadexAssistant>
       duration: const Duration(milliseconds: 1800),
     );
 
-    final isTest = WidgetsBinding.instance.runtimeType.toString().contains('Test');
+    final isTest = WidgetsBinding.instance.runtimeType.toString().contains(
+      'Test',
+    );
     if (!isTest) {
       if (widget.enableBreathing) {
         _breathingController.repeat();
@@ -124,7 +128,8 @@ class _AcadexAssistantState extends State<AcadexAssistant>
   @override
   void didUpdateWidget(covariant AcadexAssistant oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.controller != oldWidget.controller && widget.controller != null) {
+    if (widget.controller != oldWidget.controller &&
+        widget.controller != null) {
       _controller.removeListener(_onControllerUpdated);
       if (_internalController) {
         _controller.dispose();
@@ -164,7 +169,8 @@ class _AcadexAssistantState extends State<AcadexAssistant>
             double dimension;
             if (widget.size != null) {
               dimension = widget.size!;
-            } else if (constraints.hasBoundedWidth && constraints.hasBoundedHeight) {
+            } else if (constraints.hasBoundedWidth &&
+                constraints.hasBoundedHeight) {
               dimension = math.min(constraints.maxWidth, constraints.maxHeight);
             } else if (constraints.hasBoundedWidth) {
               dimension = constraints.maxWidth;
@@ -176,9 +182,14 @@ class _AcadexAssistantState extends State<AcadexAssistant>
 
             return RepaintBoundary(
               child: AnimatedBuilder(
-                animation: Listenable.merge([_breathingController, _actionController]),
+                animation: Listenable.merge([
+                  _breathingController,
+                  _actionController,
+                ]),
                 builder: (context, child) {
-                  final progress = reducedMotion ? 0.0 : _actionController.value;
+                  final progress = reducedMotion
+                      ? 0.0
+                      : _actionController.value;
                   final breathing = (reducedMotion || !widget.enableBreathing)
                       ? 0.0
                       : _breathingController.value;

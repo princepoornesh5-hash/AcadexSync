@@ -9,10 +9,7 @@ import '../widgets/subject_academic_tile.dart';
 class AcademicRecordDetailScreen extends ConsumerStatefulWidget {
   final String recordId;
 
-  const AcademicRecordDetailScreen({
-    super.key,
-    required this.recordId,
-  });
+  const AcademicRecordDetailScreen({super.key, required this.recordId});
 
   @override
   ConsumerState<AcademicRecordDetailScreen> createState() =>
@@ -25,8 +22,7 @@ class _AcademicRecordDetailScreenState
     BuildContext context,
     AcademicRecordDetailModel detail,
   ) {
-    AcademicProgressionStatus selectedStatus =
-        detail.record.progressionStatus;
+    AcademicProgressionStatus selectedStatus = detail.record.progressionStatus;
     final remarksController = TextEditingController();
 
     showModalBottomSheet(
@@ -51,22 +47,23 @@ class _AcademicRecordDetailScreenState
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.upgrade_rounded, color: Colors.blueAccent),
+                      const Icon(
+                        Icons.upgrade_rounded,
+                        color: Colors.blueAccent,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Update Academic Progression',
-                        style: Theme.of(modalContext).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                        style: Theme.of(modalContext).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Target Progression Status',
-                    style: Theme.of(modalContext).textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                    style: Theme.of(modalContext).textTheme.labelMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<AcademicProgressionStatus>(
@@ -75,8 +72,10 @@ class _AcademicRecordDetailScreenState
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                     ),
                     items: AcademicProgressionStatus.values.map((status) {
                       return DropdownMenuItem(
@@ -116,7 +115,9 @@ class _AcademicRecordDetailScreenState
                       onPressed: () async {
                         Navigator.of(modalContext).pop();
                         final success = await ref
-                            .read(academicRecordActionControllerProvider.notifier)
+                            .read(
+                              academicRecordActionControllerProvider.notifier,
+                            )
                             .updateProgression(
                               widget.recordId,
                               status: selectedStatus,
@@ -132,8 +133,9 @@ class _AcademicRecordDetailScreenState
                                     ? 'Progression status updated successfully'
                                     : 'Failed to update progression status',
                               ),
-                              backgroundColor:
-                                  success ? Colors.green : Colors.redAccent,
+                              backgroundColor: success
+                                  ? Colors.green
+                                  : Colors.redAccent,
                             ),
                           );
                         }
@@ -169,10 +171,13 @@ class _AcademicRecordDetailScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final detailAsync = ref.watch(academicRecordDetailProvider(widget.recordId));
+    final detailAsync = ref.watch(
+      academicRecordDetailProvider(widget.recordId),
+    );
     final currentUser = ref.watch(currentUserProvider);
 
-    final canManageProgression = currentUser?.role == AppRole.collegeAdmin ||
+    final canManageProgression =
+        currentUser?.role == AppRole.collegeAdmin ||
         currentUser?.role == AppRole.superAdmin ||
         currentUser?.role == AppRole.hod;
 
@@ -208,7 +213,9 @@ class _AcademicRecordDetailScreenState
                     color: isDark ? const Color(0xFF1E222A) : Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                      color: isDark
+                          ? Colors.grey.shade800
+                          : Colors.grey.shade200,
                       width: 1,
                     ),
                   ),
@@ -243,7 +250,9 @@ class _AcademicRecordDetailScreenState
                             decoration: BoxDecoration(
                               color: statusColor.withOpacity(0.12),
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: statusColor.withOpacity(0.3)),
+                              border: Border.all(
+                                color: statusColor.withOpacity(0.3),
+                              ),
                             ),
                             child: Text(
                               detail.record.progressionStatus.displayName,
@@ -266,7 +275,9 @@ class _AcademicRecordDetailScreenState
                       Text(
                         '${detail.departmentName} ${detail.sectionName != null ? "• Section ${detail.sectionName}" : ""}',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                          color: theme.textTheme.bodySmall?.color?.withOpacity(
+                            0.7,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -276,12 +287,16 @@ class _AcademicRecordDetailScreenState
                           if (detail.record.academicStage.isNotEmpty)
                             Text(
                               'Stage: ${detail.record.academicStage}',
-                              style: theme.textTheme.labelSmall?.copyWith(fontSize: 11),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontSize: 11,
+                              ),
                             ),
                           if (detail.record.cohort.isNotEmpty)
                             Text(
                               '• Cohort: ${detail.record.cohort}',
-                              style: theme.textTheme.labelSmall?.copyWith(fontSize: 11),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontSize: 11,
+                              ),
                             ),
                         ],
                       ),
@@ -382,9 +397,7 @@ class _AcademicRecordDetailScreenState
             ),
           );
         },
-        loading: () => const Center(
-          child: CircularProgressIndicator(),
-        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -407,12 +420,16 @@ class _AcademicRecordDetailScreenState
                 Text(
                   err.toString(),
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.grey,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
                   onPressed: () {
-                    ref.invalidate(academicRecordDetailProvider(widget.recordId));
+                    ref.invalidate(
+                      academicRecordDetailProvider(widget.recordId),
+                    );
                   },
                   icon: const Icon(Icons.refresh_rounded, size: 18),
                   label: const Text('Try Again'),

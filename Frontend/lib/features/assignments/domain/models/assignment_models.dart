@@ -176,7 +176,9 @@ class SubmissionAttachmentModel {
       name: json['name']?.toString() ?? 'Attachment',
       url: json['url']?.toString() ?? '',
       fileType: json['fileType']?.toString(),
-      fileSize: json['fileSize'] is num ? (json['fileSize'] as num).toInt() : null,
+      fileSize: json['fileSize'] is num
+          ? (json['fileSize'] as num).toInt()
+          : null,
       uploadedAt: json['uploadedAt']?.toString(),
     );
   }
@@ -219,7 +221,9 @@ class SubmissionHistoryModel {
       version: json['version'] is num ? (json['version'] as num).toInt() : 1,
       textResponse: json['textResponse']?.toString(),
       attachments: atts,
-      submittedAt: json['submittedAt'] != null ? DateTime.tryParse(json['submittedAt'].toString()) : null,
+      submittedAt: json['submittedAt'] != null
+          ? DateTime.tryParse(json['submittedAt'].toString())
+          : null,
       isLate: json['isLate'] == true,
     );
   }
@@ -286,14 +290,20 @@ class SubmissionModel {
       status: StudentTaskStatus.fromString(json['status']?.toString()),
       textResponse: json['textResponse']?.toString(),
       attachments: atts,
-      submittedAt: json['submittedAt'] != null ? DateTime.tryParse(json['submittedAt'].toString()) : null,
+      submittedAt: json['submittedAt'] != null
+          ? DateTime.tryParse(json['submittedAt'].toString())
+          : null,
       isLate: json['isLate'] == true,
       version: json['version'] is num ? (json['version'] as num).toInt() : 1,
       submissionHistory: hist,
-      reviewStatus: FacultyReviewStatus.fromString(json['reviewStatus']?.toString()),
+      reviewStatus: FacultyReviewStatus.fromString(
+        json['reviewStatus']?.toString(),
+      ),
       marks: json['marks'] is num ? (json['marks'] as num).toDouble() : null,
       feedback: json['feedback']?.toString(),
-      reviewedAt: json['reviewedAt'] != null ? DateTime.tryParse(json['reviewedAt'].toString()) : null,
+      reviewedAt: json['reviewedAt'] != null
+          ? DateTime.tryParse(json['reviewedAt'].toString())
+          : null,
       reviewedBy: json['reviewedBy']?.toString(),
     );
   }
@@ -349,7 +359,9 @@ class AssignmentAttachmentModel {
       name: json['name']?.toString() ?? 'Attachment',
       url: json['url']?.toString() ?? '',
       fileType: json['fileType']?.toString(),
-      fileSize: json['fileSize'] is num ? (json['fileSize'] as num).toInt() : null,
+      fileSize: json['fileSize'] is num
+          ? (json['fileSize'] as num).toInt()
+          : null,
     );
   }
 
@@ -477,46 +489,106 @@ class AssignmentModel {
     final rawDueDateTime = json['dueDateTime'];
     DateTime dueDateTime;
     if (rawDueDateTime != null) {
-      dueDateTime = DateTime.tryParse(rawDueDateTime.toString()) ?? DateTime.now();
+      dueDateTime =
+          DateTime.tryParse(rawDueDateTime.toString()) ?? DateTime.now();
     } else {
       dueDateTime = DateTime.now();
     }
 
     return AssignmentModel(
       id: rawId.toString(),
-      collegeId: (json['collegeId'] is Map ? json['collegeId']['_id'] : json['collegeId'])?.toString() ?? '',
-      departmentId: (json['departmentId'] is Map ? json['departmentId']['_id'] : json['departmentId'])?.toString() ?? '',
-      courseId: (json['courseId'] is Map ? json['courseId']['_id'] : json['courseId'])?.toString() ?? '',
-      academicYearId: (json['academicYearId'] is Map ? json['academicYearId']['_id'] : json['academicYearId'])?.toString() ?? '',
-      semesterId: (json['semesterId'] is Map ? json['semesterId']['_id'] : json['semesterId'])?.toString() ?? '',
-      sectionId: (json['sectionId'] is Map ? json['sectionId']['_id'] : json['sectionId'])?.toString(),
-      subjectId: (json['subjectId'] is Map ? json['subjectId']['_id'] : json['subjectId'])?.toString() ?? '',
-      facultyId: (json['facultyId'] is Map ? json['facultyId']['_id'] : json['facultyId'])?.toString() ?? '',
+      collegeId:
+          (json['collegeId'] is Map
+                  ? json['collegeId']['_id']
+                  : json['collegeId'])
+              ?.toString() ??
+          '',
+      departmentId:
+          (json['departmentId'] is Map
+                  ? json['departmentId']['_id']
+                  : json['departmentId'])
+              ?.toString() ??
+          '',
+      courseId:
+          (json['courseId'] is Map ? json['courseId']['_id'] : json['courseId'])
+              ?.toString() ??
+          '',
+      academicYearId:
+          (json['academicYearId'] is Map
+                  ? json['academicYearId']['_id']
+                  : json['academicYearId'])
+              ?.toString() ??
+          '',
+      semesterId:
+          (json['semesterId'] is Map
+                  ? json['semesterId']['_id']
+                  : json['semesterId'])
+              ?.toString() ??
+          '',
+      sectionId:
+          (json['sectionId'] is Map
+                  ? json['sectionId']['_id']
+                  : json['sectionId'])
+              ?.toString(),
+      subjectId:
+          (json['subjectId'] is Map
+                  ? json['subjectId']['_id']
+                  : json['subjectId'])
+              ?.toString() ??
+          '',
+      facultyId:
+          (json['facultyId'] is Map
+                  ? json['facultyId']['_id']
+                  : json['facultyId'])
+              ?.toString() ??
+          '',
       facultyAssignmentId: json['facultyAssignmentId']?.toString(),
       facultyName: json['facultyName']?.toString() ?? 'Faculty',
       title: json['title']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
       questions: questionsList,
-      assignmentType: AssignmentType.fromString(json['assignmentType']?.toString()),
+      assignmentType: AssignmentType.fromString(
+        json['assignmentType']?.toString(),
+      ),
       dueDate: json['dueDate']?.toString() ?? '',
       dueTime: json['dueTime']?.toString() ?? '',
       dueDateTime: dueDateTime,
-      maximumMarks: json['maximumMarks'] is num ? (json['maximumMarks'] as num).toInt() : 10,
+      maximumMarks: json['maximumMarks'] is num
+          ? (json['maximumMarks'] as num).toInt()
+          : 10,
       attachments: attachmentsList,
       status: AssignmentStatus.fromString(json['status']?.toString()),
-      publishedAt: json['publishedAt'] != null ? DateTime.tryParse(json['publishedAt'].toString()) : null,
-      closedAt: json['closedAt'] != null ? DateTime.tryParse(json['closedAt'].toString()) : null,
-      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
+      publishedAt: json['publishedAt'] != null
+          ? DateTime.tryParse(json['publishedAt'].toString())
+          : null,
+      closedAt: json['closedAt'] != null
+          ? DateTime.tryParse(json['closedAt'].toString())
+          : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : null,
       scope: json['scope']?.toString(),
       subjectName: subjectName,
       sectionName: sectionName,
-      totalStudents: json['totalStudents'] is num ? (json['totalStudents'] as num).toInt() : null,
-      completedCount: json['completedCount'] is num ? (json['completedCount'] as num).toInt() : null,
-      pendingCount: json['pendingCount'] is num ? (json['pendingCount'] as num).toInt() : null,
-      studentStatus: json['studentStatus'] != null ? StudentTaskStatus.fromString(json['studentStatus'].toString()) : null,
-      completedAt: json['completedAt'] != null ? DateTime.tryParse(json['completedAt'].toString()) : null,
+      totalStudents: json['totalStudents'] is num
+          ? (json['totalStudents'] as num).toInt()
+          : null,
+      completedCount: json['completedCount'] is num
+          ? (json['completedCount'] as num).toInt()
+          : null,
+      pendingCount: json['pendingCount'] is num
+          ? (json['pendingCount'] as num).toInt()
+          : null,
+      studentStatus: json['studentStatus'] != null
+          ? StudentTaskStatus.fromString(json['studentStatus'].toString())
+          : null,
+      completedAt: json['completedAt'] != null
+          ? DateTime.tryParse(json['completedAt'].toString())
+          : null,
       isLate: json['isLate'] == true,
-      reviewStatus: json['reviewStatus'] != null ? FacultyReviewStatus.fromString(json['reviewStatus'].toString()) : null,
+      reviewStatus: json['reviewStatus'] != null
+          ? FacultyReviewStatus.fromString(json['reviewStatus'].toString())
+          : null,
       marks: json['marks'] is num ? (json['marks'] as num).toInt() : null,
     );
   }
@@ -533,7 +605,8 @@ class AssignmentModel {
       if (sectionId != null) 'sectionId': sectionId,
       'subjectId': subjectId,
       'facultyId': facultyId,
-      if (facultyAssignmentId != null) 'facultyAssignmentId': facultyAssignmentId,
+      if (facultyAssignmentId != null)
+        'facultyAssignmentId': facultyAssignmentId,
       if (scope != null) 'scope': scope,
       'facultyName': facultyName,
       'title': title,
@@ -592,7 +665,10 @@ class StudentAssignmentActivityModel {
     this.feedback,
   });
 
-  factory StudentAssignmentActivityModel.fromJson(Map<String, dynamic> json, int maxMarks) {
+  factory StudentAssignmentActivityModel.fromJson(
+    Map<String, dynamic> json,
+    int maxMarks,
+  ) {
     final rawAtts = json['attachments'];
     List<SubmissionAttachmentModel> atts = [];
     if (rawAtts is List) {
@@ -616,15 +692,23 @@ class StudentAssignmentActivityModel {
       studentName: json['studentName']?.toString() ?? 'Student',
       rollNumber: json['rollNumber']?.toString(),
       status: StudentTaskStatus.fromString(json['status']?.toString()),
-      completedAt: json['completedAt'] != null ? DateTime.tryParse(json['completedAt'].toString()) : null,
+      completedAt: json['completedAt'] != null
+          ? DateTime.tryParse(json['completedAt'].toString())
+          : null,
       isLate: json['isLate'] == true,
-      reviewStatus: FacultyReviewStatus.fromString(json['reviewStatus']?.toString()),
+      reviewStatus: FacultyReviewStatus.fromString(
+        json['reviewStatus']?.toString(),
+      ),
       marks: json['marks'] is num ? (json['marks'] as num).toDouble() : null,
-      maximumMarks: json['maximumMarks'] is num ? (json['maximumMarks'] as num).toInt() : maxMarks,
+      maximumMarks: json['maximumMarks'] is num
+          ? (json['maximumMarks'] as num).toInt()
+          : maxMarks,
       submissionId: json['submissionId']?.toString(),
       textResponse: json['textResponse']?.toString(),
       attachments: atts,
-      submittedAt: json['submittedAt'] != null ? DateTime.tryParse(json['submittedAt'].toString()) : null,
+      submittedAt: json['submittedAt'] != null
+          ? DateTime.tryParse(json['submittedAt'].toString())
+          : null,
       version: json['version'] is num ? (json['version'] as num).toInt() : 1,
       submissionHistory: hist,
       feedback: json['feedback']?.toString(),
@@ -678,13 +762,27 @@ class AssignmentActivitySummaryModel {
 
   factory AssignmentActivitySummaryModel.fromJson(Map<String, dynamic> json) {
     return AssignmentActivitySummaryModel(
-      totalStudents: json['totalStudents'] is num ? (json['totalStudents'] as num).toInt() : 0,
-      completedCount: json['completedCount'] is num ? (json['completedCount'] as num).toInt() : 0,
-      pendingCount: json['pendingCount'] is num ? (json['pendingCount'] as num).toInt() : 0,
-      overdueCount: json['overdueCount'] is num ? (json['overdueCount'] as num).toInt() : 0,
-      reviewedCount: json['reviewedCount'] is num ? (json['reviewedCount'] as num).toInt() : 0,
-      averageMarks: json['averageMarks'] is num ? (json['averageMarks'] as num).toDouble() : null,
-      maximumMarks: json['maximumMarks'] is num ? (json['maximumMarks'] as num).toInt() : 10,
+      totalStudents: json['totalStudents'] is num
+          ? (json['totalStudents'] as num).toInt()
+          : 0,
+      completedCount: json['completedCount'] is num
+          ? (json['completedCount'] as num).toInt()
+          : 0,
+      pendingCount: json['pendingCount'] is num
+          ? (json['pendingCount'] as num).toInt()
+          : 0,
+      overdueCount: json['overdueCount'] is num
+          ? (json['overdueCount'] as num).toInt()
+          : 0,
+      reviewedCount: json['reviewedCount'] is num
+          ? (json['reviewedCount'] as num).toInt()
+          : 0,
+      averageMarks: json['averageMarks'] is num
+          ? (json['averageMarks'] as num).toDouble()
+          : null,
+      maximumMarks: json['maximumMarks'] is num
+          ? (json['maximumMarks'] as num).toInt()
+          : 10,
     );
   }
 }
@@ -703,15 +801,26 @@ class AssignmentActivityResponseModel {
   });
 
   factory AssignmentActivityResponseModel.fromJson(Map<String, dynamic> json) {
-    final asgn = AssignmentModel.fromJson(json['assignment'] is Map<String, dynamic> ? json['assignment'] as Map<String, dynamic> : {});
-    final summary = AssignmentActivitySummaryModel.fromJson(json['summary'] is Map<String, dynamic> ? json['summary'] as Map<String, dynamic> : {});
-    
+    final asgn = AssignmentModel.fromJson(
+      json['assignment'] is Map<String, dynamic>
+          ? json['assignment'] as Map<String, dynamic>
+          : {},
+    );
+    final summary = AssignmentActivitySummaryModel.fromJson(
+      json['summary'] is Map<String, dynamic>
+          ? json['summary'] as Map<String, dynamic>
+          : {},
+    );
+
     final rawCompleted = json['completed'];
     List<StudentAssignmentActivityModel> completedList = [];
     if (rawCompleted is List) {
       completedList = rawCompleted
           .whereType<Map<String, dynamic>>()
-          .map((c) => StudentAssignmentActivityModel.fromJson(c, asgn.maximumMarks))
+          .map(
+            (c) =>
+                StudentAssignmentActivityModel.fromJson(c, asgn.maximumMarks),
+          )
           .toList();
     }
 
@@ -720,7 +829,10 @@ class AssignmentActivityResponseModel {
     if (rawPending is List) {
       pendingList = rawPending
           .whereType<Map<String, dynamic>>()
-          .map((p) => StudentAssignmentActivityModel.fromJson(p, asgn.maximumMarks))
+          .map(
+            (p) =>
+                StudentAssignmentActivityModel.fromJson(p, asgn.maximumMarks),
+          )
           .toList();
     }
 

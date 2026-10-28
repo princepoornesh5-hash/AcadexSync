@@ -26,21 +26,28 @@ class NotificationCard extends ConsumerWidget {
     if (difference.inHours < 24) return '${difference.inHours}h ago';
     if (difference.inDays == 1) return 'Yesterday';
     if (difference.inDays < 7) return '${difference.inDays}d ago';
-    
+
     return '${time.day}/${time.month}/${time.year}';
   }
 
   IconData _getIconForCategory(NotificationCategory category) {
     if (category == NotificationCategory.attendance) {
-      if (notification.notificationType == NotificationType.attendanceAbsent) return LucideIcons.userX;
-      if (notification.notificationType == NotificationType.attendanceAlert || notification.priority == NotificationPriority.critical) return LucideIcons.shieldAlert;
-      if (notification.notificationType == NotificationType.attendanceLow) return LucideIcons.alertTriangle;
+      if (notification.notificationType == NotificationType.attendanceAbsent)
+        return LucideIcons.userX;
+      if (notification.notificationType == NotificationType.attendanceAlert ||
+          notification.priority == NotificationPriority.critical)
+        return LucideIcons.shieldAlert;
+      if (notification.notificationType == NotificationType.attendanceLow)
+        return LucideIcons.alertTriangle;
       final titleLower = notification.title.toLowerCase();
       if (titleLower.contains('recovered')) return LucideIcons.circleCheck;
       if (titleLower.contains('drop')) return LucideIcons.trendingDown;
-      if (titleLower.contains('absence') || titleLower.contains('absent')) return LucideIcons.userX;
-      if (titleLower.contains('unmarked') || titleLower.contains('missing')) return LucideIcons.calendarX;
-      if (notification.priority == NotificationPriority.critical) return LucideIcons.shieldAlert;
+      if (titleLower.contains('absence') || titleLower.contains('absent'))
+        return LucideIcons.userX;
+      if (titleLower.contains('unmarked') || titleLower.contains('missing'))
+        return LucideIcons.calendarX;
+      if (notification.priority == NotificationPriority.critical)
+        return LucideIcons.shieldAlert;
       return LucideIcons.calendarCheck;
     }
 
@@ -48,31 +55,51 @@ class NotificationCard extends ConsumerWidget {
       case NotificationCategory.request:
         if (notification.notificationType == NotificationType.requestApproved) {
           return LucideIcons.checkCircle;
-        } else if (notification.notificationType == NotificationType.requestRejected) {
+        } else if (notification.notificationType ==
+            NotificationType.requestRejected) {
           return LucideIcons.xCircle;
-        } else if (notification.notificationType == NotificationType.requestReceived) {
+        } else if (notification.notificationType ==
+            NotificationType.requestReceived) {
           return LucideIcons.inbox;
         }
         return LucideIcons.fileCheck2;
-      case NotificationCategory.attendance: return LucideIcons.calendarCheck;
-      case NotificationCategory.academic: return LucideIcons.bookOpen;
-      case NotificationCategory.system: return LucideIcons.settings;
-      case NotificationCategory.profile: return LucideIcons.user;
-      case NotificationCategory.security: return LucideIcons.shieldAlert;
-      case NotificationCategory.notes: return LucideIcons.fileText;
-      case NotificationCategory.certificates: return LucideIcons.award;
-      case NotificationCategory.timetable: return LucideIcons.calendarDays;
-      case NotificationCategory.announcement: return LucideIcons.megaphone;
-      case NotificationCategory.assignment: return LucideIcons.bookMarked;
-      case NotificationCategory.practical: return LucideIcons.flaskConical;
-      case NotificationCategory.assessment: return LucideIcons.clipboardCheck;
-      case NotificationCategory.result: return LucideIcons.graduationCap;
-      case NotificationCategory.calendar: return LucideIcons.calendar;
-      case NotificationCategory.general: return LucideIcons.bell;
+      case NotificationCategory.attendance:
+        return LucideIcons.calendarCheck;
+      case NotificationCategory.academic:
+        return LucideIcons.bookOpen;
+      case NotificationCategory.system:
+        return LucideIcons.settings;
+      case NotificationCategory.profile:
+        return LucideIcons.user;
+      case NotificationCategory.security:
+        return LucideIcons.shieldAlert;
+      case NotificationCategory.notes:
+        return LucideIcons.fileText;
+      case NotificationCategory.certificates:
+        return LucideIcons.award;
+      case NotificationCategory.timetable:
+        return LucideIcons.calendarDays;
+      case NotificationCategory.announcement:
+        return LucideIcons.megaphone;
+      case NotificationCategory.assignment:
+        return LucideIcons.bookMarked;
+      case NotificationCategory.practical:
+        return LucideIcons.flaskConical;
+      case NotificationCategory.assessment:
+        return LucideIcons.clipboardCheck;
+      case NotificationCategory.result:
+        return LucideIcons.graduationCap;
+      case NotificationCategory.calendar:
+        return LucideIcons.calendar;
+      case NotificationCategory.general:
+        return LucideIcons.bell;
     }
   }
 
-  Color _getColorForPriority(BuildContext context, NotificationPriority priority) {
+  Color _getColorForPriority(
+    BuildContext context,
+    NotificationPriority priority,
+  ) {
     if (notification.category == NotificationCategory.attendance &&
         notification.title.toLowerCase().contains('recovered')) {
       return AcadexColors.success;
@@ -80,23 +107,38 @@ class NotificationCard extends ConsumerWidget {
     if (notification.category == NotificationCategory.request) {
       if (notification.notificationType == NotificationType.requestApproved) {
         return AcadexColors.success;
-      } else if (notification.notificationType == NotificationType.requestRejected) {
+      } else if (notification.notificationType ==
+          NotificationType.requestRejected) {
         return AcadexColors.error;
       }
     }
     switch (priority) {
-      case NotificationPriority.critical: return AcadexColors.error;
-      case NotificationPriority.high: return AcadexColors.warning;
-      case NotificationPriority.normal: return Theme.of(context).primaryColor;
-      case NotificationPriority.low: return Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted;
+      case NotificationPriority.critical:
+        return AcadexColors.error;
+      case NotificationPriority.high:
+        return AcadexColors.warning;
+      case NotificationPriority.normal:
+        return Theme.of(context).primaryColor;
+      case NotificationPriority.low:
+        return Theme.of(context).textTheme.bodySmall?.color ??
+            AcadexColors.inkMuted;
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isUnread = !notification.isRead;
     final iconColor = _getColorForPriority(context, notification.priority);
-    final bgColor = Theme.of(context).colorScheme.surface;
+    final bgColor = isDark
+        ? AcadexColors.darkSurface
+        : Theme.of(context).colorScheme.surface;
+    final primaryTextColor = isDark
+        ? (isUnread ? AcadexColors.darkInk : AcadexColors.darkInkSecondary)
+        : (isUnread ? AcadexColors.ink : AcadexColors.inkSecondary);
+    final secondaryTextColor = isDark
+        ? AcadexColors.darkInkSecondary
+        : AcadexColors.inkSecondary;
 
     return Dismissible(
       key: Key(notification.id),
@@ -111,13 +153,19 @@ class NotificationCard extends ConsumerWidget {
       child: InkWell(
         onTap: () {
           if (isUnread) onReadToggle();
-          ref.read(notificationNavigationCoordinatorProvider).handleNotificationTap(context, notification);
+          ref
+              .read(notificationNavigationCoordinatorProvider)
+              .handleNotificationTap(context, notification);
         },
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: bgColor,
-            border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
+            borderRadius: AcadexRadius.borderRadiusMd,
+            border: Border.all(
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+              width: 1.0,
+            ),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,7 +185,7 @@ class NotificationCard extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              
+
               // Content
               Expanded(
                 child: Column(
@@ -149,30 +197,44 @@ class NotificationCard extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             notification.title,
-                            style: AcadexTypography.body(
-                              color: isUnread ? AcadexColors.ink : AcadexColors.inkSecondary,
-                            ).copyWith(
-                              fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
-                            ),
+                            style:
+                                AcadexTypography.body(
+                                  color: primaryTextColor,
+                                ).copyWith(
+                                  fontWeight: isUnread
+                                      ? FontWeight.w700
+                                      : FontWeight.w600,
+                                ),
                           ),
                         ),
                         Text(
                           _formatRelativeTime(notification.timestamp),
-                          style: AcadexTypography.caption(color: AcadexColors.inkMuted),
+                          style: AcadexTypography.caption(
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 6),
                     Text(
                       notification.message,
-                      style: AcadexTypography.bodySmall(color: AcadexColors.inkSecondary),
+                      style: AcadexTypography.bodySmall(
+                        color: secondaryTextColor,
+                      ),
                     ),
-                    if (notification.collegeId != null || notification.audienceType == NotificationAudienceType.platform) ...[
+                    if (notification.collegeId != null ||
+                        notification.audienceType ==
+                            NotificationAudienceType.platform) ...[
                       const SizedBox(height: 6),
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: notification.collegeId != null
                                   ? AcadexColors.primary.withValues(alpha: 0.1)
@@ -183,17 +245,25 @@ class NotificationCard extends ConsumerWidget {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
-                                  notification.collegeId != null ? LucideIcons.building2 : LucideIcons.globe,
+                                  notification.collegeId != null
+                                      ? LucideIcons.building2
+                                      : LucideIcons.globe,
                                   size: 11,
-                                  color: notification.collegeId != null ? AcadexColors.primary : Colors.amber.shade800,
+                                  color: notification.collegeId != null
+                                      ? AcadexColors.primary
+                                      : Colors.amber.shade800,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  notification.collegeId != null ? 'Campus Workspace' : 'Global Platform',
+                                  notification.collegeId != null
+                                      ? 'Campus Workspace'
+                                      : 'Global Platform',
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,
-                                    color: notification.collegeId != null ? AcadexColors.primary : Colors.amber.shade900,
+                                    color: notification.collegeId != null
+                                        ? AcadexColors.primary
+                                        : Colors.amber.shade900,
                                   ),
                                 ),
                               ],
@@ -209,17 +279,23 @@ class NotificationCard extends ConsumerWidget {
                           children: [
                             Text(
                               'View details',
-                              style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(fontWeight: FontWeight.w600),
+                              style: AcadexTypography.caption(
+                                color: AcadexColors.primary,
+                              ).copyWith(fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(width: 4),
-                            const Icon(LucideIcons.chevronRight, size: 14, color: AcadexColors.primary),
+                            const Icon(
+                              LucideIcons.chevronRight,
+                              size: 14,
+                              color: AcadexColors.primary,
+                            ),
                           ],
                         ),
                       ),
                   ],
                 ),
               ),
-              
+
               // Unread Dot
               if (isUnread)
                 Padding(

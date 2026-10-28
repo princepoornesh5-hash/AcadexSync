@@ -17,10 +17,7 @@ import '../providers/academic_result_providers.dart';
 class StudentOfficialResultScreen extends ConsumerWidget {
   final String? semesterId;
 
-  const StudentOfficialResultScreen({
-    super.key,
-    this.semesterId,
-  });
+  const StudentOfficialResultScreen({super.key, this.semesterId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,20 +27,28 @@ class StudentOfficialResultScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/dashboard'),
         ),
         title: Text(
           'Official Academic Result',
-          style: AcadexTypography.title(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          style: AcadexTypography.title(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
         ),
         actions: [
           IconButton(
             tooltip: 'Refresh Result',
             icon: const Icon(LucideIcons.refreshCw, size: 18),
-            onPressed: () => ref.refresh(studentOfficialResultProvider(semesterId)),
+            onPressed: () =>
+                ref.refresh(studentOfficialResultProvider(semesterId)),
           ),
         ],
       ),
@@ -57,18 +62,23 @@ class StudentOfficialResultScreen extends ConsumerWidget {
               child: Text(
                 'Institutional academic record certified and published by the administration.',
                 style: AcadexTypography.bodySmall(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
             ),
 
             resultAsync.when(
-              loading: () => const AcadexLoadingState(message: 'Loading your official academic result...'),
+              loading: () => const AcadexLoadingState(
+                message: 'Loading your official academic result...',
+              ),
               error: (err, _) => Center(
                 child: AcadexErrorState(
                   message: "Couldn't load your academic result at this time.",
                   retryLabel: 'Retry',
-                  onRetry: () => ref.refresh(studentOfficialResultProvider(semesterId)),
+                  onRetry: () =>
+                      ref.refresh(studentOfficialResultProvider(semesterId)),
                 ),
               ),
               data: (result) {
@@ -78,7 +88,8 @@ class StudentOfficialResultScreen extends ConsumerWidget {
                     child: Center(
                       child: AcadexEmptyState(
                         title: 'Result Not Officially Published Yet',
-                        subtitle: 'Your academic results have not been finalized or published by the administration. Interim scores can be viewed under Internal Marks.',
+                        subtitle:
+                            'Your academic results have not been finalized or published by the administration. Interim scores can be viewed under Internal Marks.',
                         icon: LucideIcons.fileCheck,
                       ),
                     ),
@@ -142,7 +153,9 @@ class _OfficialResultView extends StatelessWidget {
               Text(
                 'Academic Year: ${result.academicYearName}',
                 style: AcadexTypography.body(
-                  color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                  color: isDark
+                      ? AcadexColors.darkInkSecondary
+                      : AcadexColors.inkSecondary,
                 ),
               ),
             ],
@@ -186,7 +199,9 @@ class _OfficialResultView extends StatelessWidget {
                 Icon(
                   LucideIcons.lock,
                   size: 14,
-                  color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                  color: isDark
+                      ? AcadexColors.darkInkSecondary
+                      : AcadexColors.inkSecondary,
                 ),
                 const SizedBox(width: 8),
                 Flexible(
@@ -194,7 +209,9 @@ class _OfficialResultView extends StatelessWidget {
                     'Certified snapshot. Historical official versions are archived and tamper-proof.',
                     textAlign: TextAlign.center,
                     style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                      color: isDark
+                          ? AcadexColors.darkInkSecondary
+                          : AcadexColors.inkSecondary,
                     ),
                   ),
                 ),
@@ -217,7 +234,8 @@ class _ResultSummaryMetrics extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final isPass = summary.overallStatus == OverallResultStatus.pass ||
+    final isPass =
+        summary.overallStatus == OverallResultStatus.pass ||
         summary.overallStatus == OverallResultStatus.promoted;
 
     return AcadexCard(
@@ -238,8 +256,12 @@ class _ResultSummaryMetrics extends StatelessWidget {
               ),
               AcadexBadge(
                 label: summary.overallStatus.label,
-                variant: isPass ? AcadexBadgeVariant.success : AcadexBadgeVariant.danger,
-                icon: isPass ? LucideIcons.checkCircle2 : LucideIcons.alertTriangle,
+                variant: isPass
+                    ? AcadexBadgeVariant.success
+                    : AcadexBadgeVariant.danger,
+                icon: isPass
+                    ? LucideIcons.checkCircle2
+                    : LucideIcons.alertTriangle,
               ),
             ],
           ),
@@ -256,11 +278,13 @@ class _ResultSummaryMetrics extends StatelessWidget {
               ),
               _MetricItem(
                 label: 'Credits Earned',
-                value: '${summary.earnedCredits.toStringAsFixed(0)} / ${summary.totalCredits.toStringAsFixed(0)}',
+                value:
+                    '${summary.earnedCredits.toStringAsFixed(0)} / ${summary.totalCredits.toStringAsFixed(0)}',
               ),
               _MetricItem(
                 label: 'Total Marks',
-                value: '${summary.totalMarks.toStringAsFixed(0)} / ${summary.maxMarks.toStringAsFixed(0)}',
+                value:
+                    '${summary.totalMarks.toStringAsFixed(0)} / ${summary.maxMarks.toStringAsFixed(0)}',
               ),
               if (summary.gpa != null)
                 _MetricItem(
@@ -302,11 +326,15 @@ class _MetricItem extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: highlight
-            ? (isDark ? AcadexColors.primary.withValues(alpha: 0.15) : AcadexColors.primaryLight)
+            ? (isDark
+                  ? AcadexColors.primary.withValues(alpha: 0.15)
+                  : AcadexColors.primaryLight)
             : (isDark ? AcadexColors.darkCanvas : AcadexColors.canvasSoft),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: highlight ? AcadexColors.primary.withValues(alpha: 0.3) : AcadexColors.hairline,
+          color: highlight
+              ? AcadexColors.primary.withValues(alpha: 0.3)
+              : AcadexColors.hairline,
         ),
       ),
       child: Column(
@@ -315,7 +343,9 @@ class _MetricItem extends StatelessWidget {
           Text(
             label,
             style: AcadexTypography.caption(
-              color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+              color: isDark
+                  ? AcadexColors.darkInkSecondary
+                  : AcadexColors.inkSecondary,
             ),
           ),
           const SizedBox(height: 4),
@@ -366,7 +396,8 @@ class _SubjectResultCard extends StatelessWidget {
                             variant: AcadexBadgeVariant.neutral,
                           ),
                         AcadexBadge(
-                          label: '${subject.credits.toStringAsFixed(0)} Credits',
+                          label:
+                              '${subject.credits.toStringAsFixed(0)} Credits',
                           variant: AcadexBadgeVariant.info,
                         ),
                       ],
@@ -383,7 +414,9 @@ class _SubjectResultCard extends StatelessWidget {
               ),
               AcadexBadge(
                 label: subject.status.label,
-                variant: isPass ? AcadexBadgeVariant.success : AcadexBadgeVariant.danger,
+                variant: isPass
+                    ? AcadexBadgeVariant.success
+                    : AcadexBadgeVariant.danger,
               ),
             ],
           ),
@@ -403,15 +436,21 @@ class _SubjectResultCard extends StatelessWidget {
               ),
               if (subject.grade != null && subject.grade!.isNotEmpty)
                 AcadexBadge(
-                  label: 'Grade: ${subject.grade}' +
-                      (subject.gradePoint != null ? ' (${subject.gradePoint!.toStringAsFixed(1)} pts)' : ''),
-                  variant: isPass ? AcadexBadgeVariant.primary : AcadexBadgeVariant.danger,
+                  label:
+                      'Grade: ${subject.grade}' +
+                      (subject.gradePoint != null
+                          ? ' (${subject.gradePoint!.toStringAsFixed(1)} pts)'
+                          : ''),
+                  variant: isPass
+                      ? AcadexBadgeVariant.primary
+                      : AcadexBadgeVariant.danger,
                 ),
             ],
           ),
 
           // Attendance / Practical eligibility notes if evaluated
-          if (subject.attendancePassed != null || subject.practicalCompleted != null) ...[
+          if (subject.attendancePassed != null ||
+              subject.practicalCompleted != null) ...[
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -422,13 +461,19 @@ class _SubjectResultCard extends StatelessWidget {
                     label: subject.attendancePassed!
                         ? 'Attendance: ${subject.attendancePercentage?.toStringAsFixed(0)}% (Met)'
                         : 'Attendance: ${subject.attendancePercentage?.toStringAsFixed(0)}% (Shortage)',
-                    variant: subject.attendancePassed! ? AcadexBadgeVariant.success : AcadexBadgeVariant.warning,
+                    variant: subject.attendancePassed!
+                        ? AcadexBadgeVariant.success
+                        : AcadexBadgeVariant.warning,
                     icon: LucideIcons.calendarCheck,
                   ),
                 if (subject.practicalCompleted != null)
                   AcadexBadge(
-                    label: subject.practicalCompleted! ? 'Practical: Completed' : 'Practical: Pending',
-                    variant: subject.practicalCompleted! ? AcadexBadgeVariant.success : AcadexBadgeVariant.warning,
+                    label: subject.practicalCompleted!
+                        ? 'Practical: Completed'
+                        : 'Practical: Pending',
+                    variant: subject.practicalCompleted!
+                        ? AcadexBadgeVariant.success
+                        : AcadexBadgeVariant.warning,
                     icon: LucideIcons.flaskConical,
                   ),
               ],

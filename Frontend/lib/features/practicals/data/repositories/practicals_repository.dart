@@ -11,9 +11,13 @@ abstract class PracticalsRepository {
     String? status,
   });
 
-  Future<({PracticalSessionModel session, List<PracticalParticipationModel> participations})> getSessionById(
-    String sessionId,
-  );
+  Future<
+    ({
+      PracticalSessionModel session,
+      List<PracticalParticipationModel> participations,
+    })
+  >
+  getSessionById(String sessionId);
 
   Future<PracticalSessionModel> createSession(Map<String, dynamic> payload);
 
@@ -21,7 +25,10 @@ abstract class PracticalsRepository {
 
   Future<PracticalSessionModel> completeSession(String sessionId);
 
-  Future<PracticalSessionModel> cancelSession(String sessionId, {String? reason});
+  Future<PracticalSessionModel> cancelSession(
+    String sessionId, {
+    String? reason,
+  });
 
   Future<PracticalParticipationModel> updateParticipation({
     required String sessionId,
@@ -45,7 +52,7 @@ class ApiPracticalsRepository implements PracticalsRepository {
   final ApiClient _apiClient;
 
   ApiPracticalsRepository({ApiClient? apiClient})
-      : _apiClient = apiClient ?? apiClientInstance;
+    : _apiClient = apiClient ?? apiClientInstance;
 
   static ApiClient get apiClientInstance => apiClient;
 
@@ -73,37 +80,61 @@ class ApiPracticalsRepository implements PracticalsRepository {
       if (response.data != null && response.data['data'] != null) {
         final list = response.data['data'] as List;
         return list
-            .map((item) => PracticalSessionModel.fromJson(Map<String, dynamic>.from(item as Map)))
+            .map(
+              (item) => PracticalSessionModel.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
             .toList();
       }
       return [];
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load practical sessions');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load practical sessions',
+      );
     }
   }
 
   @override
-  Future<({PracticalSessionModel session, List<PracticalParticipationModel> participations})> getSessionById(
-    String sessionId,
-  ) async {
+  Future<
+    ({
+      PracticalSessionModel session,
+      List<PracticalParticipationModel> participations,
+    })
+  >
+  getSessionById(String sessionId) async {
     try {
-      final response = await _apiClient.dio.get('/practicals/sessions/$sessionId');
+      final response = await _apiClient.dio.get(
+        '/practicals/sessions/$sessionId',
+      );
       final data = response.data['data'] as Map<String, dynamic>;
 
-      final session = PracticalSessionModel.fromJson(Map<String, dynamic>.from(data['session'] as Map));
+      final session = PracticalSessionModel.fromJson(
+        Map<String, dynamic>.from(data['session'] as Map),
+      );
       final rawParticipations = (data['participations'] as List? ?? []);
       final participations = rawParticipations
-          .map((item) => PracticalParticipationModel.fromJson(Map<String, dynamic>.from(item as Map)))
+          .map(
+            (item) => PracticalParticipationModel.fromJson(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
           .toList();
 
       return (session: session, participations: participations);
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load practical session details');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load practical session details',
+      );
     }
   }
 
   @override
-  Future<PracticalSessionModel> createSession(Map<String, dynamic> payload) async {
+  Future<PracticalSessionModel> createSession(
+    Map<String, dynamic> payload,
+  ) async {
     try {
       final response = await _apiClient.dio.post(
         '/practicals/sessions',
@@ -112,34 +143,50 @@ class ApiPracticalsRepository implements PracticalsRepository {
       final data = response.data['data'] as Map<String, dynamic>;
       return PracticalSessionModel.fromJson(data);
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to schedule practical session');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to schedule practical session',
+      );
     }
   }
 
   @override
   Future<PracticalSessionModel> openSession(String sessionId) async {
     try {
-      final response = await _apiClient.dio.post('/practicals/sessions/$sessionId/open');
+      final response = await _apiClient.dio.post(
+        '/practicals/sessions/$sessionId/open',
+      );
       final data = response.data['data'] as Map<String, dynamic>;
       return PracticalSessionModel.fromJson(data);
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to open practical session');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to open practical session',
+      );
     }
   }
 
   @override
   Future<PracticalSessionModel> completeSession(String sessionId) async {
     try {
-      final response = await _apiClient.dio.post('/practicals/sessions/$sessionId/complete');
+      final response = await _apiClient.dio.post(
+        '/practicals/sessions/$sessionId/complete',
+      );
       final data = response.data['data'] as Map<String, dynamic>;
       return PracticalSessionModel.fromJson(data);
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to complete practical session');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to complete practical session',
+      );
     }
   }
 
   @override
-  Future<PracticalSessionModel> cancelSession(String sessionId, {String? reason}) async {
+  Future<PracticalSessionModel> cancelSession(
+    String sessionId, {
+    String? reason,
+  }) async {
     try {
       final response = await _apiClient.dio.post(
         '/practicals/sessions/$sessionId/cancel',
@@ -148,7 +195,10 @@ class ApiPracticalsRepository implements PracticalsRepository {
       final data = response.data['data'] as Map<String, dynamic>;
       return PracticalSessionModel.fromJson(data);
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to cancel practical session');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to cancel practical session',
+      );
     }
   }
 
@@ -170,7 +220,10 @@ class ApiPracticalsRepository implements PracticalsRepository {
       final data = response.data['data'] as Map<String, dynamic>;
       return PracticalParticipationModel.fromJson(data);
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to update student participation');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to update student participation',
+      );
     }
   }
 
@@ -185,9 +238,14 @@ class ApiPracticalsRepository implements PracticalsRepository {
         data: {'updates': updates},
       );
       final data = response.data['data'] as Map<String, dynamic>;
-      return PracticalSessionModel.fromJson(Map<String, dynamic>.from(data['session'] as Map));
+      return PracticalSessionModel.fromJson(
+        Map<String, dynamic>.from(data['session'] as Map),
+      );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to bulk update student participation');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to bulk update student participation',
+      );
     }
   }
 
@@ -210,12 +268,19 @@ class ApiPracticalsRepository implements PracticalsRepository {
       if (response.data != null && response.data['data'] != null) {
         final list = response.data['data'] as List;
         return list
-            .map((item) => StudentPracticalHistoryModel.fromJson(Map<String, dynamic>.from(item as Map)))
+            .map(
+              (item) => StudentPracticalHistoryModel.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
             .toList();
       }
       return [];
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load student practical history');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load student practical history',
+      );
     }
   }
 }

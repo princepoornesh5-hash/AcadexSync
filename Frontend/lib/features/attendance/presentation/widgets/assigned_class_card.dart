@@ -45,14 +45,19 @@ class AssignedClassCard extends StatelessWidget {
                 // Time Slot Column
                 Container(
                   width: 84,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: isDark
                         ? AcadexColors.primaryHover.withValues(alpha: 0.2)
                         : AcadexColors.primaryLight,
                     borderRadius: AcadexRadius.borderRadiusMd,
                     border: Border.all(
-                      color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.4) : AcadexColors.primary.withValues(alpha: 0.15),
+                      color: isDark
+                          ? AcadexColors.primaryHover.withValues(alpha: 0.4)
+                          : AcadexColors.primary.withValues(alpha: 0.15),
                       width: 1,
                     ),
                   ),
@@ -61,7 +66,9 @@ class AssignedClassCard extends StatelessWidget {
                     children: [
                       Icon(
                         LucideIcons.clock,
-                        color: isDark ? AcadexColors.primaryMuted : AcadexColors.primary,
+                        color: isDark
+                            ? AcadexColors.primaryMuted
+                            : AcadexColors.primary,
                         size: 16,
                       ),
                       const SizedBox(height: 6),
@@ -76,7 +83,9 @@ class AssignedClassCard extends StatelessWidget {
                         Text(
                           endTime,
                           style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ).copyWith(fontSize: 11),
                         ),
                       ],
@@ -84,7 +93,7 @@ class AssignedClassCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-                
+
                 // Class Details
                 Expanded(
                   child: Column(
@@ -96,7 +105,9 @@ class AssignedClassCard extends StatelessWidget {
                             child: Text(
                               assignedClass.subjectName,
                               style: AcadexTypography.title(
-                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -110,27 +121,35 @@ class AssignedClassCard extends StatelessWidget {
                           Icon(
                             LucideIcons.users,
                             size: 13,
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             assignedClass.sectionName,
                             style: AcadexTypography.bodySmall(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
                             ),
                           ),
                           if (assignedClass.semester.isNotEmpty) ...[
                             Text(
                               ' • ',
                               style: AcadexTypography.bodySmall(
-                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
                               ),
                             ),
                             Expanded(
                               child: Text(
                                 assignedClass.semester,
                                 style: AcadexTypography.bodySmall(
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -142,27 +161,45 @@ class AssignedClassCard extends StatelessWidget {
                       if (assignedClass.isSubstitution) ...[
                         const SizedBox(height: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDark ? AcadexColors.warning.withValues(alpha: 0.15) : AcadexColors.warningLight,
+                            color: isDark
+                                ? AcadexColors.warning.withValues(alpha: 0.15)
+                                : AcadexColors.warningLight,
                             borderRadius: AcadexRadius.borderRadiusSm,
                             border: Border.all(
-                              color: isDark ? AcadexColors.warning.withValues(alpha: 0.3) : AcadexColors.warning.withValues(alpha: 0.2),
+                              color: isDark
+                                  ? AcadexColors.warning.withValues(alpha: 0.3)
+                                  : AcadexColors.warning.withValues(alpha: 0.2),
                             ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(LucideIcons.repeat, size: 12, color: AcadexColors.warning),
+                              const Icon(
+                                LucideIcons.repeat,
+                                size: 12,
+                                color: AcadexColors.warning,
+                              ),
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
-                                  assignedClass.originalFacultyName != null && assignedClass.originalFacultyName!.isNotEmpty
+                                  assignedClass.originalFacultyName != null &&
+                                          assignedClass
+                                              .originalFacultyName!
+                                              .isNotEmpty
                                       ? 'Substitution: Covering for ${assignedClass.originalFacultyName}'
                                       : 'Substitution Coverage',
-                                  style: AcadexTypography.caption(
-                                    color: AcadexColors.warning,
-                                  ).copyWith(fontWeight: FontWeight.w600, fontSize: 11),
+                                  style:
+                                      AcadexTypography.caption(
+                                        color: AcadexColors.warning,
+                                      ).copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 11,
+                                      ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -194,10 +231,13 @@ class AssignedClassCard extends StatelessWidget {
                               icon: LucideIcons.repeat,
                             ),
                           ],
-                          if (assignedClass.roomNumber != null && assignedClass.roomNumber!.isNotEmpty) ...[
+                          if (assignedClass.roomNumber != null &&
+                              assignedClass.roomNumber!.isNotEmpty) ...[
                             const SizedBox(width: 8),
                             AcadexBadge(
-                              label: assignedClass.building != null && assignedClass.building!.isNotEmpty
+                              label:
+                                  assignedClass.building != null &&
+                                      assignedClass.building!.isNotEmpty
                                   ? '${assignedClass.roomNumber} (${assignedClass.building})'
                                   : 'Room ${assignedClass.roomNumber}',
                               variant: AcadexBadgeVariant.neutral,
@@ -212,7 +252,9 @@ class AssignedClassCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Icon(
                   LucideIcons.chevronRight,
-                  color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                  color: isDark
+                      ? AcadexColors.darkInkFaint
+                      : AcadexColors.inkFaint,
                   size: 18,
                 ),
               ],

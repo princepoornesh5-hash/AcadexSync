@@ -38,18 +38,24 @@ class StudentAttendanceService {
 
     for (final session in sessions) {
       // Find record for this student
-      final record = session.records.where((r) => r.studentId == studentId).firstOrNull;
+      final record = session.records
+          .where((r) => r.studentId == studentId)
+          .firstOrNull;
       if (record != null && record.status != null) {
         result.add(
           StudentAttendanceSessionSummary(
             sessionId: session.id,
             subjectId: session.subjectId,
-            subjectName: session.subjectName.isNotEmpty ? session.subjectName : session.subjectId,
+            subjectName: session.subjectName.isNotEmpty
+                ? session.subjectName
+                : session.subjectId,
             subjectCode: session.subjectId,
             facultyId: session.facultyId,
             facultyName: session.facultyId,
             sectionId: session.sectionId,
-            sectionName: session.sectionName.isNotEmpty ? session.sectionName : session.sectionId,
+            sectionName: session.sectionName.isNotEmpty
+                ? session.sectionName
+                : session.sectionId,
             date: session.date,
             timeSlot: session.timeSlot,
             status: record.status!,
@@ -71,7 +77,8 @@ class StudentAttendanceService {
     final Map<String, List<StudentAttendanceSessionSummary>> grouped = {};
 
     for (final s in sessions) {
-      final key = '${s.date.year}-${s.date.month.toString().padLeft(2, '0')}-${s.date.day.toString().padLeft(2, '0')}';
+      final key =
+          '${s.date.year}-${s.date.month.toString().padLeft(2, '0')}-${s.date.day.toString().padLeft(2, '0')}';
       grouped.putIfAbsent(key, () => []).add(s);
     }
 
@@ -134,23 +141,32 @@ class StudentAttendanceService {
     required List<StudentDetailedSubjectAttendance> subjects,
     required List<AttendanceAlert> alerts,
   }) {
-    final sortedSubjects = List<StudentDetailedSubjectAttendance>.from(subjects)
-      ..sort((a, b) => b.attendancePercentage.compareTo(a.attendancePercentage));
+    final sortedSubjects = List<StudentDetailedSubjectAttendance>.from(
+      subjects,
+    )..sort((a, b) => b.attendancePercentage.compareTo(a.attendancePercentage));
 
-    final bestSubjects = sortedSubjects.where((s) => s.attendancePercentage >= 85.0).toList();
-    final lowestSubjects = sortedSubjects.where((s) => s.attendancePercentage < 75.0).toList();
+    final bestSubjects = sortedSubjects
+        .where((s) => s.attendancePercentage >= 85.0)
+        .toList();
+    final lowestSubjects = sortedSubjects
+        .where((s) => s.attendancePercentage < 75.0)
+        .toList();
 
     int totalRecovery = 0;
     for (final s in subjects) {
       totalRecovery += s.recoveryClassesNeeded;
     }
 
-    final warningsCount = subjects.where((s) => s.riskLevel != AttendanceRiskLevel.healthy).length;
+    final warningsCount = subjects
+        .where((s) => s.riskLevel != AttendanceRiskLevel.healthy)
+        .length;
 
     // Evaluate overall trend
     final trend = analytics.attendancePercentage >= 80.0
         ? TrendDirection.up
-        : (analytics.attendancePercentage >= 75.0 ? TrendDirection.neutral : TrendDirection.down);
+        : (analytics.attendancePercentage >= 75.0
+              ? TrendDirection.neutral
+              : TrendDirection.down);
 
     return StudentAttendanceInsights(
       overallPercentage: analytics.attendancePercentage,
@@ -162,8 +178,12 @@ class StudentAttendanceService {
       totalLate: analytics.lateCount,
       totalExcused: analytics.excusedCount,
       subjectRankings: sortedSubjects,
-      lowestAttendanceSubjects: lowestSubjects.isNotEmpty ? lowestSubjects : (sortedSubjects.length > 2 ? [sortedSubjects.last] : []),
-      bestAttendanceSubjects: bestSubjects.isNotEmpty ? bestSubjects : (sortedSubjects.isNotEmpty ? [sortedSubjects.first] : []),
+      lowestAttendanceSubjects: lowestSubjects.isNotEmpty
+          ? lowestSubjects
+          : (sortedSubjects.length > 2 ? [sortedSubjects.last] : []),
+      bestAttendanceSubjects: bestSubjects.isNotEmpty
+          ? bestSubjects
+          : (sortedSubjects.isNotEmpty ? [sortedSubjects.first] : []),
       activeAlerts: alerts,
       thresholdWarningsCount: warningsCount,
       isLowAttendance: analytics.isLowAttendance,

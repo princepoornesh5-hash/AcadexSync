@@ -7,14 +7,18 @@ class DepartmentComparisonCard extends StatelessWidget {
   final DepartmentAttendanceComparison comparison;
   final int rank;
 
-  const DepartmentComparisonCard({super.key, required this.comparison, required this.rank});
+  const DepartmentComparisonCard({
+    super.key,
+    required this.comparison,
+    required this.rank,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     IconData trendIcon;
     Color trendColor;
-    
+
     switch (comparison.trend) {
       case TrendDirection.up:
         trendIcon = LucideIcons.trendingUp;
@@ -49,7 +53,9 @@ class DepartmentComparisonCard extends StatelessWidget {
               width: 34,
               height: 34,
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+                color: isDark
+                    ? AcadexColors.darkSurfaceHover
+                    : AcadexColors.canvasSoft,
                 borderRadius: AcadexRadius.borderRadiusMd,
               ),
               child: Center(
@@ -79,7 +85,9 @@ class DepartmentComparisonCard extends StatelessWidget {
                   Text(
                     "${comparison.studentCount} Students • ${comparison.facultyCount} Faculty",
                     style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
                 ],
@@ -107,7 +115,9 @@ class DepartmentComparisonCard extends StatelessWidget {
                   Text(
                     "${comparison.todayCompletionPercentage.toInt()}% Completion",
                     style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
                 ],

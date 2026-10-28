@@ -25,14 +25,21 @@ class AdminResultsDashboardScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/dashboard'),
         ),
         title: Text(
           'Academic Finalization',
-          style: AcadexTypography.title(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          style: AcadexTypography.title(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
         ),
         actions: [
           IconButton(
@@ -57,7 +64,9 @@ class AdminResultsDashboardScreen extends ConsumerWidget {
               child: Text(
                 'Calculate, review, finalize and publish semester results under institutional governance.',
                 style: AcadexTypography.bodySmall(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
             ),
@@ -66,14 +75,18 @@ class AdminResultsDashboardScreen extends ConsumerWidget {
             _StatusFilterChips(
               selectedStatus: filter.status,
               onStatusSelected: (status) {
-                ref.read(academicResultFilterProvider.notifier).setStatus(status);
+                ref
+                    .read(academicResultFilterProvider.notifier)
+                    .setStatus(status);
               },
             ),
             const SizedBox(height: 16),
 
             // Results List / States
             resultsAsync.when(
-              loading: () => const AcadexLoadingState(message: 'Loading academic results...'),
+              loading: () => const AcadexLoadingState(
+                message: 'Loading academic results...',
+              ),
               error: (err, _) => Center(
                 child: AcadexErrorState(
                   message: "Failed to load academic results.",
@@ -90,7 +103,8 @@ class AdminResultsDashboardScreen extends ConsumerWidget {
                     child: Center(
                       child: AcadexEmptyState(
                         title: 'No Academic Results Found',
-                        subtitle: 'No student results match the current filter. Use the Calculate action to evaluate semester cohorts.',
+                        subtitle:
+                            'No student results match the current filter. Use the Calculate action to evaluate semester cohorts.',
                         icon: LucideIcons.graduationCap,
                       ),
                     ),
@@ -135,21 +149,28 @@ class AdminResultsDashboardScreen extends ConsumerWidget {
                 TextFormField(
                   controller: courseController,
                   decoration: const InputDecoration(labelText: 'Course ID *'),
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'Required' : null,
                 ),
                 TextFormField(
                   controller: yearController,
-                  decoration: const InputDecoration(labelText: 'Academic Year ID *'),
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Academic Year ID *',
+                  ),
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'Required' : null,
                 ),
                 TextFormField(
                   controller: semesterController,
                   decoration: const InputDecoration(labelText: 'Semester ID *'),
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'Required' : null,
                 ),
                 TextFormField(
                   controller: sectionController,
-                  decoration: const InputDecoration(labelText: 'Section ID (Optional)'),
+                  decoration: const InputDecoration(
+                    labelText: 'Section ID (Optional)',
+                  ),
                 ),
               ],
             ),
@@ -164,12 +185,16 @@ class AdminResultsDashboardScreen extends ConsumerWidget {
             onPressed: () async {
               if (formKey.currentState?.validate() ?? false) {
                 Navigator.of(ctx).pop();
-                final success = await ref.read(academicResultActionProvider.notifier).calculateClass(
-                  courseId: courseController.text.trim(),
-                  academicYearId: yearController.text.trim(),
-                  semesterId: semesterController.text.trim(),
-                  sectionId: sectionController.text.trim().isEmpty ? null : sectionController.text.trim(),
-                );
+                final success = await ref
+                    .read(academicResultActionProvider.notifier)
+                    .calculateClass(
+                      courseId: courseController.text.trim(),
+                      academicYearId: yearController.text.trim(),
+                      semesterId: semesterController.text.trim(),
+                      sectionId: sectionController.text.trim().isEmpty
+                          ? null
+                          : sectionController.text.trim(),
+                    );
 
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -269,7 +294,9 @@ class _AdminResultItemCard extends ConsumerWidget {
                       Text(
                         'Roll: $rollNumber',
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                          color: isDark
+                              ? AcadexColors.darkInkSecondary
+                              : AcadexColors.inkSecondary,
                         ),
                       ),
                     ],
@@ -296,7 +323,9 @@ class _AdminResultItemCard extends ConsumerWidget {
               Text(
                 'Credits: ${summary.earnedCredits.toStringAsFixed(0)} / ${summary.totalCredits.toStringAsFixed(0)}',
                 style: AcadexTypography.body(
-                  color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                  color: isDark
+                      ? AcadexColors.darkInkSecondary
+                      : AcadexColors.inkSecondary,
                 ),
               ),
               if (summary.gpa != null)
@@ -322,7 +351,8 @@ class _AdminResultItemCard extends ConsumerWidget {
           if (result.validationWarnings.isNotEmpty) ...[
             const SizedBox(height: 8),
             AcadexBadge(
-              label: '${result.validationWarnings.length} validation warning(s)',
+              label:
+                  '${result.validationWarnings.length} validation warning(s)',
               variant: AcadexBadgeVariant.warning,
               icon: LucideIcons.alertTriangle,
             ),
@@ -348,10 +378,14 @@ class _AdminResultItemCard extends ConsumerWidget {
                   icon: const Icon(LucideIcons.fileSearch, size: 16),
                   label: const Text('Review'),
                   onPressed: () async {
-                    final ok = await ref.read(academicResultActionProvider.notifier).reviewResult(result.id);
+                    final ok = await ref
+                        .read(academicResultActionProvider.notifier)
+                        .reviewResult(result.id);
                     if (context.mounted && ok) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Result moved to Under Review')),
+                        const SnackBar(
+                          content: Text('Result moved to Under Review'),
+                        ),
                       );
                     }
                   },
@@ -368,10 +402,14 @@ class _AdminResultItemCard extends ConsumerWidget {
                   icon: const Icon(LucideIcons.lock, size: 16),
                   label: const Text('Finalize'),
                   onPressed: () async {
-                    final ok = await ref.read(academicResultActionProvider.notifier).finalizeResult(result.id);
+                    final ok = await ref
+                        .read(academicResultActionProvider.notifier)
+                        .finalizeResult(result.id);
                     if (context.mounted && ok) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Result finalized successfully')),
+                        const SnackBar(
+                          content: Text('Result finalized successfully'),
+                        ),
                       );
                     }
                   },
@@ -387,10 +425,16 @@ class _AdminResultItemCard extends ConsumerWidget {
                   icon: const Icon(LucideIcons.send, size: 16),
                   label: const Text('Publish Officially'),
                   onPressed: () async {
-                    final ok = await ref.read(academicResultActionProvider.notifier).publishResult(result.id);
+                    final ok = await ref
+                        .read(academicResultActionProvider.notifier)
+                        .publishResult(result.id);
                     if (context.mounted && ok) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Result officially published to student')),
+                        const SnackBar(
+                          content: Text(
+                            'Result officially published to student',
+                          ),
+                        ),
                       );
                     }
                   },
@@ -445,40 +489,48 @@ class _AdminResultItemCard extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              ...result.subjectResults.map((sub) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Card(
-                      elevation: 0,
-                      color: AcadexColors.canvasSoft,
-                      child: ListTile(
-                        title: Text('${sub.subjectCode} — ${sub.subjectName}'),
-                        subtitle: Text(
-                          'Credits: ${sub.credits} | Marks: ${sub.totalMarks} (${sub.percentage}%)' +
-                              (sub.grade != null ? ' | Grade: ${sub.grade}' : ''),
-                        ),
-                        trailing: AcadexBadge(
-                          label: sub.status.label,
-                          variant: sub.status == SubjectResultStatus.pass
-                              ? AcadexBadgeVariant.success
-                              : AcadexBadgeVariant.danger,
-                        ),
+              ...result.subjectResults.map(
+                (sub) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Card(
+                    elevation: 0,
+                    color: AcadexColors.canvasSoft,
+                    child: ListTile(
+                      title: Text('${sub.subjectCode} — ${sub.subjectName}'),
+                      subtitle: Text(
+                        'Credits: ${sub.credits} | Marks: ${sub.totalMarks} (${sub.percentage}%)' +
+                            (sub.grade != null ? ' | Grade: ${sub.grade}' : ''),
+                      ),
+                      trailing: AcadexBadge(
+                        label: sub.status.label,
+                        variant: sub.status == SubjectResultStatus.pass
+                            ? AcadexBadgeVariant.success
+                            : AcadexBadgeVariant.danger,
                       ),
                     ),
-                  )),
+                  ),
+                ),
+              ),
               if (result.validationWarnings.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 Text('Validation Warnings', style: AcadexTypography.heading3()),
                 const SizedBox(height: 8),
-                ...result.validationWarnings.map((w) => Padding(
-                      padding: const EdgeInsets.only(bottom: 4.0),
-                      child: Row(
-                        children: [
-                          const Icon(LucideIcons.alertCircle, size: 16, color: Colors.orange),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(w)),
-                        ],
-                      ),
-                    )),
+                ...result.validationWarnings.map(
+                  (w) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4.0),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          LucideIcons.alertCircle,
+                          size: 16,
+                          color: Colors.orange,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(w)),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ],
           ),
@@ -510,7 +562,8 @@ class _AdminResultItemCard extends ConsumerWidget {
                 controller: reasonController,
                 decoration: const InputDecoration(
                   labelText: 'Mandatory Justification / Reason *',
-                  hintText: 'e.g. Grade re-evaluation approved by academic board',
+                  hintText:
+                      'e.g. Grade re-evaluation approved by academic board',
                 ),
                 maxLines: 2,
                 validator: (v) {
@@ -529,17 +582,25 @@ class _AdminResultItemCard extends ConsumerWidget {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange.shade800),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange.shade800,
+            ),
             onPressed: () async {
               if (formKey.currentState?.validate() ?? false) {
                 Navigator.of(ctx).pop();
-                final ok = await ref.read(academicResultActionProvider.notifier).reopenResult(
+                final ok = await ref
+                    .read(academicResultActionProvider.notifier)
+                    .reopenResult(
                       resultId,
                       reason: reasonController.text.trim(),
                     );
                 if (context.mounted && ok) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Result unlocked and reopened for correction.')),
+                    const SnackBar(
+                      content: Text(
+                        'Result unlocked and reopened for correction.',
+                      ),
+                    ),
                   );
                 }
               }
@@ -590,10 +651,6 @@ class _LifecycleStatusBadge extends StatelessWidget {
         break;
     }
 
-    return AcadexBadge(
-      label: status.label,
-      variant: variant,
-      icon: icon,
-    );
+    return AcadexBadge(label: status.label, variant: variant, icon: icon);
   }
 }

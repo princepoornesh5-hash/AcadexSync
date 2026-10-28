@@ -10,10 +10,7 @@ import '../../domain/models/achievement_models.dart';
 class AchievementStatusBadge extends StatelessWidget {
   final AchievementVerificationStatus status;
 
-  const AchievementStatusBadge({
-    super.key,
-    required this.status,
-  });
+  const AchievementStatusBadge({super.key, required this.status});
 
   @override
   Widget build(BuildContext context) {
@@ -50,10 +47,7 @@ class AchievementStatusBadge extends StatelessWidget {
 class AchievementCategoryBadge extends StatelessWidget {
   final AchievementCategory category;
 
-  const AchievementCategoryBadge({
-    super.key,
-    required this.category,
-  });
+  const AchievementCategoryBadge({super.key, required this.category});
 
   @override
   Widget build(BuildContext context) {
@@ -64,16 +58,14 @@ class AchievementCategoryBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
         borderRadius: BorderRadius.circular(AcadexRadius.xs),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            category.icon,
-            size: 13,
-            color: AcadexColors.primary,
-          ),
+          Icon(category.icon, size: 13, color: AcadexColors.primary),
           const SizedBox(width: 5),
           Text(
             category.displayName.toUpperCase(),
@@ -160,14 +152,18 @@ class _AchievementCardState extends State<AchievementCard> {
                   Icon(
                     LucideIcons.building,
                     size: 14,
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       a.issuer,
                       style: AcadexTypography.bodyMedium(
-                        color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                        color: isDark
+                            ? AcadexColors.darkInkSecondary
+                            : AcadexColors.inkSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -183,13 +179,17 @@ class _AchievementCardState extends State<AchievementCard> {
                   Icon(
                     LucideIcons.calendar,
                     size: 14,
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     '${a.achievementDate.day} ${_monthName(a.achievementDate.month)} ${a.achievementDate.year}',
                     style: AcadexTypography.bodySmall(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
                 ],
@@ -203,7 +203,10 @@ class _AchievementCardState extends State<AchievementCard> {
                   runSpacing: 4,
                   children: a.skills.map((skill) {
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: AcadexColors.primary.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(AcadexRadius.xs),
@@ -213,7 +216,9 @@ class _AchievementCardState extends State<AchievementCard> {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
-                          color: isDark ? AcadexColors.primaryMuted : AcadexColors.primary,
+                          color: isDark
+                              ? AcadexColors.primaryMuted
+                              : AcadexColors.primary,
                         ),
                       ),
                     );
@@ -222,23 +227,33 @@ class _AchievementCardState extends State<AchievementCard> {
               ],
 
               // Rejection Note Alert if Rejected
-              if (a.isRejected && a.verificationNote != null && a.verificationNote!.isNotEmpty) ...[
+              if (a.isRejected &&
+                  a.verificationNote != null &&
+                  a.verificationNote!.isNotEmpty) ...[
                 const SizedBox(height: AcadexSpacing.space12),
                 Container(
                   padding: const EdgeInsets.all(AcadexSpacing.space12),
                   decoration: BoxDecoration(
                     color: AcadexColors.error.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(AcadexRadius.sm),
-                    border: Border.all(color: AcadexColors.error.withValues(alpha: 0.2)),
+                    border: Border.all(
+                      color: AcadexColors.error.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 16),
+                      const Icon(
+                        LucideIcons.alertCircle,
+                        color: AcadexColors.error,
+                        size: 16,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Note: ${a.verificationNote}',
-                          style: AcadexTypography.bodySmall(color: AcadexColors.error),
+                          style: AcadexTypography.bodySmall(
+                            color: AcadexColors.error,
+                          ),
                         ),
                       ),
                     ],
@@ -268,7 +283,9 @@ class _AchievementCardState extends State<AchievementCard> {
                           child: Text(
                             a.fileName ?? 'Proof Document',
                             style: AcadexTypography.caption(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -278,7 +295,9 @@ class _AchievementCardState extends State<AchievementCard> {
                         Text(
                           '(${a.fileSizeDisplay})',
                           style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                         ),
                       ],
@@ -287,14 +306,17 @@ class _AchievementCardState extends State<AchievementCard> {
                     Text(
                       'No proof attached',
                       style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                     ),
 
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (widget.showReviewAction && widget.onReview != null) ...[
+                      if (widget.showReviewAction &&
+                          widget.onReview != null) ...[
                         AcadexButton(
                           label: 'Review',
                           icon: LucideIcons.eye,
@@ -331,7 +353,20 @@ class _AchievementCardState extends State<AchievementCard> {
   }
 
   String _monthName(int month) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return months[month - 1];
   }
 }
@@ -368,7 +403,9 @@ class AchievementMetricCard extends StatelessWidget {
               Text(
                 label,
                 style: AcadexTypography.caption(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
               Container(
@@ -394,7 +431,9 @@ class AchievementMetricCard extends StatelessWidget {
             Text(
               subtitle!,
               style: AcadexTypography.bodySmall(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
             ),
           ],

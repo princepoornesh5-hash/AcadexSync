@@ -11,24 +11,19 @@ import 'package:campus_management/features/attendance/presentation/providers/att
 import 'package:campus_management/features/attendance/presentation/widgets/alerts/attendance_alert_card.dart';
 import 'package:campus_management/features/attendance/presentation/screens/attendance_alert_detail_screen.dart';
 
-enum AlertFilterTab {
-  all,
-  critical,
-  warning,
-  unread,
-  active,
-  resolved,
-}
+enum AlertFilterTab { all, critical, warning, unread, active, resolved }
 
 /// Full screen interface for managing and acting on attendance alerts and early warnings
 class AttendanceAlertsScreen extends ConsumerStatefulWidget {
   const AttendanceAlertsScreen({super.key});
 
   @override
-  ConsumerState<AttendanceAlertsScreen> createState() => _AttendanceAlertsScreenState();
+  ConsumerState<AttendanceAlertsScreen> createState() =>
+      _AttendanceAlertsScreenState();
 }
 
-class _AttendanceAlertsScreenState extends ConsumerState<AttendanceAlertsScreen> {
+class _AttendanceAlertsScreenState
+    extends ConsumerState<AttendanceAlertsScreen> {
   AlertFilterTab _activeTab = AlertFilterTab.all;
   final TextEditingController _searchController = TextEditingController();
 
@@ -46,42 +41,44 @@ class _AttendanceAlertsScreenState extends ConsumerState<AttendanceAlertsScreen>
     final currentFilter = ref.read(attendanceAlertFilterProvider);
     switch (tab) {
       case AlertFilterTab.all:
-        ref.read(attendanceAlertFilterProvider.notifier).state = const AttendanceAlertFilter();
+        ref.read(attendanceAlertFilterProvider.notifier).state =
+            const AttendanceAlertFilter();
         break;
       case AlertFilterTab.critical:
-        ref.read(attendanceAlertFilterProvider.notifier).state = currentFilter.copyWith(
-          severity: AttendanceAlertSeverity.critical,
-          clearStatus: true,
-          clearUnreadOnly: true,
-        );
+        ref.read(attendanceAlertFilterProvider.notifier).state = currentFilter
+            .copyWith(
+              severity: AttendanceAlertSeverity.critical,
+              clearStatus: true,
+              clearUnreadOnly: true,
+            );
         break;
       case AlertFilterTab.warning:
-        ref.read(attendanceAlertFilterProvider.notifier).state = currentFilter.copyWith(
-          severity: AttendanceAlertSeverity.warning,
-          clearStatus: true,
-          clearUnreadOnly: true,
-        );
+        ref.read(attendanceAlertFilterProvider.notifier).state = currentFilter
+            .copyWith(
+              severity: AttendanceAlertSeverity.warning,
+              clearStatus: true,
+              clearUnreadOnly: true,
+            );
         break;
       case AlertFilterTab.unread:
-        ref.read(attendanceAlertFilterProvider.notifier).state = currentFilter.copyWith(
-          unreadOnly: true,
-          clearSeverity: true,
-          clearStatus: true,
-        );
+        ref.read(attendanceAlertFilterProvider.notifier).state = currentFilter
+            .copyWith(unreadOnly: true, clearSeverity: true, clearStatus: true);
         break;
       case AlertFilterTab.active:
-        ref.read(attendanceAlertFilterProvider.notifier).state = currentFilter.copyWith(
-          status: AttendanceAlertStatus.active,
-          clearSeverity: true,
-          clearUnreadOnly: true,
-        );
+        ref.read(attendanceAlertFilterProvider.notifier).state = currentFilter
+            .copyWith(
+              status: AttendanceAlertStatus.active,
+              clearSeverity: true,
+              clearUnreadOnly: true,
+            );
         break;
       case AlertFilterTab.resolved:
-        ref.read(attendanceAlertFilterProvider.notifier).state = currentFilter.copyWith(
-          status: AttendanceAlertStatus.resolved,
-          clearSeverity: true,
-          clearUnreadOnly: true,
-        );
+        ref.read(attendanceAlertFilterProvider.notifier).state = currentFilter
+            .copyWith(
+              status: AttendanceAlertStatus.resolved,
+              clearSeverity: true,
+              clearUnreadOnly: true,
+            );
         break;
     }
   }
@@ -108,7 +105,8 @@ class _AttendanceAlertsScreenState extends ConsumerState<AttendanceAlertsScreen>
                 // Header Bar
                 AcadexPageHeader(
                   title: 'Attendance Early-Warning Center',
-                  subtitle: 'Real-time shortage detection, sharp drops, and automated compliance alerts.',
+                  subtitle:
+                      'Real-time shortage detection, sharp drops, and automated compliance alerts.',
                   onBack: () => Navigator.of(context).canPop()
                       ? Navigator.of(context).pop()
                       : context.go('/attendance/analytics'),
@@ -121,7 +119,11 @@ class _AttendanceAlertsScreenState extends ConsumerState<AttendanceAlertsScreen>
                               variant: AcadexButtonVariant.secondary,
                               size: AcadexButtonSize.sm,
                               onPressed: () {
-                                ref.read(attendanceAlertActionProvider.notifier).markAllAsRead();
+                                ref
+                                    .read(
+                                      attendanceAlertActionProvider.notifier,
+                                    )
+                                    .markAllAsRead();
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text('All alerts marked as read.'),
@@ -147,27 +149,43 @@ class _AttendanceAlertsScreenState extends ConsumerState<AttendanceAlertsScreen>
                       TextField(
                         controller: _searchController,
                         onChanged: (val) {
-                          ref.read(attendanceAlertSearchQueryProvider.notifier).state = val;
+                          ref
+                                  .read(
+                                    attendanceAlertSearchQueryProvider.notifier,
+                                  )
+                                  .state =
+                              val;
                         },
                         decoration: InputDecoration(
-                          hintText: 'Search alerts by student, roll no, subject, or section...',
+                          hintText:
+                              'Search alerts by student, roll no, subject, or section...',
                           prefixIcon: const Icon(LucideIcons.search, size: 16),
                           suffixIcon: _searchController.text.isNotEmpty
                               ? IconButton(
                                   icon: const Icon(LucideIcons.x, size: 16),
                                   onPressed: () {
                                     _searchController.clear();
-                                    ref.read(attendanceAlertSearchQueryProvider.notifier).state = '';
+                                    ref
+                                            .read(
+                                              attendanceAlertSearchQueryProvider
+                                                  .notifier,
+                                            )
+                                            .state =
+                                        '';
                                   },
                                 )
                               : null,
                           isDense: true,
                           filled: true,
-                          fillColor: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                          fillColor: isDark
+                              ? AcadexColors.darkCanvasSoft
+                              : AcadexColors.canvasSoft,
                           border: OutlineInputBorder(
                             borderRadius: AcadexRadius.borderRadiusSm,
                             borderSide: BorderSide(
-                              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                              color: isDark
+                                  ? AcadexColors.darkHairline
+                                  : AcadexColors.hairline,
                             ),
                           ),
                         ),
@@ -245,23 +263,32 @@ class _AttendanceAlertsScreenState extends ConsumerState<AttendanceAlertsScreen>
                       padding: const EdgeInsets.all(24.0),
                       child: Column(
                         children: [
-                          const Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 40),
+                          const Icon(
+                            LucideIcons.alertCircle,
+                            color: AcadexColors.error,
+                            size: 40,
+                          ),
                           const SizedBox(height: 12),
                           Text(
                             'Failed to load attendance alerts',
-                            style: AcadexTypography.heading2(color: AcadexColors.error),
+                            style: AcadexTypography.heading2(
+                              color: AcadexColors.error,
+                            ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             err.toString(),
-                            style: AcadexTypography.caption(color: AcadexColors.inkMuted),
+                            style: AcadexTypography.caption(
+                              color: AcadexColors.inkMuted,
+                            ),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 16),
                           AcadexButton(
                             label: 'Retry',
                             icon: LucideIcons.refreshCw,
-                            onPressed: () => ref.refresh(attendanceAlertsProvider),
+                            onPressed: () =>
+                                ref.refresh(attendanceAlertsProvider),
                           ),
                         ],
                       ),
@@ -269,10 +296,15 @@ class _AttendanceAlertsScreenState extends ConsumerState<AttendanceAlertsScreen>
                   ),
                   data: (alerts) {
                     if (alerts.isEmpty) {
-                      final hasFilter = _activeTab != AlertFilterTab.all || _searchController.text.isNotEmpty;
+                      final hasFilter =
+                          _activeTab != AlertFilterTab.all ||
+                          _searchController.text.isNotEmpty;
                       return AcadexCard(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 48,
+                            horizontal: 24,
+                          ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -280,7 +312,9 @@ class _AttendanceAlertsScreenState extends ConsumerState<AttendanceAlertsScreen>
                                 width: 56,
                                 height: 56,
                                 decoration: BoxDecoration(
-                                  color: AcadexColors.success.withValues(alpha: isDark ? 0.15 : 0.08),
+                                  color: AcadexColors.success.withValues(
+                                    alpha: isDark ? 0.15 : 0.08,
+                                  ),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Center(
@@ -293,9 +327,13 @@ class _AttendanceAlertsScreenState extends ConsumerState<AttendanceAlertsScreen>
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                hasFilter ? 'No Matching Alerts' : 'All Students Compliant',
+                                hasFilter
+                                    ? 'No Matching Alerts'
+                                    : 'All Students Compliant',
                                 style: AcadexTypography.heading2(
-                                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
                                 ),
                               ),
                               const SizedBox(height: 6),
@@ -304,7 +342,9 @@ class _AttendanceAlertsScreenState extends ConsumerState<AttendanceAlertsScreen>
                                     ? 'No attendance alerts match the current filter or search criteria.'
                                     : 'No attendance alerts right now. All active attendance metrics meet institutional standards.',
                                 style: AcadexTypography.caption(
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -337,14 +377,22 @@ class _AttendanceAlertsScreenState extends ConsumerState<AttendanceAlertsScreen>
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => AttendanceAlertDetailScreen(alert: alerts[i]),
+                                  builder: (context) =>
+                                      AttendanceAlertDetailScreen(
+                                        alert: alerts[i],
+                                      ),
                                 ),
                               );
                             },
                             onMarkAsRead: alerts[i].isRead
                                 ? null
                                 : () {
-                                    ref.read(attendanceAlertActionProvider.notifier).markAsRead(alerts[i].id);
+                                    ref
+                                        .read(
+                                          attendanceAlertActionProvider
+                                              .notifier,
+                                        )
+                                        .markAsRead(alerts[i].id);
                                   },
                           ),
                         ],
@@ -379,7 +427,9 @@ class _AttendanceAlertsScreenState extends ConsumerState<AttendanceAlertsScreen>
         decoration: BoxDecoration(
           color: isSelected
               ? activeColor.withValues(alpha: isDark ? 0.25 : 0.15)
-              : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
+              : (isDark
+                    ? AcadexColors.darkCanvasSoft
+                    : AcadexColors.canvasSoft),
           borderRadius: AcadexRadius.borderRadiusSm,
           border: Border.all(
             color: isSelected
@@ -394,19 +444,26 @@ class _AttendanceAlertsScreenState extends ConsumerState<AttendanceAlertsScreen>
               Icon(
                 icon,
                 size: 12,
-                color: isSelected ? activeColor : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                color: isSelected
+                    ? activeColor
+                    : (isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted),
               ),
               const SizedBox(width: 5),
             ],
             Text(
               label,
-              style: AcadexTypography.caption(
-                color: isSelected
-                    ? activeColor
-                    : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
-              ).copyWith(
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              ),
+              style:
+                  AcadexTypography.caption(
+                    color: isSelected
+                        ? activeColor
+                        : (isDark
+                              ? AcadexColors.darkInkSecondary
+                              : AcadexColors.inkSecondary),
+                  ).copyWith(
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  ),
             ),
           ],
         ),

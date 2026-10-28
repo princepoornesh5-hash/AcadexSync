@@ -16,8 +16,8 @@ class FirebaseNotesRepository implements NotesRepository {
     this._firestoreService, {
     FileStorageRepository? storageRepository,
     NotificationService? notificationService,
-  })  : _storageRepository = storageRepository,
-        _notificationService = notificationService;
+  }) : _storageRepository = storageRepository,
+       _notificationService = notificationService;
 
   @override
   Stream<List<NoteModel>> watchNotes({
@@ -57,10 +57,16 @@ class FirebaseNotesRepository implements NotesRepository {
     }
 
     return _firestoreService
-        .watchQuery('notes', filters, limit: 50, orderBy: 'updatedAt', descending: true)
+        .watchQuery(
+          'notes',
+          filters,
+          limit: 50,
+          orderBy: 'updatedAt',
+          descending: true,
+        )
         .map((docs) {
-      return docs.map((doc) => NoteModel.fromJson(doc)).toList();
-    });
+          return docs.map((doc) => NoteModel.fromJson(doc)).toList();
+        });
   }
 
   @override
@@ -134,7 +140,9 @@ class FirebaseNotesRepository implements NotesRepository {
   @override
   Future<void> createNote(NoteModel note) async {
     await _validateNoteAuthorization(note);
-    final newId = note.id.isNotEmpty ? note.id : 'note_${DateTime.now().millisecondsSinceEpoch}';
+    final newId = note.id.isNotEmpty
+        ? note.id
+        : 'note_${DateTime.now().millisecondsSinceEpoch}';
     final newNote = note.copyWith(
       id: newId,
       createdAt: DateTime.now(),
@@ -143,7 +151,8 @@ class FirebaseNotesRepository implements NotesRepository {
     );
     await _firestoreService.setDocument('notes', newId, newNote.toJson());
 
-    if (newNote.status == NoteStatus.published && _notificationService != null) {
+    if (newNote.status == NoteStatus.published &&
+        _notificationService != null) {
       try {
         await _notificationService.notifyNotePublished(
           noteId: newNote.id,
@@ -151,7 +160,10 @@ class FirebaseNotesRepository implements NotesRepository {
           sectionId: newNote.sectionId,
         );
       } catch (e) {
-        developer.log('Notification dispatch warning for note publication: $e', name: 'Acadex.Notes');
+        developer.log(
+          'Notification dispatch warning for note publication: $e',
+          name: 'Acadex.Notes',
+        );
       }
     }
   }
@@ -166,9 +178,11 @@ class FirebaseNotesRepository implements NotesRepository {
     final existingNote = NoteModel.fromJson(existingDoc);
     DateTime? publishedAt = existingNote.publishedAt;
 
-    if (existingNote.status != NoteStatus.published && note.status == NoteStatus.published) {
+    if (existingNote.status != NoteStatus.published &&
+        note.status == NoteStatus.published) {
       publishedAt = DateTime.now();
-    } else if (note.status == NoteStatus.unpublished || note.status == NoteStatus.draft) {
+    } else if (note.status == NoteStatus.unpublished ||
+        note.status == NoteStatus.draft) {
       publishedAt = null;
     }
 
@@ -189,7 +203,10 @@ class FirebaseNotesRepository implements NotesRepository {
           sectionId: updatedNote.sectionId,
         );
       } catch (e) {
-        developer.log('Notification dispatch warning for note publication: $e', name: 'Acadex.Notes');
+        developer.log(
+          'Notification dispatch warning for note publication: $e',
+          name: 'Acadex.Notes',
+        );
       }
     }
   }
@@ -205,20 +222,27 @@ class FirebaseNotesRepository implements NotesRepository {
           try {
             await _storageRepository.deleteFile(note.storagePath!);
           } catch (e) {
-            developer.log('Warning: Failed to delete Storage file ${note.storagePath}: $e', name: 'Acadex.Notes');
+            developer.log(
+              'Warning: Failed to delete Storage file ${note.storagePath}: $e',
+              name: 'Acadex.Notes',
+            );
           }
         } else if (note.fileName != null &&
             note.fileName!.isNotEmpty &&
             note.collegeId.isNotEmpty &&
             note.authorUserId.isNotEmpty) {
-          final inferredPath = 'colleges/${note.collegeId}/faculty/${note.authorUserId}/notes/${note.fileName}';
+          final inferredPath =
+              'colleges/${note.collegeId}/faculty/${note.authorUserId}/notes/${note.fileName}';
           try {
             await _storageRepository.deleteFile(inferredPath);
           } catch (_) {}
         }
       }
     } catch (e) {
-      developer.log('Pre-delete storage cleanup warning: $e', name: 'Acadex.Notes');
+      developer.log(
+        'Pre-delete storage cleanup warning: $e',
+        name: 'Acadex.Notes',
+      );
     }
 
     // 2. Delete Firestore document
@@ -226,7 +250,10 @@ class FirebaseNotesRepository implements NotesRepository {
   }
 
   Future<void> _validateNoteAuthorization(NoteModel note) async {
-    final userDoc = await _firestoreService.getDocument('users', note.authorUserId);
+    final userDoc = await _firestoreService.getDocument(
+      'users',
+      note.authorUserId,
+    );
     if (userDoc == null) throw Exception('User not found');
 
     final rawRole = userDoc['role'] as String?;
@@ -241,14 +268,22 @@ class FirebaseNotesRepository implements NotesRepository {
     }
 
     if (role == AppRole.faculty) {
-      final subjectIds = List<String>.from(userDoc['subjectIds'] ?? userDoc['assignedSubjects'] ?? []);
-      final sectionIds = List<String>.from(userDoc['sectionIds'] ?? userDoc['assignedSections'] ?? []);
+      final subjectIds = List<String>.from(
+        userDoc['subjectIds'] ?? userDoc['assignedSubjects'] ?? [],
+      );
+      final sectionIds = List<String>.from(
+        userDoc['sectionIds'] ?? userDoc['assignedSections'] ?? [],
+      );
 
       if (subjectIds.isNotEmpty && !subjectIds.contains(note.subjectId)) {
-        throw Exception('Unauthorized: Faculty is not assigned to this subject.');
+        throw Exception(
+          'Unauthorized: Faculty is not assigned to this subject.',
+        );
       }
       if (sectionIds.isNotEmpty && !sectionIds.contains(note.sectionId)) {
-        throw Exception('Unauthorized: Faculty is not assigned to this section.');
+        throw Exception(
+          'Unauthorized: Faculty is not assigned to this section.',
+        );
       }
     }
   }

@@ -22,10 +22,22 @@ class OverallAttendanceCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isGood = percentage >= 75;
     final isWarning = percentage >= 60 && percentage < 75;
-    
-    final statusLabel = isGood ? "Good Standing" : isWarning ? "Attendance Warning" : "Critical Shortage";
-    final badgeVariant = isGood ? AcadexBadgeVariant.success : isWarning ? AcadexBadgeVariant.warning : AcadexBadgeVariant.danger;
-    final progressColor = isGood ? AcadexColors.success : isWarning ? AcadexColors.warning : AcadexColors.error;
+
+    final statusLabel = isGood
+        ? "Good Standing"
+        : isWarning
+        ? "Attendance Warning"
+        : "Critical Shortage";
+    final badgeVariant = isGood
+        ? AcadexBadgeVariant.success
+        : isWarning
+        ? AcadexBadgeVariant.warning
+        : AcadexBadgeVariant.danger;
+    final progressColor = isGood
+        ? AcadexColors.success
+        : isWarning
+        ? AcadexColors.warning
+        : AcadexColors.error;
 
     final totalClasses = classesAttended + classesMissed;
 
@@ -49,18 +61,24 @@ class OverallAttendanceCard extends StatelessWidget {
               Text(
                 "OVERALL ATTENDANCE",
                 style: AcadexTypography.eyebrow(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
               AcadexBadge(
                 label: statusLabel,
                 variant: badgeVariant,
-                icon: isGood ? LucideIcons.checkCircle2 : (isWarning ? LucideIcons.alertTriangle : LucideIcons.alertOctagon),
+                icon: isGood
+                    ? LucideIcons.checkCircle2
+                    : (isWarning
+                          ? LucideIcons.alertTriangle
+                          : LucideIcons.alertOctagon),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          
+
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
@@ -75,31 +93,49 @@ class OverallAttendanceCard extends StatelessWidget {
               Text(
                 "Min. Requirement: 75%",
                 style: AcadexTypography.bodySmall(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 18),
-          
+
           // Progress Bar
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
               value: (percentage / 100.0).clamp(0.0, 1.0),
               minHeight: 10,
-              backgroundColor: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+              backgroundColor: isDark
+                  ? AcadexColors.darkSurfaceHover
+                  : AcadexColors.canvasSoft,
               valueColor: AlwaysStoppedAnimation<Color>(progressColor),
             ),
           ),
           const SizedBox(height: 24),
-          
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildMetricItem("Active Subjects", subjectsCount.toString(), isDark),
-              _buildMetricItem("Classes Attended", classesAttended.toString(), isDark, valueColor: AcadexColors.success),
-              _buildMetricItem("Classes Missed", classesMissed.toString(), isDark, valueColor: AcadexColors.error),
+              _buildMetricItem(
+                "Active Subjects",
+                subjectsCount.toString(),
+                isDark,
+              ),
+              _buildMetricItem(
+                "Classes Attended",
+                classesAttended.toString(),
+                isDark,
+                valueColor: AcadexColors.success,
+              ),
+              _buildMetricItem(
+                "Classes Missed",
+                classesMissed.toString(),
+                isDark,
+                valueColor: AcadexColors.error,
+              ),
               _buildMetricItem("Total Held", totalClasses.toString(), isDark),
             ],
           ),
@@ -108,7 +144,12 @@ class OverallAttendanceCard extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricItem(String label, String value, bool isDark, {Color? valueColor}) {
+  Widget _buildMetricItem(
+    String label,
+    String value,
+    bool isDark, {
+    Color? valueColor,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -122,7 +163,9 @@ class OverallAttendanceCard extends StatelessWidget {
         Text(
           value,
           style: AcadexTypography.heading2(
-            color: valueColor ?? (isDark ? AcadexColors.darkInk : AcadexColors.ink),
+            color:
+                valueColor ??
+                (isDark ? AcadexColors.darkInk : AcadexColors.ink),
           ),
         ),
       ],

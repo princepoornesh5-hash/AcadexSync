@@ -36,7 +36,9 @@ class HodDashboard extends ConsumerWidget {
       },
       child: dashboardAsync.when(
         loading: () => const Center(
-          child: AcadexLoadingState(message: 'Loading department dashboard...'),
+          child: AcadexLoadingState.spinner(
+            message: 'Loading department dashboard...',
+          ),
         ),
         error: (err, _) => AcadexErrorState.fromError(
           error: err,
@@ -45,7 +47,9 @@ class HodDashboard extends ConsumerWidget {
         ),
         data: (dashboard) {
           final deptCode = dashboard.context.departmentCode ?? 'CSE';
-          final deptName = dashboard.context.departmentName ?? 'Department of Computer Science & Engineering';
+          final deptName =
+              dashboard.context.departmentName ??
+              'Department of Computer Science & Engineering';
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,9 +66,14 @@ class HodDashboard extends ConsumerWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
-                        color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                        color: isDark
+                            ? AcadexColors.primary.withValues(alpha: 0.2)
+                            : AcadexColors.primaryLight,
                         borderRadius: AcadexRadius.borderRadiusSm,
                       ),
                       child: Text(
@@ -77,15 +86,22 @@ class HodDashboard extends ConsumerWidget {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2.5,
+                      ),
                       decoration: BoxDecoration(
-                        color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                        color: isDark
+                            ? AcadexColors.darkHairline
+                            : AcadexColors.hairline,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         deptCode,
                         style: TextStyle(
-                          color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                          color: isDark
+                              ? AcadexColors.darkInkSecondary
+                              : AcadexColors.inkSecondary,
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
                         ),
@@ -94,13 +110,16 @@ class HodDashboard extends ConsumerWidget {
                     Text(
                       'Head of Department',
                       style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
                 title: deptName,
-                subtitle: 'Academic session active. Review faculty workload, timetable coverage, and student attendance.',
+                subtitle:
+                    'Academic session active. Review faculty workload, timetable coverage, and student attendance.',
                 primaryActionLabel: 'Department Analytics',
                 primaryActionIcon: LucideIcons.barChart3,
                 onPrimaryAction: () => context.push('/analytics'),
@@ -112,7 +131,12 @@ class HodDashboard extends ConsumerWidget {
               _buildDepartmentOverview(context, ref, dashboard.summary, isDark),
 
               // 4. Department Operations (Tactile Quick Actions Grid)
-              _buildQuickOperations(context, ref, dashboard.quickActions, isDark),
+              _buildQuickOperations(
+                context,
+                ref,
+                dashboard.quickActions,
+                isDark,
+              ),
 
               // 5. Department Requests Status Card
               const SizedBox(height: 14),
@@ -122,10 +146,17 @@ class HodDashboard extends ConsumerWidget {
               if (dashboard.alerts.isNotEmpty)
                 DashboardAlertsSection(alerts: dashboard.alerts),
               if (dashboard.pendingActions.isNotEmpty)
-                DashboardPendingActionsSection(pendingActions: dashboard.pendingActions),
+                DashboardPendingActionsSection(
+                  pendingActions: dashboard.pendingActions,
+                ),
 
               // 6. Today's Department Timetable
-              _buildTodayTimetableSection(context, ref, dashboard.upcoming, isDark),
+              _buildTodayTimetableSection(
+                context,
+                ref,
+                dashboard.upcoming,
+                isDark,
+              ),
 
               // 7. Faculty Teaching Allocations (Content-driven, no fixed heights, no spaceBetween)
               _buildFacultyTeachingAllocations(
@@ -157,14 +188,18 @@ class HodDashboard extends ConsumerWidget {
     final hasCustomActions = quickActions.isNotEmpty;
 
     final actions = hasCustomActions
-        ? quickActions.map((a) => (
-            id: a.id.isNotEmpty ? a.id : a.label,
-            label: a.label,
-            icon: _resolveIcon(a.icon),
-            route: a.route,
-            isPrimary: a.isPrimary,
-            badgeCount: a.badgeCount,
-          )).toList()
+        ? quickActions
+              .map(
+                (a) => (
+                  id: a.id.isNotEmpty ? a.id : a.label,
+                  label: a.label,
+                  icon: _resolveIcon(a.icon),
+                  route: a.route,
+                  isPrimary: a.isPrimary,
+                  badgeCount: a.badgeCount,
+                ),
+              )
+              .toList()
         : [
             (
               id: 'hod_add_course',
@@ -270,10 +305,9 @@ class HodDashboard extends ConsumerWidget {
                   badgeCount: act.badgeCount,
                   isCompact: true,
                   onTap: () {
-                    ref.read(navigationProvider.notifier).selectDashboardAction(
-                      route: act.route,
-                      id: act.id,
-                    );
+                    ref
+                        .read(navigationProvider.notifier)
+                        .selectDashboardAction(route: act.route, id: act.id);
                     context.push(act.route);
                   },
                 );
@@ -354,7 +388,9 @@ class HodDashboard extends ConsumerWidget {
             Text(
               'Department Status',
               style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
             ),
           ],
@@ -365,25 +401,39 @@ class HodDashboard extends ConsumerWidget {
             context,
             faculty: '${summary.activeFacultyCount}',
             students: '${summary.activeStudentsCount}',
-            subjects: summary.subjectsCount > 0 ? '${summary.subjectsCount}' : (summary.pendingAssessmentsCount > 0 ? '14' : '12'),
-            attendance: summary.attendancePercentage != null ? '${summary.attendancePercentage!.toStringAsFixed(1)}%' : '88.0%',
+            subjects: summary.subjectsCount > 0
+                ? '${summary.subjectsCount}'
+                : (summary.pendingAssessmentsCount > 0 ? '14' : '12'),
+            attendance: summary.attendancePercentage != null
+                ? '${summary.attendancePercentage!.toStringAsFixed(1)}%'
+                : '88.0%',
             isDark: isDark,
           ),
           error: (_, __) => _buildOverviewGrid(
             context,
             faculty: '${summary.activeFacultyCount}',
             students: '${summary.activeStudentsCount}',
-            subjects: summary.subjectsCount > 0 ? '${summary.subjectsCount}' : '14',
-            attendance: summary.attendancePercentage != null ? '${summary.attendancePercentage!.toStringAsFixed(1)}%' : '88.0%',
+            subjects: summary.subjectsCount > 0
+                ? '${summary.subjectsCount}'
+                : '14',
+            attendance: summary.attendancePercentage != null
+                ? '${summary.attendancePercentage!.toStringAsFixed(1)}%'
+                : '88.0%',
             isDark: isDark,
           ),
           data: (stats) {
             String val(String title, String fallback) {
-              final s = stats.where((x) => x.title.toLowerCase().contains(title.toLowerCase())).firstOrNull;
+              final s = stats
+                  .where(
+                    (x) => x.title.toLowerCase().contains(title.toLowerCase()),
+                  )
+                  .firstOrNull;
               return s?.value ?? fallback;
             }
 
-            final fallbackSubjects = summary.subjectsCount > 0 ? '${summary.subjectsCount}' : '14';
+            final fallbackSubjects = summary.subjectsCount > 0
+                ? '${summary.subjectsCount}'
+                : '14';
             final fallbackAttendance = summary.attendancePercentage != null
                 ? '${summary.attendancePercentage!.toStringAsFixed(1)}%'
                 : '88.0%';
@@ -452,7 +502,10 @@ class HodDashboard extends ConsumerWidget {
         final itemWidth = (w - (crossAxisCount - 1) * 8) / crossAxisCount;
         final textScale = MediaQuery.textScalerOf(context).scale(1.0);
         final targetCardHeight = 80.0 * textScale.clamp(1.0, 1.6);
-        final childAspectRatio = (itemWidth / targetCardHeight).clamp(0.85, 1.45);
+        final childAspectRatio = (itemWidth / targetCardHeight).clamp(
+          0.85,
+          1.45,
+        );
 
         return GridView.count(
           shrinkWrap: true,
@@ -524,12 +577,19 @@ class HodDashboard extends ConsumerWidget {
         todayScheduleAsync.when(
           loading: () => upcoming.isEmpty
               ? Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 10,
+                    horizontal: 12,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                    color: isDark
+                        ? AcadexColors.darkSurfaceCard
+                        : AcadexColors.surface,
                     borderRadius: AcadexRadius.borderRadiusMd,
                     border: Border.all(
-                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                      color: isDark
+                          ? AcadexColors.darkHairline
+                          : AcadexColors.hairline,
                     ),
                   ),
                   child: Row(
@@ -537,14 +597,18 @@ class HodDashboard extends ConsumerWidget {
                       Icon(
                         LucideIcons.calendar,
                         size: 15,
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'No classes scheduled today',
                           style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                         ),
                       ),
@@ -561,12 +625,19 @@ class HodDashboard extends ConsumerWidget {
           data: (schedule) {
             if (schedule.isEmpty && upcoming.isEmpty) {
               return Container(
-                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 12,
+                ),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                  color: isDark
+                      ? AcadexColors.darkSurfaceCard
+                      : AcadexColors.surface,
                   borderRadius: AcadexRadius.borderRadiusMd,
                   border: Border.all(
-                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
                   ),
                 ),
                 child: Row(
@@ -574,7 +645,9 @@ class HodDashboard extends ConsumerWidget {
                     Icon(
                       LucideIcons.calendarX,
                       size: 15,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -584,14 +657,22 @@ class HodDashboard extends ConsumerWidget {
                         children: [
                           Text(
                             'No classes scheduled today',
-                            style: AcadexTypography.caption(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                            ).copyWith(fontWeight: FontWeight.w600, fontSize: 11.5),
+                            style:
+                                AcadexTypography.caption(
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
+                                ).copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 11.5,
+                                ),
                           ),
                           Text(
                             'No timetable published yet',
                             style: AcadexTypography.caption(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
                             ).copyWith(fontSize: 10.5),
                           ),
                         ],
@@ -610,7 +691,10 @@ class HodDashboard extends ConsumerWidget {
 
             if (upcoming.isNotEmpty) {
               return Column(
-                children: upcoming.take(2).map((item) => _buildUpcomingTile(context, item, isDark)).toList(),
+                children: upcoming
+                    .take(2)
+                    .map((item) => _buildUpcomingTile(context, item, isDark))
+                    .toList(),
               );
             }
 
@@ -621,7 +705,11 @@ class HodDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildUpcomingTile(BuildContext context, DashboardUpcomingItemModel item, bool isDark) {
+  Widget _buildUpcomingTile(
+    BuildContext context,
+    DashboardUpcomingItemModel item,
+    bool isDark,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -641,7 +729,11 @@ class HodDashboard extends ConsumerWidget {
               color: AcadexColors.primary.withValues(alpha: 0.12),
               borderRadius: AcadexRadius.borderRadiusSm,
             ),
-            child: const Icon(LucideIcons.calendar, size: 14, color: AcadexColors.primary),
+            child: const Icon(
+              LucideIcons.calendar,
+              size: 14,
+              color: AcadexColors.primary,
+            ),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -664,7 +756,9 @@ class HodDashboard extends ConsumerWidget {
                         ? '${item.startTime} – ${item.endTime}'
                         : item.startTime,
                     style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ).copyWith(fontSize: 10.5),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -729,19 +823,33 @@ class HodDashboard extends ConsumerWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+              color: isDark
+                  ? AcadexColors.darkSurfaceCard
+                  : AcadexColors.surface,
               borderRadius: AcadexRadius.borderRadiusMd,
-              border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+              border: Border.all(
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
+              ),
             ),
             child: Row(
               children: [
-                Icon(LucideIcons.loader, size: 16, color: isDark ? AcadexColors.darkInkMuted : Colors.grey.shade400),
+                Icon(
+                  LucideIcons.loader,
+                  size: 16,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : Colors.grey.shade400,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     'Loading teaching allocations...',
                     style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -754,20 +862,32 @@ class HodDashboard extends ConsumerWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+              color: isDark
+                  ? AcadexColors.darkSurfaceCard
+                  : AcadexColors.surface,
               borderRadius: AcadexRadius.borderRadiusMd,
-              border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+              border: Border.all(
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
+              ),
             ),
             child: Row(
               children: [
-                const Icon(LucideIcons.alertCircle, size: 16, color: AcadexColors.warning),
+                const Icon(
+                  LucideIcons.alertCircle,
+                  size: 16,
+                  color: AcadexColors.warning,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Unable to load allocations.',
                     style: TextStyle(
                       fontSize: 12.5,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
                 ),
@@ -781,28 +901,51 @@ class HodDashboard extends ConsumerWidget {
             ),
           ),
           data: (allAssignments) {
-            final deptAssignments = (departmentId != null && departmentId.isNotEmpty)
-                ? allAssignments.where((a) => a.departmentId == departmentId && a.isActive).take(4).toList()
+            final deptAssignments =
+                (departmentId != null && departmentId.isNotEmpty)
+                ? allAssignments
+                      .where(
+                        (a) => a.departmentId == departmentId && a.isActive,
+                      )
+                      .take(4)
+                      .toList()
                 : allAssignments.where((a) => a.isActive).take(4).toList();
 
             if (deptAssignments.isEmpty) {
               return Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 14,
+                ),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                  color: isDark
+                      ? AcadexColors.darkSurfaceCard
+                      : AcadexColors.surface,
                   borderRadius: AcadexRadius.borderRadiusMd,
-                  border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                  border: Border.all(
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(LucideIcons.users, size: 16, color: isDark ? AcadexColors.darkInkMuted : Colors.grey.shade400),
+                    Icon(
+                      LucideIcons.users,
+                      size: 16,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : Colors.grey.shade400,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'No teaching allocations recorded for this department.',
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                       ),
                     ),
@@ -829,7 +972,13 @@ class HodDashboard extends ConsumerWidget {
                       final itemWidth = (constraints.maxWidth - 8) / 2;
                       return SizedBox(
                         width: itemWidth,
-                        child: _buildAllocationCard(context, a, subMap[a.subjectId], secMap[a.sectionId], isDark),
+                        child: _buildAllocationCard(
+                          context,
+                          a,
+                          subMap[a.subjectId],
+                          secMap[a.sectionId],
+                          isDark,
+                        ),
                       );
                     }).toList(),
                   );
@@ -870,7 +1019,11 @@ class HodDashboard extends ConsumerWidget {
       fallback: 'Sec A',
       compact: true,
     );
-    final subjectName = sub?.name ?? (AcadexEntityFormatters.isRawIdentifier(a.subjectId) ? 'Course Subject' : a.subjectId);
+    final subjectName =
+        sub?.name ??
+        (AcadexEntityFormatters.isRawIdentifier(a.subjectId)
+            ? 'Course Subject'
+            : a.subjectId);
     final subjectCode = sub?.code ?? '';
 
     return AcadexCard(
@@ -894,9 +1047,14 @@ class HodDashboard extends ConsumerWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 7,
+                  vertical: 2.5,
+                ),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                  color: isDark
+                      ? AcadexColors.primary.withValues(alpha: 0.2)
+                      : AcadexColors.primaryLight,
                   borderRadius: AcadexRadius.borderRadiusSm,
                 ),
                 child: Text(

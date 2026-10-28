@@ -29,10 +29,15 @@ class AcadexCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = backgroundColor ?? (isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface);
-    final border = borderColor ?? (isDark ? AcadexColors.darkHairline : AcadexColors.hairline);
+    final bg =
+        backgroundColor ??
+        (isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface);
+    final border =
+        borderColor ??
+        (isDark ? AcadexColors.darkHairline : AcadexColors.hairline);
     final radius = borderRadius ?? AcadexRadius.borderRadiusLg;
-    final effectivePadding = padding ?? AcadexBreakpoints.responsiveCardPadding(context);
+    final effectivePadding =
+        padding ?? AcadexBreakpoints.responsiveCardPadding(context);
 
     final content = Container(
       width: width,
@@ -59,11 +64,11 @@ class AcadexCard extends StatelessWidget {
             onTap: onTap,
             borderRadius: radius,
             // Subtle overlay color for interaction
-            highlightColor: isDark 
-                ? Colors.white.withOpacity(0.05) 
+            highlightColor: isDark
+                ? Colors.white.withOpacity(0.05)
                 : Colors.black.withOpacity(0.03),
-            splashColor: isDark 
-                ? Colors.white.withOpacity(0.08) 
+            splashColor: isDark
+                ? Colors.white.withOpacity(0.08)
                 : AcadexColors.primary.withOpacity(0.05),
             child: content,
           ),
@@ -105,11 +110,15 @@ class AcadexStatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final defaultIconColor = iconColor ?? AcadexColors.primary;
-    final defaultIconBg = iconBackgroundColor ??
-        (isDark ? AcadexColors.primary.withValues(alpha: 0.15) : AcadexColors.primaryLight);
+    final defaultIconBg =
+        iconBackgroundColor ??
+        (isDark
+            ? AcadexColors.primary.withValues(alpha: 0.15)
+            : AcadexColors.primaryLight);
     final isSmall = AcadexBreakpoints.isSmallMobile(context);
 
-    final cardPadding = padding ??
+    final cardPadding =
+        padding ??
         EdgeInsets.all(isSmall ? AcadexSpacing.space10 : AcadexSpacing.space14);
 
     return AcadexCard(
@@ -126,7 +135,9 @@ class AcadexStatCard extends StatelessWidget {
                 child: Text(
                   title,
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ).copyWith(fontWeight: FontWeight.w600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -140,7 +151,11 @@ class AcadexStatCard extends StatelessWidget {
                   color: defaultIconBg,
                   borderRadius: AcadexRadius.borderRadiusMd,
                 ),
-                child: Icon(icon, size: isSmall ? 15 : 17, color: defaultIconColor),
+                child: Icon(
+                  icon,
+                  size: isSmall ? 15 : 17,
+                  color: defaultIconColor,
+                ),
               ),
             ],
           ),
@@ -166,7 +181,10 @@ class AcadexStatCard extends StatelessWidget {
               children: [
                 if (trend != null) ...[
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: (isPositiveTrend ?? true)
                           ? AcadexColors.successLight
@@ -189,7 +207,9 @@ class AcadexStatCard extends StatelessWidget {
                     child: Text(
                       subtitle!,
                       style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                        color: isDark
+                            ? AcadexColors.darkInkSecondary
+                            : AcadexColors.inkSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

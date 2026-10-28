@@ -47,19 +47,19 @@ class BaseUserProfileModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'instituteId': instituteId,
-        'name': name,
-        'email': email,
-        'phone': phone,
-        'role': role.value,
-        'profilePictureUrl': profilePictureUrl,
-        'bio': bio,
-        'collegeId': collegeId,
-        'collegeName': collegeName,
-        'departmentId': departmentId,
-        'departmentName': departmentName,
-      };
+    'id': id,
+    'instituteId': instituteId,
+    'name': name,
+    'email': email,
+    'phone': phone,
+    'role': role.value,
+    'profilePictureUrl': profilePictureUrl,
+    'bio': bio,
+    'collegeId': collegeId,
+    'collegeName': collegeName,
+    'departmentId': departmentId,
+    'departmentName': departmentName,
+  };
 
   BaseUserProfileModel copyWith({
     String? id,
@@ -174,7 +174,8 @@ class StudentRoleProfileModel {
       isEnrollmentAvailable: json['isEnrollmentAvailable'] == true,
       currentEnrollment: json['currentEnrollment'] != null
           ? CurrentEnrollmentSummaryModel.fromJson(
-              json['currentEnrollment'] as Map<String, dynamic>)
+              json['currentEnrollment'] as Map<String, dynamic>,
+            )
           : null,
     );
   }
@@ -255,7 +256,11 @@ class FacultyRoleProfileModel {
           ? DateTime.tryParse(json['joiningDate'].toString())
           : null,
       activeAssignments: assignmentsList
-          .map((a) => TeachingAssignmentSummaryModel.fromJson(a as Map<String, dynamic>))
+          .map(
+            (a) => TeachingAssignmentSummaryModel.fromJson(
+              a as Map<String, dynamic>,
+            ),
+          )
           .toList(),
     );
   }
@@ -357,19 +362,27 @@ class RoleProfileCompositeModel {
   factory RoleProfileCompositeModel.fromJson(Map<String, dynamic> json) {
     return RoleProfileCompositeModel(
       student: json['student'] != null
-          ? StudentRoleProfileModel.fromJson(json['student'] as Map<String, dynamic>)
+          ? StudentRoleProfileModel.fromJson(
+              json['student'] as Map<String, dynamic>,
+            )
           : null,
       faculty: json['faculty'] != null
-          ? FacultyRoleProfileModel.fromJson(json['faculty'] as Map<String, dynamic>)
+          ? FacultyRoleProfileModel.fromJson(
+              json['faculty'] as Map<String, dynamic>,
+            )
           : null,
       hod: json['hod'] != null
           ? HodRoleProfileModel.fromJson(json['hod'] as Map<String, dynamic>)
           : null,
       collegeAdmin: json['collegeAdmin'] != null
-          ? CollegeAdminRoleProfileModel.fromJson(json['collegeAdmin'] as Map<String, dynamic>)
+          ? CollegeAdminRoleProfileModel.fromJson(
+              json['collegeAdmin'] as Map<String, dynamic>,
+            )
           : null,
       superAdmin: json['superAdmin'] != null
-          ? SuperAdminRoleProfileModel.fromJson(json['superAdmin'] as Map<String, dynamic>)
+          ? SuperAdminRoleProfileModel.fromJson(
+              json['superAdmin'] as Map<String, dynamic>,
+            )
           : null,
     );
   }
@@ -389,11 +402,13 @@ class ProfileCompletionModel {
   factory ProfileCompletionModel.fromJson(Map<String, dynamic> json) {
     return ProfileCompletionModel(
       percentage: (json['percentage'] as num?)?.toInt() ?? 100,
-      completedFields: (json['completedFields'] as List<dynamic>?)
+      completedFields:
+          (json['completedFields'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
-      missingFields: (json['missingFields'] as List<dynamic>?)
+      missingFields:
+          (json['missingFields'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
@@ -418,10 +433,13 @@ class ComposedProfileModel {
     return ComposedProfileModel(
       user: BaseUserProfileModel.fromJson(json['user'] as Map<String, dynamic>),
       roleProfile: RoleProfileCompositeModel.fromJson(
-          json['roleProfile'] as Map<String, dynamic>? ?? {}),
+        json['roleProfile'] as Map<String, dynamic>? ?? {},
+      ),
       completion: ProfileCompletionModel.fromJson(
-          json['completion'] as Map<String, dynamic>? ?? {}),
-      editableFields: (json['editableFields'] as List<dynamic>?)
+        json['completion'] as Map<String, dynamic>? ?? {},
+      ),
+      editableFields:
+          (json['editableFields'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],

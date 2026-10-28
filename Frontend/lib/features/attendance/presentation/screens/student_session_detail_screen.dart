@@ -14,10 +14,7 @@ import '../providers/student_portal_providers.dart';
 class StudentSessionDetailScreen extends ConsumerWidget {
   final String sessionId;
 
-  const StudentSessionDetailScreen({
-    super.key,
-    required this.sessionId,
-  });
+  const StudentSessionDetailScreen({super.key, required this.sessionId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,7 +25,8 @@ class StudentSessionDetailScreen extends ConsumerWidget {
       backgroundColor: Colors.white,
       maxWidth: AcadexLayout.contentMaxWidth,
       child: sessionAsync.when(
-        loading: () => const AcadexLoadingState(message: 'Loading session details...'),
+        loading: () =>
+            const AcadexLoadingState(message: 'Loading session details...'),
         error: (err, _) => AcadexErrorState(
           message: 'Unable to load attendance session: $err',
           onRetry: () => ref.refresh(studentSessionDetailProvider(sessionId)),
@@ -38,9 +36,11 @@ class StudentSessionDetailScreen extends ConsumerWidget {
             return Center(
               child: AcadexEmptyState(
                 title: 'Session Not Found',
-                subtitle: 'No verified attendance record was found for session ID "$sessionId".',
+                subtitle:
+                    'No verified attendance record was found for session ID "$sessionId".',
                 actionLabel: 'Return to Portal',
-                onActionTap: () => context.safePop(fallbackRoute: '/attendance'),
+                onActionTap: () =>
+                    context.safePop(fallbackRoute: '/attendance'),
               ),
             );
           }
@@ -51,7 +51,11 @@ class StudentSessionDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDetailContent(BuildContext context, StudentAttendanceSessionSummary session, bool isDark) {
+  Widget _buildDetailContent(
+    BuildContext context,
+    StudentAttendanceSessionSummary session,
+    bool isDark,
+  ) {
     final statusColor = _getStatusColor(session.status);
 
     return Column(
@@ -59,7 +63,8 @@ class StudentSessionDetailScreen extends ConsumerWidget {
       children: [
         AcadexPageHeader(
           title: session.subjectName,
-          subtitle: 'Official Academic Attendance Record — ${session.subjectCode}',
+          subtitle:
+              'Official Academic Attendance Record — ${session.subjectCode}',
           actions: [
             AcadexButton(
               label: 'Back to Attendance',
@@ -77,16 +82,24 @@ class StudentSessionDetailScreen extends ConsumerWidget {
           decoration: BoxDecoration(
             color: AcadexColors.primary.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.2)),
+            border: Border.all(
+              color: AcadexColors.primary.withValues(alpha: 0.2),
+            ),
           ),
           child: Row(
             children: [
-              const Icon(LucideIcons.shieldCheck, size: 18, color: AcadexColors.primary),
+              const Icon(
+                LucideIcons.shieldCheck,
+                size: 18,
+                color: AcadexColors.primary,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   'Verified Institutional Record • Read-Only Access (Faculty Verified)',
-                  style: AcadexTypography.bodySmall(color: AcadexColors.primary).copyWith(fontWeight: FontWeight.w600),
+                  style: AcadexTypography.bodySmall(
+                    color: AcadexColors.primary,
+                  ).copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
               Container(
@@ -97,7 +110,9 @@ class StudentSessionDetailScreen extends ConsumerWidget {
                 ),
                 child: Text(
                   'v${session.version}',
-                  style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(fontWeight: FontWeight.w700),
+                  style: AcadexTypography.caption(
+                    color: AcadexColors.primary,
+                  ).copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
             ],
@@ -111,7 +126,9 @@ class StudentSessionDetailScreen extends ConsumerWidget {
           decoration: BoxDecoration(
             color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+            border: Border.all(
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,20 +136,31 @@ class StudentSessionDetailScreen extends ConsumerWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: statusColor.withValues(alpha: 0.4)),
+                      border: Border.all(
+                        color: statusColor.withValues(alpha: 0.4),
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(_getStatusIcon(session.status), size: 16, color: statusColor),
+                        Icon(
+                          _getStatusIcon(session.status),
+                          size: 16,
+                          color: statusColor,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           session.status.name.toUpperCase(),
-                          style: AcadexTypography.bodySmall(color: statusColor).copyWith(fontWeight: FontWeight.w700),
+                          style: AcadexTypography.bodySmall(
+                            color: statusColor,
+                          ).copyWith(fontWeight: FontWeight.w700),
                         ),
                       ],
                     ),
@@ -140,7 +168,11 @@ class StudentSessionDetailScreen extends ConsumerWidget {
                   const Spacer(),
                   Text(
                     'Recorded on ${session.date.toIso8601String().split('T').first}',
-                    style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                    style: AcadexTypography.caption(
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
+                    ),
                   ),
                 ],
               ),
@@ -153,14 +185,44 @@ class StudentSessionDetailScreen extends ConsumerWidget {
                 spacing: 24,
                 runSpacing: 20,
                 children: [
-                  _buildMetaItem('Subject Code', session.subjectCode, LucideIcons.bookOpen, isDark),
-                  _buildMetaItem('Faculty Instructor', session.facultyName, LucideIcons.graduationCap, isDark),
-                  _buildMetaItem('Section', session.sectionName, LucideIcons.users, isDark),
-                  _buildMetaItem('Time Slot', session.timeSlot, LucideIcons.clock, isDark),
+                  _buildMetaItem(
+                    'Subject Code',
+                    session.subjectCode,
+                    LucideIcons.bookOpen,
+                    isDark,
+                  ),
+                  _buildMetaItem(
+                    'Faculty Instructor',
+                    session.facultyName,
+                    LucideIcons.graduationCap,
+                    isDark,
+                  ),
+                  _buildMetaItem(
+                    'Section',
+                    session.sectionName,
+                    LucideIcons.users,
+                    isDark,
+                  ),
+                  _buildMetaItem(
+                    'Time Slot',
+                    session.timeSlot,
+                    LucideIcons.clock,
+                    isDark,
+                  ),
                   if (session.roomNumber != null)
-                    _buildMetaItem('Room / Hall', session.roomNumber!, LucideIcons.mapPin, isDark),
+                    _buildMetaItem(
+                      'Room / Hall',
+                      session.roomNumber!,
+                      LucideIcons.mapPin,
+                      isDark,
+                    ),
                   if (session.remarks != null && session.remarks!.isNotEmpty)
-                    _buildMetaItem('Faculty Remarks', session.remarks!, LucideIcons.messageSquare, isDark),
+                    _buildMetaItem(
+                      'Faculty Remarks',
+                      session.remarks!,
+                      LucideIcons.messageSquare,
+                      isDark,
+                    ),
                 ],
               ),
             ],
@@ -170,13 +232,22 @@ class StudentSessionDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMetaItem(String label, String value, IconData icon, bool isDark) {
+  Widget _buildMetaItem(
+    String label,
+    String value,
+    IconData icon,
+    bool isDark,
+  ) {
     return SizedBox(
       width: 220,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+          Icon(
+            icon,
+            size: 16,
+            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -184,12 +255,18 @@ class StudentSessionDetailScreen extends ConsumerWidget {
               children: [
                 Text(
                   label,
-                  style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                  style: AcadexTypography.caption(
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+                  style: AcadexTypography.body(
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ).copyWith(fontWeight: FontWeight.w600),
                 ),
               ],
             ),

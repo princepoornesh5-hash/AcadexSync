@@ -18,7 +18,8 @@ class SectionAttendanceChart extends StatelessWidget {
 
   Color _getBarColor(double pct) {
     if (pct >= 85.0) return AcadexColors.success;
-    if (pct >= AttendanceAnalyticsConstants.lowAttendanceThreshold) return AcadexColors.warning;
+    if (pct >= AttendanceAnalyticsConstants.lowAttendanceThreshold)
+      return AcadexColors.warning;
     return AcadexColors.error;
   }
 
@@ -32,7 +33,11 @@ class SectionAttendanceChart extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(LucideIcons.layoutGrid, size: 18, color: AcadexColors.primary),
+              const Icon(
+                LucideIcons.layoutGrid,
+                size: 18,
+                color: AcadexColors.primary,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -55,13 +60,17 @@ class SectionAttendanceChart extends StatelessWidget {
                     Icon(
                       LucideIcons.layoutGrid,
                       size: 36,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'No section attendance records available',
                       style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                     ),
                   ],
@@ -77,10 +86,14 @@ class SectionAttendanceChart extends StatelessWidget {
                     builder: (context) {
                       final item = sections[index];
                       final barColor = _getBarColor(item.attendancePercentage);
-                      final displayName = item.sectionName.isNotEmpty ? item.sectionName : item.sectionId;
+                      final displayName = item.sectionName.isNotEmpty
+                          ? item.sectionName
+                          : item.sectionId;
 
                       return InkWell(
-                        onTap: onSectionSelected != null ? () => onSectionSelected!(item) : null,
+                        onTap: onSectionSelected != null
+                            ? () => onSectionSelected!(item)
+                            : null,
                         borderRadius: AcadexRadius.borderRadiusSm,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 2),
@@ -88,46 +101,72 @@ class SectionAttendanceChart extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
                                     child: Row(
                                       children: [
                                         Text(
                                           displayName,
-                                          style: AcadexTypography.body(
-                                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                                          ).copyWith(fontWeight: FontWeight.w600),
+                                          style:
+                                              AcadexTypography.body(
+                                                color: isDark
+                                                    ? AcadexColors.darkInk
+                                                    : AcadexColors.ink,
+                                              ).copyWith(
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                         ),
                                         const SizedBox(width: 8),
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
-                                            borderRadius: AcadexRadius.borderRadiusSm,
+                                            color: isDark
+                                                ? AcadexColors.darkCanvasSoft
+                                                : AcadexColors.canvasSoft,
+                                            borderRadius:
+                                                AcadexRadius.borderRadiusSm,
                                           ),
                                           child: Text(
                                             '${item.totalStudents} students',
                                             style: AcadexTypography.caption(
-                                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                              color: isDark
+                                                  ? AcadexColors.darkInkMuted
+                                                  : AcadexColors.inkMuted,
                                             ).copyWith(fontSize: 10),
                                           ),
                                         ),
-                                        if (item.lowAttendanceStudentCount > 0) ...[
+                                        if (item.lowAttendanceStudentCount >
+                                            0) ...[
                                           const SizedBox(width: 6),
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
                                             decoration: BoxDecoration(
-                                              color: AcadexColors.error.withValues(alpha: 0.12),
-                                              borderRadius: AcadexRadius.borderRadiusSm,
-                                              border: Border.all(color: AcadexColors.error.withValues(alpha: 0.3)),
+                                              color: AcadexColors.error
+                                                  .withValues(alpha: 0.12),
+                                              borderRadius:
+                                                  AcadexRadius.borderRadiusSm,
+                                              border: Border.all(
+                                                color: AcadexColors.error
+                                                    .withValues(alpha: 0.3),
+                                              ),
                                             ),
                                             child: Text(
                                               '${item.lowAttendanceStudentCount} below 75%',
-                                              style: AcadexTypography.caption(color: AcadexColors.error).copyWith(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w600,
-                                              ),
+                                              style:
+                                                  AcadexTypography.caption(
+                                                    color: AcadexColors.error,
+                                                  ).copyWith(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
                                             ),
                                           ),
                                         ],
@@ -139,16 +178,18 @@ class SectionAttendanceChart extends StatelessWidget {
                                     children: [
                                       Text(
                                         '${item.attendancePercentage.toStringAsFixed(1)}%',
-                                        style: AcadexTypography.body(color: barColor).copyWith(
-                                          fontWeight: FontWeight.w700,
-                                        ),
+                                        style: AcadexTypography.body(
+                                          color: barColor,
+                                        ).copyWith(fontWeight: FontWeight.w700),
                                       ),
                                       if (onSectionSelected != null) ...[
                                         const SizedBox(width: 6),
                                         Icon(
                                           LucideIcons.chevronRight,
                                           size: 14,
-                                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                          color: isDark
+                                              ? AcadexColors.darkInkMuted
+                                              : AcadexColors.inkMuted,
                                         ),
                                       ],
                                     ],
@@ -159,10 +200,15 @@ class SectionAttendanceChart extends StatelessWidget {
                               ClipRRect(
                                 borderRadius: AcadexRadius.borderRadiusSm,
                                 child: LinearProgressIndicator(
-                                  value: (item.attendancePercentage / 100).clamp(0.0, 1.0),
+                                  value: (item.attendancePercentage / 100)
+                                      .clamp(0.0, 1.0),
                                   minHeight: 8,
-                                  backgroundColor: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-                                  valueColor: AlwaysStoppedAnimation<Color>(barColor),
+                                  backgroundColor: isDark
+                                      ? AcadexColors.darkHairline
+                                      : AcadexColors.hairline,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    barColor,
+                                  ),
                                 ),
                               ),
                             ],

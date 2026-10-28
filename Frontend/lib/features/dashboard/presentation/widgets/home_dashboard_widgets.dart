@@ -15,16 +15,26 @@ import '../../domain/models/home_dashboard_models.dart';
 class DashboardGreetingHeader extends StatelessWidget {
   final DashboardGreetingModel greeting;
 
-  const DashboardGreetingHeader({
-    super.key,
-    required this.greeting,
-  });
+  const DashboardGreetingHeader({super.key, required this.greeting});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final now = DateTime.now();
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     final dateStr = 'Today, ${now.day} ${months[now.month - 1]}';
 
     return Padding(
@@ -43,14 +53,18 @@ class DashboardGreetingHeader extends StatelessWidget {
                 height: 40,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                  color: isDark
+                      ? AcadexColors.primary.withValues(alpha: 0.2)
+                      : AcadexColors.primaryLight,
                   border: Border.all(
                     color: AcadexColors.primary.withValues(alpha: 0.25),
                     width: 1.5,
                   ),
                 ),
                 child: ClipOval(
-                  child: greeting.avatarUrl != null && greeting.avatarUrl!.isNotEmpty
+                  child:
+                      greeting.avatarUrl != null &&
+                          greeting.avatarUrl!.isNotEmpty
                       ? Image.network(
                           greeting.avatarUrl!,
                           fit: BoxFit.cover,
@@ -70,16 +84,25 @@ class DashboardGreetingHeader extends StatelessWidget {
                     Text(
                       greeting.greetingText,
                       style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                        color: isDark
+                            ? AcadexColors.darkInkSecondary
+                            : AcadexColors.inkSecondary,
                       ).copyWith(fontSize: 11.5, fontWeight: FontWeight.w600),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       greeting.displayName,
-                      style: AcadexTypography.heading2(
-                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                      ).copyWith(fontSize: 16.5, fontWeight: FontWeight.w700, letterSpacing: -0.2),
+                      style:
+                          AcadexTypography.heading2(
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
+                          ).copyWith(
+                            fontSize: 16.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.2,
+                          ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -96,7 +119,9 @@ class DashboardGreetingHeader extends StatelessWidget {
                         Text(
                           '•  $dateStr',
                           style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ).copyWith(fontSize: 11),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -124,7 +149,9 @@ class DashboardGreetingHeader extends StatelessWidget {
   }
 
   Widget _buildInitials() {
-    final initial = greeting.displayName.isNotEmpty ? greeting.displayName[0].toUpperCase() : 'U';
+    final initial = greeting.displayName.isNotEmpty
+        ? greeting.displayName[0].toUpperCase()
+        : 'U';
     return Center(
       child: Text(
         initial,
@@ -160,13 +187,19 @@ class DashboardContextCard extends StatelessWidget {
         if (!contextModel.isEnrollmentAvailable) {
           content = Row(
             children: [
-              const Icon(LucideIcons.alertCircle, color: AcadexColors.warning, size: 16),
+              const Icon(
+                LucideIcons.alertCircle,
+                color: AcadexColors.warning,
+                size: 16,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Academic enrollment not assigned yet.',
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                 ),
               ),
@@ -179,10 +212,16 @@ class DashboardContextCard extends StatelessWidget {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                  color: isDark
+                      ? AcadexColors.primary.withValues(alpha: 0.2)
+                      : AcadexColors.primaryLight,
                   borderRadius: AcadexRadius.borderRadiusSm,
                 ),
-                child: const Icon(LucideIcons.graduationCap, color: AcadexColors.primary, size: 15),
+                child: const Icon(
+                  LucideIcons.graduationCap,
+                  color: AcadexColors.primary,
+                  size: 15,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -203,11 +242,21 @@ class DashboardContextCard extends StatelessWidget {
                       spacing: 6,
                       runSpacing: 4,
                       children: [
-                        if (contextModel.semesterName != null && contextModel.semesterName!.isNotEmpty)
-                          _buildChip(context, contextModel.semesterName!, isDark)
+                        if (contextModel.semesterName != null &&
+                            contextModel.semesterName!.isNotEmpty)
+                          _buildChip(
+                            context,
+                            contextModel.semesterName!,
+                            isDark,
+                          )
                         else if (contextModel.semesterNumber != null)
-                          _buildChip(context, 'Semester ${contextModel.semesterNumber}', isDark),
-                        if (contextModel.sectionName != null && contextModel.sectionName!.isNotEmpty)
+                          _buildChip(
+                            context,
+                            'Semester ${contextModel.semesterNumber}',
+                            isDark,
+                          ),
+                        if (contextModel.sectionName != null &&
+                            contextModel.sectionName!.isNotEmpty)
                           _buildChip(
                             context,
                             contextModel.sectionName!.startsWith('Section')
@@ -215,10 +264,19 @@ class DashboardContextCard extends StatelessWidget {
                                 : 'Section ${contextModel.sectionName!}',
                             isDark,
                           ),
-                        if (contextModel.rollNumber != null && contextModel.rollNumber!.isNotEmpty)
-                          _buildChip(context, 'Roll: ${contextModel.rollNumber}', isDark),
+                        if (contextModel.rollNumber != null &&
+                            contextModel.rollNumber!.isNotEmpty)
+                          _buildChip(
+                            context,
+                            'Roll: ${contextModel.rollNumber}',
+                            isDark,
+                          ),
                         if (contextModel.academicYearName != null)
-                          _buildChip(context, contextModel.academicYearName!, isDark),
+                          _buildChip(
+                            context,
+                            contextModel.academicYearName!,
+                            isDark,
+                          ),
                       ],
                     ),
                   ],
@@ -236,10 +294,16 @@ class DashboardContextCard extends StatelessWidget {
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                color: isDark
+                    ? AcadexColors.primary.withValues(alpha: 0.2)
+                    : AcadexColors.primaryLight,
                 borderRadius: AcadexRadius.borderRadiusSm,
               ),
-              child: const Icon(LucideIcons.briefcase, color: AcadexColors.primary, size: 15),
+              child: const Icon(
+                LucideIcons.briefcase,
+                color: AcadexColors.primary,
+                size: 15,
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -283,10 +347,16 @@ class DashboardContextCard extends StatelessWidget {
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                color: isDark
+                    ? AcadexColors.primary.withValues(alpha: 0.2)
+                    : AcadexColors.primaryLight,
                 borderRadius: AcadexRadius.borderRadiusSm,
               ),
-              child: const Icon(LucideIcons.layers, color: AcadexColors.primary, size: 15),
+              child: const Icon(
+                LucideIcons.layers,
+                color: AcadexColors.primary,
+                size: 15,
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -309,9 +379,17 @@ class DashboardContextCard extends StatelessWidget {
                     children: [
                       _buildChip(context, 'Head of Department', isDark),
                       if (contextModel.departmentCode != null)
-                        _buildChip(context, contextModel.departmentCode!, isDark),
+                        _buildChip(
+                          context,
+                          contextModel.departmentCode!,
+                          isDark,
+                        ),
                       if (contextModel.academicYearName != null)
-                        _buildChip(context, contextModel.academicYearName!, isDark),
+                        _buildChip(
+                          context,
+                          contextModel.academicYearName!,
+                          isDark,
+                        ),
                     ],
                   ),
                 ],
@@ -328,10 +406,16 @@ class DashboardContextCard extends StatelessWidget {
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                color: isDark
+                    ? AcadexColors.primary.withValues(alpha: 0.2)
+                    : AcadexColors.primaryLight,
                 borderRadius: AcadexRadius.borderRadiusSm,
               ),
-              child: const Icon(LucideIcons.building, color: AcadexColors.primary, size: 15),
+              child: const Icon(
+                LucideIcons.building,
+                color: AcadexColors.primary,
+                size: 15,
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -356,7 +440,11 @@ class DashboardContextCard extends StatelessWidget {
                       if (contextModel.collegeCode != null)
                         _buildChip(context, contextModel.collegeCode!, isDark),
                       if (contextModel.academicYearName != null)
-                        _buildChip(context, contextModel.academicYearName!, isDark),
+                        _buildChip(
+                          context,
+                          contextModel.academicYearName!,
+                          isDark,
+                        ),
                     ],
                   ),
                 ],
@@ -373,10 +461,16 @@ class DashboardContextCard extends StatelessWidget {
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                color: isDark
+                    ? AcadexColors.primary.withValues(alpha: 0.2)
+                    : AcadexColors.primaryLight,
                 borderRadius: AcadexRadius.borderRadiusSm,
               ),
-              child: const Icon(LucideIcons.globe, color: AcadexColors.primary, size: 15),
+              child: const Icon(
+                LucideIcons.globe,
+                color: AcadexColors.primary,
+                size: 15,
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -414,7 +508,9 @@ class DashboardContextCard extends StatelessWidget {
       child: Text(
         text,
         style: AcadexTypography.caption(
-          color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+          color: isDark
+              ? AcadexColors.darkInkSecondary
+              : AcadexColors.inkSecondary,
         ).copyWith(fontSize: 10.5, fontWeight: FontWeight.w500),
       ),
     );
@@ -426,10 +522,7 @@ class DashboardContextCard extends StatelessWidget {
 class DashboardAlertsSection extends StatelessWidget {
   final List<DashboardAlertModel> alerts;
 
-  const DashboardAlertsSection({
-    super.key,
-    required this.alerts,
-  });
+  const DashboardAlertsSection({super.key, required this.alerts});
 
   @override
   Widget build(BuildContext context) {
@@ -446,26 +539,38 @@ class DashboardAlertsSection extends StatelessWidget {
               : (isWarning ? AcadexColors.warning : AcadexColors.primary);
           final bgColor = isCritical
               ? AcadexColors.errorLight
-              : (isWarning ? AcadexColors.warningLight : AcadexColors.primaryLight);
+              : (isWarning
+                    ? AcadexColors.warningLight
+                    : AcadexColors.primaryLight);
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 6),
             child: AcadexPressable(
-              onTap: alert.route != null ? () => context.push(alert.route!) : null,
+              onTap: alert.route != null
+                  ? () => context.push(alert.route!)
+                  : null,
               pressedScale: 0.985,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: bgColor,
                   borderRadius: AcadexRadius.borderRadiusMd,
-                  border: Border.all(color: color.withValues(alpha: 0.35), width: 1),
+                  border: Border.all(
+                    color: color.withValues(alpha: 0.35),
+                    width: 1,
+                  ),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       isCritical
                           ? LucideIcons.alertOctagon
-                          : (isWarning ? LucideIcons.alertTriangle : LucideIcons.info),
+                          : (isWarning
+                                ? LucideIcons.alertTriangle
+                                : LucideIcons.info),
                       color: color,
                       size: 16,
                     ),
@@ -486,8 +591,9 @@ class DashboardAlertsSection extends StatelessWidget {
                           ),
                           Text(
                             alert.message,
-                            style: AcadexTypography.caption(color: AcadexColors.inkSecondary)
-                                .copyWith(fontSize: 11),
+                            style: AcadexTypography.caption(
+                              color: AcadexColors.inkSecondary,
+                            ).copyWith(fontSize: 11),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -545,7 +651,10 @@ class DashboardPendingActionsSection extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AcadexColors.errorLight,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AcadexColors.error.withValues(alpha: 0.25), width: 0.8),
+                border: Border.all(
+                  color: AcadexColors.error.withValues(alpha: 0.25),
+                  width: 0.8,
+                ),
               ),
               child: Text(
                 '${pendingActions.length}',
@@ -559,12 +668,18 @@ class DashboardPendingActionsSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 6),
-        ...pendingActions.map((action) => _buildActionCard(context, action, isDark)),
+        ...pendingActions.map(
+          (action) => _buildActionCard(context, action, isDark),
+        ),
       ],
     );
   }
 
-  Widget _buildActionCard(BuildContext context, DashboardPendingActionModel action, bool isDark) {
+  Widget _buildActionCard(
+    BuildContext context,
+    DashboardPendingActionModel action,
+    bool isDark,
+  ) {
     final isHigh = action.priority == 'HIGH';
 
     return Padding(
@@ -581,7 +696,9 @@ class DashboardPendingActionsSection extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: isHigh ? AcadexColors.errorLight : AcadexColors.primaryLight,
+                  color: isHigh
+                      ? AcadexColors.errorLight
+                      : AcadexColors.primaryLight,
                   borderRadius: AcadexRadius.borderRadiusSm,
                 ),
                 child: Icon(
@@ -607,7 +724,9 @@ class DashboardPendingActionsSection extends StatelessWidget {
                       Text(
                         action.description!,
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ).copyWith(fontSize: 11),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -619,7 +738,9 @@ class DashboardPendingActionsSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                  color: isDark
+                      ? AcadexColors.darkCanvasSoft
+                      : AcadexColors.canvasSoft,
                   borderRadius: AcadexRadius.borderRadiusSm,
                 ),
                 child: Row(
@@ -634,7 +755,11 @@ class DashboardPendingActionsSection extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 3),
-                    const Icon(LucideIcons.arrowRight, size: 12, color: AcadexColors.primary),
+                    const Icon(
+                      LucideIcons.arrowRight,
+                      size: 12,
+                      color: AcadexColors.primary,
+                    ),
                   ],
                 ),
               ),
@@ -702,10 +827,14 @@ class DashboardUpcomingSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+              color: isDark
+                  ? AcadexColors.darkSurfaceCard
+                  : AcadexColors.surface,
               borderRadius: AcadexRadius.borderRadiusMd,
               border: Border.all(
-                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
               ),
             ),
             child: Row(
@@ -713,14 +842,18 @@ class DashboardUpcomingSection extends StatelessWidget {
                 Icon(
                   LucideIcons.calendar,
                   size: 15,
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     emptyMessage ?? 'No classes scheduled today',
                     style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
                 ),
@@ -733,7 +866,11 @@ class DashboardUpcomingSection extends StatelessWidget {
     );
   }
 
-  Widget _buildUpcomingTile(BuildContext context, DashboardUpcomingItemModel item, bool isDark) {
+  Widget _buildUpcomingTile(
+    BuildContext context,
+    DashboardUpcomingItemModel item,
+    bool isDark,
+  ) {
     IconData icon;
     Color iconColor;
     switch (item.type) {
@@ -803,15 +940,24 @@ class DashboardUpcomingSection extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (item.location != null && item.location!.isNotEmpty) ...[
+                        if (item.location != null &&
+                            item.location!.isNotEmpty) ...[
                           const SizedBox(width: 5),
-                          Text('•', style: TextStyle(color: Colors.grey[400], fontSize: 10)),
+                          Text(
+                            '•',
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 10,
+                            ),
+                          ),
                           const SizedBox(width: 5),
                           Flexible(
                             child: Text(
                               item.location!,
                               style: AcadexTypography.caption(
-                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
                               ).copyWith(fontSize: 11),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -827,7 +973,9 @@ class DashboardUpcomingSection extends StatelessWidget {
                 Icon(
                   LucideIcons.chevronRight,
                   size: 14,
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
             ],
           ),
@@ -915,10 +1063,12 @@ class DashboardQuickActionsGrid extends ConsumerWidget {
                   badgeCount: action.badgeCount,
                   isCompact: true,
                   onTap: () {
-                    ref.read(navigationProvider.notifier).selectDashboardAction(
-                      route: action.route,
-                      id: action.id,
-                    );
+                    ref
+                        .read(navigationProvider.notifier)
+                        .selectDashboardAction(
+                          route: action.route,
+                          id: action.id,
+                        );
                     context.push(action.route);
                   },
                 );
@@ -1017,15 +1167,21 @@ class _DashboardActionCardState extends State<DashboardActionCard> {
     } else if (_isFocused) {
       borderColor = AcadexColors.primary;
       borderWidth = 1.5;
-      backgroundColor = isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface;
+      backgroundColor = isDark
+          ? AcadexColors.darkSurfaceCard
+          : AcadexColors.surface;
     } else if (_isHovered) {
       borderColor = AcadexColors.primary.withValues(alpha: 0.5);
       borderWidth = 1.0;
-      backgroundColor = isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface;
+      backgroundColor = isDark
+          ? AcadexColors.darkSurfaceCard
+          : AcadexColors.surface;
     } else {
       borderColor = isDark ? AcadexColors.darkHairline : AcadexColors.hairline;
       borderWidth = 0.8;
-      backgroundColor = isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface;
+      backgroundColor = isDark
+          ? AcadexColors.darkSurfaceCard
+          : AcadexColors.surface;
     }
 
     final isPrimaryOrSelected = widget.isSelected;
@@ -1052,10 +1208,7 @@ class _DashboardActionCardState extends State<DashboardActionCard> {
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: AcadexRadius.borderRadiusMd,
-            border: Border.all(
-              color: borderColor,
-              width: borderWidth,
-            ),
+            border: Border.all(color: borderColor, width: borderWidth),
             boxShadow: [
               if (_isFocused)
                 BoxShadow(
@@ -1065,13 +1218,17 @@ class _DashboardActionCardState extends State<DashboardActionCard> {
                 )
               else if (_isHovered)
                 BoxShadow(
-                  color: isDark ? Colors.black.withValues(alpha: 0.25) : const Color(0x1007111F),
+                  color: isDark
+                      ? Colors.black.withValues(alpha: 0.25)
+                      : const Color(0x1007111F),
                   blurRadius: 6,
                   offset: const Offset(0, 2),
                 )
               else
                 BoxShadow(
-                  color: isDark ? Colors.black.withValues(alpha: 0.15) : const Color(0x0607111F),
+                  color: isDark
+                      ? Colors.black.withValues(alpha: 0.15)
+                      : const Color(0x0607111F),
                   blurRadius: 4,
                   offset: const Offset(0, 1),
                 ),
@@ -1096,8 +1253,12 @@ class _DashboardActionCardState extends State<DashboardActionCard> {
                               height: 28,
                               decoration: BoxDecoration(
                                 color: isPrimaryOrSelected
-                                    ? AcadexColors.primary.withValues(alpha: 0.15)
-                                    : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
+                                    ? AcadexColors.primary.withValues(
+                                        alpha: 0.15,
+                                      )
+                                    : (isDark
+                                          ? AcadexColors.darkCanvasSoft
+                                          : AcadexColors.canvasSoft),
                                 borderRadius: AcadexRadius.borderRadiusSm,
                               ),
                               child: Center(
@@ -1106,7 +1267,9 @@ class _DashboardActionCardState extends State<DashboardActionCard> {
                                   size: 20,
                                   color: isPrimaryOrSelected
                                       ? AcadexColors.primary
-                                      : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                                      : (isDark
+                                            ? AcadexColors.darkInkSecondary
+                                            : AcadexColors.inkSecondary),
                                 ),
                               ),
                             ),
@@ -1116,10 +1279,14 @@ class _DashboardActionCardState extends State<DashboardActionCard> {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 12,
-                                fontWeight: isPrimaryOrSelected ? FontWeight.w700 : FontWeight.w600,
+                                fontWeight: isPrimaryOrSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
                                 color: isPrimaryOrSelected
                                     ? AcadexColors.primary
-                                    : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                                    : (isDark
+                                          ? AcadexColors.darkInk
+                                          : AcadexColors.ink),
                                 height: 1.15,
                               ),
                               maxLines: 2,
@@ -1134,12 +1301,18 @@ class _DashboardActionCardState extends State<DashboardActionCard> {
                         top: -4,
                         right: -4,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4.5, vertical: 1.5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4.5,
+                            vertical: 1.5,
+                          ),
                           decoration: BoxDecoration(
                             color: AcadexColors.error,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
                           child: Center(
                             child: Text(
                               '${widget.badgeCount}',
@@ -1163,7 +1336,9 @@ class _DashboardActionCardState extends State<DashboardActionCard> {
                       decoration: BoxDecoration(
                         color: isPrimaryOrSelected
                             ? AcadexColors.primary.withValues(alpha: 0.15)
-                            : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
+                            : (isDark
+                                  ? AcadexColors.darkCanvasSoft
+                                  : AcadexColors.canvasSoft),
                         borderRadius: AcadexRadius.borderRadiusSm,
                       ),
                       child: Icon(
@@ -1171,7 +1346,9 @@ class _DashboardActionCardState extends State<DashboardActionCard> {
                         size: 15,
                         color: isPrimaryOrSelected
                             ? AcadexColors.primary
-                            : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                            : (isDark
+                                  ? AcadexColors.darkInkSecondary
+                                  : AcadexColors.inkSecondary),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -1180,10 +1357,14 @@ class _DashboardActionCardState extends State<DashboardActionCard> {
                         widget.label,
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: isPrimaryOrSelected ? FontWeight.w700 : FontWeight.w600,
+                          fontWeight: isPrimaryOrSelected
+                              ? FontWeight.w700
+                              : FontWeight.w600,
                           color: isPrimaryOrSelected
                               ? AcadexColors.primary
-                              : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                              : (isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1192,7 +1373,10 @@ class _DashboardActionCardState extends State<DashboardActionCard> {
                     if (widget.badgeCount != null && widget.badgeCount! > 0)
                       Container(
                         margin: const EdgeInsets.only(left: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1.5,
+                        ),
                         decoration: BoxDecoration(
                           color: AcadexColors.error,
                           borderRadius: BorderRadius.circular(10),
@@ -1245,10 +1429,14 @@ class DashboardRecentActivitySection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+              color: isDark
+                  ? AcadexColors.darkSurfaceCard
+                  : AcadexColors.surface,
               borderRadius: AcadexRadius.borderRadiusMd,
               border: Border.all(
-                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
               ),
             ),
             child: Row(
@@ -1256,14 +1444,19 @@ class DashboardRecentActivitySection extends StatelessWidget {
                 Icon(
                   LucideIcons.activity,
                   size: 15,
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    emptyMessage ?? "You're all caught up. No recent updates right now.",
+                    emptyMessage ??
+                        "You're all caught up. No recent updates right now.",
                     style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
                 ),
@@ -1276,7 +1469,11 @@ class DashboardRecentActivitySection extends StatelessWidget {
     );
   }
 
-  Widget _buildRecentTile(BuildContext context, DashboardRecentActivityModel item, bool isDark) {
+  Widget _buildRecentTile(
+    BuildContext context,
+    DashboardRecentActivityModel item,
+    bool isDark,
+  ) {
     IconData icon;
     Color iconColor;
     switch (item.type) {
@@ -1340,7 +1537,9 @@ class DashboardRecentActivitySection extends StatelessWidget {
                       Text(
                         item.description!,
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ).copyWith(fontSize: 11),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1352,7 +1551,9 @@ class DashboardRecentActivitySection extends StatelessWidget {
                 Icon(
                   LucideIcons.chevronRight,
                   size: 13,
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
             ],
           ),
@@ -1405,9 +1606,7 @@ class DashboardCompactTile extends StatelessWidget {
                   color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Center(
-                  child: Icon(icon, size: 20, color: color),
-                ),
+                child: Center(child: Icon(icon, size: 20, color: color)),
               ),
               const SizedBox(height: 3),
               FittedBox(
@@ -1416,26 +1615,30 @@ class DashboardCompactTile extends StatelessWidget {
                 child: Text(
                   value,
                   textAlign: TextAlign.center,
-                  style: AcadexTypography.heading2(
-                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                  ).copyWith(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.2,
-                  ),
+                  style:
+                      AcadexTypography.heading2(
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ).copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.2,
+                      ),
                 ),
               ),
               const SizedBox(height: 1.5),
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: AcadexTypography.caption(
-                  color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                ).copyWith(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
-                  height: 1.15,
-                ),
+                style:
+                    AcadexTypography.caption(
+                      color: isDark
+                          ? AcadexColors.darkInkSecondary
+                          : AcadexColors.inkSecondary,
+                    ).copyWith(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w600,
+                      height: 1.15,
+                    ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -1445,7 +1648,9 @@ class DashboardCompactTile extends StatelessWidget {
                   subtitle,
                   textAlign: TextAlign.center,
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ).copyWith(fontSize: 9.0, height: 1.1),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1461,10 +1666,6 @@ class DashboardCompactTile extends StatelessWidget {
       return card;
     }
 
-    return AcadexPressable(
-      onTap: onTap,
-      pressedScale: 0.97,
-      child: card,
-    );
+    return AcadexPressable(onTap: onTap, pressedScale: 0.97, child: card);
   }
 }

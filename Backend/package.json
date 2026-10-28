@@ -15,7 +15,8 @@
     "seed:svgp": "ts-node src/scripts/seed-svgp-demo.ts",
     "seed:svgp:reset": "ts-node src/scripts/seed-svgp-demo.ts --reset",
     "test:gemini-smoke": "ts-node src/scripts/gemini-smoke-test.ts",
-    "test:gemini-stream-smoke": "ts-node src/scripts/gemini-stream-smoke-test.ts"
+    "test:gemini-stream-smoke": "ts-node src/scripts/gemini-stream-smoke-test.ts",
+    "test:email": "ts-node src/scripts/send-test-email.ts"
   },
   "keywords": [
     "acadex",
@@ -39,6 +40,7 @@
     "mongoose": "^8.9.5",
     "morgan": "^1.10.0",
     "multer": "^2.4.0",
+    "resend": "^6.35.0",
     "ws": "^8.22.0",
     "xlsx": "^0.18.5",
     "zod": "^3.24.1"

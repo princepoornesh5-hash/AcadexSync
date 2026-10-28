@@ -8,7 +8,7 @@ class ApiRequestsRepository implements RequestsRepository {
   final ApiClient _apiClient;
 
   ApiRequestsRepository({ApiClient? apiClient})
-      : _apiClient = apiClient ?? apiClientInstance;
+    : _apiClient = apiClient ?? apiClientInstance;
 
   static ApiClient get apiClientInstance => apiClient;
 
@@ -24,7 +24,8 @@ class ApiRequestsRepository implements RequestsRepository {
         'page': page,
         'limit': limit,
         if (status != null) 'status': status.value,
-        if (requestType != null && requestType.isNotEmpty) 'requestType': requestType,
+        if (requestType != null && requestType.isNotEmpty)
+          'requestType': requestType,
       };
 
       final response = await _apiClient.dio.get(
@@ -36,7 +37,10 @@ class ApiRequestsRepository implements RequestsRepository {
         final data = response.data['data'];
         final items = (data['items'] as List?) ?? (data is List ? data : []);
         return items
-            .map((item) => RequestModel.fromJson(Map<String, dynamic>.from(item as Map)))
+            .map(
+              (item) =>
+                  RequestModel.fromJson(Map<String, dynamic>.from(item as Map)),
+            )
             .toList();
       }
       return [];
@@ -57,7 +61,8 @@ class ApiRequestsRepository implements RequestsRepository {
         'page': page,
         'limit': limit,
         if (status != null) 'status': status.value,
-        if (requestType != null && requestType.isNotEmpty) 'requestType': requestType,
+        if (requestType != null && requestType.isNotEmpty)
+          'requestType': requestType,
       };
 
       final response = await _apiClient.dio.get(
@@ -69,12 +74,18 @@ class ApiRequestsRepository implements RequestsRepository {
         final data = response.data['data'];
         final items = (data['items'] as List?) ?? (data is List ? data : []);
         return items
-            .map((item) => RequestModel.fromJson(Map<String, dynamic>.from(item as Map)))
+            .map(
+              (item) =>
+                  RequestModel.fromJson(Map<String, dynamic>.from(item as Map)),
+            )
             .toList();
       }
       return [];
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load incoming requests');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load incoming requests',
+      );
     }
   }
 
@@ -106,7 +117,10 @@ class ApiRequestsRepository implements RequestsRepository {
       return null;
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return null;
-      throw AcadexException.fromDio(e, context: 'Failed to load request detail');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load request detail',
+      );
     }
   }
 
@@ -127,16 +141,16 @@ class ApiRequestsRepository implements RequestsRepository {
         if (title != null && title.isNotEmpty) 'title': title,
         'description': description,
         if (status != null && status.isNotEmpty) 'status': status,
-        if (relatedEntityType != null && relatedEntityType.isNotEmpty) 'relatedEntityType': relatedEntityType,
-        if (relatedEntityId != null && relatedEntityId.isNotEmpty) 'relatedEntityId': relatedEntityId,
-        if (academicContext != null) 'academicContext': academicContext.toJson(),
+        if (relatedEntityType != null && relatedEntityType.isNotEmpty)
+          'relatedEntityType': relatedEntityType,
+        if (relatedEntityId != null && relatedEntityId.isNotEmpty)
+          'relatedEntityId': relatedEntityId,
+        if (academicContext != null)
+          'academicContext': academicContext.toJson(),
         if (details != null) 'details': details.toJson(),
       };
 
-      final response = await _apiClient.dio.post(
-        '/requests',
-        data: payload,
-      );
+      final response = await _apiClient.dio.post('/requests', data: payload);
 
       if (response.data != null && response.data['data'] != null) {
         return RequestModel.fromJson(
@@ -149,7 +163,10 @@ class ApiRequestsRepository implements RequestsRepository {
         userMessage: "Couldn't submit your request. Please try again.",
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, fallback: "Couldn't submit your request. Please try again.");
+      throw AcadexException.fromDio(
+        e,
+        fallback: "Couldn't submit your request. Please try again.",
+      );
     }
   }
 
@@ -177,9 +194,7 @@ class ApiRequestsRepository implements RequestsRepository {
     try {
       final response = await _apiClient.dio.post(
         '/requests/$id/cancel',
-        data: {
-          if (reason != null && reason.isNotEmpty) 'reason': reason,
-        },
+        data: {if (reason != null && reason.isNotEmpty) 'reason': reason},
       );
       if (response.data != null && response.data['data'] != null) {
         return RequestModel.fromJson(
@@ -211,7 +226,10 @@ class ApiRequestsRepository implements RequestsRepository {
         userMessage: 'Unable to put request in review.',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, fallback: 'Unable to put request in review.');
+      throw AcadexException.fromDio(
+        e,
+        fallback: 'Unable to put request in review.',
+      );
     }
   }
 
@@ -243,7 +261,10 @@ class ApiRequestsRepository implements RequestsRepository {
         userMessage: 'Unable to submit your response. Please try again.',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, fallback: 'Unable to submit your response. Please try again.');
+      throw AcadexException.fromDio(
+        e,
+        fallback: 'Unable to submit your response. Please try again.',
+      );
     }
   }
 
@@ -275,7 +296,10 @@ class ApiRequestsRepository implements RequestsRepository {
         userMessage: 'Unable to update request status. Please try again.',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, fallback: 'Unable to update request status. Please try again.');
+      throw AcadexException.fromDio(
+        e,
+        fallback: 'Unable to update request status. Please try again.',
+      );
     }
   }
 }

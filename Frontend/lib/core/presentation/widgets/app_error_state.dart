@@ -19,10 +19,6 @@ class AppErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AcadexErrorState(
-      title: title,
-      message: message,
-      onRetry: onRetry,
-    );
+    return AcadexErrorState(title: title, message: message, onRetry: onRetry);
   }
 }

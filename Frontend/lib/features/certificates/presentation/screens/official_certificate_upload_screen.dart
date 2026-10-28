@@ -26,10 +26,12 @@ class OfficialCertificateUploadScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<OfficialCertificateUploadScreen> createState() => _OfficialCertificateUploadScreenState();
+  ConsumerState<OfficialCertificateUploadScreen> createState() =>
+      _OfficialCertificateUploadScreenState();
 }
 
-class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertificateUploadScreen> {
+class _OfficialCertificateUploadScreenState
+    extends ConsumerState<OfficialCertificateUploadScreen> {
   final _formKey = GlobalKey<FormState>();
   final _descController = TextEditingController();
 
@@ -68,8 +70,11 @@ class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertif
   Future<void> _pickFile() async {
     setState(() => _errorMessage = null);
     try {
-      final allowedExtensions = _resolvedRequirement?.allowedFileTypes ?? ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
-      final maxBytes = _resolvedRequirement?.maxFileSizeBytes ?? 10 * 1024 * 1024;
+      final allowedExtensions =
+          _resolvedRequirement?.allowedFileTypes ??
+          ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
+      final maxBytes =
+          _resolvedRequirement?.maxFileSizeBytes ?? 10 * 1024 * 1024;
 
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -82,7 +87,8 @@ class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertif
 
         if (file.size > maxBytes) {
           setState(() {
-            _errorMessage = 'Selected file is too large (${(file.size / (1024 * 1024)).toStringAsFixed(1)} MB). Maximum allowed size is 10 MB.';
+            _errorMessage =
+                'Selected file is too large (${(file.size / (1024 * 1024)).toStringAsFixed(1)} MB). Maximum allowed size is 10 MB.';
           });
           return;
         }
@@ -127,7 +133,8 @@ class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertif
       final repo = ref.read(officialCertificateRepositoryProvider);
       final certId = const Uuid().v4();
       final storageFileName = '${certId}_${_selectedFile!.name}';
-      final storagePath = '/colleges/${student.collegeId ?? 'default'}/students/${student.id}/official-certificates/$storageFileName';
+      final storagePath =
+          '/colleges/${student.collegeId ?? 'default'}/students/${student.id}/official-certificates/$storageFileName';
 
       final submission = OfficialCertificate(
         id: certId,
@@ -142,7 +149,9 @@ class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertif
         academicYearId: req.academicYearId ?? '',
         requirementId: req.id,
         certificateName: req.name,
-        description: _descController.text.trim().isNotEmpty ? _descController.text.trim() : null,
+        description: _descController.text.trim().isNotEmpty
+            ? _descController.text.trim()
+            : null,
         fileName: _selectedFile!.name,
         fileType: _selectedFile!.extension ?? 'pdf',
         fileSizeBytes: _selectedFile!.size,
@@ -160,7 +169,9 @@ class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertif
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Document submitted successfully! Status: Pending Verification'),
+            content: Text(
+              'Document submitted successfully! Status: Pending Verification',
+            ),
             backgroundColor: AcadexColors.success,
           ),
         );
@@ -192,7 +203,8 @@ class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertif
             children: [
               const AcadexPageHeader(
                 title: 'Upload Official Certificate',
-                subtitle: 'Submit verified documents required by your institution.',
+                subtitle:
+                    'Submit verified documents required by your institution.',
               ),
               const SizedBox(height: AcadexSpacing.space16),
 
@@ -202,16 +214,24 @@ class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertif
                   decoration: BoxDecoration(
                     color: AcadexColors.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(AcadexRadius.md),
-                    border: Border.all(color: AcadexColors.error.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: AcadexColors.error.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 20),
+                      const Icon(
+                        LucideIcons.alertCircle,
+                        color: AcadexColors.error,
+                        size: 20,
+                      ),
                       const SizedBox(width: AcadexSpacing.space8),
                       Expanded(
                         child: Text(
                           _errorMessage!,
-                          style: AcadexTypography.bodyMedium(color: AcadexColors.error),
+                          style: AcadexTypography.bodyMedium(
+                            color: AcadexColors.error,
+                          ),
                         ),
                       ),
                     ],
@@ -233,38 +253,61 @@ class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertif
                           padding: const EdgeInsets.all(AcadexSpacing.space16),
                           decoration: BoxDecoration(
                             color: AcadexColors.primary.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(AcadexRadius.md),
-                            border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.15)),
+                            borderRadius: BorderRadius.circular(
+                              AcadexRadius.md,
+                            ),
+                            border: Border.all(
+                              color: AcadexColors.primary.withValues(
+                                alpha: 0.15,
+                              ),
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
-                                  const Icon(LucideIcons.fileCheck2, color: AcadexColors.primary, size: 22),
+                                  const Icon(
+                                    LucideIcons.fileCheck2,
+                                    color: AcadexColors.primary,
+                                    size: 22,
+                                  ),
                                   const SizedBox(width: AcadexSpacing.space8),
                                   Expanded(
                                     child: Text(
                                       req.name,
                                       style: AcadexTypography.heading3(
-                                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                        color: isDark
+                                            ? AcadexColors.darkInk
+                                            : AcadexColors.ink,
                                       ),
                                     ),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: req.required
-                                          ? AcadexColors.error.withValues(alpha: 0.1)
-                                          : (isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft),
-                                      borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                                          ? AcadexColors.error.withValues(
+                                              alpha: 0.1,
+                                            )
+                                          : (isDark
+                                                ? AcadexColors.darkSurfaceCard
+                                                : AcadexColors.canvasSoft),
+                                      borderRadius: BorderRadius.circular(
+                                        AcadexRadius.xs,
+                                      ),
                                     ),
                                     child: Text(
                                       req.required ? 'Mandatory' : 'Optional',
                                       style: TextStyle(
                                         color: req.required
                                             ? AcadexColors.error
-                                            : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                            : (isDark
+                                                  ? AcadexColors.darkInkMuted
+                                                  : AcadexColors.inkMuted),
                                         fontWeight: FontWeight.w600,
                                         fontSize: 11,
                                       ),
@@ -277,7 +320,9 @@ class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertif
                                 Text(
                                   req.description,
                                   style: AcadexTypography.bodySmall(
-                                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
                                   ),
                                 ),
                               ],
@@ -285,7 +330,9 @@ class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertif
                               Text(
                                 'Accepted formats: ${req.allowedFileTypes.join(', ').toUpperCase()} • Max size: ${(req.maxFileSizeBytes / (1024 * 1024)).toStringAsFixed(0)}MB',
                                 style: AcadexTypography.caption(
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
                                 ),
                               ),
                             ],
@@ -298,7 +345,9 @@ class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertif
                       Text(
                         'Document Description (Optional)',
                         style: AcadexTypography.title(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       const SizedBox(height: AcadexSpacing.space8),
@@ -306,8 +355,13 @@ class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertif
                         controller: _descController,
                         maxLines: 2,
                         decoration: InputDecoration(
-                          hintText: 'e.g. Scanned copy of original transfer certificate',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                          hintText:
+                              'e.g. Scanned copy of original transfer certificate',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                              AcadexRadius.md,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: AcadexSpacing.space24),
@@ -316,7 +370,9 @@ class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertif
                       Text(
                         'Upload Document File *',
                         style: AcadexTypography.title(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       const SizedBox(height: AcadexSpacing.space8),
@@ -327,12 +383,21 @@ class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertif
                           borderRadius: BorderRadius.circular(AcadexRadius.lg),
                           child: Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 40,
+                              horizontal: 24,
+                            ),
                             decoration: BoxDecoration(
-                              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
-                              borderRadius: BorderRadius.circular(AcadexRadius.lg),
+                              color: isDark
+                                  ? AcadexColors.darkSurfaceCard
+                                  : AcadexColors.canvasSoft,
+                              borderRadius: BorderRadius.circular(
+                                AcadexRadius.lg,
+                              ),
                               border: Border.all(
-                                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                color: isDark
+                                    ? AcadexColors.darkHairline
+                                    : AcadexColors.hairline,
                                 width: 1.5,
                               ),
                             ),
@@ -343,23 +408,33 @@ class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertif
                                   width: 56,
                                   height: 56,
                                   decoration: BoxDecoration(
-                                    color: AcadexColors.primary.withValues(alpha: 0.1),
+                                    color: AcadexColors.primary.withValues(
+                                      alpha: 0.1,
+                                    ),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(LucideIcons.uploadCloud, color: AcadexColors.primary, size: 28),
+                                  child: const Icon(
+                                    LucideIcons.uploadCloud,
+                                    color: AcadexColors.primary,
+                                    size: 28,
+                                  ),
                                 ),
                                 const SizedBox(height: AcadexSpacing.space16),
                                 Text(
                                   'Choose a file or click to browse',
                                   style: AcadexTypography.heading3(
-                                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                    color: isDark
+                                        ? AcadexColors.darkInk
+                                        : AcadexColors.ink,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   'Accepted formats: PDF, JPG, JPEG, PNG, DOC, DOCX (Max 10MB)',
                                   style: AcadexTypography.bodySmall(
-                                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
                                   ),
                                 ),
                               ],
@@ -371,8 +446,14 @@ class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertif
                           padding: const EdgeInsets.all(AcadexSpacing.space16),
                           decoration: BoxDecoration(
                             color: AcadexColors.success.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(AcadexRadius.md),
-                            border: Border.all(color: AcadexColors.success.withValues(alpha: 0.3)),
+                            borderRadius: BorderRadius.circular(
+                              AcadexRadius.md,
+                            ),
+                            border: Border.all(
+                              color: AcadexColors.success.withValues(
+                                alpha: 0.3,
+                              ),
+                            ),
                           ),
                           child: Row(
                             children: [
@@ -380,10 +461,18 @@ class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertif
                                 width: 44,
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color: AcadexColors.success.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(AcadexRadius.sm),
+                                  color: AcadexColors.success.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    AcadexRadius.sm,
+                                  ),
                                 ),
-                                child: const Icon(LucideIcons.fileCheck, color: AcadexColors.success, size: 24),
+                                child: const Icon(
+                                  LucideIcons.fileCheck,
+                                  color: AcadexColors.success,
+                                  size: 24,
+                                ),
                               ),
                               const SizedBox(width: AcadexSpacing.space16),
                               Expanded(
@@ -393,13 +482,17 @@ class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertif
                                     Text(
                                       _selectedFile!.name,
                                       style: AcadexTypography.bodyMedium(
-                                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                        color: isDark
+                                            ? AcadexColors.darkInk
+                                            : AcadexColors.ink,
                                       ),
                                     ),
                                     Text(
                                       '${(_selectedFile!.size / (1024 * 1024)).toStringAsFixed(2)} MB',
                                       style: AcadexTypography.caption(
-                                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                        color: isDark
+                                            ? AcadexColors.darkInkMuted
+                                            : AcadexColors.inkMuted,
                                       ),
                                     ),
                                   ],
@@ -425,11 +518,17 @@ class _OfficialCertificateUploadScreenState extends ConsumerState<OfficialCertif
                           AcadexButton(
                             label: 'Cancel',
                             variant: AcadexButtonVariant.secondary,
-                            onPressed: _isSubmitting ? null : () => context.safePop(fallbackRoute: '/certificates/official'),
+                            onPressed: _isSubmitting
+                                ? null
+                                : () => context.safePop(
+                                    fallbackRoute: '/certificates/official',
+                                  ),
                           ),
                           const SizedBox(width: AcadexSpacing.space16),
                           AcadexButton(
-                            label: _isSubmitting ? 'Submitting...' : 'Submit Document',
+                            label: _isSubmitting
+                                ? 'Submitting...'
+                                : 'Submit Document',
                             icon: LucideIcons.send,
                             variant: AcadexButtonVariant.primary,
                             onPressed: _isSubmitting ? null : _submit,

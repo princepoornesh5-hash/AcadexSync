@@ -20,16 +20,15 @@ import '../../../institution_config/presentation/providers/institution_config_pr
 class AssignmentDetailScreen extends ConsumerStatefulWidget {
   final String assignmentId;
 
-  const AssignmentDetailScreen({
-    super.key,
-    required this.assignmentId,
-  });
+  const AssignmentDetailScreen({super.key, required this.assignmentId});
 
   @override
-  ConsumerState<AssignmentDetailScreen> createState() => _AssignmentDetailScreenState();
+  ConsumerState<AssignmentDetailScreen> createState() =>
+      _AssignmentDetailScreenState();
 }
 
-class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen> {
+class _AssignmentDetailScreenState
+    extends ConsumerState<AssignmentDetailScreen> {
   bool _isProcessing = false;
   final _textResponseController = TextEditingController();
   List<SubmissionAttachmentModel> _attachments = [];
@@ -53,7 +52,18 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
 
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'jpg', 'jpeg', 'png', 'zip', 'txt'],
+      allowedExtensions: [
+        'pdf',
+        'doc',
+        'docx',
+        'ppt',
+        'pptx',
+        'jpg',
+        'jpeg',
+        'png',
+        'zip',
+        'txt',
+      ],
       withData: true,
       allowMultiple: false,
     );
@@ -73,7 +83,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
 
   Future<void> _uploadSelectedFile(PlatformFile file) async {
     if (file.bytes == null) {
-      setState(() => _uploadError = 'Could not read file data. Please try again.');
+      setState(
+        () => _uploadError = 'Could not read file data. Please try again.',
+      );
       return;
     }
 
@@ -118,14 +130,16 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
 
       if (mounted) {
         setState(() {
-          _attachments.add(SubmissionAttachmentModel(
-            fileId: uploadResult.fileId,
-            name: file.name,
-            url: uploadResult.url,
-            fileSize: uploadResult.size,
-            fileType: file.extension,
-            uploadedAt: DateTime.now().toIso8601String(),
-          ));
+          _attachments.add(
+            SubmissionAttachmentModel(
+              fileId: uploadResult.fileId,
+              name: file.name,
+              url: uploadResult.url,
+              fileSize: uploadResult.size,
+              fileType: file.extension,
+              uploadedAt: DateTime.now().toIso8601String(),
+            ),
+          );
           _isUploadingFile = false;
           _uploadProgress = 0.0;
         });
@@ -156,7 +170,10 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
       }
     } catch (e) {
       if (mounted) {
-        AcadexSnackBar.showError(context, 'Could not access file: ${e.toString()}');
+        AcadexSnackBar.showError(
+          context,
+          'Could not access file: ${e.toString()}',
+        );
       }
     }
   }
@@ -175,7 +192,10 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
       if (res != null) {
         AcadexSnackBar.showSuccess(context, 'Draft saved.');
       } else {
-        AcadexSnackBar.showError(context, "Couldn't save draft. Please try again.");
+        AcadexSnackBar.showError(
+          context,
+          "Couldn't save draft. Please try again.",
+        );
       }
     }
   }
@@ -183,7 +203,10 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
   Future<void> _handleSubmitAssignment(AssignmentModel asgn) async {
     final text = _textResponseController.text.trim();
     if (text.isEmpty && _attachments.isEmpty) {
-      AcadexSnackBar.showError(context, 'Please enter a response or attach a file before submitting.');
+      AcadexSnackBar.showError(
+        context,
+        'Please enter a response or attach a file before submitting.',
+      );
       return;
     }
 
@@ -196,7 +219,10 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Assignment: ${asgn.title}', style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              'Assignment: ${asgn.title}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 6),
             Text('Due Date: ${asgn.dueDate} at ${asgn.dueTime}'),
             if (isPastDue) ...[
@@ -209,7 +235,11 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                 ),
                 child: const Row(
                   children: [
-                    Icon(LucideIcons.alertTriangle, size: 16, color: Color(0xFFDC2626)),
+                    Icon(
+                      LucideIcons.alertTriangle,
+                      size: 16,
+                      color: Color(0xFFDC2626),
+                    ),
                     SizedBox(width: 6),
                     Expanded(
                       child: Text(
@@ -262,14 +292,18 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
         }
       });
       if (res != null) {
-        AcadexSnackBar.showSuccess(context, 'Assignment submitted successfully!');
+        AcadexSnackBar.showSuccess(
+          context,
+          'Assignment submitted successfully!',
+        );
       } else {
-        AcadexSnackBar.showError(context, "Submission failed. Please try again.");
+        AcadexSnackBar.showError(
+          context,
+          "Submission failed. Please try again.",
+        );
       }
     }
   }
-
-
 
   Future<void> _handlePublish(AssignmentModel asgn) async {
     final confirmed = await showDialog<bool>(
@@ -280,9 +314,14 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Title: ${asgn.title}', style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              'Title: ${asgn.title}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 6),
-            Text('Context: ${asgn.subjectName ?? "Subject"}${asgn.sectionName != null ? " • Section ${asgn.sectionName}" : ""}'),
+            Text(
+              'Context: ${asgn.subjectName ?? "Subject"}${asgn.sectionName != null ? " • Section ${asgn.sectionName}" : ""}',
+            ),
             const SizedBox(height: 6),
             Text('Due Date: ${asgn.dueDate} at ${asgn.dueTime}'),
           ],
@@ -308,9 +347,15 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
     if (mounted) {
       setState(() => _isProcessing = false);
       if (success) {
-        AcadexSnackBar.showSuccess(context, 'Assignment published successfully.');
+        AcadexSnackBar.showSuccess(
+          context,
+          'Assignment published successfully.',
+        );
       } else {
-        AcadexSnackBar.showError(context, "Couldn't publish assignment. Please try again.");
+        AcadexSnackBar.showError(
+          context,
+          "Couldn't publish assignment. Please try again.",
+        );
       }
     }
   }
@@ -324,7 +369,10 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
       if (success) {
         AcadexSnackBar.showSuccess(context, 'Assignment closed.');
       } else {
-        AcadexSnackBar.showError(context, "Couldn't close assignment. Please try again.");
+        AcadexSnackBar.showError(
+          context,
+          "Couldn't close assignment. Please try again.",
+        );
       }
     }
   }
@@ -338,7 +386,10 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
       if (success) {
         AcadexSnackBar.showSuccess(context, 'Assignment marked as completed.');
       } else {
-        AcadexSnackBar.showError(context, "Couldn't mark assignment as completed. Please try again.");
+        AcadexSnackBar.showError(
+          context,
+          "Couldn't mark assignment as completed. Please try again.",
+        );
       }
     }
   }
@@ -372,10 +423,16 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
     if (mounted) {
       setState(() => _isProcessing = false);
       if (success) {
-        AcadexSnackBar.showSuccess(context, 'Assignment archived successfully.');
+        AcadexSnackBar.showSuccess(
+          context,
+          'Assignment archived successfully.',
+        );
         context.safePop(fallbackRoute: '/assignments');
       } else {
-        AcadexSnackBar.showError(context, "Couldn't archive assignment. Please try again.");
+        AcadexSnackBar.showError(
+          context,
+          "Couldn't archive assignment. Please try again.",
+        );
       }
     }
   }
@@ -385,7 +442,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete draft assignment?'),
-        content: Text('Are you sure you want to permanently delete draft "${asgn.title}"?'),
+        content: Text(
+          'Are you sure you want to permanently delete draft "${asgn.title}"?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -411,7 +470,10 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
         AcadexSnackBar.showSuccess(context, 'Draft assignment deleted.');
         context.safePop(fallbackRoute: '/assignments');
       } else {
-        AcadexSnackBar.showError(context, "Couldn't delete draft assignment. Please try again.");
+        AcadexSnackBar.showError(
+          context,
+          "Couldn't delete draft assignment. Please try again.",
+        );
       }
     }
   }
@@ -419,12 +481,17 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final assignmentAsync = ref.watch(assignmentDetailProvider(widget.assignmentId));
+    final assignmentAsync = ref.watch(
+      assignmentDetailProvider(widget.assignmentId),
+    );
     final authState = ref.watch(authProvider);
     final terminology = ref.watch(terminologyProvider);
 
-    final isStudent = authState is AuthAuthenticated && authState.user.role == AppRole.student;
-    final isFacultyOrAdmin = authState is AuthAuthenticated &&
+    final isStudent =
+        authState is AuthAuthenticated &&
+        authState.user.role == AppRole.student;
+    final isFacultyOrAdmin =
+        authState is AuthAuthenticated &&
         (authState.user.role == AppRole.faculty ||
             authState.user.role == AppRole.hod ||
             authState.user.role == AppRole.collegeAdmin);
@@ -432,9 +499,14 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/assignments'),
         ),
         title: Text(
@@ -445,12 +517,14 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
         ),
       ),
       body: assignmentAsync.when(
-        loading: () => const AcadexLoadingState(message: 'Loading assignment...'),
+        loading: () =>
+            const AcadexLoadingState(message: 'Loading assignment...'),
         error: (err, stack) => Center(
           child: AcadexErrorState(
             message: "This item is no longer available.",
             retryLabel: 'Retry',
-            onRetry: () => ref.refresh(assignmentDetailProvider(widget.assignmentId)),
+            onRetry: () =>
+                ref.refresh(assignmentDetailProvider(widget.assignmentId)),
           ),
         ),
         data: (asgn) {
@@ -473,7 +547,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                     sectionName: asgn.sectionName,
                   ),
                   style: AcadexTypography.bodyMedium(
-                    color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                    color: isDark
+                        ? AcadexColors.darkInkSecondary
+                        : AcadexColors.inkSecondary,
                   ),
                 ),
 
@@ -481,12 +557,19 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
 
                 // Due & Max Marks info card
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                    color: isDark
+                        ? AcadexColors.darkSurface
+                        : AcadexColors.surface,
                     borderRadius: AcadexRadius.borderRadiusMd,
                     border: Border.all(
-                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                      color: isDark
+                          ? AcadexColors.darkHairline
+                          : AcadexColors.hairline,
                     ),
                   ),
                   child: Row(
@@ -498,7 +581,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                             Text(
                               'DUE DATE & TIME',
                               style: AcadexTypography.eyebrow(
-                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -507,7 +592,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
                               ),
                             ),
                           ],
@@ -516,7 +603,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                       Container(
                         height: 36,
                         width: 1,
-                        color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                        color: isDark
+                            ? AcadexColors.darkHairline
+                            : AcadexColors.hairline,
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -526,7 +615,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                             Text(
                               'MAXIMUM MARKS',
                               style: AcadexTypography.eyebrow(
-                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -535,7 +626,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
                               ),
                             ),
                           ],
@@ -554,7 +647,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                 Text(
                   'INSTRUCTIONS / DESCRIPTION',
                   style: AcadexTypography.eyebrow(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -572,7 +667,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                   Text(
                     'QUESTIONS',
                     style: AcadexTypography.eyebrow(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -595,7 +692,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                             child: Text(
                               qText,
                               style: AcadexTypography.body(
-                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
                               ),
                             ),
                           ),
@@ -611,24 +710,37 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                   Text(
                     'ATTACHMENTS',
                     style: AcadexTypography.eyebrow(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
                   const SizedBox(height: 8),
                   ...asgn.attachments.map((att) {
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       margin: const EdgeInsets.only(bottom: 6),
                       decoration: BoxDecoration(
-                        color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                        color: isDark
+                            ? AcadexColors.darkSurface
+                            : AcadexColors.surface,
                         borderRadius: AcadexRadius.borderRadiusMd,
                         border: Border.all(
-                          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                          color: isDark
+                              ? AcadexColors.darkHairline
+                              : AcadexColors.hairline,
                         ),
                       ),
                       child: Row(
                         children: [
-                          const Icon(LucideIcons.paperclip, size: 16, color: AcadexColors.primary),
+                          const Icon(
+                            LucideIcons.paperclip,
+                            size: 16,
+                            color: AcadexColors.primary,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -636,7 +748,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -648,9 +762,8 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                   const SizedBox(height: 24),
                 ],
 
-
-
-                if (isStudent && asgn.studentStatus != StudentTaskStatus.completed) ...[
+                if (isStudent &&
+                    asgn.studentStatus != StudentTaskStatus.completed) ...[
                   SizedBox(
                     width: double.infinity,
                     height: 48,
@@ -670,7 +783,8 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                     child: AcadexButton(
                       label: 'View Activity & Record Marks',
                       icon: LucideIcons.users,
-                      onPressed: () => context.push('/assignments/${asgn.id}/activity'),
+                      onPressed: () =>
+                          context.push('/assignments/${asgn.id}/activity'),
                     ),
                   ),
                   if (asgn.status == AssignmentStatus.draft) ...[
@@ -679,7 +793,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                       width: double.infinity,
                       height: 44,
                       child: OutlinedButton.icon(
-                        onPressed: _isProcessing ? null : () => _handlePublish(asgn),
+                        onPressed: _isProcessing
+                            ? null
+                            : () => _handlePublish(asgn),
                         icon: const Icon(LucideIcons.send, size: 16),
                         label: const Text('Publish Assignment'),
                       ),
@@ -689,8 +805,12 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                       width: double.infinity,
                       height: 44,
                       child: OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
-                        onPressed: _isProcessing ? null : () => _handleDeleteDraft(asgn),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                        ),
+                        onPressed: _isProcessing
+                            ? null
+                            : () => _handleDeleteDraft(asgn),
                         icon: const Icon(LucideIcons.trash2, size: 16),
                         label: const Text('Delete Draft'),
                       ),
@@ -712,7 +832,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                       width: double.infinity,
                       height: 44,
                       child: OutlinedButton.icon(
-                        onPressed: _isProcessing ? null : () => _handleArchive(asgn),
+                        onPressed: _isProcessing
+                            ? null
+                            : () => _handleArchive(asgn),
                         icon: const Icon(LucideIcons.archive, size: 16),
                         label: const Text('Archive Assignment'),
                       ),
@@ -724,7 +846,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                       width: double.infinity,
                       height: 44,
                       child: OutlinedButton.icon(
-                        onPressed: _isProcessing ? null : () => _handleArchive(asgn),
+                        onPressed: _isProcessing
+                            ? null
+                            : () => _handleArchive(asgn),
                         icon: const Icon(LucideIcons.archive, size: 16),
                         label: const Text('Archive Assignment'),
                       ),
@@ -740,7 +864,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
   }
 
   Widget _buildStudentSubmissionSection(AssignmentModel asgn, bool isDark) {
-    final submissionAsync = ref.watch(mySubmissionProvider(widget.assignmentId));
+    final submissionAsync = ref.watch(
+      mySubmissionProvider(widget.assignmentId),
+    );
 
     return submissionAsync.when(
       loading: () => const Padding(
@@ -761,7 +887,8 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
           });
         }
 
-        final isSubmitted = submission != null &&
+        final isSubmitted =
+            submission != null &&
             (submission.status == StudentTaskStatus.submitted ||
                 submission.status == StudentTaskStatus.resubmitted ||
                 submission.status == StudentTaskStatus.completed) &&
@@ -776,7 +903,11 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
     );
   }
 
-  Widget _buildSubmittedView(AssignmentModel asgn, SubmissionModel submission, bool isDark) {
+  Widget _buildSubmittedView(
+    AssignmentModel asgn,
+    SubmissionModel submission,
+    bool isDark,
+  ) {
     final isReviewed = submission.reviewStatus == FacultyReviewStatus.reviewed;
     final marks = submission.marks ?? asgn.marks;
 
@@ -790,7 +921,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
         border: Border.all(
           color: isReviewed
               ? const Color(0xFFBBF7D0)
-              : (submission.isLate ? const Color(0xFFFECACA) : AcadexColors.primaryLight),
+              : (submission.isLate
+                    ? const Color(0xFFFECACA)
+                    : AcadexColors.primaryLight),
         ),
       ),
       child: Column(
@@ -805,7 +938,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                 size: 22,
                 color: isReviewed
                     ? const Color(0xFF15803D)
-                    : (submission.isLate ? const Color(0xFFDC2626) : AcadexColors.primary),
+                    : (submission.isLate
+                          ? const Color(0xFFDC2626)
+                          : AcadexColors.primary),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -824,13 +959,20 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                             fontWeight: FontWeight.w700,
                             color: isReviewed
                                 ? const Color(0xFF15803D)
-                                : (submission.isLate ? const Color(0xFFDC2626) : AcadexColors.primary),
+                                : (submission.isLate
+                                      ? const Color(0xFFDC2626)
+                                      : AcadexColors.primary),
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                            color: isDark
+                                ? AcadexColors.darkCanvasSoft
+                                : AcadexColors.canvasSoft,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -838,13 +980,18 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                              color: isDark
+                                  ? AcadexColors.darkInkSecondary
+                                  : AcadexColors.inkSecondary,
                             ),
                           ),
                         ),
                         if (submission.isLate)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFFEE2E2),
                               borderRadius: BorderRadius.circular(4),
@@ -865,7 +1012,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                       Text(
                         'Submitted: ${submission.submittedAt!.toLocal().toString().substring(0, 16)}',
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                       ),
                     ],
@@ -927,11 +1076,16 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                       ),
                     ],
                   ),
-                  if (submission.feedback != null && submission.feedback!.isNotEmpty) ...[
+                  if (submission.feedback != null &&
+                      submission.feedback!.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Text(
                       'Feedback: "${submission.feedback}"',
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF166534), fontStyle: FontStyle.italic),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF166534),
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                   ],
                 ],
@@ -942,18 +1096,23 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
             Text(
               'Your submission has been received. Faculty review is pending.',
               style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                color: isDark
+                    ? AcadexColors.darkInkSecondary
+                    : AcadexColors.inkSecondary,
               ),
             ),
           ],
 
           // Submitted response text
-          if (submission.textResponse != null && submission.textResponse!.isNotEmpty) ...[
+          if (submission.textResponse != null &&
+              submission.textResponse!.isNotEmpty) ...[
             const SizedBox(height: 14),
             Text(
               'YOUR RESPONSE',
               style: AcadexTypography.eyebrow(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
             ),
             const SizedBox(height: 4),
@@ -961,10 +1120,14 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
               width: double.infinity,
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                color: isDark
+                    ? AcadexColors.darkCanvasSoft
+                    : AcadexColors.canvasSoft,
                 borderRadius: AcadexRadius.borderRadiusMd,
                 border: Border.all(
-                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
                 ),
               ),
               child: Text(
@@ -982,24 +1145,37 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
             Text(
               'ATTACHED FILES (${submission.attachments.length})',
               style: AcadexTypography.eyebrow(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
             ),
             const SizedBox(height: 4),
             ...submission.attachments.map((att) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
                 margin: const EdgeInsets.only(bottom: 6),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                  color: isDark
+                      ? AcadexColors.darkCanvasSoft
+                      : AcadexColors.canvasSoft,
                   borderRadius: AcadexRadius.borderRadiusMd,
                   border: Border.all(
-                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
                   ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.paperclip, size: 16, color: AcadexColors.primary),
+                    const Icon(
+                      LucideIcons.paperclip,
+                      size: 16,
+                      color: AcadexColors.primary,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -1007,24 +1183,38 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     InkWell(
-                      onTap: () => _handleDownloadFile(submission.id, att.fileId),
+                      onTap: () =>
+                          _handleDownloadFile(submission.id, att.fileId),
                       borderRadius: BorderRadius.circular(4),
                       child: const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 4,
+                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(LucideIcons.download, size: 13, color: AcadexColors.primary),
+                            Icon(
+                              LucideIcons.download,
+                              size: 13,
+                              color: AcadexColors.primary,
+                            ),
                             SizedBox(width: 3),
                             Text(
                               'Download',
-                              style: TextStyle(fontSize: 11, color: AcadexColors.primary, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AcadexColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ],
                         ),
@@ -1042,7 +1232,10 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
             ExpansionTile(
               title: Text(
                 'Submission History (${submission.submissionHistory.length} earlier version(s))',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               tilePadding: EdgeInsets.zero,
               children: submission.submissionHistory.map((hist) {
@@ -1050,13 +1243,22 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Row(
                     children: [
-                      const Icon(LucideIcons.history, size: 14, color: Colors.grey),
+                      const Icon(
+                        LucideIcons.history,
+                        size: 14,
+                        color: Colors.grey,
+                      ),
                       const SizedBox(width: 8),
-                      Text('v${hist.version} • ${hist.submittedAt?.toLocal().toString().substring(0, 16) ?? ""}',
-                          style: const TextStyle(fontSize: 11)),
+                      Text(
+                        'v${hist.version} • ${hist.submittedAt?.toLocal().toString().substring(0, 16) ?? ""}',
+                        style: const TextStyle(fontSize: 11),
+                      ),
                       if (hist.isLate) ...[
                         const SizedBox(width: 6),
-                        const Text('(Late)', style: TextStyle(fontSize: 10, color: Colors.red)),
+                        const Text(
+                          '(Late)',
+                          style: TextStyle(fontSize: 10, color: Colors.red),
+                        ),
                       ],
                     ],
                   ),
@@ -1087,7 +1289,11 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
     );
   }
 
-  Widget _buildSubmissionForm(AssignmentModel asgn, SubmissionModel? submission, bool isDark) {
+  Widget _buildSubmissionForm(
+    AssignmentModel asgn,
+    SubmissionModel? submission,
+    bool isDark,
+  ) {
     final isDraft = submission?.status == StudentTaskStatus.draft;
 
     return Container(
@@ -1121,7 +1327,10 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
               if (isDraft) ...[
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: AcadexColors.primaryTint,
                     borderRadius: BorderRadius.circular(4),
@@ -1150,12 +1359,20 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.alertTriangle, size: 16, color: Color(0xFFDC2626)),
+                  const Icon(
+                    LucideIcons.alertTriangle,
+                    size: 16,
+                    color: Color(0xFFDC2626),
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'This assignment is past its due date (${asgn.dueDate}, ${asgn.dueTime}). You can still submit, but it will be recorded as late.',
-                      style: const TextStyle(fontSize: 12, color: Color(0xFFDC2626), fontWeight: FontWeight.w500),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFDC2626),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],
@@ -1182,7 +1399,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
               border: OutlineInputBorder(
                 borderRadius: AcadexRadius.borderRadiusMd,
                 borderSide: BorderSide(
-                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
                 ),
               ),
             ),
@@ -1197,7 +1416,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                 child: Text(
                   'ATTACHED FILES (${_attachments.length})',
                   style: AcadexTypography.eyebrow(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                 ),
               ),
@@ -1209,11 +1430,19 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(LucideIcons.paperclip, size: 14, color: AcadexColors.primary),
+                      Icon(
+                        LucideIcons.paperclip,
+                        size: 14,
+                        color: AcadexColors.primary,
+                      ),
                       SizedBox(width: 4),
                       Text(
                         'Attach File',
-                        style: TextStyle(fontSize: 12, color: AcadexColors.primary, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AcadexColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -1226,7 +1455,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
             const SizedBox(height: 8),
             LinearProgressIndicator(
               value: _uploadProgress > 0 ? _uploadProgress : null,
-              backgroundColor: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+              backgroundColor: isDark
+                  ? AcadexColors.darkCanvasSoft
+                  : AcadexColors.canvasSoft,
               color: AcadexColors.primary,
             ),
             const SizedBox(height: 4),
@@ -1261,28 +1492,46 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
               final idx = entry.key;
               final att = entry.value;
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 margin: const EdgeInsets.only(bottom: 6),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                  color: isDark
+                      ? AcadexColors.darkCanvasSoft
+                      : AcadexColors.canvasSoft,
                   borderRadius: AcadexRadius.borderRadiusMd,
                   border: Border.all(
-                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
                   ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.file, size: 16, color: AcadexColors.primary),
+                    const Icon(
+                      LucideIcons.file,
+                      size: 16,
+                      color: AcadexColors.primary,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         att.name,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(LucideIcons.x, size: 16, color: Colors.grey),
+                      icon: const Icon(
+                        LucideIcons.x,
+                        size: 16,
+                        color: Colors.grey,
+                      ),
                       onPressed: () {
                         setState(() {
                           _attachments.removeAt(idx);
@@ -1307,7 +1556,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                 child: AcadexButton(
                   label: _isProcessing ? 'Submitting...' : 'Submit',
                   icon: LucideIcons.send,
-                  onPressed: _isProcessing ? null : () => _handleSubmitAssignment(asgn),
+                  onPressed: _isProcessing
+                      ? null
+                      : () => _handleSubmitAssignment(asgn),
                 ),
               ),
               const SizedBox(height: 8),

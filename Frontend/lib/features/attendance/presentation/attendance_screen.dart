@@ -45,115 +45,196 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final isWarning = _percentage < 75.0;
 
     return _isLoading
-        ? Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor))
+        ? Center(
+            child: CircularProgressIndicator(
+              color: Theme.of(context).primaryColor,
+            ),
+          )
         : Padding(
             padding: EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("Attendance Overview", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text("Real-time subject-wise and overall class presence tracking", style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
-          const SizedBox(height: 24),
-
-          // Gauge Card
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: isWarning ? AppColors.error : Theme.of(context).primaryColor, width: 1.5),
-            ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Circle Progress Indicator
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    SizedBox(
-                      width: 110,
-                      height: 110,
-                      child: CircularProgressIndicator(
-                        value: _percentage / 100.0,
-                        strokeWidth: 10,
-                        backgroundColor: Theme.of(context).colorScheme.surface,
-                        color: isWarning ? AppColors.error : AppColors.success,
-                      ),
-                    ),
-                    Text(
-                      "${_percentage.toStringAsFixed(1)}%",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: isWarning ? AppColors.error : AppColors.success,
-                      ),
-                    ),
-                  ],
+                const Text(
+                  "Attendance Overview",
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
-                SizedBox(width: 24),
+                const SizedBox(height: 4),
+                Text(
+                  "Real-time subject-wise and overall class presence tracking",
+                  style: TextStyle(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+                const SizedBox(height: 24),
 
-                // Stats breakdown
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                // Gauge Card
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isWarning
+                          ? AppColors.error
+                          : Theme.of(context).primaryColor,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
                     children: [
-                      Row(
+                      // Circle Progress Indicator
+                      Stack(
+                        alignment: Alignment.center,
                         children: [
-                          Icon(
-                            isWarning ? LucideIcons.alertTriangle : LucideIcons.checkCircle2,
-                            color: isWarning ? AppColors.error : AppColors.success,
-                            size: 20,
+                          SizedBox(
+                            width: 110,
+                            height: 110,
+                            child: CircularProgressIndicator(
+                              value: _percentage / 100.0,
+                              strokeWidth: 10,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.surface,
+                              color: isWarning
+                                  ? AppColors.error
+                                  : AppColors.success,
+                            ),
                           ),
-                          const SizedBox(width: 8),
                           Text(
-                            isWarning ? "Shortage Warning (< 75%)" : "Good Attendance Record",
+                            "${_percentage.toStringAsFixed(1)}%",
                             style: TextStyle(
+                              fontSize: 22,
                               fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: isWarning ? AppColors.error : AppColors.success,
+                              color: isWarning
+                                  ? AppColors.error
+                                  : AppColors.success,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      Text("Total Classes Held: $_totalClasses", style: const TextStyle(color: Colors.white, fontSize: 14)),
-                      const SizedBox(height: 4),
-                      Text("Classes Attended: $_classesAttended", style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 14)),
-                      const SizedBox(height: 4),
-                      Text("Classes Missed: ${_totalClasses - _classesAttended}", style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 14)),
+                      SizedBox(width: 24),
+
+                      // Stats breakdown
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  isWarning
+                                      ? LucideIcons.alertTriangle
+                                      : LucideIcons.checkCircle2,
+                                  color: isWarning
+                                      ? AppColors.error
+                                      : AppColors.success,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  isWarning
+                                      ? "Shortage Warning (< 75%)"
+                                      : "Good Attendance Record",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: isWarning
+                                        ? AppColors.error
+                                        : AppColors.success,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              "Total Classes Held: $_totalClasses",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              "Classes Attended: $_classesAttended",
+                              style: TextStyle(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.6),
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              "Classes Missed: ${_totalClasses - _classesAttended}",
+                              style: TextStyle(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.6),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                )
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
+                ),
+                const SizedBox(height: 24),
 
-          // Course-wise List
-          const Text("Subject Breakdown", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          Expanded(
-            child: ListView(
-              children: [
-                _buildCourseAttendanceItem("CS301 - Data Structures & Algorithms", 18, 20, 90.0),
-                _buildCourseAttendanceItem("CS302 - Database Management Systems", 14, 15, 93.3),
-                _buildCourseAttendanceItem("CS303 - Operating Systems", 10, 15, 66.7),
-                _buildCourseAttendanceItem("CS304 - Computer Networks", 12, 14, 85.7),
+                // Course-wise List
+                const Text(
+                  "Subject Breakdown",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: ListView(
+                    children: [
+                      _buildCourseAttendanceItem(
+                        "CS301 - Data Structures & Algorithms",
+                        18,
+                        20,
+                        90.0,
+                      ),
+                      _buildCourseAttendanceItem(
+                        "CS302 - Database Management Systems",
+                        14,
+                        15,
+                        93.3,
+                      ),
+                      _buildCourseAttendanceItem(
+                        "CS303 - Operating Systems",
+                        10,
+                        15,
+                        66.7,
+                      ),
+                      _buildCourseAttendanceItem(
+                        "CS304 - Computer Networks",
+                        12,
+                        14,
+                        85.7,
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-          )
-        ],
-      ),
-    );
+          );
   }
 
-  Widget _buildCourseAttendanceItem(String title, int attended, int total, double percent) {
+  Widget _buildCourseAttendanceItem(
+    String title,
+    int attended,
+    int total,
+    double percent,
+  ) {
     final isLow = percent < 75.0;
     return Container(
       margin: EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        
         borderRadius: AcadexRadius.borderRadiusLg,
         border: Border.all(color: Theme.of(context).dividerColor),
       ),
@@ -163,16 +244,32 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text("Attended $attended of $total lectures", style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 13)),
+                Text(
+                  "Attended $attended of $total lectures",
+                  style: TextStyle(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
+                    fontSize: 13,
+                  ),
+                ),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: isLow ? AppColors.error.withValues(alpha: 0.2) : AppColors.success.withValues(alpha: 0.2),
+              color: isLow
+                  ? AppColors.error.withValues(alpha: 0.2)
+                  : AppColors.success.withValues(alpha: 0.2),
               borderRadius: AcadexRadius.borderRadiusMd,
             ),
             child: Text(
@@ -182,7 +279,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 color: isLow ? AppColors.error : AppColors.success,
               ),
             ),
-          )
+          ),
         ],
       ),
     );

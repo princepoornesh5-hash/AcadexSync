@@ -21,11 +21,11 @@ class ColumnMappingModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'sourceColumn': sourceColumn,
-        'targetField': targetField,
-        'confidence': confidence,
-        'status': status,
-      };
+    'sourceColumn': sourceColumn,
+    'targetField': targetField,
+    'confidence': confidence,
+    'status': status,
+  };
 }
 
 class ImportIssueModel {
@@ -226,10 +226,12 @@ class ImportPreviewResponseModel {
     return ImportPreviewResponseModel(
       batch: ImportBatchModel.fromJson(json['batch'] as Map<String, dynamic>),
       summary: ImportSummaryModel.fromJson(
-          json['summary'] as Map<String, dynamic>? ?? {}),
+        json['summary'] as Map<String, dynamic>? ?? {},
+      ),
       previewRows: rawRows
-          .map((r) =>
-              NormalizedImportRowModel.fromJson(r as Map<String, dynamic>))
+          .map(
+            (r) => NormalizedImportRowModel.fromJson(r as Map<String, dynamic>),
+          )
           .toList(),
     );
   }

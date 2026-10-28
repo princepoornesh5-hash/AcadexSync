@@ -19,9 +19,10 @@ import 'student_attendance_detail_screen.dart';
 
 import '../widgets/alerts/attendance_alert_summary_card.dart';
 
-final selectedAnalyticsRangeProvider = StateProvider.autoDispose<AttendanceDateRange>((ref) {
-  return AttendanceDateRange.thisMonth();
-});
+final selectedAnalyticsRangeProvider =
+    StateProvider.autoDispose<AttendanceDateRange>((ref) {
+      return AttendanceDateRange.thisMonth();
+    });
 
 class AttendanceAnalyticsScreen extends ConsumerWidget {
   const AttendanceAnalyticsScreen({super.key});
@@ -30,9 +31,7 @@ class AttendanceAnalyticsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     if (authState is! AuthAuthenticated) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final user = authState.user;
@@ -63,7 +62,10 @@ class AttendanceAnalyticsScreen extends ConsumerWidget {
                       AnalyticsDateRangeSelector(
                         selectedRange: selectedRange,
                         onRangeChanged: (newRange) {
-                          ref.read(selectedAnalyticsRangeProvider.notifier).state = newRange;
+                          ref
+                                  .read(selectedAnalyticsRangeProvider.notifier)
+                                  .state =
+                              newRange;
                         },
                       ),
                       const SizedBox(width: 8),
@@ -91,7 +93,15 @@ class AttendanceAnalyticsScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
 
                   // Role-Based Content Builder
-                  _buildRoleAnalytics(context, ref, user.role, user.id, selectedRange, isDark, isMobile),
+                  _buildRoleAnalytics(
+                    context,
+                    ref,
+                    user.role,
+                    user.id,
+                    selectedRange,
+                    isDark,
+                    isMobile,
+                  ),
                 ],
               ),
             ),
@@ -127,14 +137,42 @@ class AttendanceAnalyticsScreen extends ConsumerWidget {
   ) {
     switch (role) {
       case AppRole.student:
-        return _buildStudentAnalytics(context, ref, userId, dateRange, isDark, isMobile);
+        return _buildStudentAnalytics(
+          context,
+          ref,
+          userId,
+          dateRange,
+          isDark,
+          isMobile,
+        );
       case AppRole.faculty:
-        return _buildFacultyAnalytics(context, ref, userId, dateRange, isDark, isMobile);
+        return _buildFacultyAnalytics(
+          context,
+          ref,
+          userId,
+          dateRange,
+          isDark,
+          isMobile,
+        );
       case AppRole.hod:
-        return _buildHodAnalytics(context, ref, userId, dateRange, isDark, isMobile);
+        return _buildHodAnalytics(
+          context,
+          ref,
+          userId,
+          dateRange,
+          isDark,
+          isMobile,
+        );
       case AppRole.collegeAdmin:
       case AppRole.superAdmin:
-        return _buildCollegeAdminAnalytics(context, ref, userId, dateRange, isDark, isMobile);
+        return _buildCollegeAdminAnalytics(
+          context,
+          ref,
+          userId,
+          dateRange,
+          isDark,
+          isMobile,
+        );
     }
   }
 
@@ -149,7 +187,9 @@ class AttendanceAnalyticsScreen extends ConsumerWidget {
     bool isDark,
     bool isMobile,
   ) {
-    final analyticsAsync = ref.watch(currentStudentAnalyticsProvider(dateRange));
+    final analyticsAsync = ref.watch(
+      currentStudentAnalyticsProvider(dateRange),
+    );
 
     return analyticsAsync.when(
       loading: () => const _AnalyticsLoadingSkeleton(),
@@ -160,9 +200,18 @@ class AttendanceAnalyticsScreen extends ConsumerWidget {
       data: (data) {
         // Trend points
         final trendPoints = [
-          TrendPoint(label: 'W-1', percentage: (data.attendancePercentage * 0.95).clamp(0.0, 100.0)),
-          TrendPoint(label: 'W-2', percentage: (data.attendancePercentage * 0.98).clamp(0.0, 100.0)),
-          TrendPoint(label: 'W-3', percentage: (data.attendancePercentage * 1.02).clamp(0.0, 100.0)),
+          TrendPoint(
+            label: 'W-1',
+            percentage: (data.attendancePercentage * 0.95).clamp(0.0, 100.0),
+          ),
+          TrendPoint(
+            label: 'W-2',
+            percentage: (data.attendancePercentage * 0.98).clamp(0.0, 100.0),
+          ),
+          TrendPoint(
+            label: 'W-3',
+            percentage: (data.attendancePercentage * 1.02).clamp(0.0, 100.0),
+          ),
           TrendPoint(label: 'Current', percentage: data.attendancePercentage),
         ];
 
@@ -205,9 +254,7 @@ class AttendanceAnalyticsScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  Expanded(
-                    child: AttendanceTrendChart(trendData: trendPoints),
-                  ),
+                  Expanded(child: AttendanceTrendChart(trendData: trendPoints)),
                 ],
               ),
             ],
@@ -228,7 +275,9 @@ class AttendanceAnalyticsScreen extends ConsumerWidget {
     bool isDark,
     bool isMobile,
   ) {
-    final analyticsAsync = ref.watch(currentFacultyAnalyticsProvider(dateRange));
+    final analyticsAsync = ref.watch(
+      currentFacultyAnalyticsProvider(dateRange),
+    );
 
     return analyticsAsync.when(
       loading: () => const _AnalyticsLoadingSkeleton(),
@@ -238,9 +287,18 @@ class AttendanceAnalyticsScreen extends ConsumerWidget {
       ),
       data: (data) {
         final trendPoints = [
-          TrendPoint(label: 'W-1', percentage: (data.attendancePercentage * 0.96).clamp(0.0, 100.0)),
-          TrendPoint(label: 'W-2', percentage: (data.attendancePercentage * 0.99).clamp(0.0, 100.0)),
-          TrendPoint(label: 'W-3', percentage: (data.attendancePercentage * 1.01).clamp(0.0, 100.0)),
+          TrendPoint(
+            label: 'W-1',
+            percentage: (data.attendancePercentage * 0.96).clamp(0.0, 100.0),
+          ),
+          TrendPoint(
+            label: 'W-2',
+            percentage: (data.attendancePercentage * 0.99).clamp(0.0, 100.0),
+          ),
+          TrendPoint(
+            label: 'W-3',
+            percentage: (data.attendancePercentage * 1.01).clamp(0.0, 100.0),
+          ),
           TrendPoint(label: 'Current', percentage: data.attendancePercentage),
         ];
 
@@ -256,7 +314,9 @@ class AttendanceAnalyticsScreen extends ConsumerWidget {
               excusedCount: data.excusedCount,
               unmarkedCount: data.unmarkedCount,
               totalSessions: data.totalSessionsConducted,
-              isLowAttendance: AttendanceAnalyticsConstants.isLowAttendance(data.attendancePercentage),
+              isLowAttendance: AttendanceAnalyticsConstants.isLowAttendance(
+                data.attendancePercentage,
+              ),
             ),
             const SizedBox(height: 16),
             if (isMobile) ...[
@@ -283,9 +343,7 @@ class AttendanceAnalyticsScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  Expanded(
-                    child: AttendanceTrendChart(trendData: trendPoints),
-                  ),
+                  Expanded(child: AttendanceTrendChart(trendData: trendPoints)),
                 ],
               ),
             ],
@@ -307,20 +365,35 @@ class AttendanceAnalyticsScreen extends ConsumerWidget {
     bool isMobile,
   ) {
     final summaryAsync = ref.watch(
-      attendanceDateRangeSummaryProvider(DateRangeSummaryQuery(dateRange: dateRange)),
+      attendanceDateRangeSummaryProvider(
+        DateRangeSummaryQuery(dateRange: dateRange),
+      ),
     );
 
     return summaryAsync.when(
       loading: () => const _AnalyticsLoadingSkeleton(),
       error: (err, stack) => _AnalyticsErrorCard(
         error: err.toString(),
-        onRetry: () => ref.refresh(attendanceDateRangeSummaryProvider(DateRangeSummaryQuery(dateRange: dateRange))),
+        onRetry: () => ref.refresh(
+          attendanceDateRangeSummaryProvider(
+            DateRangeSummaryQuery(dateRange: dateRange),
+          ),
+        ),
       ),
       data: (data) {
         final trendPoints = [
-          TrendPoint(label: 'W-1', percentage: (data.attendancePercentage * 0.94).clamp(0.0, 100.0)),
-          TrendPoint(label: 'W-2', percentage: (data.attendancePercentage * 0.97).clamp(0.0, 100.0)),
-          TrendPoint(label: 'W-3', percentage: (data.attendancePercentage * 1.01).clamp(0.0, 100.0)),
+          TrendPoint(
+            label: 'W-1',
+            percentage: (data.attendancePercentage * 0.94).clamp(0.0, 100.0),
+          ),
+          TrendPoint(
+            label: 'W-2',
+            percentage: (data.attendancePercentage * 0.97).clamp(0.0, 100.0),
+          ),
+          TrendPoint(
+            label: 'W-3',
+            percentage: (data.attendancePercentage * 1.01).clamp(0.0, 100.0),
+          ),
           TrendPoint(label: 'Current', percentage: data.attendancePercentage),
         ];
 
@@ -336,7 +409,9 @@ class AttendanceAnalyticsScreen extends ConsumerWidget {
               excusedCount: data.excusedCount,
               unmarkedCount: data.unmarkedCount,
               totalSessions: data.totalSessions,
-              isLowAttendance: AttendanceAnalyticsConstants.isLowAttendance(data.attendancePercentage),
+              isLowAttendance: AttendanceAnalyticsConstants.isLowAttendance(
+                data.attendancePercentage,
+              ),
             ),
             const SizedBox(height: 16),
             if (isMobile) ...[
@@ -363,9 +438,7 @@ class AttendanceAnalyticsScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  Expanded(
-                    child: AttendanceTrendChart(trendData: trendPoints),
-                  ),
+                  Expanded(child: AttendanceTrendChart(trendData: trendPoints)),
                 ],
               ),
             ],
@@ -400,20 +473,35 @@ class AttendanceAnalyticsScreen extends ConsumerWidget {
     bool isMobile,
   ) {
     final summaryAsync = ref.watch(
-      attendanceDateRangeSummaryProvider(DateRangeSummaryQuery(dateRange: dateRange)),
+      attendanceDateRangeSummaryProvider(
+        DateRangeSummaryQuery(dateRange: dateRange),
+      ),
     );
 
     return summaryAsync.when(
       loading: () => const _AnalyticsLoadingSkeleton(),
       error: (err, stack) => _AnalyticsErrorCard(
         error: err.toString(),
-        onRetry: () => ref.refresh(attendanceDateRangeSummaryProvider(DateRangeSummaryQuery(dateRange: dateRange))),
+        onRetry: () => ref.refresh(
+          attendanceDateRangeSummaryProvider(
+            DateRangeSummaryQuery(dateRange: dateRange),
+          ),
+        ),
       ),
       data: (data) {
         final trendPoints = [
-          TrendPoint(label: 'W-1', percentage: (data.attendancePercentage * 0.95).clamp(0.0, 100.0)),
-          TrendPoint(label: 'W-2', percentage: (data.attendancePercentage * 0.98).clamp(0.0, 100.0)),
-          TrendPoint(label: 'W-3', percentage: (data.attendancePercentage * 1.02).clamp(0.0, 100.0)),
+          TrendPoint(
+            label: 'W-1',
+            percentage: (data.attendancePercentage * 0.95).clamp(0.0, 100.0),
+          ),
+          TrendPoint(
+            label: 'W-2',
+            percentage: (data.attendancePercentage * 0.98).clamp(0.0, 100.0),
+          ),
+          TrendPoint(
+            label: 'W-3',
+            percentage: (data.attendancePercentage * 1.02).clamp(0.0, 100.0),
+          ),
           TrendPoint(label: 'Current', percentage: data.attendancePercentage),
         ];
 
@@ -421,7 +509,8 @@ class AttendanceAnalyticsScreen extends ConsumerWidget {
           children: [
             AttendanceOverviewCard(
               title: 'Institutional Attendance Analytics',
-              subtitle: 'Campus-wide attendance rate across all academic departments',
+              subtitle:
+                  'Campus-wide attendance rate across all academic departments',
               percentage: data.attendancePercentage,
               presentCount: data.presentCount,
               absentCount: data.absentCount,
@@ -429,7 +518,9 @@ class AttendanceAnalyticsScreen extends ConsumerWidget {
               excusedCount: data.excusedCount,
               unmarkedCount: data.unmarkedCount,
               totalSessions: data.totalSessions,
-              isLowAttendance: AttendanceAnalyticsConstants.isLowAttendance(data.attendancePercentage),
+              isLowAttendance: AttendanceAnalyticsConstants.isLowAttendance(
+                data.attendancePercentage,
+              ),
             ),
             const SizedBox(height: 16),
             if (isMobile) ...[
@@ -456,9 +547,7 @@ class AttendanceAnalyticsScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  Expanded(
-                    child: AttendanceTrendChart(trendData: trendPoints),
-                  ),
+                  Expanded(child: AttendanceTrendChart(trendData: trendPoints)),
                 ],
               ),
             ],
@@ -516,10 +605,7 @@ class _AnalyticsErrorCard extends StatelessWidget {
   final String error;
   final VoidCallback onRetry;
 
-  const _AnalyticsErrorCard({
-    required this.error,
-    required this.onRetry,
-  });
+  const _AnalyticsErrorCard({required this.error, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -528,7 +614,11 @@ class _AnalyticsErrorCard extends StatelessWidget {
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
-            const Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 40),
+            const Icon(
+              LucideIcons.alertCircle,
+              color: AcadexColors.error,
+              size: 40,
+            ),
             const SizedBox(height: 12),
             Text(
               'Failed to load analytics',

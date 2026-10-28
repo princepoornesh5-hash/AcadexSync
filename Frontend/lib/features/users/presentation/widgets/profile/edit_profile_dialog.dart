@@ -38,11 +38,13 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) return;
 
-    await ref.read(profileEditProvider.notifier).updateProfile(
-      widget.profile,
-      _nameController.text.trim(),
-      _phoneController.text.trim(),
-    );
+    await ref
+        .read(profileEditProvider.notifier)
+        .updateProfile(
+          widget.profile,
+          _nameController.text.trim(),
+          _phoneController.text.trim(),
+        );
 
     final editState = ref.read(profileEditProvider);
     if (!mounted) return;
@@ -61,7 +63,9 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
     final isSaving = state.status == ProfileEditStatus.saving;
 
     return Dialog(
-      backgroundColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+      backgroundColor: isDark
+          ? AcadexColors.darkSurfaceCard
+          : AcadexColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: AcadexRadius.borderRadiusLg,
         side: const BorderSide(color: AcadexColors.hairline),
@@ -89,7 +93,9 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
                     labelText: 'Full Name *',
                     hintText: 'Enter your full name',
                   ),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Name cannot be empty' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Name cannot be empty'
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -107,16 +113,25 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
                     decoration: BoxDecoration(
                       color: AcadexColors.error.withValues(alpha: 0.1),
                       borderRadius: AcadexRadius.borderRadiusMd,
-                      border: Border.all(color: AcadexColors.error.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: AcadexColors.error.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.error_outline, color: AcadexColors.error, size: 16),
+                        const Icon(
+                          Icons.error_outline,
+                          color: AcadexColors.error,
+                          size: 16,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             AcadexException.sanitizedMessage(state.error),
-                            style: const TextStyle(color: AcadexColors.error, fontSize: 12),
+                            style: const TextStyle(
+                              color: AcadexColors.error,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                       ],
@@ -134,7 +149,9 @@ class _EditProfileDialogState extends ConsumerState<EditProfileDialog> {
                       AcadexButton(
                         label: 'Cancel',
                         variant: AcadexButtonVariant.secondary,
-                        onPressed: isSaving ? null : () => Navigator.pop(context),
+                        onPressed: isSaving
+                            ? null
+                            : () => Navigator.pop(context),
                       ),
                       AcadexButton(
                         label: isSaving ? 'Saving...' : 'Save Changes',

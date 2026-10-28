@@ -50,16 +50,23 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: isCurrentlyActive ? AcadexColors.error : AcadexColors.success,
+              backgroundColor: isCurrentlyActive
+                  ? AcadexColors.error
+                  : AcadexColors.success,
               foregroundColor: Colors.white,
             ),
             onPressed: () async {
               Navigator.of(ctx).pop();
               try {
-                await ref.read(coursesProvider.notifier).toggleCourseStatus(widget.courseId, !isCurrentlyActive);
+                await ref
+                    .read(coursesProvider.notifier)
+                    .toggleCourseStatus(widget.courseId, !isCurrentlyActive);
                 ref.invalidate(courseByIdProvider(widget.courseId));
                 if (context.mounted) {
-                  AcadexSnackBar.showSuccess(context, 'Course $action successful!');
+                  AcadexSnackBar.showSuccess(
+                    context,
+                    'Course $action successful!',
+                  );
                 }
               } catch (e) {
                 if (context.mounted) {
@@ -88,7 +95,8 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
 
     final authState = ref.watch(authProvider);
     final user = authState is AuthAuthenticated ? authState.user : null;
-    final canManage = user?.role == AppRole.superAdmin ||
+    final canManage =
+        user?.role == AppRole.superAdmin ||
         user?.role == AppRole.collegeAdmin ||
         user?.role == AppRole.hod;
 
@@ -105,7 +113,11 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
       ),
       data: (course) {
         final dept = deptMap[course.departmentId];
-        final deptName = dept?.name ?? (course.departmentId.isNotEmpty ? course.departmentId : 'Unassigned Department');
+        final deptName =
+            dept?.name ??
+            (course.departmentId.isNotEmpty
+                ? course.departmentId
+                : 'Unassigned Department');
         final deptCode = dept?.code ?? '';
 
         return AcadexPageContainer(
@@ -122,25 +134,58 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
               if (isMobile) ...[
                 _buildDetailsCard(context, isDark, course),
                 const SizedBox(height: 20),
-                _buildDepartmentCard(context, isDark, deptName, deptCode, dept?.id),
+                _buildDepartmentCard(
+                  context,
+                  isDark,
+                  deptName,
+                  deptCode,
+                  dept?.id,
+                ),
               ] else ...[
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(flex: 3, child: _buildDetailsCard(context, isDark, course)),
+                    Expanded(
+                      flex: 3,
+                      child: _buildDetailsCard(context, isDark, course),
+                    ),
                     const SizedBox(width: 20),
-                    Expanded(flex: 2, child: _buildDepartmentCard(context, isDark, deptName, deptCode, dept?.id)),
+                    Expanded(
+                      flex: 2,
+                      child: _buildDepartmentCard(
+                        context,
+                        isDark,
+                        deptName,
+                        deptCode,
+                        dept?.id,
+                      ),
+                    ),
                   ],
                 ),
               ],
               const SizedBox(height: 24),
 
               // ── Summary Metrics ───────────────────────────────────────
-              _buildSummaryMetrics(isDark, isMobile, semesters.length, sections.length, subjects.length),
+              _buildSummaryMetrics(
+                isDark,
+                isMobile,
+                semesters.length,
+                sections.length,
+                subjects.length,
+              ),
               const SizedBox(height: 24),
 
               // ── Downstream Curriculum Tabs ────────────────────────────
-              _buildCurriculumTabs(context, isDark, isMobile, canManage, semesters, sections, subjects, semesterMap),
+              _buildCurriculumTabs(
+                context,
+                isDark,
+                isMobile,
+                canManage,
+                semesters,
+                sections,
+                subjects,
+                semesterMap,
+              ),
               const SizedBox(height: 32),
             ],
           ),
@@ -158,7 +203,10 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/academics/courses'),
         ),
         title: Text(
@@ -203,7 +251,11 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                   color: AcadexColors.primary.withValues(alpha: 0.12),
                   borderRadius: AcadexRadius.borderRadiusMd,
                 ),
-                child: const Icon(LucideIcons.bookOpen, color: AcadexColors.primary, size: 24),
+                child: const Icon(
+                  LucideIcons.bookOpen,
+                  color: AcadexColors.primary,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -220,9 +272,14 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                            color: isDark
+                                ? AcadexColors.darkCanvasSoft
+                                : AcadexColors.canvasSoft,
                             borderRadius: AcadexRadius.borderRadiusSm,
                           ),
                           child: Text(
@@ -231,21 +288,30 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                               fontFamily: 'monospace',
                               fontWeight: FontWeight.w700,
                               fontSize: 11,
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: course.isActive ? AcadexColors.successLight : AcadexColors.errorLight,
+                            color: course.isActive
+                                ? AcadexColors.successLight
+                                : AcadexColors.errorLight,
                             borderRadius: AcadexRadius.borderRadiusFull,
                           ),
                           child: Text(
                             course.isActive ? 'Active' : 'Inactive',
                             style: TextStyle(
-                              color: course.isActive ? AcadexColors.success : AcadexColors.error,
+                              color: course.isActive
+                                  ? AcadexColors.success
+                                  : AcadexColors.error,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -270,13 +336,21 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                   label: 'Edit Course',
                   icon: LucideIcons.edit,
                   variant: AcadexButtonVariant.primary,
-                  onPressed: () => context.push('/academics/courses/edit/${widget.courseId}'),
+                  onPressed: () => context.push(
+                    '/academics/courses/edit/${widget.courseId}',
+                  ),
                 ),
                 AcadexButton(
                   label: course.isActive ? 'Deactivate' : 'Activate',
-                  icon: course.isActive ? LucideIcons.powerOff : LucideIcons.power,
+                  icon: course.isActive
+                      ? LucideIcons.powerOff
+                      : LucideIcons.power,
                   variant: AcadexButtonVariant.secondary,
-                  onPressed: () => _confirmStatusToggle(context, course.name, course.isActive),
+                  onPressed: () => _confirmStatusToggle(
+                    context,
+                    course.name,
+                    course.isActive,
+                  ),
                 ),
               ],
             ),
@@ -286,11 +360,7 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
     );
   }
 
-  Widget _buildDetailsCard(
-    BuildContext context,
-    bool isDark,
-    Course course,
-  ) {
+  Widget _buildDetailsCard(BuildContext context, bool isDark, Course course) {
     return AcadexCard(
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -298,7 +368,13 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.info, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              Icon(
+                LucideIcons.info,
+                size: 16,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Course Details',
@@ -313,13 +389,20 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
           const Divider(height: 16),
           _infoRow(isDark, LucideIcons.bookOpen, 'Course Name', course.name),
           const Divider(height: 16),
-          _infoRow(isDark, LucideIcons.calendar, 'Duration', '${course.duration} ${course.duration == 1 ? "Year" : "Years"}'),
+          _infoRow(
+            isDark,
+            LucideIcons.calendar,
+            'Duration',
+            '${course.duration} ${course.duration == 1 ? "Year" : "Years"}',
+          ),
           const Divider(height: 16),
           _infoRow(
             isDark,
             LucideIcons.activity,
             'Status',
-            course.isActive ? 'Active (Accepting enrollments & curriculum)' : 'Inactive (Archived)',
+            course.isActive
+                ? 'Active (Accepting enrollments & curriculum)'
+                : 'Inactive (Archived)',
           ),
         ],
       ),
@@ -340,7 +423,11 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
         children: [
           Row(
             children: [
-              const Icon(LucideIcons.layers, size: 16, color: AcadexColors.primary),
+              const Icon(
+                LucideIcons.layers,
+                size: 16,
+                color: AcadexColors.primary,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Department Affiliation',
@@ -354,10 +441,14 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+              color: isDark
+                  ? AcadexColors.darkCanvasSoft
+                  : AcadexColors.canvasSoft,
               borderRadius: AcadexRadius.borderRadiusMd,
               border: Border.all(
-                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
               ),
             ),
             child: Column(
@@ -369,13 +460,18 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                       child: Text(
                         deptName,
                         style: AcadexTypography.body(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ).copyWith(fontWeight: FontWeight.w700, fontSize: 14),
                       ),
                     ),
                     if (deptCode.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: AcadexColors.primary.withValues(alpha: 0.12),
                           borderRadius: AcadexRadius.borderRadiusSm,
@@ -400,8 +496,12 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     icon: const Icon(LucideIcons.arrowUpRight, size: 14),
-                    label: const Text('View Department Overview', style: TextStyle(fontSize: 12)),
-                    onPressed: () => context.push('/academics/departments/$deptId'),
+                    label: const Text(
+                      'View Department Overview',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    onPressed: () =>
+                        context.push('/academics/departments/$deptId'),
                   ),
               ],
             ),
@@ -452,14 +552,25 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
               onTap: () => setState(() => _selectedTabIndex = m.tabIndex),
               borderRadius: AcadexRadius.borderRadiusMd,
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 12,
+                ),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? (isDark ? m.color.withValues(alpha: 0.18) : m.color.withValues(alpha: 0.08))
-                      : (isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface),
+                      ? (isDark
+                            ? m.color.withValues(alpha: 0.18)
+                            : m.color.withValues(alpha: 0.08))
+                      : (isDark
+                            ? AcadexColors.darkSurfaceCard
+                            : AcadexColors.surface),
                   borderRadius: AcadexRadius.borderRadiusMd,
                   border: Border.all(
-                    color: isSelected ? m.color : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                    color: isSelected
+                        ? m.color
+                        : (isDark
+                              ? AcadexColors.darkHairline
+                              : AcadexColors.hairline),
                     width: isSelected ? 1.5 : 1,
                   ),
                 ),
@@ -480,14 +591,22 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                         children: [
                           Text(
                             m.count.toString(),
-                            style: AcadexTypography.heading2(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                            ).copyWith(fontSize: 18, fontWeight: FontWeight.w700),
+                            style:
+                                AcadexTypography.heading2(
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
+                                ).copyWith(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                ),
                           ),
                           Text(
                             m.label,
                             style: AcadexTypography.caption(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
                             ),
                           ),
                         ],
@@ -523,11 +642,26 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _tabChip('Semesters (${semesters.length})', 0, LucideIcons.calendarDays, isDark),
+                _tabChip(
+                  'Semesters (${semesters.length})',
+                  0,
+                  LucideIcons.calendarDays,
+                  isDark,
+                ),
                 const SizedBox(width: 8),
-                _tabChip('Sections (${sections.length})', 1, LucideIcons.users, isDark),
+                _tabChip(
+                  'Sections (${sections.length})',
+                  1,
+                  LucideIcons.users,
+                  isDark,
+                ),
                 const SizedBox(width: 8),
-                _tabChip('Subjects (${subjects.length})', 2, LucideIcons.bookCheck, isDark),
+                _tabChip(
+                  'Subjects (${subjects.length})',
+                  2,
+                  LucideIcons.bookCheck,
+                  isDark,
+                ),
               ],
             ),
           ),
@@ -541,7 +675,13 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
           else if (_selectedTabIndex == 1)
             _buildSectionsTab(context, isDark, canManage, sections, semesterMap)
           else
-            _buildSubjectsTab(context, isDark, canManage, subjects, semesterMap),
+            _buildSubjectsTab(
+              context,
+              isDark,
+              canManage,
+              subjects,
+              semesterMap,
+            ),
         ],
       ),
     );
@@ -557,7 +697,9 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
         decoration: BoxDecoration(
           color: isSelected
               ? AcadexColors.primary.withValues(alpha: 0.12)
-              : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
+              : (isDark
+                    ? AcadexColors.darkCanvasSoft
+                    : AcadexColors.canvasSoft),
           borderRadius: AcadexRadius.borderRadiusFull,
           border: Border.all(
             color: isSelected ? AcadexColors.primary : Colors.transparent,
@@ -570,13 +712,19 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
             Icon(
               icon,
               size: 15,
-              color: isSelected ? AcadexColors.primary : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              color: isSelected
+                  ? AcadexColors.primary
+                  : (isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted),
             ),
             const SizedBox(width: 6),
             Text(
               title,
               style: TextStyle(
-                color: isSelected ? AcadexColors.primary : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                color: isSelected
+                    ? AcadexColors.primary
+                    : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 fontSize: 13,
               ),
@@ -611,7 +759,9 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                 icon: LucideIcons.plus,
                 size: AcadexButtonSize.sm,
                 variant: AcadexButtonVariant.primary,
-                onPressed: () => context.push('/academics/semesters/new?courseId=${widget.courseId}'),
+                onPressed: () => context.push(
+                  '/academics/semesters/new?courseId=${widget.courseId}',
+                ),
               ),
           ],
         ),
@@ -619,10 +769,15 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
         if (semesters.isEmpty)
           AcadexEmptyState(
             title: 'No Semesters Found',
-            subtitle: 'Establish semesters for this course to organize academic terms.',
+            subtitle:
+                'Establish semesters for this course to organize academic terms.',
             icon: LucideIcons.calendarDays,
             actionLabel: canManage ? 'Create First Semester' : null,
-            onActionTap: canManage ? () => context.push('/academics/semesters/new?courseId=${widget.courseId}') : null,
+            onActionTap: canManage
+                ? () => context.push(
+                    '/academics/semesters/new?courseId=${widget.courseId}',
+                  )
+                : null,
           )
         else
           ListView.separated(
@@ -635,9 +790,15 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
               return Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                  color: isDark
+                      ? AcadexColors.darkCanvasSoft
+                      : AcadexColors.canvasSoft,
                   borderRadius: AcadexRadius.borderRadiusMd,
-                  border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                  border: Border.all(
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -651,7 +812,10 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                       child: Center(
                         child: Text(
                           'S${s.number}',
-                          style: const TextStyle(fontWeight: FontWeight.w700, color: AcadexColors.primary),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AcadexColors.primary,
+                          ),
                         ),
                       ),
                     ),
@@ -665,12 +829,17 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                               Text(
                                 s.name,
                                 style: AcadexTypography.body(
-                                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
                                 ).copyWith(fontWeight: FontWeight.w600),
                               ),
                               if (s.isCurrent) ...[
                                 const SizedBox(width: 8),
-                                const AcadexBadge(label: 'CURRENT', variant: AcadexBadgeVariant.success),
+                                const AcadexBadge(
+                                  label: 'CURRENT',
+                                  variant: AcadexBadgeVariant.success,
+                                ),
                               ],
                             ],
                           ),
@@ -678,7 +847,9 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                             Text(
                               'Term: ${s.startDate} → ${s.endDate}',
                               style: AcadexTypography.caption(
-                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
                               ),
                             ),
                         ],
@@ -687,7 +858,8 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                     IconButton(
                       icon: const Icon(LucideIcons.arrowRight, size: 16),
                       tooltip: 'View Semester',
-                      onPressed: () => context.push('/academics/semesters/${s.id}'),
+                      onPressed: () =>
+                          context.push('/academics/semesters/${s.id}'),
                     ),
                   ],
                 ),
@@ -723,7 +895,9 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                 icon: LucideIcons.plus,
                 size: AcadexButtonSize.sm,
                 variant: AcadexButtonVariant.primary,
-                onPressed: () => context.push('/academics/sections/new?courseId=${widget.courseId}'),
+                onPressed: () => context.push(
+                  '/academics/sections/new?courseId=${widget.courseId}',
+                ),
               ),
           ],
         ),
@@ -731,10 +905,15 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
         if (sections.isEmpty)
           AcadexEmptyState(
             title: 'No Sections Found',
-            subtitle: 'Create sections under this course for timetable scheduling.',
+            subtitle:
+                'Create sections under this course for timetable scheduling.',
             icon: LucideIcons.users,
             actionLabel: canManage ? 'Create First Section' : null,
-            onActionTap: canManage ? () => context.push('/academics/sections/new?courseId=${widget.courseId}') : null,
+            onActionTap: canManage
+                ? () => context.push(
+                    '/academics/sections/new?courseId=${widget.courseId}',
+                  )
+                : null,
           )
         else
           ListView.separated(
@@ -748,9 +927,15 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
               return Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                  color: isDark
+                      ? AcadexColors.darkCanvasSoft
+                      : AcadexColors.canvasSoft,
                   borderRadius: AcadexRadius.borderRadiusMd,
-                  border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                  border: Border.all(
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -762,7 +947,11 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                         borderRadius: AcadexRadius.borderRadiusSm,
                       ),
                       child: const Center(
-                        child: Icon(LucideIcons.users, size: 18, color: AcadexColors.info),
+                        child: Icon(
+                          LucideIcons.users,
+                          size: 18,
+                          color: AcadexColors.info,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -773,7 +962,9 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                           Text(
                             sec.name,
                             style: AcadexTypography.body(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ).copyWith(fontWeight: FontWeight.w600),
                           ),
                           Row(
@@ -781,7 +972,9 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                               Text(
                                 'Capacity: ${sec.capacity} students',
                                 style: AcadexTypography.caption(
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
                                 ),
                               ),
                               if (sem != null) ...[
@@ -789,7 +982,9 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                                 Text(
                                   '•  ${sem.name}',
                                   style: AcadexTypography.caption(
-                                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
                                   ),
                                 ),
                               ],
@@ -801,7 +996,8 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                     IconButton(
                       icon: const Icon(LucideIcons.arrowRight, size: 16),
                       tooltip: 'View Section',
-                      onPressed: () => context.push('/academics/sections/${sec.id}'),
+                      onPressed: () =>
+                          context.push('/academics/sections/${sec.id}'),
                     ),
                   ],
                 ),
@@ -837,7 +1033,9 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                 icon: LucideIcons.plus,
                 size: AcadexButtonSize.sm,
                 variant: AcadexButtonVariant.primary,
-                onPressed: () => context.push('/academics/subjects/new?courseId=${widget.courseId}'),
+                onPressed: () => context.push(
+                  '/academics/subjects/new?courseId=${widget.courseId}',
+                ),
               ),
           ],
         ),
@@ -845,10 +1043,15 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
         if (subjects.isEmpty)
           AcadexEmptyState(
             title: 'No Subjects Found',
-            subtitle: 'Add syllabus subjects with course credits and types (Theory/Lab).',
+            subtitle:
+                'Add syllabus subjects with course credits and types (Theory/Lab).',
             icon: LucideIcons.bookCheck,
             actionLabel: canManage ? 'Create First Subject' : null,
-            onActionTap: canManage ? () => context.push('/academics/subjects/new?courseId=${widget.courseId}') : null,
+            onActionTap: canManage
+                ? () => context.push(
+                    '/academics/subjects/new?courseId=${widget.courseId}',
+                  )
+                : null,
           )
         else
           ListView.separated(
@@ -862,9 +1065,15 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
               return Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                  color: isDark
+                      ? AcadexColors.darkCanvasSoft
+                      : AcadexColors.canvasSoft,
                   borderRadius: AcadexRadius.borderRadiusMd,
-                  border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                  border: Border.all(
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -876,7 +1085,11 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                         borderRadius: AcadexRadius.borderRadiusSm,
                       ),
                       child: const Center(
-                        child: Icon(LucideIcons.bookCheck, size: 18, color: AcadexColors.success),
+                        child: Icon(
+                          LucideIcons.bookCheck,
+                          size: 18,
+                          color: AcadexColors.success,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -889,16 +1102,27 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                               Text(
                                 sub.name,
                                 style: AcadexTypography.body(
-                                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
                                 ).copyWith(fontWeight: FontWeight.w600),
                               ),
                               const SizedBox(width: 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 1,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                                  color: isDark
+                                      ? AcadexColors.darkSurface
+                                      : AcadexColors.surface,
                                   borderRadius: AcadexRadius.borderRadiusSm,
-                                  border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                                  border: Border.all(
+                                    color: isDark
+                                        ? AcadexColors.darkHairline
+                                        : AcadexColors.hairline,
+                                  ),
                                 ),
                                 child: Text(
                                   sub.code,
@@ -916,7 +1140,9 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                               Text(
                                 '${sub.credits} Credits • ${sub.type}',
                                 style: AcadexTypography.caption(
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
                                 ),
                               ),
                               if (sem != null) ...[
@@ -924,7 +1150,9 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                                 Text(
                                   '•  ${sem.name}',
                                   style: AcadexTypography.caption(
-                                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
                                   ),
                                 ),
                               ],
@@ -936,7 +1164,8 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                     IconButton(
                       icon: const Icon(LucideIcons.arrowRight, size: 16),
                       tooltip: 'View Subject',
-                      onPressed: () => context.push('/academics/subjects/${sub.id}'),
+                      onPressed: () =>
+                          context.push('/academics/subjects/${sub.id}'),
                     ),
                   ],
                 ),
@@ -951,7 +1180,11 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 15, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+        Icon(
+          icon,
+          size: 15,
+          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+        ),
         const SizedBox(width: 10),
         SizedBox(
           width: 95,

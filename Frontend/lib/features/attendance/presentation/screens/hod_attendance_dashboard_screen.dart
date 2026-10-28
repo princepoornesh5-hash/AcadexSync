@@ -29,17 +29,24 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
           children: [
             const AcadexPageHeader(
               title: "Department Attendance",
-              subtitle: "Monitor departmental session completion, faculty compliance, and student shortage rosters.",
+              subtitle:
+                  "Monitor departmental session completion, faculty compliance, and student shortage rosters.",
             ),
             const SizedBox(height: 12),
             Container(
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                color: isDark
+                    ? AcadexColors.darkSurfaceCard
+                    : AcadexColors.surface,
                 borderRadius: AcadexRadius.borderRadiusLg,
                 border: Border.all(
-                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
                 ),
-                boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+                boxShadow: isDark
+                    ? AcadexShadows.darkSm
+                    : AcadexShadows.lightSm,
               ),
               child: TabBar(
                 isScrollable: true,
@@ -76,10 +83,12 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
 
   Widget _buildOverviewTab(WidgetRef ref, bool isDark) {
     final summaryAsync = ref.watch(hodDepartmentSummaryProvider);
-    
+
     return summaryAsync.when(
       loading: () => const Center(
-        child: AcadexLoadingState(message: "Loading departmental attendance metrics..."),
+        child: AcadexLoadingState.spinner(
+          message: "Loading departmental attendance metrics...",
+        ),
       ),
       error: (err, stack) => Center(
         child: AcadexErrorState(
@@ -97,7 +106,9 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
               Text(
                 "QUICK ACTIONS",
                 style: AcadexTypography.eyebrow(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
               const SizedBox(height: 12),
@@ -105,9 +116,21 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
                 spacing: 12,
                 runSpacing: 12,
                 children: [
-                  _buildActionChip(LucideIcons.fileSpreadsheet, "Export Attendance Report", isDark),
-                  _buildActionChip(LucideIcons.mail, "Notify Defaulters", isDark),
-                  _buildActionChip(LucideIcons.lock, "Lock Completed Sessions", isDark),
+                  _buildActionChip(
+                    LucideIcons.fileSpreadsheet,
+                    "Export Attendance Report",
+                    isDark,
+                  ),
+                  _buildActionChip(
+                    LucideIcons.mail,
+                    "Notify Defaulters",
+                    isDark,
+                  ),
+                  _buildActionChip(
+                    LucideIcons.lock,
+                    "Lock Completed Sessions",
+                    isDark,
+                  ),
                 ],
               ),
             ],
@@ -119,10 +142,12 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
 
   Widget _buildFacultyTab(WidgetRef ref) {
     final facultyAsync = ref.watch(hodFacultyCompletionProvider);
-    
+
     return facultyAsync.when(
       loading: () => const Center(
-        child: AcadexLoadingState(message: "Loading faculty completion records..."),
+        child: AcadexLoadingState.spinner(
+          message: "Loading faculty completion records...",
+        ),
       ),
       error: (err, stack) => Center(
         child: AcadexErrorState(
@@ -143,10 +168,12 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
 
   Widget _buildShortageTab(WidgetRef ref) {
     final shortageAsync = ref.watch(hodStudentShortageProvider);
-    
+
     return shortageAsync.when(
       loading: () => const Center(
-        child: AcadexLoadingState(message: "Loading critical shortage alerts..."),
+        child: AcadexLoadingState.spinner(
+          message: "Loading critical shortage alerts...",
+        ),
       ),
       error: (err, stack) => Center(
         child: AcadexErrorState(
@@ -167,10 +194,12 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
 
   Widget _buildSectionTab(WidgetRef ref) {
     final sectionAsync = ref.watch(hodSectionAttendanceProvider);
-    
+
     return sectionAsync.when(
       loading: () => const Center(
-        child: AcadexLoadingState(message: "Loading section-wise breakdown..."),
+        child: AcadexLoadingState.spinner(
+          message: "Loading section-wise breakdown...",
+        ),
       ),
       error: (err, stack) => Center(
         child: AcadexErrorState(

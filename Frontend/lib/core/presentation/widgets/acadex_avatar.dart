@@ -74,9 +74,7 @@ class AcadexAvatar extends StatelessWidget {
     final avatarWidget = Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-      ),
+      decoration: const BoxDecoration(shape: BoxShape.circle),
       child: ClipOval(
         child: imageUrl != null && imageUrl!.isNotEmpty
             ? Image.network(
@@ -85,7 +83,8 @@ class AcadexAvatar extends StatelessWidget {
                 width: size,
                 height: size,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => _buildInitialsFallback(bg, fg),
+                errorBuilder: (context, error, stackTrace) =>
+                    _buildInitialsFallback(bg, fg),
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
                   return Container(
@@ -138,7 +137,11 @@ class AcadexAvatar extends StatelessWidget {
                   color: AcadexColors.success,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
+                child: const Icon(
+                  Icons.camera_alt,
+                  size: 14,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),

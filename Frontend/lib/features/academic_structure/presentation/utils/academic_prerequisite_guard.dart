@@ -15,8 +15,10 @@ export '../models/setup_action_decision.dart';
 enum PrerequisitePriorityLevel {
   /// Level 1 — Core academic foundation (Academic Year, Program/Course, Semester)
   core,
+
   /// Level 2 — Contextual operational dependency (Section, Subject, Faculty, Assignment)
   contextual,
+
   /// Level 3 — Optional operational module (Room, Lab, Record)
   optional,
 }
@@ -72,13 +74,13 @@ class PrerequisiteCheckResult {
   });
 
   const PrerequisiteCheckResult.allowed()
-      : isAllowed = true,
-        missingType = null,
-        title = null,
-        message = null,
-        actionLabel = null,
-        actionRoute = null,
-        priorityLevel = PrerequisitePriorityLevel.optional;
+    : isAllowed = true,
+      missingType = null,
+      title = null,
+      message = null,
+      actionLabel = null,
+      actionRoute = null,
+      priorityLevel = PrerequisitePriorityLevel.optional;
 
   const PrerequisiteCheckResult.blocked({
     required this.missingType,
@@ -92,7 +94,6 @@ class PrerequisiteCheckResult {
   bool get isSatisfied => isAllowed;
 }
 
-
 class AcademicPrerequisiteGuard {
   /// Validates prerequisites before Semester creation.
   static PrerequisiteCheckResult checkSemesterPrerequisites({
@@ -104,8 +105,11 @@ class AcademicPrerequisiteGuard {
     final courseLabel = termHelper?.programName() ?? 'Course';
     final ayLabel = termHelper?.academicYearName() ?? 'Academic Year';
     final semLabel = termHelper?.semesterName() ?? 'Semester';
-    final createCourseLabel = termHelper?.createLabel(AcademicConcept.program) ?? 'Create Course';
-    final createAyLabel = termHelper?.createLabel(AcademicConcept.academicYear) ?? 'Create Academic Year';
+    final createCourseLabel =
+        termHelper?.createLabel(AcademicConcept.program) ?? 'Create Course';
+    final createAyLabel =
+        termHelper?.createLabel(AcademicConcept.academicYear) ??
+        'Create Academic Year';
 
     if (courses.isEmpty) {
       return PrerequisiteCheckResult.blocked(
@@ -152,7 +156,8 @@ class AcademicPrerequisiteGuard {
     bool isSectionEnabled = true,
     TerminologyHelper? termHelper,
   }) {
-    final effectiveIsSectionEnabled = termHelper?.isSectionEnabled ?? isSectionEnabled;
+    final effectiveIsSectionEnabled =
+        termHelper?.isSectionEnabled ?? isSectionEnabled;
     final progLabel = termHelper?.programName() ?? 'Course';
     final progsLabel = termHelper?.programName(plural: true) ?? 'Courses';
     final ayLabel = termHelper?.academicYearName() ?? 'Academic Year';
@@ -168,17 +173,53 @@ class AcademicPrerequisiteGuard {
     final isSuperAdmin = currentRole == AppRole.superAdmin;
     final canManageDept = isHod || isCollegeAdmin || isSuperAdmin;
 
-    final deptCourses = courses.where((c) => c.departmentId == departmentId && c.isActive).toList();
-    final activeCollegeYears = academicYears.where((y) => (collegeId.isEmpty || y.collegeId == collegeId) && y.isActive).toList();
-    final effectiveAy = currentAcademicYear ?? (activeCollegeYears.isNotEmpty ? activeCollegeYears.first : null);
+    final deptCourses = courses
+        .where((c) => c.departmentId == departmentId && c.isActive)
+        .toList();
+    final activeCollegeYears = academicYears
+        .where(
+          (y) => (collegeId.isEmpty || y.collegeId == collegeId) && y.isActive,
+        )
+        .toList();
+    final effectiveAy =
+        currentAcademicYear ??
+        (activeCollegeYears.isNotEmpty ? activeCollegeYears.first : null);
     final hasAcademicYear = effectiveAy != null;
 
-    final deptSemesters = semesters.where((s) => s.departmentId == departmentId && s.status != 'archived' && (s.isActive || s.isCurrent || s.status == 'active' || s.status == 'upcoming')).toList();
-    final deptSections = sections.where((s) => s.departmentId == departmentId && s.isActive).toList();
-    final deptSubjects = subjects.where((s) => s.departmentId == departmentId && s.isActive).toList();
-    final deptAssignments = facultyAssignments.where((a) => a.departmentId == departmentId && a.isActive).toList();
-    final activeFaculty = faculty.where((f) => (f.departmentId.isEmpty || f.departmentId == departmentId) && f.isActive).toList();
-    final enrolledStudents = students.where((s) => s.isActive && (!effectiveIsSectionEnabled || s.sectionId.isNotEmpty)).toList();
+    final deptSemesters = semesters
+        .where(
+          (s) =>
+              s.departmentId == departmentId &&
+              s.status != 'archived' &&
+              (s.isActive ||
+                  s.isCurrent ||
+                  s.status == 'active' ||
+                  s.status == 'upcoming'),
+        )
+        .toList();
+    final deptSections = sections
+        .where((s) => s.departmentId == departmentId && s.isActive)
+        .toList();
+    final deptSubjects = subjects
+        .where((s) => s.departmentId == departmentId && s.isActive)
+        .toList();
+    final deptAssignments = facultyAssignments
+        .where((a) => a.departmentId == departmentId && a.isActive)
+        .toList();
+    final activeFaculty = faculty
+        .where(
+          (f) =>
+              (f.departmentId.isEmpty || f.departmentId == departmentId) &&
+              f.isActive,
+        )
+        .toList();
+    final enrolledStudents = students
+        .where(
+          (s) =>
+              s.isActive &&
+              (!effectiveIsSectionEnabled || s.sectionId.isNotEmpty),
+        )
+        .toList();
     final allDeptStudents = students.where((s) => s.isActive).toList();
 
     final firstCourse = deptCourses.isNotEmpty ? deptCourses.first : null;
@@ -191,7 +232,8 @@ class AcademicPrerequisiteGuard {
           return SetupActionDecision.complete(
             milestoneId: milestoneId,
             currentRole: currentRole,
-            explanation: '${deptCourses.first.name}${deptCourses.length > 1 ? " (+${deptCourses.length - 1} more)" : ""}',
+            explanation:
+                '${deptCourses.first.name}${deptCourses.length > 1 ? " (+${deptCourses.length - 1} more)" : ""}',
             contextParams: {'departmentId': departmentId},
           );
         }
@@ -211,8 +253,10 @@ class AcademicPrerequisiteGuard {
           currentRole: currentRole,
           ownerRole: AppRole.hod,
           missingDependency: AcademicPrerequisiteType.course,
-          explanation: 'A $progLabel must be created before department academic setup can proceed.',
-          waitingReason: '$progLabel creation is managed by Department Head or College Administration.',
+          explanation:
+              'A $progLabel must be created before department academic setup can proceed.',
+          waitingReason:
+              '$progLabel creation is managed by Department Head or College Administration.',
         );
 
       case SetupMilestoneId.academicYear:
@@ -231,8 +275,10 @@ class AcademicPrerequisiteGuard {
             currentRole: currentRole,
             ownerRole: AppRole.collegeAdmin,
             missingDependency: AcademicPrerequisiteType.academicYear,
-            explanation: 'Your college has not configured an ${ayLabel.toLowerCase()} yet. $semsLabel require an active ${ayLabel.toLowerCase()}.',
-            waitingReason: '$ayLabel is created by College Admin and is required before $semsLabel can be configured.',
+            explanation:
+                'Your college has not configured an ${ayLabel.toLowerCase()} yet. $semsLabel require an active ${ayLabel.toLowerCase()}.',
+            waitingReason:
+                '$ayLabel is created by College Admin and is required before $semsLabel can be configured.',
             notifyActionLabel: 'Notify College Admin',
           );
         }
@@ -243,7 +289,8 @@ class AcademicPrerequisiteGuard {
             ownerRole: AppRole.collegeAdmin,
             actionRoute: '/academics/academic_years/new',
             actionLabel: 'Create $ayLabel',
-            explanation: '$ayLabel is required for ${semLabel.toLowerCase()} setup across college departments.',
+            explanation:
+                '$ayLabel is required for ${semLabel.toLowerCase()} setup across college departments.',
           );
         }
         return SetupActionDecision.waitingOnOtherRole(
@@ -251,7 +298,8 @@ class AcademicPrerequisiteGuard {
           currentRole: currentRole,
           ownerRole: AppRole.collegeAdmin,
           missingDependency: AcademicPrerequisiteType.academicYear,
-          explanation: '$ayLabel is required for ${semLabel.toLowerCase()} setup.',
+          explanation:
+              '$ayLabel is required for ${semLabel.toLowerCase()} setup.',
           waitingReason: '$ayLabel is created by College Admin.',
         );
 
@@ -260,7 +308,8 @@ class AcademicPrerequisiteGuard {
           return SetupActionDecision.complete(
             milestoneId: milestoneId,
             currentRole: currentRole,
-            explanation: '${deptSemesters.first.name}${deptSemesters.length > 1 ? " (+${deptSemesters.length - 1} more)" : ""}',
+            explanation:
+                '${deptSemesters.first.name}${deptSemesters.length > 1 ? " (+${deptSemesters.length - 1} more)" : ""}',
             contextParams: {
               'departmentId': departmentId,
               if (firstCourse != null) 'courseId': firstCourse.id,
@@ -275,9 +324,12 @@ class AcademicPrerequisiteGuard {
             ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
             missingDependency: AcademicPrerequisiteType.course,
             canCurrentUserAct: canManageDept,
-            actionRoute: canManageDept ? '/academics/courses/new?departmentId=$departmentId' : null,
+            actionRoute: canManageDept
+                ? '/academics/courses/new?departmentId=$departmentId'
+                : null,
             actionLabel: canManageDept ? 'Create $progLabel' : null,
-            explanation: 'Create a $progLabel first before setting up teaching ${semsLabel.toLowerCase()}.',
+            explanation:
+                'Create a $progLabel first before setting up teaching ${semsLabel.toLowerCase()}.',
           );
         }
         if (!hasAcademicYear) {
@@ -287,7 +339,8 @@ class AcademicPrerequisiteGuard {
               currentRole: currentRole,
               ownerRole: AppRole.collegeAdmin,
               missingDependency: AcademicPrerequisiteType.academicYear,
-              explanation: 'Waiting for College Admin to configure $ayLabel before $semsLabel can be created.',
+              explanation:
+                  'Waiting for College Admin to configure $ayLabel before $semsLabel can be created.',
               waitingReason: '$ayLabel is managed by College Administration.',
               notifyActionLabel: 'Notify College Admin',
             );
@@ -300,7 +353,8 @@ class AcademicPrerequisiteGuard {
             canCurrentUserAct: true,
             actionRoute: '/academics/academic_years/new',
             actionLabel: 'Create $ayLabel',
-            explanation: 'An $ayLabel must be created before adding ${semsLabel.toLowerCase()}.',
+            explanation:
+                'An $ayLabel must be created before adding ${semsLabel.toLowerCase()}.',
           );
         }
         // Both Course and Academic Year are present
@@ -309,9 +363,11 @@ class AcademicPrerequisiteGuard {
           milestoneId: milestoneId,
           currentRole: currentRole,
           ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
-          actionRoute: '/academics/semesters/new?courseId=${activeCourse.id}&academicYearId=${effectiveAy.id}',
+          actionRoute:
+              '/academics/semesters/new?courseId=${activeCourse.id}&academicYearId=${effectiveAy.id}',
           actionLabel: 'Create $semLabel',
-          explanation: 'Create active teaching terms under your department $progsLabel.',
+          explanation:
+              'Create active teaching terms under your department $progsLabel.',
           contextParams: {
             'departmentId': departmentId,
             'courseId': activeCourse.id,
@@ -324,7 +380,8 @@ class AcademicPrerequisiteGuard {
           return SetupActionDecision.complete(
             milestoneId: milestoneId,
             currentRole: currentRole,
-            explanation: '${deptSections.first.name} (${deptSections.first.capacity} seats)${deptSections.length > 1 ? " (+${deptSections.length - 1} more)" : ""}',
+            explanation:
+                '${deptSections.first.name} (${deptSections.first.capacity} seats)${deptSections.length > 1 ? " (+${deptSections.length - 1} more)" : ""}',
             contextParams: {
               'departmentId': departmentId,
               if (firstCourse != null) 'courseId': firstCourse.id,
@@ -338,12 +395,18 @@ class AcademicPrerequisiteGuard {
             currentRole: currentRole,
             ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
             missingDependency: AcademicPrerequisiteType.semester,
-            canCurrentUserAct: canManageDept && deptCourses.isNotEmpty && hasAcademicYear,
-            actionRoute: (canManageDept && deptCourses.isNotEmpty && hasAcademicYear)
+            canCurrentUserAct:
+                canManageDept && deptCourses.isNotEmpty && hasAcademicYear,
+            actionRoute:
+                (canManageDept && deptCourses.isNotEmpty && hasAcademicYear)
                 ? '/academics/semesters/new?courseId=${firstCourse?.id ?? ""}&academicYearId=${effectiveAy.id}'
                 : null,
-            actionLabel: (canManageDept && deptCourses.isNotEmpty && hasAcademicYear) ? 'Create $semLabel' : null,
-            explanation: 'Create a $semLabel for this $progLabel before configuring ${secsLabel.toLowerCase()}.',
+            actionLabel:
+                (canManageDept && deptCourses.isNotEmpty && hasAcademicYear)
+                ? 'Create $semLabel'
+                : null,
+            explanation:
+                'Create a $semLabel for this $progLabel before configuring ${secsLabel.toLowerCase()}.',
           );
         }
         final activeSectionSemester = deptSemesters.first;
@@ -351,9 +414,11 @@ class AcademicPrerequisiteGuard {
           milestoneId: milestoneId,
           currentRole: currentRole,
           ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
-          actionRoute: '/academics/sections/new?courseId=${firstCourse?.id ?? ""}&semesterId=${activeSectionSemester.id}',
+          actionRoute:
+              '/academics/sections/new?courseId=${firstCourse?.id ?? ""}&semesterId=${activeSectionSemester.id}',
           actionLabel: 'Create $secLabel',
-          explanation: 'Form classroom student cohorts with designated seat capacity.',
+          explanation:
+              'Form classroom student cohorts with designated seat capacity.',
           contextParams: {
             'departmentId': departmentId,
             if (firstCourse != null) 'courseId': firstCourse.id,
@@ -366,7 +431,8 @@ class AcademicPrerequisiteGuard {
           return SetupActionDecision.complete(
             milestoneId: milestoneId,
             currentRole: currentRole,
-            explanation: '${deptSubjects.first.name} (${deptSubjects.first.code})${deptSubjects.length > 1 ? " (+${deptSubjects.length - 1} more)" : ""}',
+            explanation:
+                '${deptSubjects.first.name} (${deptSubjects.first.code})${deptSubjects.length > 1 ? " (+${deptSubjects.length - 1} more)" : ""}',
             contextParams: {
               'departmentId': departmentId,
               if (firstCourse != null) 'courseId': firstCourse.id,
@@ -380,12 +446,18 @@ class AcademicPrerequisiteGuard {
             currentRole: currentRole,
             ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
             missingDependency: AcademicPrerequisiteType.semester,
-            canCurrentUserAct: canManageDept && deptCourses.isNotEmpty && hasAcademicYear,
-            actionRoute: (canManageDept && deptCourses.isNotEmpty && hasAcademicYear)
+            canCurrentUserAct:
+                canManageDept && deptCourses.isNotEmpty && hasAcademicYear,
+            actionRoute:
+                (canManageDept && deptCourses.isNotEmpty && hasAcademicYear)
                 ? '/academics/semesters/new?courseId=${firstCourse?.id ?? ""}&academicYearId=${effectiveAy.id}'
                 : null,
-            actionLabel: (canManageDept && deptCourses.isNotEmpty && hasAcademicYear) ? 'Create $semLabel' : null,
-            explanation: 'Create a $semLabel for this $progLabel before configuring ${subsLabel.toLowerCase()}.',
+            actionLabel:
+                (canManageDept && deptCourses.isNotEmpty && hasAcademicYear)
+                ? 'Create $semLabel'
+                : null,
+            explanation:
+                'Create a $semLabel for this $progLabel before configuring ${subsLabel.toLowerCase()}.',
           );
         }
         final activeSubjectSemester = deptSemesters.first;
@@ -393,9 +465,11 @@ class AcademicPrerequisiteGuard {
           milestoneId: milestoneId,
           currentRole: currentRole,
           ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
-          actionRoute: '/academics/subjects/new?courseId=${firstCourse?.id ?? ""}&semesterId=${activeSubjectSemester.id}',
+          actionRoute:
+              '/academics/subjects/new?courseId=${firstCourse?.id ?? ""}&semesterId=${activeSubjectSemester.id}',
           actionLabel: 'Add $subLabel',
-          explanation: 'Add syllabus courses, theory lectures, and practical labs.',
+          explanation:
+              'Add syllabus courses, theory lectures, and practical labs.',
           contextParams: {
             'departmentId': departmentId,
             if (firstCourse != null) 'courseId': firstCourse.id,
@@ -422,7 +496,8 @@ class AcademicPrerequisiteGuard {
             ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
             missingDependency: AcademicPrerequisiteType.section,
             canCurrentUserAct: canManageDept,
-            explanation: 'Create ${secsLabel.toLowerCase()} before allocating faculty members.',
+            explanation:
+                'Create ${secsLabel.toLowerCase()} before allocating faculty members.',
           );
         }
         if (deptSubjects.isEmpty) {
@@ -432,7 +507,8 @@ class AcademicPrerequisiteGuard {
             ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
             missingDependency: AcademicPrerequisiteType.subject,
             canCurrentUserAct: canManageDept,
-            explanation: 'Add ${subsLabel.toLowerCase()} before allocating faculty members.',
+            explanation:
+                'Add ${subsLabel.toLowerCase()} before allocating faculty members.',
           );
         }
         // Section & Subject exist, check active faculty availability
@@ -446,7 +522,8 @@ class AcademicPrerequisiteGuard {
               canCurrentUserAct: true,
               actionRoute: '/academics/faculty/new?departmentId=$departmentId',
               actionLabel: 'Provision Faculty',
-              explanation: 'No active faculty is available for this $subLabel. Provision faculty first.',
+              explanation:
+                  'No active faculty is available for this $subLabel. Provision faculty first.',
             );
           }
           return SetupActionDecision.waitingOnOtherRole(
@@ -464,7 +541,8 @@ class AcademicPrerequisiteGuard {
           ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
           actionRoute: '/faculty-assignments',
           actionLabel: 'Assign Faculty',
-          explanation: 'Allocate teachers and professors to $subLabel ${effectiveIsSectionEnabled ? "$secLabel " : ""}batches.',
+          explanation:
+              'Allocate teachers and professors to $subLabel ${effectiveIsSectionEnabled ? "$secLabel " : ""}batches.',
           contextParams: {
             'departmentId': departmentId,
             if (firstSection != null) 'sectionId': firstSection.id,
@@ -490,7 +568,8 @@ class AcademicPrerequisiteGuard {
             ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
             missingDependency: AcademicPrerequisiteType.section,
             canCurrentUserAct: canManageDept,
-            explanation: 'Create ${secsLabel.toLowerCase()} before enrolling students.',
+            explanation:
+                'Create ${secsLabel.toLowerCase()} before enrolling students.',
           );
         }
         // Sections exist. Check whether any students exist in the department
@@ -504,7 +583,8 @@ class AcademicPrerequisiteGuard {
               canCurrentUserAct: true,
               actionRoute: '/academics/students/new?departmentId=$departmentId',
               actionLabel: 'Provision Student',
-              explanation: 'No admitted students available for enrollment. Student accounts must be provisioned before assigning to ${effectiveIsSectionEnabled ? secsLabel.toLowerCase() : semsLabel.toLowerCase()}.',
+              explanation:
+                  'No admitted students available for enrollment. Student accounts must be provisioned before assigning to ${effectiveIsSectionEnabled ? secsLabel.toLowerCase() : semsLabel.toLowerCase()}.',
             );
           }
           return SetupActionDecision.waitingOnOtherRole(
@@ -513,7 +593,8 @@ class AcademicPrerequisiteGuard {
             ownerRole: AppRole.collegeAdmin,
             missingDependency: AcademicPrerequisiteType.enrollment,
             explanation: 'No students are available to enroll.',
-            waitingReason: 'Student enrollment requires admitted student records from College Administration.',
+            waitingReason:
+                'Student enrollment requires admitted student records from College Administration.',
           );
         }
         return SetupActionDecision.ready(
@@ -522,7 +603,8 @@ class AcademicPrerequisiteGuard {
           ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
           actionRoute: '/academics/students',
           actionLabel: 'Enroll Students',
-          explanation: 'Assign admitted students to department ${effectiveIsSectionEnabled ? secsLabel.toLowerCase() : semsLabel.toLowerCase()} for class rosters.',
+          explanation:
+              'Assign admitted students to department ${effectiveIsSectionEnabled ? secsLabel.toLowerCase() : semsLabel.toLowerCase()} for class rosters.',
           contextParams: {
             'departmentId': departmentId,
             if (firstSection != null) 'sectionId': firstSection.id,
@@ -546,7 +628,8 @@ class AcademicPrerequisiteGuard {
             missingDependency: AcademicPrerequisiteType.section,
             canCurrentUserAct: false,
             actionRoute: null,
-            explanation: 'Create ${secsLabel.toLowerCase()} before generating timetables.',
+            explanation:
+                'Create ${secsLabel.toLowerCase()} before generating timetables.',
           );
         }
         if (deptSubjects.isEmpty) {
@@ -557,7 +640,8 @@ class AcademicPrerequisiteGuard {
             missingDependency: AcademicPrerequisiteType.subject,
             canCurrentUserAct: false,
             actionRoute: null,
-            explanation: 'Add ${subsLabel.toLowerCase()} before generating timetables.',
+            explanation:
+                'Add ${subsLabel.toLowerCase()} before generating timetables.',
           );
         }
         if (deptAssignments.isEmpty) {
@@ -568,7 +652,8 @@ class AcademicPrerequisiteGuard {
             missingDependency: AcademicPrerequisiteType.facultyAssignment,
             canCurrentUserAct: false,
             actionRoute: null,
-            explanation: 'Assign faculty to ${subsLabel.toLowerCase()} before creating timetable schedules.',
+            explanation:
+                'Assign faculty to ${subsLabel.toLowerCase()} before creating timetable schedules.',
           );
         }
         return SetupActionDecision.ready(
@@ -577,7 +662,8 @@ class AcademicPrerequisiteGuard {
           ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
           actionRoute: '/timetable/manage',
           actionLabel: 'Create Timetable',
-          explanation: 'Build and publish regular class lecture schedule containers.',
+          explanation:
+              'Build and publish regular class lecture schedule containers.',
           contextParams: {'departmentId': departmentId},
         );
     }
@@ -591,14 +677,17 @@ class AcademicPrerequisiteGuard {
   }) {
     final courseLabel = termHelper?.programName() ?? 'Course';
     final semLabel = termHelper?.semesterName() ?? 'Semester';
-    final createCourseLabel = termHelper?.createLabel(AcademicConcept.program) ?? 'Create Course';
-    final createSemLabel = termHelper?.createLabel(AcademicConcept.semester) ?? 'Create Semester';
+    final createCourseLabel =
+        termHelper?.createLabel(AcademicConcept.program) ?? 'Create Course';
+    final createSemLabel =
+        termHelper?.createLabel(AcademicConcept.semester) ?? 'Create Semester';
 
     if (courses.isEmpty) {
       return PrerequisiteCheckResult.blocked(
         missingType: AcademicPrerequisiteType.course,
         title: 'Before you continue',
-        message: 'A $courseLabel is required before creating a ${termHelper?.sectionName() ?? "Section"}.',
+        message:
+            'A $courseLabel is required before creating a ${termHelper?.sectionName() ?? "Section"}.',
         actionLabel: createCourseLabel,
         actionRoute: '/academics/courses/new',
         priorityLevel: PrerequisitePriorityLevel.core,
@@ -625,14 +714,17 @@ class AcademicPrerequisiteGuard {
   }) {
     final courseLabel = termHelper?.programName() ?? 'Course';
     final semLabel = termHelper?.semesterName() ?? 'Semester';
-    final createCourseLabel = termHelper?.createLabel(AcademicConcept.program) ?? 'Create Course';
-    final createSemLabel = termHelper?.createLabel(AcademicConcept.semester) ?? 'Create Semester';
+    final createCourseLabel =
+        termHelper?.createLabel(AcademicConcept.program) ?? 'Create Course';
+    final createSemLabel =
+        termHelper?.createLabel(AcademicConcept.semester) ?? 'Create Semester';
 
     if (courses.isEmpty) {
       return PrerequisiteCheckResult.blocked(
         missingType: AcademicPrerequisiteType.course,
         title: 'Before you continue',
-        message: 'A $courseLabel is required before adding a ${termHelper?.subjectName() ?? "Subject"}.',
+        message:
+            'A $courseLabel is required before adding a ${termHelper?.subjectName() ?? "Subject"}.',
         actionLabel: createCourseLabel,
         actionRoute: '/academics/courses/new',
         priorityLevel: PrerequisitePriorityLevel.core,
@@ -676,7 +768,9 @@ class AcademicPrerequisiteGuard {
         missingType: AcademicPrerequisiteType.academicYear,
         title: 'Before you continue',
         message: 'Create an $ayLabel before creating a teaching assignment.',
-        actionLabel: termHelper?.createLabel(AcademicConcept.academicYear) ?? 'Create Academic Year',
+        actionLabel:
+            termHelper?.createLabel(AcademicConcept.academicYear) ??
+            'Create Academic Year',
         actionRoute: '/academics/academic_years/new',
         priorityLevel: PrerequisitePriorityLevel.core,
       );
@@ -686,7 +780,8 @@ class AcademicPrerequisiteGuard {
         missingType: AcademicPrerequisiteType.course,
         title: 'Before you continue',
         message: 'A $courseLabel is required before allocating faculty.',
-        actionLabel: termHelper?.createLabel(AcademicConcept.program) ?? 'Create Course',
+        actionLabel:
+            termHelper?.createLabel(AcademicConcept.program) ?? 'Create Course',
         actionRoute: '/academics/courses/new',
         priorityLevel: PrerequisitePriorityLevel.core,
       );
@@ -696,7 +791,9 @@ class AcademicPrerequisiteGuard {
         missingType: AcademicPrerequisiteType.semester,
         title: 'Before you continue',
         message: 'Create a $semLabel for this $courseLabel first.',
-        actionLabel: termHelper?.createLabel(AcademicConcept.semester) ?? 'Create Semester',
+        actionLabel:
+            termHelper?.createLabel(AcademicConcept.semester) ??
+            'Create Semester',
         actionRoute: '/academics/semesters/new',
         priorityLevel: PrerequisitePriorityLevel.core,
       );
@@ -706,7 +803,9 @@ class AcademicPrerequisiteGuard {
         missingType: AcademicPrerequisiteType.section,
         title: 'Before you continue',
         message: 'Create a $secLabel for this $semLabel first.',
-        actionLabel: termHelper?.createLabel(AcademicConcept.section) ?? 'Create Section',
+        actionLabel:
+            termHelper?.createLabel(AcademicConcept.section) ??
+            'Create Section',
         actionRoute: '/academics/sections/new',
         priorityLevel: PrerequisitePriorityLevel.contextual,
       );
@@ -716,7 +815,8 @@ class AcademicPrerequisiteGuard {
         missingType: AcademicPrerequisiteType.subject,
         title: 'Before you continue',
         message: 'Add a $subLabel for this $semLabel first.',
-        actionLabel: termHelper?.addLabel(AcademicConcept.subject) ?? 'Add Subject',
+        actionLabel:
+            termHelper?.addLabel(AcademicConcept.subject) ?? 'Add Subject',
         actionRoute: '/academics/subjects/new',
         priorityLevel: PrerequisitePriorityLevel.contextual,
       );
@@ -726,7 +826,8 @@ class AcademicPrerequisiteGuard {
       return const PrerequisiteCheckResult.blocked(
         missingType: AcademicPrerequisiteType.faculty,
         title: 'Before you continue',
-        message: 'No active faculty available. Create or activate a faculty member first.',
+        message:
+            'No active faculty available. Create or activate a faculty member first.',
         actionLabel: 'Provision Faculty',
         actionRoute: '/academics/faculty/new',
         priorityLevel: PrerequisitePriorityLevel.contextual,
@@ -753,7 +854,8 @@ class AcademicPrerequisiteGuard {
         missingType: AcademicPrerequisiteType.course,
         title: 'Before you continue',
         message: 'Create a $courseLabel before enrolling students.',
-        actionLabel: termHelper?.createLabel(AcademicConcept.program) ?? 'Create Course',
+        actionLabel:
+            termHelper?.createLabel(AcademicConcept.program) ?? 'Create Course',
         actionRoute: '/academics/courses/new',
         priorityLevel: PrerequisitePriorityLevel.core,
       );
@@ -763,7 +865,9 @@ class AcademicPrerequisiteGuard {
         missingType: AcademicPrerequisiteType.semester,
         title: 'Before you continue',
         message: 'Create a $semLabel first.',
-        actionLabel: termHelper?.createLabel(AcademicConcept.semester) ?? 'Create Semester',
+        actionLabel:
+            termHelper?.createLabel(AcademicConcept.semester) ??
+            'Create Semester',
         actionRoute: '/academics/semesters/new',
         priorityLevel: PrerequisitePriorityLevel.core,
       );
@@ -773,7 +877,9 @@ class AcademicPrerequisiteGuard {
         missingType: AcademicPrerequisiteType.section,
         title: 'Before you continue',
         message: 'Create a $secLabel first.',
-        actionLabel: termHelper?.createLabel(AcademicConcept.section) ?? 'Create Section',
+        actionLabel:
+            termHelper?.createLabel(AcademicConcept.section) ??
+            'Create Section',
         actionRoute: '/academics/sections/new',
         priorityLevel: PrerequisitePriorityLevel.contextual,
       );
@@ -811,7 +917,8 @@ class AcademicPrerequisiteGuard {
         missingType: AcademicPrerequisiteType.course,
         title: 'Timetable needs a little setup',
         message: 'Create a $courseLabel first.',
-        actionLabel: termHelper?.createLabel(AcademicConcept.program) ?? 'Create Course',
+        actionLabel:
+            termHelper?.createLabel(AcademicConcept.program) ?? 'Create Course',
         actionRoute: '/academics/courses/new',
         priorityLevel: PrerequisitePriorityLevel.core,
       );
@@ -821,7 +928,9 @@ class AcademicPrerequisiteGuard {
         missingType: AcademicPrerequisiteType.academicYear,
         title: 'Timetable needs a little setup',
         message: 'Create an $ayLabel first.',
-        actionLabel: termHelper?.createLabel(AcademicConcept.academicYear) ?? 'Create Academic Year',
+        actionLabel:
+            termHelper?.createLabel(AcademicConcept.academicYear) ??
+            'Create Academic Year',
         actionRoute: '/academics/academic_years/new',
         priorityLevel: PrerequisitePriorityLevel.core,
       );
@@ -831,7 +940,9 @@ class AcademicPrerequisiteGuard {
         missingType: AcademicPrerequisiteType.semester,
         title: 'Timetable needs a little setup',
         message: 'Create a $semLabel for this $courseLabel first.',
-        actionLabel: termHelper?.createLabel(AcademicConcept.semester) ?? 'Create Semester',
+        actionLabel:
+            termHelper?.createLabel(AcademicConcept.semester) ??
+            'Create Semester',
         actionRoute: '/academics/semesters/new',
         priorityLevel: PrerequisitePriorityLevel.core,
       );
@@ -841,7 +952,9 @@ class AcademicPrerequisiteGuard {
         missingType: AcademicPrerequisiteType.section,
         title: 'Timetable needs a little setup',
         message: 'Create a $secLabel for this $semLabel first.',
-        actionLabel: termHelper?.createLabel(AcademicConcept.section) ?? 'Create Section',
+        actionLabel:
+            termHelper?.createLabel(AcademicConcept.section) ??
+            'Create Section',
         actionRoute: '/academics/sections/new',
         priorityLevel: PrerequisitePriorityLevel.contextual,
       );
@@ -851,17 +964,21 @@ class AcademicPrerequisiteGuard {
         missingType: AcademicPrerequisiteType.subject,
         title: 'Timetable needs a little setup',
         message: 'Add a $subLabel for this $semLabel first.',
-        actionLabel: termHelper?.addLabel(AcademicConcept.subject) ?? 'Add Subject',
+        actionLabel:
+            termHelper?.addLabel(AcademicConcept.subject) ?? 'Add Subject',
         actionRoute: '/academics/subjects/new',
         priorityLevel: PrerequisitePriorityLevel.contextual,
       );
     }
-    final activeAssignments = facultyAssignments.where((a) => a.isActive).toList();
+    final activeAssignments = facultyAssignments
+        .where((a) => a.isActive)
+        .toList();
     if (activeAssignments.isEmpty) {
       return PrerequisiteCheckResult.blocked(
         missingType: AcademicPrerequisiteType.facultyAssignment,
         title: 'Timetable needs a little setup',
-        message: 'Assign a faculty member to the $subLabel before creating the timetable. At least one teaching assignment is required before you can schedule a class.',
+        message:
+            'Assign a faculty member to the $subLabel before creating the timetable. At least one teaching assignment is required before you can schedule a class.',
         actionLabel: 'Assign Faculty',
         actionRoute: '/faculty-assignments',
         priorityLevel: PrerequisitePriorityLevel.contextual,
@@ -871,7 +988,8 @@ class AcademicPrerequisiteGuard {
       return PrerequisiteCheckResult.blocked(
         missingType: AcademicPrerequisiteType.room,
         title: 'Timetable needs a little setup',
-        message: 'No ${roomLabel.toLowerCase()}s are set up yet. Your institution requires ${roomLabel.toLowerCase()}s for timetable scheduling. Click below to add a $roomLabel.',
+        message:
+            'No ${roomLabel.toLowerCase()}s are set up yet. Your institution requires ${roomLabel.toLowerCase()}s for timetable scheduling. Click below to add a $roomLabel.',
         actionLabel: termHelper?.addLabel(AcademicConcept.room) ?? 'Add Room',
         actionRoute: '/academics/rooms/new',
         priorityLevel: PrerequisitePriorityLevel.optional,
@@ -921,8 +1039,12 @@ class AcademicPrerequisiteGuard {
       context: context,
       barrierDismissible: true,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusLg),
+        backgroundColor: isDark
+            ? AcadexColors.darkSurfaceCard
+            : AcadexColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: AcadexRadius.borderRadiusLg,
+        ),
         contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
         titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
         title: Row(
@@ -933,7 +1055,11 @@ class AcademicPrerequisiteGuard {
                 color: AcadexColors.primary.withValues(alpha: 0.12),
                 borderRadius: AcadexRadius.borderRadiusSm,
               ),
-              child: const Icon(LucideIcons.compass, size: 20, color: AcadexColors.primary),
+              child: const Icon(
+                LucideIcons.compass,
+                size: 20,
+                color: AcadexColors.primary,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -951,9 +1077,12 @@ class AcademicPrerequisiteGuard {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              result.message ?? 'A required academic foundation is needed before continuing.',
+              result.message ??
+                  'A required academic foundation is needed before continuing.',
               style: AcadexTypography.body(
-                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                color: isDark
+                    ? AcadexColors.darkInkSecondary
+                    : AcadexColors.inkSecondary,
               ),
             ),
           ],
@@ -962,7 +1091,9 @@ class AcademicPrerequisiteGuard {
         actions: [
           TextButton(
             style: TextButton.styleFrom(
-              foregroundColor: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+              foregroundColor: isDark
+                  ? AcadexColors.darkInkMuted
+                  : AcadexColors.inkMuted,
             ),
             onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('Cancel'),
@@ -972,8 +1103,13 @@ class AcademicPrerequisiteGuard {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AcadexColors.primary,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: AcadexRadius.borderRadiusMd,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
               ),
               onPressed: () {
                 Navigator.of(ctx).pop();
@@ -1002,7 +1138,9 @@ class AcademicPrerequisiteGuard {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
+        color: isDark
+            ? AcadexColors.warningDarkContainer
+            : AcadexColors.warningLight,
         borderRadius: AcadexRadius.borderRadiusMd,
         border: Border.all(color: AcadexColors.warning),
       ),
@@ -1012,19 +1150,26 @@ class AcademicPrerequisiteGuard {
         children: [
           Row(
             children: [
-              const Icon(LucideIcons.compass, size: 18, color: AcadexColors.warning),
+              const Icon(
+                LucideIcons.compass,
+                size: 18,
+                color: AcadexColors.warning,
+              ),
               const SizedBox(width: 8),
               Text(
                 result.title ?? 'Before you continue',
                 style: AcadexTypography.bodyMedium(
-                  color: isDark ? AcadexColors.warning : AcadexColors.warningDark,
+                  color: isDark
+                      ? AcadexColors.warning
+                      : AcadexColors.warningDark,
                 ).copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            result.message ?? 'Please complete the required academic prerequisite.',
+            result.message ??
+                'Please complete the required academic prerequisite.',
             style: AcadexTypography.body(
               color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
             ),

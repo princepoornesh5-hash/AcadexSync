@@ -7,25 +7,29 @@ final assignmentsRepositoryProvider = Provider<AssignmentsRepository>((ref) {
   return ApiAssignmentsRepository();
 });
 
-final facultyCourseAssignmentsProvider = FutureProvider.autoDispose<List<AssignmentModel>>((ref) async {
-  final repo = ref.watch(assignmentsRepositoryProvider);
-  return repo.getFacultyAssignments();
-});
+final facultyCourseAssignmentsProvider =
+    FutureProvider.autoDispose<List<AssignmentModel>>((ref) async {
+      final repo = ref.watch(assignmentsRepositoryProvider);
+      return repo.getFacultyAssignments();
+    });
 
-final studentAssignmentsProvider = FutureProvider.autoDispose<List<AssignmentModel>>((ref) async {
-  final repo = ref.watch(assignmentsRepositoryProvider);
-  return repo.getStudentAssignments();
-});
+final studentAssignmentsProvider =
+    FutureProvider.autoDispose<List<AssignmentModel>>((ref) async {
+      final repo = ref.watch(assignmentsRepositoryProvider);
+      return repo.getStudentAssignments();
+    });
 
-final assignmentDetailProvider = FutureProvider.autoDispose.family<AssignmentModel, String>((ref, id) async {
-  final repo = ref.watch(assignmentsRepositoryProvider);
-  return repo.getAssignmentDetail(id);
-});
+final assignmentDetailProvider = FutureProvider.autoDispose
+    .family<AssignmentModel, String>((ref, id) async {
+      final repo = ref.watch(assignmentsRepositoryProvider);
+      return repo.getAssignmentDetail(id);
+    });
 
-final mySubmissionProvider = FutureProvider.autoDispose.family<SubmissionModel?, String>((ref, assignmentId) async {
-  final repo = ref.watch(assignmentsRepositoryProvider);
-  return repo.getMySubmission(assignmentId);
-});
+final mySubmissionProvider = FutureProvider.autoDispose
+    .family<SubmissionModel?, String>((ref, assignmentId) async {
+      final repo = ref.watch(assignmentsRepositoryProvider);
+      return repo.getMySubmission(assignmentId);
+    });
 
 class AssignmentActivityNotifier
     extends StateNotifier<AsyncValue<AssignmentActivityResponseModel>> {
@@ -36,7 +40,7 @@ class AssignmentActivityNotifier
   final Map<String, double> _pendingMarks = {};
 
   AssignmentActivityNotifier(this._repository, this._assignmentId)
-      : super(const AsyncValue.loading()) {
+    : super(const AsyncValue.loading()) {
     loadActivity();
   }
 
@@ -71,12 +75,14 @@ class AssignmentActivityNotifier
       }).toList();
 
       if (!mounted) return;
-      state = AsyncValue.data(AssignmentActivityResponseModel(
-        assignment: current.assignment,
-        summary: current.summary,
-        completed: updatedCompleted,
-        pending: current.pending,
-      ));
+      state = AsyncValue.data(
+        AssignmentActivityResponseModel(
+          assignment: current.assignment,
+          summary: current.summary,
+          completed: updatedCompleted,
+          pending: current.pending,
+        ),
+      );
     });
   }
 
@@ -88,7 +94,10 @@ class AssignmentActivityNotifier
         .toList();
 
     try {
-      final updated = await _repository.recordMarks(_assignmentId, marksPayload);
+      final updated = await _repository.recordMarks(
+        _assignmentId,
+        marksPayload,
+      );
       if (!mounted) return true;
       _pendingMarks.clear();
       state = AsyncValue.data(updated);
@@ -102,12 +111,14 @@ class AssignmentActivityNotifier
 }
 
 final assignmentActivityProvider = StateNotifierProvider.autoDispose
-    .family<AssignmentActivityNotifier, AsyncValue<AssignmentActivityResponseModel>, String>(
-  (ref, id) {
-    final repo = ref.watch(assignmentsRepositoryProvider);
-    return AssignmentActivityNotifier(repo, id);
-  },
-);
+    .family<
+      AssignmentActivityNotifier,
+      AsyncValue<AssignmentActivityResponseModel>,
+      String
+    >((ref, id) {
+      final repo = ref.watch(assignmentsRepositoryProvider);
+      return AssignmentActivityNotifier(repo, id);
+    });
 
 class AssignmentActionState {
   final bool isLoading;
@@ -353,6 +364,7 @@ class AssignmentActionNotifier extends StateNotifier<AssignmentActionState> {
 }
 
 final assignmentActionProvider =
-    StateNotifierProvider.autoDispose<AssignmentActionNotifier, AssignmentActionState>(
-  (ref) => AssignmentActionNotifier(ref),
-);
+    StateNotifierProvider.autoDispose<
+      AssignmentActionNotifier,
+      AssignmentActionState
+    >((ref) => AssignmentActionNotifier(ref));

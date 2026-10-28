@@ -17,7 +17,9 @@ final mockTimetableRepositoryProvider = Provider<TimetableRepository>((ref) {
   return MockTimetableRepository();
 });
 
-final firebaseTimetableRepositoryProvider = Provider<TimetableRepository>((ref) {
+final firebaseTimetableRepositoryProvider = Provider<TimetableRepository>((
+  ref,
+) {
   final firestoreService = ref.watch(firestoreServiceProvider);
   final currentUser = ref.watch(currentUserProvider);
   final notificationService = ref.watch(notificationServiceProvider);
@@ -36,109 +38,116 @@ final timetableRepositoryProvider = Provider<TimetableRepository>((ref) {
   return ref.watch(apiTimetableRepositoryProvider);
 });
 
-final weeklyTimetableProvider = StreamProvider<Map<TimetableDay, List<TimetableModel>>>((ref) async* {
-  final authState = ref.watch(authProvider);
-  if (authState is! AuthAuthenticated) {
-    yield {for (var day in TimetableDay.values) day: []};
-    return;
-  }
+final weeklyTimetableProvider =
+    StreamProvider<Map<TimetableDay, List<TimetableModel>>>((ref) async* {
+      final authState = ref.watch(authProvider);
+      if (authState is! AuthAuthenticated) {
+        yield {for (var day in TimetableDay.values) day: []};
+        return;
+      }
 
-  final user = authState.user;
-  
-  // Profile readiness guard: non-super-admin users must have collegeId loaded
-  if ((user.collegeId == null || user.collegeId!.isEmpty) && user.role != AppRole.superAdmin) {
-    yield {for (var day in TimetableDay.values) day: []};
-    return;
-  }
+      final user = authState.user;
 
-  final repository = ref.watch(timetableRepositoryProvider);
-  
-  String? sectionId;
-  if (user.role == AppRole.student) {
-    sectionId = user.sectionId;
-    if (sectionId == null || sectionId.isEmpty) {
-      // Student has no assigned section yet; safely yield empty schedule without querying Firestore
-      yield {for (var day in TimetableDay.values) day: []};
-      return;
-    }
-  }
+      // Profile readiness guard: non-super-admin users must have collegeId loaded
+      if ((user.collegeId == null || user.collegeId!.isEmpty) &&
+          user.role != AppRole.superAdmin) {
+        yield {for (var day in TimetableDay.values) day: []};
+        return;
+      }
 
-  final stream = repository.watchTimetable(
-    role: user.role,
-    userId: user.id,
-    collegeId: user.collegeId,
-    departmentId: user.departmentId,
-    sectionId: sectionId,
-  );
-  
-  await for (final entries in stream) {
-    final Map<TimetableDay, List<TimetableModel>> grouped = {
-      for (var day in TimetableDay.values) day: []
-    };
-    
-    for (var entry in entries) {
-      grouped[entry.dayOfWeek]?.add(entry);
-    }
-    
-    for (var day in TimetableDay.values) {
-      grouped[day]?.sort((a, b) => a.startTime.compareTo(b.startTime));
-    }
-    
-    yield grouped;
-  }
-});
+      final repository = ref.watch(timetableRepositoryProvider);
 
-final dateScheduleProvider = FutureProvider.autoDispose.family<List<TimetableModel>, DateTime>((ref, date) async {
-  final authState = ref.watch(authProvider);
-  if (authState is! AuthAuthenticated) return [];
+      String? sectionId;
+      if (user.role == AppRole.student) {
+        sectionId = user.sectionId;
+        if (sectionId == null || sectionId.isEmpty) {
+          // Student has no assigned section yet; safely yield empty schedule without querying Firestore
+          yield {for (var day in TimetableDay.values) day: []};
+          return;
+        }
+      }
 
-  final user = authState.user;
-  if ((user.collegeId == null || user.collegeId!.isEmpty) && user.role != AppRole.superAdmin) {
-    return [];
-  }
+      final stream = repository.watchTimetable(
+        role: user.role,
+        userId: user.id,
+        collegeId: user.collegeId,
+        departmentId: user.departmentId,
+        sectionId: sectionId,
+      );
 
-  final repository = ref.watch(timetableRepositoryProvider);
-  final y = date.year.toString().padLeft(4, '0');
-  final m = date.month.toString().padLeft(2, '0');
-  final d = date.day.toString().padLeft(2, '0');
-  final dateStr = '$y-$m-$d';
+      await for (final entries in stream) {
+        final Map<TimetableDay, List<TimetableModel>> grouped = {
+          for (var day in TimetableDay.values) day: [],
+        };
 
-  String? sectionId;
-  if (user.role == AppRole.student) {
-    sectionId = user.sectionId;
-    if (sectionId == null || sectionId.isEmpty) return [];
-  }
+        for (var entry in entries) {
+          grouped[entry.dayOfWeek]?.add(entry);
+        }
 
-  final list = await repository.getTimetable(
-    collegeId: user.collegeId ?? '',
-    departmentId: user.departmentId,
-    sectionId: sectionId,
-    facultyId: user.role == AppRole.faculty ? 'me' : null,
-    date: dateStr,
-    role: user.role,
-  );
+        for (var day in TimetableDay.values) {
+          grouped[day]?.sort((a, b) => a.startTime.compareTo(b.startTime));
+        }
 
-  final sorted = List<TimetableModel>.from(list)
-    ..sort((a, b) => a.startTime.compareTo(b.startTime));
-  return sorted;
-});
+        yield grouped;
+      }
+    });
 
-final todayScheduleProvider = Provider.autoDispose<AsyncValue<List<TimetableModel>>>((ref) {
-  final now = DateTime.now();
-  final dateAsync = ref.watch(dateScheduleProvider(DateTime(now.year, now.month, now.day)));
+final dateScheduleProvider = FutureProvider.autoDispose
+    .family<List<TimetableModel>, DateTime>((ref, date) async {
+      final authState = ref.watch(authProvider);
+      if (authState is! AuthAuthenticated) return [];
 
-  return dateAsync.when(
-    data: (data) => AsyncValue.data(data),
-    loading: () {
-      final weeklyData = ref.watch(weeklyTimetableProvider);
-      return weeklyData.whenData((weekly) {
-        final currentDay = TimetableDay.values[now.weekday - 1];
-        return weekly[currentDay] ?? [];
-      });
-    },
-    error: (e, st) => AsyncValue.error(e, st),
-  );
-});
+      final user = authState.user;
+      if ((user.collegeId == null || user.collegeId!.isEmpty) &&
+          user.role != AppRole.superAdmin) {
+        return [];
+      }
+
+      final repository = ref.watch(timetableRepositoryProvider);
+      final y = date.year.toString().padLeft(4, '0');
+      final m = date.month.toString().padLeft(2, '0');
+      final d = date.day.toString().padLeft(2, '0');
+      final dateStr = '$y-$m-$d';
+
+      String? sectionId;
+      if (user.role == AppRole.student) {
+        sectionId = user.sectionId;
+        if (sectionId == null || sectionId.isEmpty) return [];
+      }
+
+      final list = await repository.getTimetable(
+        collegeId: user.collegeId ?? '',
+        departmentId: user.departmentId,
+        sectionId: sectionId,
+        facultyId: user.role == AppRole.faculty ? 'me' : null,
+        date: dateStr,
+        role: user.role,
+      );
+
+      final sorted = List<TimetableModel>.from(list)
+        ..sort((a, b) => a.startTime.compareTo(b.startTime));
+      return sorted;
+    });
+
+final todayScheduleProvider =
+    Provider.autoDispose<AsyncValue<List<TimetableModel>>>((ref) {
+      final now = DateTime.now();
+      final dateAsync = ref.watch(
+        dateScheduleProvider(DateTime(now.year, now.month, now.day)),
+      );
+
+      return dateAsync.when(
+        data: (data) => AsyncValue.data(data),
+        loading: () {
+          final weeklyData = ref.watch(weeklyTimetableProvider);
+          return weeklyData.whenData((weekly) {
+            final currentDay = TimetableDay.values[now.weekday - 1];
+            return weekly[currentDay] ?? [];
+          });
+        },
+        error: (e, st) => AsyncValue.error(e, st),
+      );
+    });
 
 class TeacherSubstitutionsQuery {
   final String? date;
@@ -161,17 +170,21 @@ class TeacherSubstitutionsQuery {
           departmentId == other.departmentId;
 
   @override
-  int get hashCode => date.hashCode ^ timetableId.hashCode ^ departmentId.hashCode;
+  int get hashCode =>
+      date.hashCode ^ timetableId.hashCode ^ departmentId.hashCode;
 }
 
-final teacherSubstitutionsProvider = FutureProvider.family<List<TeacherSubstitution>, TeacherSubstitutionsQuery>((ref, query) async {
-  final repository = ref.watch(timetableRepositoryProvider);
-  return repository.getTeacherSubstitutions(
-    date: query.date,
-    timetableId: query.timetableId,
-    departmentId: query.departmentId,
-  );
-});
+final teacherSubstitutionsProvider =
+    FutureProvider.family<List<TeacherSubstitution>, TeacherSubstitutionsQuery>(
+      (ref, query) async {
+        final repository = ref.watch(timetableRepositoryProvider);
+        return repository.getTeacherSubstitutions(
+          date: query.date,
+          timetableId: query.timetableId,
+          departmentId: query.departmentId,
+        );
+      },
+    );
 
 final currentClassProvider = Provider<AsyncValue<TimetableModel?>>((ref) {
   final todayAsync = ref.watch(todayScheduleProvider);
@@ -184,7 +197,8 @@ final currentClassProvider = Provider<AsyncValue<TimetableModel?>>((ref) {
       try {
         final startParts = entry.startTime.split(':');
         final endParts = entry.endTime.split(':');
-        final startMinutes = int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
+        final startMinutes =
+            int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
         final endMinutes = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
         if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) {
           return entry;
@@ -205,7 +219,8 @@ final nextClassProvider = Provider<AsyncValue<TimetableModel?>>((ref) {
     for (final entry in todayClasses) {
       try {
         final startParts = entry.startTime.split(':');
-        final startMinutes = int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
+        final startMinutes =
+            int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
         if (startMinutes > currentMinutes) {
           return entry;
         }
@@ -242,7 +257,10 @@ class TimetableManagementNotifier extends AsyncNotifier<void> {
   }
 
   /// Deletes a grid entry through its parent container via PUT /timetables/:id.
-  Future<void> deleteGridEntry({required String timetableId, required String entryId}) async {
+  Future<void> deleteGridEntry({
+    required String timetableId,
+    required String entryId,
+  }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final repository = ref.read(timetableRepositoryProvider);
@@ -255,10 +273,13 @@ class TimetableManagementNotifier extends AsyncNotifier<void> {
 
   @Deprecated('Use deleteGridEntry with timetableId for container authoring')
   Future<void> deleteEntry(String id) async {
-    throw UnsupportedError('Individual entry deletion without container is deprecated. Use deleteGridEntry.');
+    throw UnsupportedError(
+      'Individual entry deletion without container is deprecated. Use deleteGridEntry.',
+    );
   }
 }
 
-final timetableManagementProvider = AsyncNotifierProvider<TimetableManagementNotifier, void>(() {
-  return TimetableManagementNotifier();
-});
+final timetableManagementProvider =
+    AsyncNotifierProvider<TimetableManagementNotifier, void>(() {
+      return TimetableManagementNotifier();
+    });

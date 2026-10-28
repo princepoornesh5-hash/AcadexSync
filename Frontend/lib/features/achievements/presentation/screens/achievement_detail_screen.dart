@@ -27,10 +27,12 @@ class AchievementDetailScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<AchievementDetailScreen> createState() => _AchievementDetailScreenState();
+  ConsumerState<AchievementDetailScreen> createState() =>
+      _AchievementDetailScreenState();
 }
 
-class _AchievementDetailScreenState extends ConsumerState<AchievementDetailScreen> {
+class _AchievementDetailScreenState
+    extends ConsumerState<AchievementDetailScreen> {
   Achievement? _resolvedAchievement;
   bool _isLoading = false;
   bool _isProcessing = false;
@@ -60,7 +62,9 @@ class _AchievementDetailScreenState extends ConsumerState<AchievementDetailScree
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.lg)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AcadexRadius.lg),
+        ),
         title: const Text('Delete Achievement'),
         content: const Text(
           'Are you sure you want to permanently delete this achievement? This will also remove the attached proof file.',
@@ -103,7 +107,10 @@ class _AchievementDetailScreenState extends ConsumerState<AchievementDetailScree
       if (mounted) {
         setState(() => _isProcessing = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error deleting: $e'), backgroundColor: AcadexColors.error),
+          SnackBar(
+            content: Text('Error deleting: $e'),
+            backgroundColor: AcadexColors.error,
+          ),
         );
       }
     }
@@ -149,8 +156,11 @@ class _AchievementDetailScreenState extends ConsumerState<AchievementDetailScree
     final authState = ref.watch(authProvider);
     final user = authState is AuthAuthenticated ? authState.user : null;
     final isOwner = user != null && user.id == a.studentUid;
-    final canReview = user != null &&
-        (user.role == AppRole.hod || user.role == AppRole.faculty || user.role == AppRole.collegeAdmin);
+    final canReview =
+        user != null &&
+        (user.role == AppRole.hod ||
+            user.role == AppRole.faculty ||
+            user.role == AppRole.collegeAdmin);
 
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
@@ -164,14 +174,16 @@ class _AchievementDetailScreenState extends ConsumerState<AchievementDetailScree
               // Page Header
               AcadexPageHeader(
                 title: a.title,
-                subtitle: 'Issued by ${a.issuer} on ${a.achievementDate.day}/${a.achievementDate.month}/${a.achievementDate.year}',
+                subtitle:
+                    'Issued by ${a.issuer} on ${a.achievementDate.day}/${a.achievementDate.month}/${a.achievementDate.year}',
                 actions: [
                   if (isOwner) ...[
                     AcadexButton(
                       label: 'Edit',
                       icon: LucideIcons.pencil,
                       variant: AcadexButtonVariant.secondary,
-                      onPressed: () => context.push('/achievements/${a.id}/edit', extra: a),
+                      onPressed: () =>
+                          context.push('/achievements/${a.id}/edit', extra: a),
                     ),
                     const SizedBox(width: 8),
                     AcadexButton(
@@ -222,7 +234,9 @@ class _AchievementDetailScreenState extends ConsumerState<AchievementDetailScree
                       Text(
                         a.description,
                         style: AcadexTypography.body(
-                          color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                          color: isDark
+                              ? AcadexColors.darkInkSecondary
+                              : AcadexColors.inkSecondary,
                         ),
                       ),
                       const SizedBox(height: AcadexSpacing.space20),
@@ -236,9 +250,17 @@ class _AchievementDetailScreenState extends ConsumerState<AchievementDetailScree
                       isDark,
                     ),
                     _infoRow('Student Name', a.studentName, isDark),
-                    _infoRow('Department', a.departmentId.toUpperCase(), isDark),
+                    _infoRow(
+                      'Department',
+                      a.departmentId.toUpperCase(),
+                      isDark,
+                    ),
                     if (a.courseId.isNotEmpty || a.semesterId.isNotEmpty)
-                      _infoRow('Academic Scope', 'Sem: ${a.semesterId} • Sec: ${a.sectionId}', isDark),
+                      _infoRow(
+                        'Academic Scope',
+                        'Sem: ${a.semesterId} • Sec: ${a.sectionId}',
+                        isDark,
+                      ),
 
                     const SizedBox(height: AcadexSpacing.space20),
                     const Divider(),
@@ -249,7 +271,9 @@ class _AchievementDetailScreenState extends ConsumerState<AchievementDetailScree
                       Text(
                         'Skills & Tags',
                         style: AcadexTypography.title(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -259,7 +283,9 @@ class _AchievementDetailScreenState extends ConsumerState<AchievementDetailScree
                         children: a.skills.map((skill) {
                           return Chip(
                             label: Text(skill),
-                            backgroundColor: AcadexColors.primary.withValues(alpha: 0.1),
+                            backgroundColor: AcadexColors.primary.withValues(
+                              alpha: 0.1,
+                            ),
                           );
                         }).toList(),
                       ),
@@ -281,10 +307,14 @@ class _AchievementDetailScreenState extends ConsumerState<AchievementDetailScree
                       Container(
                         padding: const EdgeInsets.all(AcadexSpacing.space16),
                         decoration: BoxDecoration(
-                          color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
+                          color: isDark
+                              ? AcadexColors.darkSurfaceCard
+                              : AcadexColors.canvasSoft,
                           borderRadius: BorderRadius.circular(AcadexRadius.md),
                           border: Border.all(
-                            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                            color: isDark
+                                ? AcadexColors.darkHairline
+                                : AcadexColors.hairline,
                           ),
                         ),
                         child: Row(
@@ -293,11 +323,17 @@ class _AchievementDetailScreenState extends ConsumerState<AchievementDetailScree
                               width: 44,
                               height: 44,
                               decoration: BoxDecoration(
-                                color: AcadexColors.primary.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(AcadexRadius.sm),
+                                color: AcadexColors.primary.withValues(
+                                  alpha: 0.1,
+                                ),
+                                borderRadius: BorderRadius.circular(
+                                  AcadexRadius.sm,
+                                ),
                               ),
                               child: Icon(
-                                a.isPdf ? LucideIcons.fileText : LucideIcons.image,
+                                a.isPdf
+                                    ? LucideIcons.fileText
+                                    : LucideIcons.image,
                                 color: AcadexColors.primary,
                                 size: 22,
                               ),
@@ -310,13 +346,17 @@ class _AchievementDetailScreenState extends ConsumerState<AchievementDetailScree
                                   Text(
                                     a.fileName ?? 'Proof File',
                                     style: AcadexTypography.bodyMedium(
-                                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                      color: isDark
+                                          ? AcadexColors.darkInk
+                                          : AcadexColors.ink,
                                     ),
                                   ),
                                   Text(
                                     '${a.fileType?.toUpperCase()} • ${a.fileSizeDisplay}',
                                     style: AcadexTypography.caption(
-                                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                      color: isDark
+                                          ? AcadexColors.darkInkMuted
+                                          : AcadexColors.inkMuted,
                                     ),
                                   ),
                                 ],
@@ -338,7 +378,9 @@ class _AchievementDetailScreenState extends ConsumerState<AchievementDetailScree
                       Text(
                         'No proof file was uploaded for this achievement.',
                         style: AcadexTypography.bodySmall(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                       ),
 
@@ -350,23 +392,39 @@ class _AchievementDetailScreenState extends ConsumerState<AchievementDetailScree
                       Text(
                         'Institutional Verification Status',
                         style: AcadexTypography.title(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       const SizedBox(height: 12),
 
                       if (a.isVerified) ...[
                         _infoRow('Verification Status', 'Verified ✓', isDark),
-                        if (a.verifiedBy != null) _infoRow('Verified By', a.verifiedBy!, isDark),
+                        if (a.verifiedBy != null)
+                          _infoRow('Verified By', a.verifiedBy!, isDark),
                         if (a.verifiedAt != null)
-                          _infoRow('Verified On', a.verifiedAt.toString().substring(0, 16), isDark),
+                          _infoRow(
+                            'Verified On',
+                            a.verifiedAt.toString().substring(0, 16),
+                            isDark,
+                          ),
                       ] else if (a.isPending) ...[
-                        _infoRow('Verification Status', 'Pending Review by Faculty / HOD', isDark),
+                        _infoRow(
+                          'Verification Status',
+                          'Pending Review by Faculty / HOD',
+                          isDark,
+                        ),
                       ] else if (a.isRejected) ...[
                         _infoRow('Verification Status', 'Rejected', isDark),
-                        if (a.verifiedBy != null) _infoRow('Reviewed By', a.verifiedBy!, isDark),
+                        if (a.verifiedBy != null)
+                          _infoRow('Reviewed By', a.verifiedBy!, isDark),
                         if (a.verificationNote != null)
-                          _infoRow('Feedback Reason', a.verificationNote!, isDark),
+                          _infoRow(
+                            'Feedback Reason',
+                            a.verificationNote!,
+                            isDark,
+                          ),
                       ],
                     ],
                   ],
@@ -390,7 +448,9 @@ class _AchievementDetailScreenState extends ConsumerState<AchievementDetailScree
             child: Text(
               label,
               style: AcadexTypography.bodySmall(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
             ),
           ),
@@ -411,7 +471,9 @@ class _AchievementDetailScreenState extends ConsumerState<AchievementDetailScree
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.lg)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AcadexRadius.lg),
+        ),
         title: Text(a.fileName ?? 'Proof Preview'),
         content: SizedBox(
           width: 500,
@@ -470,10 +532,12 @@ class _ReviewAchievementDialog extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<_ReviewAchievementDialog> createState() => _ReviewAchievementDialogState();
+  ConsumerState<_ReviewAchievementDialog> createState() =>
+      _ReviewAchievementDialogState();
 }
 
-class _ReviewAchievementDialogState extends ConsumerState<_ReviewAchievementDialog> {
+class _ReviewAchievementDialogState
+    extends ConsumerState<_ReviewAchievementDialog> {
   final _noteController = TextEditingController();
   bool _isProcessing = false;
 
@@ -484,7 +548,8 @@ class _ReviewAchievementDialogState extends ConsumerState<_ReviewAchievementDial
   }
 
   Future<void> _updateVerification(AchievementVerificationStatus status) async {
-    if (status == AchievementVerificationStatus.rejected && _noteController.text.trim().isEmpty) {
+    if (status == AchievementVerificationStatus.rejected &&
+        _noteController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('A verification note is mandatory when rejecting.'),
@@ -495,8 +560,12 @@ class _ReviewAchievementDialogState extends ConsumerState<_ReviewAchievementDial
     }
 
     final authState = ref.read(authProvider);
-    final reviewerName = authState is AuthAuthenticated ? authState.user.name : 'Reviewer';
-    final reviewerUid = authState is AuthAuthenticated ? authState.user.id : 'reviewer';
+    final reviewerName = authState is AuthAuthenticated
+        ? authState.user.name
+        : 'Reviewer';
+    final reviewerUid = authState is AuthAuthenticated
+        ? authState.user.id
+        : 'reviewer';
 
     setState(() => _isProcessing = true);
 
@@ -507,7 +576,9 @@ class _ReviewAchievementDialogState extends ConsumerState<_ReviewAchievementDial
         reviewerUid: reviewerUid,
         reviewerName: reviewerName,
         status: status,
-        verificationNote: _noteController.text.trim().isNotEmpty ? _noteController.text.trim() : null,
+        verificationNote: _noteController.text.trim().isNotEmpty
+            ? _noteController.text.trim()
+            : null,
       );
 
       widget.onUpdated();
@@ -516,7 +587,9 @@ class _ReviewAchievementDialogState extends ConsumerState<_ReviewAchievementDial
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Achievement verification updated to: ${status.displayName}'),
+            content: Text(
+              'Achievement verification updated to: ${status.displayName}',
+            ),
             backgroundColor: AcadexColors.success,
           ),
         );
@@ -525,7 +598,10 @@ class _ReviewAchievementDialogState extends ConsumerState<_ReviewAchievementDial
       if (mounted) {
         setState(() => _isProcessing = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AcadexColors.error),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AcadexColors.error,
+          ),
         );
       }
     }
@@ -537,7 +613,9 @@ class _ReviewAchievementDialogState extends ConsumerState<_ReviewAchievementDial
     final a = widget.achievement;
 
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.lg)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AcadexRadius.lg),
+      ),
       title: Row(
         children: [
           const Icon(LucideIcons.award, color: AcadexColors.primary),
@@ -552,26 +630,36 @@ class _ReviewAchievementDialogState extends ConsumerState<_ReviewAchievementDial
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Student: ${a.studentName} (${a.studentId})', style: AcadexTypography.bodyMedium()),
+              Text(
+                'Student: ${a.studentName} (${a.studentId})',
+                style: AcadexTypography.bodyMedium(),
+              ),
               const SizedBox(height: 4),
               Text('Issuer: ${a.issuer}', style: AcadexTypography.bodySmall()),
               const SizedBox(height: 4),
-              Text('Date: ${a.achievementDate.day}/${a.achievementDate.month}/${a.achievementDate.year}',
-                  style: AcadexTypography.bodySmall()),
+              Text(
+                'Date: ${a.achievementDate.day}/${a.achievementDate.month}/${a.achievementDate.year}',
+                style: AcadexTypography.bodySmall(),
+              ),
               const SizedBox(height: AcadexSpacing.space16),
               const Divider(),
               const SizedBox(height: AcadexSpacing.space8),
               Text(
                 'Review Feedback / Rejection Note',
-                style: AcadexTypography.title(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                style: AcadexTypography.title(
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ),
               ),
               const SizedBox(height: 4),
               TextField(
                 controller: _noteController,
                 maxLines: 3,
                 decoration: InputDecoration(
-                  hintText: 'Enter feedback or reason (mandatory for rejection)...',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                  hintText:
+                      'Enter feedback or reason (mandatory for rejection)...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AcadexRadius.md),
+                  ),
                 ),
               ),
             ],
@@ -588,14 +676,20 @@ class _ReviewAchievementDialogState extends ConsumerState<_ReviewAchievementDial
           icon: LucideIcons.xCircle,
           variant: AcadexButtonVariant.secondary,
           size: AcadexButtonSize.sm,
-          onPressed: _isProcessing ? null : () => _updateVerification(AchievementVerificationStatus.rejected),
+          onPressed: _isProcessing
+              ? null
+              : () =>
+                    _updateVerification(AchievementVerificationStatus.rejected),
         ),
         AcadexButton(
           label: 'Approve & Verify',
           icon: LucideIcons.checkCircle2,
           variant: AcadexButtonVariant.primary,
           size: AcadexButtonSize.sm,
-          onPressed: _isProcessing ? null : () => _updateVerification(AchievementVerificationStatus.verified),
+          onPressed: _isProcessing
+              ? null
+              : () =>
+                    _updateVerification(AchievementVerificationStatus.verified),
         ),
       ],
     );

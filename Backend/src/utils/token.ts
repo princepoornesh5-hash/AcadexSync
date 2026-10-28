@@ -242,8 +242,77 @@ export function verifyActivationCompletionToken(token: string): JwtPayload {
 }
 
 /**
+ * Generates a Registration Authorization Token (short-lived, 10 minutes)
+ * Issued upon verifying an email OTP during self-registration.
+ */
+export function signRegistrationToken(
+  payload: { email: string },
+  expiresInSeconds = 600
+): string {
+  return signJwtToken(
+    {
+      userId: 'unregistered',
+      role: AppRole.STUDENT,
+      tokenType: TokenType.REGISTRATION,
+      email: payload.email,
+      purpose: 'registration',
+    },
+    expiresInSeconds,
+    env.JWT_ACCESS_SECRET
+  );
+}
+
+/**
+ * Verifies a Registration Token.
+ */
+export function verifyRegistrationToken(token: string): { email: string } {
+  const payload = verifyJwtToken(token, TokenType.REGISTRATION, env.JWT_ACCESS_SECRET);
+  if (payload.tokenType !== TokenType.REGISTRATION || payload.purpose !== 'registration' || !payload.email) {
+    throw ApiError.unauthorized('Invalid or expired registration token');
+  }
+  return { email: payload.email };
+}
+
+/**
+ * Generates an Email Verification Token for Institutional Activation (short-lived, 10 minutes)
+ */
+export function signEmailVerificationToken(
+  payload: { email: string; purpose?: string; invitationId?: string },
+  expiresInSeconds = 600
+): string {
+  return signJwtToken(
+    {
+      userId: 'pending_verification',
+      role: AppRole.STUDENT,
+      tokenType: TokenType.EMAIL_VERIFICATION,
+      email: payload.email,
+      purpose: payload.purpose || 'email_verification',
+      invitationId: payload.invitationId,
+    },
+    expiresInSeconds,
+    env.ACTIVATION_CODE_SECRET
+  );
+}
+
+/**
+ * Verifies an Email Verification Token.
+ */
+export function verifyEmailVerificationToken(token: string): { email: string; purpose: string; invitationId?: string } {
+  const payload = verifyJwtToken(token, TokenType.EMAIL_VERIFICATION, env.ACTIVATION_CODE_SECRET);
+  if (payload.tokenType !== TokenType.EMAIL_VERIFICATION || !payload.email) {
+    throw ApiError.unauthorized('Invalid or expired email verification token');
+  }
+  return {
+    email: payload.email,
+    purpose: payload.purpose || 'email_verification',
+    invitationId: payload.invitationId,
+  };
+}
+
+/**
  * Hashes a token using SHA-256 for persistent session storage (zero plaintext storage).
  */
 export function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
+

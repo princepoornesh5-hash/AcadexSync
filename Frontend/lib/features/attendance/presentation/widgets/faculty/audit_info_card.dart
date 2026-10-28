@@ -32,13 +32,17 @@ class AuditInfoCard extends StatelessWidget {
               Text(
                 "AUDIT TRAIL",
                 style: AcadexTypography.eyebrow(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.25) : AcadexColors.primaryLight,
+                  color: isDark
+                      ? AcadexColors.primaryHover.withValues(alpha: 0.25)
+                      : AcadexColors.primaryLight,
                   borderRadius: AcadexRadius.borderRadiusFull,
                 ),
                 child: Text(
@@ -51,14 +55,36 @@ class AuditInfoCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          _buildRow("Created By", session.createdBy ?? "System", session.createdAt, isDark),
-          Divider(height: 18, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-          _buildRow("Last Modified", session.lastModifiedBy ?? "System", session.lastModifiedAt, isDark),
+          _buildRow(
+            "Created By",
+            session.createdBy ?? "System",
+            session.createdAt,
+            isDark,
+          ),
+          Divider(
+            height: 18,
+            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          ),
+          _buildRow(
+            "Last Modified",
+            session.lastModifiedBy ?? "System",
+            session.lastModifiedAt,
+            isDark,
+          ),
           if (session.isSubstitution) ...[
-            Divider(height: 18, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+            Divider(
+              height: 18,
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+            ),
             _buildRow("Coverage Type", "Approved Substitution", null, isDark),
-            if (session.substitutionReason != null && session.substitutionReason!.isNotEmpty)
-              _buildRow("Substitution Reason", session.substitutionReason!, null, isDark),
+            if (session.substitutionReason != null &&
+                session.substitutionReason!.isNotEmpty)
+              _buildRow(
+                "Substitution Reason",
+                session.substitutionReason!,
+                null,
+                isDark,
+              ),
           ],
         ],
       ),
@@ -75,7 +101,9 @@ class AuditInfoCard extends StatelessWidget {
             Text(
               label,
               style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
             ),
             const SizedBox(height: 2),

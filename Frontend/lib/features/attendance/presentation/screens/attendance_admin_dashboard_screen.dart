@@ -25,10 +25,16 @@ class AttendanceAdminDashboardScreen extends ConsumerWidget {
     final unreadCount = ref.watch(unreadNotificationCountProvider);
     final alertSummaryAsync = ref.watch(attendanceAlertSummaryProvider);
     final reconciliationAsync = ref.watch(
-      attendanceReconciliationProvider((departmentId: deptId, sectionId: null, dateRange: null)),
+      attendanceReconciliationProvider((
+        departmentId: deptId,
+        sectionId: null,
+        dateRange: null,
+      )),
     );
     final dateRangeSummaryAsync = ref.watch(
-      attendanceDateRangeSummaryProvider(DateRangeSummaryQuery(departmentId: deptId, dateRange: null)),
+      attendanceDateRangeSummaryProvider(
+        DateRangeSummaryQuery(departmentId: deptId, dateRange: null),
+      ),
     );
 
     return Scaffold(
@@ -37,12 +43,20 @@ class AttendanceAdminDashboardScreen extends ConsumerWidget {
         title: Text(
           user?.role == AppRole.hod
               ? 'Department Attendance Administration'
-              : (user?.role == AppRole.superAdmin ? 'Super Admin Attendance System' : 'College Attendance Administration'),
-          style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+              : (user?.role == AppRole.superAdmin
+                    ? 'Super Admin Attendance System'
+                    : 'College Attendance Administration'),
+          style: AcadexTypography.heading3(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
         ),
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         elevation: 0,
-        iconTheme: IconThemeData(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+        iconTheme: IconThemeData(
+          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+        ),
         actions: [
           IconButton(
             icon: const Icon(LucideIcons.fileSpreadsheet),
@@ -84,14 +98,22 @@ class AttendanceAdminDashboardScreen extends ConsumerWidget {
 
             // Summary & Breakdown Cards
             dateRangeSummaryAsync.when(
-              loading: () => const AcadexLoadingState(message: 'Loading institutional attendance data...'),
+              loading: () => const AcadexLoadingState(
+                message: 'Loading institutional attendance data...',
+              ),
               error: (err, _) => AcadexErrorState(
                 message: 'Failed to load attendance metrics: $err',
                 onRetry: () => ref.refresh(
-                  attendanceDateRangeSummaryProvider(DateRangeSummaryQuery(departmentId: deptId, dateRange: null)),
+                  attendanceDateRangeSummaryProvider(
+                    DateRangeSummaryQuery(
+                      departmentId: deptId,
+                      dateRange: null,
+                    ),
+                  ),
                 ),
               ),
-              data: (summary) => _buildBreakdownSections(context, summary, isDark),
+              data: (summary) =>
+                  _buildBreakdownSections(context, summary, isDark),
             ),
           ],
         ),
@@ -109,7 +131,9 @@ class AttendanceAdminDashboardScreen extends ConsumerWidget {
   ) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 900 ? 4 : (constraints.maxWidth > 600 ? 2 : 1);
+        final crossAxisCount = constraints.maxWidth > 900
+            ? 4
+            : (constraints.maxWidth > 600 ? 2 : 1);
         return GridView.count(
           crossAxisCount: crossAxisCount,
           crossAxisSpacing: 12,
@@ -164,7 +188,14 @@ class AttendanceAdminDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color, bool isDark, {VoidCallback? onTap}) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+    bool isDark, {
+    VoidCallback? onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -173,7 +204,9 @@ class AttendanceAdminDashboardScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+          border: Border.all(
+            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,7 +217,13 @@ class AttendanceAdminDashboardScreen extends ConsumerWidget {
                 Icon(icon, size: 18, color: color),
                 const Spacer(),
                 if (onTap != null)
-                  Icon(LucideIcons.arrowUpRight, size: 14, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                  Icon(
+                    LucideIcons.arrowUpRight,
+                    size: 14,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
+                  ),
               ],
             ),
             Column(
@@ -192,11 +231,17 @@ class AttendanceAdminDashboardScreen extends ConsumerWidget {
               children: [
                 Text(
                   value,
-                  style: AcadexTypography.heading2(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                  style: AcadexTypography.heading2(
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ),
                 ),
                 Text(
                   title,
-                  style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                  style: AcadexTypography.caption(
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
+                  ),
                 ),
               ],
             ),
@@ -212,12 +257,21 @@ class AttendanceAdminDashboardScreen extends ConsumerWidget {
         Expanded(
           child: ElevatedButton.icon(
             onPressed: () => context.go('/attendance/reports'),
-            icon: const Icon(LucideIcons.fileSpreadsheet, size: 18, color: Colors.white),
-            label: const Text('Open Report Center', style: TextStyle(color: Colors.white)),
+            icon: const Icon(
+              LucideIcons.fileSpreadsheet,
+              size: 18,
+              color: Colors.white,
+            ),
+            label: const Text(
+              'Open Report Center',
+              style: TextStyle(color: Colors.white),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AcadexColors.primary,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
         ),
@@ -229,7 +283,9 @@ class AttendanceAdminDashboardScreen extends ConsumerWidget {
             label: const Text('Manage Sessions & Audit'),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
         ),
@@ -241,7 +297,9 @@ class AttendanceAdminDashboardScreen extends ConsumerWidget {
             label: const Text('Historical Entry'),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
         ),
@@ -249,12 +307,18 @@ class AttendanceAdminDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBreakdownSections(BuildContext context, dynamic summary, bool isDark) {
+  Widget _buildBreakdownSections(
+    BuildContext context,
+    dynamic summary,
+    bool isDark,
+  ) {
     return Material(
       color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        side: BorderSide(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -263,34 +327,62 @@ class AttendanceAdminDashboardScreen extends ConsumerWidget {
           children: [
             Row(
               children: [
-                const Icon(LucideIcons.barChart3, size: 18, color: AcadexColors.primary),
+                const Icon(
+                  LucideIcons.barChart3,
+                  size: 18,
+                  color: AcadexColors.primary,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Department & Section Overview',
-                  style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                  style: AcadexTypography.heading3(
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Text(
               'Institutional target is 75.0%. Interventions are flagged for any student or class falling below standard.',
-              style: AcadexTypography.bodySmall(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              style: AcadexTypography.bodySmall(
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
             ),
             const SizedBox(height: 16),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: CircleAvatar(backgroundColor: AcadexColors.primary, child: const Icon(LucideIcons.users, color: Colors.white, size: 16)),
+              leading: CircleAvatar(
+                backgroundColor: AcadexColors.primary,
+                child: const Icon(
+                  LucideIcons.users,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
               title: const Text('Interactive Student & Section Drill-Down'),
-              subtitle: const Text('View ranked rosters, recovery trajectories, and detailed attendance analytics.'),
+              subtitle: const Text(
+                'View ranked rosters, recovery trajectories, and detailed attendance analytics.',
+              ),
               trailing: const Icon(LucideIcons.chevronRight),
               onTap: () => context.go('/attendance/analytics'),
             ),
             const Divider(),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: CircleAvatar(backgroundColor: AcadexColors.error, child: const Icon(LucideIcons.alertOctagon, color: Colors.white, size: 16)),
+              leading: CircleAvatar(
+                backgroundColor: AcadexColors.error,
+                child: const Icon(
+                  LucideIcons.alertOctagon,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
               title: const Text('Early-Warning Attendance Alerts'),
-              subtitle: const Text('Automated tracking of drop alerts, shortage risks, and recovery resolutions.'),
+              subtitle: const Text(
+                'Automated tracking of drop alerts, shortage risks, and recovery resolutions.',
+              ),
               trailing: const Icon(LucideIcons.chevronRight),
               onTap: () => context.go('/attendance/alerts'),
             ),

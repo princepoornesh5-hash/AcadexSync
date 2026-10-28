@@ -7,15 +7,14 @@ import '../widgets/academic_period_card.dart';
 class StudentAcademicHistoryScreen extends ConsumerWidget {
   final String? studentId;
 
-  const StudentAcademicHistoryScreen({
-    super.key,
-    this.studentId,
-  });
+  const StudentAcademicHistoryScreen({super.key, this.studentId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final historyAsync = ref.watch(studentAcademicRecordsHistoryProvider(studentId));
+    final historyAsync = ref.watch(
+      studentAcademicRecordsHistoryProvider(studentId),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -57,7 +56,9 @@ class StudentAcademicHistoryScreen extends ConsumerWidget {
                       'Your academic history will be populated as your semesters and enrollments become active.',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+                        color: theme.textTheme.bodyMedium?.color?.withOpacity(
+                          0.7,
+                        ),
                       ),
                     ),
                   ],
@@ -69,7 +70,9 @@ class StudentAcademicHistoryScreen extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(studentAcademicRecordsHistoryProvider(studentId));
-              await ref.read(studentAcademicRecordsHistoryProvider(studentId).future);
+              await ref.read(
+                studentAcademicRecordsHistoryProvider(studentId).future,
+              );
             },
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -86,9 +89,7 @@ class StudentAcademicHistoryScreen extends ConsumerWidget {
             ),
           );
         },
-        loading: () => const Center(
-          child: CircularProgressIndicator(),
-        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -103,18 +104,24 @@ class StudentAcademicHistoryScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 Text(
                   'Failed to load academic history',
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   err.toString(),
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.grey,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
                   onPressed: () {
-                    ref.invalidate(studentAcademicRecordsHistoryProvider(studentId));
+                    ref.invalidate(
+                      studentAcademicRecordsHistoryProvider(studentId),
+                    );
                   },
                   icon: const Icon(Icons.refresh_rounded, size: 18),
                   label: const Text('Try Again'),

@@ -22,7 +22,9 @@ class FacultyDashboard extends ConsumerWidget {
       },
       child: dashboardAsync.when(
         loading: () => const Center(
-          child: AcadexLoadingState.spinner(message: 'Loading faculty dashboard...'),
+          child: AcadexLoadingState.spinner(
+            message: 'Loading faculty dashboard...',
+          ),
         ),
         error: (err, _) => AcadexErrorState.fromError(
           error: err,
@@ -45,9 +47,7 @@ class FacultyDashboard extends ConsumerWidget {
 
               // 3. Role Quick Shortcuts (Immediate 8px gap below hero, matching HOD standard)
               const SizedBox(height: 8),
-              DashboardQuickActionsGrid(
-                quickActions: dashboard.quickActions,
-              ),
+              DashboardQuickActionsGrid(quickActions: dashboard.quickActions),
 
               // 4. Operational Alerts & Pending Actions
               if (dashboard.alerts.isNotEmpty)
@@ -102,7 +102,9 @@ class FacultyDashboard extends ConsumerWidget {
             Text(
               'Faculty Instruction Scope',
               style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
             ),
           ],
@@ -115,7 +117,10 @@ class FacultyDashboard extends ConsumerWidget {
             final itemWidth = (w - (crossAxisCount - 1) * 8) / crossAxisCount;
             final textScale = MediaQuery.textScalerOf(context).scale(1.0);
             final targetCardHeight = 80.0 * textScale.clamp(1.0, 1.6);
-            final childAspectRatio = (itemWidth / targetCardHeight).clamp(0.85, 1.45);
+            final childAspectRatio = (itemWidth / targetCardHeight).clamp(
+              0.85,
+              1.45,
+            );
 
             return GridView.count(
               shrinkWrap: true,
@@ -138,7 +143,9 @@ class FacultyDashboard extends ConsumerWidget {
                   value: '${summary.submissionsAwaitingReview}',
                   subtitle: 'Awaiting grading',
                   icon: LucideIcons.fileSpreadsheet,
-                  color: summary.submissionsAwaitingReview > 0 ? AcadexColors.warning : AcadexColors.inkMuted,
+                  color: summary.submissionsAwaitingReview > 0
+                      ? AcadexColors.warning
+                      : AcadexColors.inkMuted,
                   onTap: () => context.push('/assignments'),
                 ),
                 DashboardCompactTile(
@@ -146,7 +153,9 @@ class FacultyDashboard extends ConsumerWidget {
                   value: '${summary.pendingAttendanceSessions}',
                   subtitle: 'Sessions to complete',
                   icon: LucideIcons.checkSquare,
-                  color: summary.pendingAttendanceSessions > 0 ? AcadexColors.warning : AcadexColors.inkMuted,
+                  color: summary.pendingAttendanceSessions > 0
+                      ? AcadexColors.warning
+                      : AcadexColors.inkMuted,
                   onTap: () => context.push('/attendance'),
                 ),
                 DashboardCompactTile(
@@ -154,7 +163,9 @@ class FacultyDashboard extends ConsumerWidget {
                   value: '${summary.pendingAssessmentMarks}',
                   subtitle: 'Marks pending entry',
                   icon: LucideIcons.penTool,
-                  color: summary.pendingAssessmentMarks > 0 ? AcadexColors.error : AcadexColors.inkMuted,
+                  color: summary.pendingAssessmentMarks > 0
+                      ? AcadexColors.error
+                      : AcadexColors.inkMuted,
                   onTap: () => context.push('/assessments'),
                 ),
               ],
@@ -165,4 +176,3 @@ class FacultyDashboard extends ConsumerWidget {
     );
   }
 }
-

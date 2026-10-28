@@ -7,11 +7,7 @@ class UserRoleBadge extends StatelessWidget {
   final AppRole role;
   final bool isCompact;
 
-  const UserRoleBadge({
-    super.key,
-    required this.role,
-    this.isCompact = false,
-  });
+  const UserRoleBadge({super.key, required this.role, this.isCompact = false});
 
   @override
   Widget build(BuildContext context) {

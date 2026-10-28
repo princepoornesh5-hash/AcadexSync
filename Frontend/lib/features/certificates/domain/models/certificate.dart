@@ -35,12 +35,12 @@ class Certificate {
   final CertificateStatus status;
   final DateTime uploadedAt;
   final DateTime updatedAt;
-  final String uploadedBy;    // uid of the uploader (student)
+  final String uploadedBy; // uid of the uploader (student)
   final String? updatedBy;
 
   // Verification
   final bool isVerified;
-  final String? verifiedBy;   // uid of faculty/admin who verified
+  final String? verifiedBy; // uid of faculty/admin who verified
   final DateTime? verifiedAt;
 
   const Certificate({
@@ -149,7 +149,9 @@ class Certificate {
       semesterId: json['semesterId'] as String?,
       sectionId: json['sectionId'] as String?,
       title: json['title'] as String,
-      type: CertificateTypeExtension.fromValue(json['type'] as String? ?? 'other'),
+      type: CertificateTypeExtension.fromValue(
+        json['type'] as String? ?? 'other',
+      ),
       description: json['description'] as String?,
       issuer: json['issuer'] as String,
       issueDate: DateTime.parse(json['issueDate'] as String),
@@ -158,14 +160,18 @@ class Certificate {
       fileSizeBytes: json['fileSizeBytes'] as int? ?? 0,
       storageFileId: json['storageFileId'] as String,
       storagePath: json['storagePath'] as String,
-      status: CertificateStatusExtension.fromValue(json['status'] as String? ?? 'active'),
+      status: CertificateStatusExtension.fromValue(
+        json['status'] as String? ?? 'active',
+      ),
       uploadedAt: DateTime.parse(json['uploadedAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       uploadedBy: json['uploadedBy'] as String,
       updatedBy: json['updatedBy'] as String?,
       isVerified: json['isVerified'] as bool? ?? false,
       verifiedBy: json['verifiedBy'] as String?,
-      verifiedAt: json['verifiedAt'] != null ? DateTime.parse(json['verifiedAt'] as String) : null,
+      verifiedAt: json['verifiedAt'] != null
+          ? DateTime.parse(json['verifiedAt'] as String)
+          : null,
     );
   }
 
@@ -202,7 +208,8 @@ class Certificate {
 
   String get fileSizeDisplay {
     if (fileSizeBytes < 1024) return '${fileSizeBytes}B';
-    if (fileSizeBytes < 1024 * 1024) return '${(fileSizeBytes / 1024).toStringAsFixed(1)}KB';
+    if (fileSizeBytes < 1024 * 1024)
+      return '${(fileSizeBytes / 1024).toStringAsFixed(1)}KB';
     return '${(fileSizeBytes / (1024 * 1024)).toStringAsFixed(1)}MB';
   }
 }

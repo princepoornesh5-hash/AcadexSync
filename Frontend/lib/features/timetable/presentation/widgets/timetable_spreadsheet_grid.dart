@@ -66,7 +66,10 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
         : TimetableGridTokens.cellHeight;
 
     // Total content width calculation (including borders)
-    final totalWidth = dayColWidth + (periods.length * periodColWidth) + (TimetableGridTokens.hairlineWidth * 2);
+    final totalWidth =
+        dayColWidth +
+        (periods.length * periodColWidth) +
+        (TimetableGridTokens.hairlineWidth * 2);
 
     // Lookups
     final subjectMap = ref.watch(timetableSubjectMapProvider);
@@ -106,7 +109,9 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
                 Divider(
                   height: TimetableGridTokens.hairlineWidth,
                   thickness: TimetableGridTokens.hairlineWidth,
-                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
                 ),
                 _buildDayRow(
                   context,
@@ -152,7 +157,10 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
     required double dayColWidth,
     required double periodColWidth,
   }) {
-    final totalWidth = dayColWidth + (periods.length * periodColWidth) + (TimetableGridTokens.hairlineWidth * 2);
+    final totalWidth =
+        dayColWidth +
+        (periods.length * periodColWidth) +
+        (TimetableGridTokens.hairlineWidth * 2);
     return Container(
       width: totalWidth,
       height: TimetableGridTokens.headerHeight,
@@ -171,7 +179,9 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
             decoration: BoxDecoration(
               border: Border(
                 right: BorderSide(
-                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
                   width: TimetableGridTokens.hairlineWidth,
                 ),
               ),
@@ -182,15 +192,24 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
               children: [
                 Text(
                   'DAY / PERIOD',
-                  style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                  ).copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.5, fontSize: 11),
+                  style:
+                      AcadexTypography.caption(
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
+                      ).copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                        fontSize: 11,
+                      ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'Schedule',
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                    color: isDark
+                        ? AcadexColors.darkInkFaint
+                        : AcadexColors.inkFaint,
                   ).copyWith(fontSize: 10),
                 ),
               ],
@@ -205,7 +224,9 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
               decoration: BoxDecoration(
                 border: Border(
                   right: BorderSide(
-                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
                     width: TimetableGridTokens.hairlineWidth,
                   ),
                 ),
@@ -215,12 +236,19 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                      color: isDark
+                          ? AcadexColors.darkSurface
+                          : AcadexColors.surface,
                       borderRadius: AcadexRadius.borderRadiusXs,
                       border: Border.all(
-                        color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                        color: isDark
+                            ? AcadexColors.darkHairline
+                            : AcadexColors.hairline,
                       ),
                     ),
                     child: Text(
@@ -234,7 +262,9 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
                   Text(
                     '${periods[i].startTime} - ${periods[i].endTime}',
                     style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ).copyWith(fontSize: 10),
                   ),
                 ],
@@ -261,7 +291,10 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
     required Map<String, dynamic> subjectMap,
     required Map<String, dynamic> facultyMap,
   }) {
-    final totalWidth = dayColWidth + (periods.length * periodColWidth) + (TimetableGridTokens.hairlineWidth * 2);
+    final totalWidth =
+        dayColWidth +
+        (periods.length * periodColWidth) +
+        (TimetableGridTokens.hairlineWidth * 2);
     return SizedBox(
       width: totalWidth,
       height: rowHeight,
@@ -274,10 +307,14 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10),
             alignment: Alignment.centerLeft,
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkCanvasSoft.withValues(alpha: 0.6) : AcadexColors.canvasSoft.withValues(alpha: 0.5),
+              color: isDark
+                  ? AcadexColors.darkCanvasSoft.withValues(alpha: 0.6)
+                  : AcadexColors.canvasSoft.withValues(alpha: 0.5),
               border: Border(
                 right: BorderSide(
-                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
                   width: TimetableGridTokens.hairlineWidth,
                 ),
               ),
@@ -344,7 +381,11 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
     required Map<String, dynamic> facultyMap,
   }) {
     // 1. Check for Breaks applying to this Day and Timeslot
-    final breakModel = authoringState.getBreakAtCell(day, period.startTime, period.endTime);
+    final breakModel = authoringState.getBreakAtCell(
+      day,
+      period.startTime,
+      period.endTime,
+    );
     if (breakModel != null) {
       return _buildBreakCell(
         context,
@@ -404,7 +445,8 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
     required Map<String, dynamic> subjectMap,
     required Map<String, dynamic> facultyMap,
   }) {
-    final isSelected = authoringState.selectedEntryId == entry.id ||
+    final isSelected =
+        authoringState.selectedEntryId == entry.id ||
         (authoringState.selectedCell != null &&
             authoringState.selectedCell!.day == entry.dayOfWeek &&
             entry.occupiesPeriod(authoringState.selectedCell!.periodIndex));
@@ -423,7 +465,9 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: isSelected
-            ? (isDark ? AcadexColors.primary.withValues(alpha: 0.25) : AcadexColors.primaryLight)
+            ? (isDark
+                  ? AcadexColors.primary.withValues(alpha: 0.25)
+                  : AcadexColors.primaryLight)
             : (isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface),
         border: Border(
           right: BorderSide(
@@ -435,8 +479,12 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
           left: isSelected
               ? const BorderSide(color: AcadexColors.primary, width: 2)
               : BorderSide(color: sessionColor, width: 3),
-          top: isSelected ? const BorderSide(color: AcadexColors.primary, width: 1.5) : BorderSide.none,
-          bottom: isSelected ? const BorderSide(color: AcadexColors.primary, width: 1.5) : BorderSide.none,
+          top: isSelected
+              ? const BorderSide(color: AcadexColors.primary, width: 1.5)
+              : BorderSide.none,
+          bottom: isSelected
+              ? const BorderSide(color: AcadexColors.primary, width: 1.5)
+              : BorderSide.none,
         ),
       ),
       child: Column(
@@ -479,14 +527,18 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
               Icon(
                 LucideIcons.user,
                 size: 11,
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
                   facultyName,
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -501,25 +553,25 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
               Icon(
                 LucideIcons.mapPin,
                 size: 11,
-                color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                color: isDark
+                    ? AcadexColors.darkInkFaint
+                    : AcadexColors.inkFaint,
               ),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
                   '${entry.roomNumber}${entry.building != null && entry.building!.isNotEmpty ? ' (${entry.building})' : ''}',
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                    color: isDark
+                        ? AcadexColors.darkInkFaint
+                        : AcadexColors.inkFaint,
                   ).copyWith(fontSize: 11),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               if (entry.isMergedHorizontal) ...[
-                Icon(
-                  LucideIcons.arrowRightLeft,
-                  size: 11,
-                  color: sessionColor,
-                ),
+                Icon(LucideIcons.arrowRightLeft, size: 11, color: sessionColor),
               ],
             ],
           ),
@@ -563,8 +615,19 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(subjectName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis),
-                Text(facultyName, style: const TextStyle(fontSize: 11, color: Colors.grey), overflow: TextOverflow.ellipsis),
+                Text(
+                  subjectName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  facultyName,
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
@@ -589,7 +652,8 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
     required double width,
     required bool isLastPeriod,
   }) {
-    final isSelected = authoringState.selectedCell != null &&
+    final isSelected =
+        authoringState.selectedCell != null &&
         authoringState.selectedCell!.day == day &&
         authoringState.selectedCell!.periodIndex == periodIndex;
 
@@ -599,8 +663,10 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
         color: isDragOver
             ? AcadexColors.primaryLight.withValues(alpha: 0.5)
             : (isSelected
-                ? (isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight.withValues(alpha: 0.8))
-                : Colors.transparent),
+                  ? (isDark
+                        ? AcadexColors.primary.withValues(alpha: 0.2)
+                        : AcadexColors.primaryLight.withValues(alpha: 0.8))
+                  : Colors.transparent),
         border: Border(
           right: BorderSide(
             color: isSelected
@@ -608,9 +674,15 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
                 : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
             width: TimetableGridTokens.hairlineWidth,
           ),
-          top: isSelected ? const BorderSide(color: AcadexColors.primary, width: 1.5) : BorderSide.none,
-          bottom: isSelected ? const BorderSide(color: AcadexColors.primary, width: 1.5) : BorderSide.none,
-          left: isSelected ? const BorderSide(color: AcadexColors.primary, width: 1.5) : BorderSide.none,
+          top: isSelected
+              ? const BorderSide(color: AcadexColors.primary, width: 1.5)
+              : BorderSide.none,
+          bottom: isSelected
+              ? const BorderSide(color: AcadexColors.primary, width: 1.5)
+              : BorderSide.none,
+          left: isSelected
+              ? const BorderSide(color: AcadexColors.primary, width: 1.5)
+              : BorderSide.none,
         ),
       ),
       child: Center(
@@ -620,7 +692,9 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
                 size: 14,
                 color: isSelected
                     ? AcadexColors.primary
-                    : (isDark ? AcadexColors.darkInkFaint.withValues(alpha: 0.3) : AcadexColors.inkFaint.withValues(alpha: 0.3)),
+                    : (isDark
+                          ? AcadexColors.darkInkFaint.withValues(alpha: 0.3)
+                          : AcadexColors.inkFaint.withValues(alpha: 0.3)),
               )
             : null,
       ),
@@ -628,18 +702,28 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
 
     if (permissions.canEdit) {
       return DragTarget<TimetableGridEntryModel>(
-        onWillAcceptWithDetails: (details) => !authoringState.isCellOccupied(day, periodIndex),
+        onWillAcceptWithDetails: (details) =>
+            !authoringState.isCellOccupied(day, periodIndex),
         onAcceptWithDetails: (details) {
           final dropped = details.data;
           try {
-            ref.read(timetableAuthoringProvider(authoringState.container!.id).notifier).moveEntry(
-              entryId: dropped.id,
-              targetDay: day,
-              targetStartPeriodIndex: periodIndex,
-            );
+            ref
+                .read(
+                  timetableAuthoringProvider(
+                    authoringState.container!.id,
+                  ).notifier,
+                )
+                .moveEntry(
+                  entryId: dropped.id,
+                  targetDay: day,
+                  targetStartPeriodIndex: periodIndex,
+                );
           } catch (e) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Cannot move class: $e'), backgroundColor: AcadexColors.error),
+              SnackBar(
+                content: Text('Cannot move class: $e'),
+                backgroundColor: AcadexColors.error,
+              ),
             );
           }
         },
@@ -652,10 +736,22 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
               }
             },
             onSecondaryTapUp: (details) {
-              _showEmptyCellContextMenu(context, ref, day, periodIndex, details.globalPosition);
+              _showEmptyCellContextMenu(
+                context,
+                ref,
+                day,
+                periodIndex,
+                details.globalPosition,
+              );
             },
             onLongPressStart: (details) {
-              _showEmptyCellContextMenu(context, ref, day, periodIndex, details.globalPosition);
+              _showEmptyCellContextMenu(
+                context,
+                ref,
+                day,
+                periodIndex,
+                details.globalPosition,
+              );
             },
             child: cellBody(isDragOver),
           );
@@ -777,7 +873,12 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
 
     final selected = await showMenu<String>(
       context: context,
-      position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx + 1, position.dy + 1),
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy,
+        position.dx + 1,
+        position.dy + 1,
+      ),
       items: [
         const PopupMenuItem(
           value: 'edit',
@@ -794,7 +895,11 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
             value: 'merge',
             child: Row(
               children: [
-                Icon(LucideIcons.arrowRight, size: 16, color: AcadexColors.primary),
+                Icon(
+                  LucideIcons.arrowRight,
+                  size: 16,
+                  color: AcadexColors.primary,
+                ),
                 SizedBox(width: 8),
                 Text('Merge Right (+1 Period)'),
               ],
@@ -805,7 +910,11 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
             value: 'split',
             child: Row(
               children: [
-                Icon(LucideIcons.split, size: 16, color: AcadexColors.warningDark),
+                Icon(
+                  LucideIcons.split,
+                  size: 16,
+                  color: AcadexColors.warningDark,
+                ),
                 SizedBox(width: 8),
                 Text('Split into 1-Period Slots'),
               ],
@@ -836,7 +945,9 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
     );
 
     if (selected == null) return;
-    final notifier = ref.read(timetableAuthoringProvider(authoringState.container!.id).notifier);
+    final notifier = ref.read(
+      timetableAuthoringProvider(authoringState.container!.id).notifier,
+    );
 
     switch (selected) {
       case 'edit':
@@ -878,7 +989,12 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
 
     final selected = await showMenu<String>(
       context: context,
-      position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx + 1, position.dy + 1),
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy,
+        position.dx + 1,
+        position.dy + 1,
+      ),
       items: const [
         PopupMenuItem(
           value: 'add_class',
@@ -894,7 +1010,11 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
           value: 'add_break',
           child: Row(
             children: [
-              Icon(LucideIcons.coffee, size: 16, color: AcadexColors.warningDark),
+              Icon(
+                LucideIcons.coffee,
+                size: 16,
+                color: AcadexColors.warningDark,
+              ),
               SizedBox(width: 8),
               Text('Add Break at this Slot'),
             ],
@@ -930,7 +1050,12 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
 
     final selected = await showMenu<String>(
       context: context,
-      position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx + 1, position.dy + 1),
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy,
+        position.dx + 1,
+        position.dy + 1,
+      ),
       items: const [
         PopupMenuItem(
           value: 'edit',
@@ -962,11 +1087,19 @@ class TimetableSpreadsheetGrid extends ConsumerWidget {
         _showQuickBreakDialog(context, ref, existingBreak: breakModel);
       }
     } else if (selected == 'delete') {
-      ref.read(timetableAuthoringProvider(authoringState.container!.id).notifier).deleteBreak(breakModel.id);
+      ref
+          .read(
+            timetableAuthoringProvider(authoringState.container!.id).notifier,
+          )
+          .deleteBreak(breakModel.id);
     }
   }
 
-  void _showMoveClassDialog(BuildContext context, WidgetRef ref, TimetableGridEntryModel entry) {
+  void _showMoveClassDialog(
+    BuildContext context,
+    WidgetRef ref,
+    TimetableGridEntryModel entry,
+  ) {
     showDialog<void>(
       context: context,
       builder: (_) => MoveClassDialog(
@@ -1069,24 +1202,34 @@ class _MoveClassDialogState extends ConsumerState<MoveClassDialog> {
 
   void _validateTarget(TimetableAuthoringState state) {
     final targetPeriods = state.getPeriodsForDay(_targetDay);
-    final startPeriod = targetPeriods.where((p) => p.index == _targetPeriodIndex).firstOrNull;
+    final startPeriod = targetPeriods
+        .where((p) => p.index == _targetPeriodIndex)
+        .firstOrNull;
     final endPeriodIndex = _targetPeriodIndex + widget.entry.periodSpan - 1;
-    final endPeriod = targetPeriods.where((p) => p.index == endPeriodIndex).firstOrNull;
+    final endPeriod = targetPeriods
+        .where((p) => p.index == endPeriodIndex)
+        .firstOrNull;
 
     if (startPeriod == null || endPeriod == null) {
-      _conflictError = 'Target periods do not exist on ${_targetDay.displayName}.';
+      _conflictError =
+          'Target periods do not exist on ${_targetDay.displayName}.';
       return;
     }
 
     for (int pIdx = _targetPeriodIndex; pIdx <= endPeriodIndex; pIdx++) {
       final occ = state.getEntryAtCell(_targetDay, pIdx);
       if (occ != null && occ.id != widget.entry.id) {
-        _conflictError = 'Period $pIdx is already occupied on ${_targetDay.displayName}.';
+        _conflictError =
+            'Period $pIdx is already occupied on ${_targetDay.displayName}.';
         return;
       }
     }
 
-    final breakAtTarget = state.getBreakAtCell(_targetDay, startPeriod.startTime, endPeriod.endTime);
+    final breakAtTarget = state.getBreakAtCell(
+      _targetDay,
+      startPeriod.startTime,
+      endPeriod.endTime,
+    );
     if (breakAtTarget != null) {
       _conflictError = 'Overlaps with break "${breakAtTarget.name}".';
       return;
@@ -1115,19 +1258,30 @@ class _MoveClassDialogState extends ConsumerState<MoveClassDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Select destination day and starting period:', style: AcadexTypography.bodySmall()),
+          Text(
+            'Select destination day and starting period:',
+            style: AcadexTypography.bodySmall(),
+          ),
           const SizedBox(height: 16),
           // Day Dropdown
           DropdownButtonFormField<TimetableDay>(
             value: _targetDay,
-            decoration: const InputDecoration(labelText: 'Target Day', prefixIcon: Icon(LucideIcons.calendar)),
-            items: activeDays.map((d) => DropdownMenuItem(value: d, child: Text(d.displayName))).toList(),
+            decoration: const InputDecoration(
+              labelText: 'Target Day',
+              prefixIcon: Icon(LucideIcons.calendar),
+            ),
+            items: activeDays
+                .map(
+                  (d) => DropdownMenuItem(value: d, child: Text(d.displayName)),
+                )
+                .toList(),
             onChanged: (val) {
               if (val != null) {
                 setState(() {
                   _targetDay = val;
                   final newPeriods = state.getPeriodsForDay(val);
-                  if (newPeriods.isNotEmpty && !newPeriods.any((p) => p.index == _targetPeriodIndex)) {
+                  if (newPeriods.isNotEmpty &&
+                      !newPeriods.any((p) => p.index == _targetPeriodIndex)) {
                     _targetPeriodIndex = newPeriods.first.index;
                   }
                 });
@@ -1137,9 +1291,21 @@ class _MoveClassDialogState extends ConsumerState<MoveClassDialog> {
           const SizedBox(height: 12),
           // Period Dropdown
           DropdownButtonFormField<int>(
-            value: periods.any((p) => p.index == _targetPeriodIndex) ? _targetPeriodIndex : (periods.isNotEmpty ? periods.first.index : null),
-            decoration: const InputDecoration(labelText: 'Starting Period', prefixIcon: Icon(LucideIcons.clock)),
-            items: periods.map((p) => DropdownMenuItem(value: p.index, child: Text('${p.name} (${p.startTime}–${p.endTime})'))).toList(),
+            value: periods.any((p) => p.index == _targetPeriodIndex)
+                ? _targetPeriodIndex
+                : (periods.isNotEmpty ? periods.first.index : null),
+            decoration: const InputDecoration(
+              labelText: 'Starting Period',
+              prefixIcon: Icon(LucideIcons.clock),
+            ),
+            items: periods
+                .map(
+                  (p) => DropdownMenuItem(
+                    value: p.index,
+                    child: Text('${p.name} (${p.startTime}–${p.endTime})'),
+                  ),
+                )
+                .toList(),
             onChanged: (val) {
               if (val != null) setState(() => _targetPeriodIndex = val);
             },
@@ -1148,12 +1314,27 @@ class _MoveClassDialogState extends ConsumerState<MoveClassDialog> {
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: AcadexColors.errorLight, borderRadius: BorderRadius.circular(6)),
+              decoration: BoxDecoration(
+                color: AcadexColors.errorLight,
+                borderRadius: BorderRadius.circular(6),
+              ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.alertTriangle, size: 16, color: AcadexColors.error),
+                  const Icon(
+                    LucideIcons.alertTriangle,
+                    size: 16,
+                    color: AcadexColors.error,
+                  ),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(_conflictError!, style: const TextStyle(color: AcadexColors.errorDark, fontSize: 12))),
+                  Expanded(
+                    child: Text(
+                      _conflictError!,
+                      style: const TextStyle(
+                        color: AcadexColors.errorDark,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -1161,20 +1342,32 @@ class _MoveClassDialogState extends ConsumerState<MoveClassDialog> {
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
         ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AcadexColors.primary,
+          ),
           onPressed: _conflictError != null
               ? null
               : () {
                   Navigator.of(context).pop();
-                  ref.read(timetableAuthoringProvider(widget.timetableId).notifier).moveEntry(
-                    entryId: widget.entry.id,
-                    targetDay: _targetDay,
-                    targetStartPeriodIndex: _targetPeriodIndex,
-                  );
+                  ref
+                      .read(
+                        timetableAuthoringProvider(widget.timetableId).notifier,
+                      )
+                      .moveEntry(
+                        entryId: widget.entry.id,
+                        targetDay: _targetDay,
+                        targetStartPeriodIndex: _targetPeriodIndex,
+                      );
                 },
-          child: const Text('Move Class', style: TextStyle(color: Colors.white)),
+          child: const Text(
+            'Move Class',
+            style: TextStyle(color: Colors.white),
+          ),
         ),
       ],
     );
@@ -1199,10 +1392,12 @@ class TimetableQuickBreakDialog extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<TimetableQuickBreakDialog> createState() => _TimetableQuickBreakDialogState();
+  ConsumerState<TimetableQuickBreakDialog> createState() =>
+      _TimetableQuickBreakDialogState();
 }
 
-class _TimetableQuickBreakDialogState extends ConsumerState<TimetableQuickBreakDialog> {
+class _TimetableQuickBreakDialogState
+    extends ConsumerState<TimetableQuickBreakDialog> {
   late TextEditingController _nameController;
   late TimetableBreakType _breakType;
   late String _startTime;
@@ -1219,7 +1414,17 @@ class _TimetableQuickBreakDialogState extends ConsumerState<TimetableQuickBreakD
     _breakType = b?.breakType ?? TimetableBreakType.lunch;
     _startTime = b?.startTime ?? '12:00';
     _endTime = b?.endTime ?? '13:00';
-    _appliesToDays = b != null ? List.from(b.appliesToDays) : (widget.day != null ? [widget.day!] : [TimetableDay.monday, TimetableDay.tuesday, TimetableDay.wednesday, TimetableDay.thursday, TimetableDay.friday]);
+    _appliesToDays = b != null
+        ? List.from(b.appliesToDays)
+        : (widget.day != null
+              ? [widget.day!]
+              : [
+                  TimetableDay.monday,
+                  TimetableDay.tuesday,
+                  TimetableDay.wednesday,
+                  TimetableDay.thursday,
+                  TimetableDay.friday,
+                ]);
   }
 
   @override
@@ -1236,7 +1441,11 @@ class _TimetableQuickBreakDialogState extends ConsumerState<TimetableQuickBreakD
     return AlertDialog(
       title: Row(
         children: [
-          const Icon(LucideIcons.coffee, size: 20, color: AcadexColors.warningDark),
+          const Icon(
+            LucideIcons.coffee,
+            size: 20,
+            color: AcadexColors.warningDark,
+          ),
           const SizedBox(width: 8),
           Text(_isEditing ? 'Edit Break' : 'Add Break'),
         ],
@@ -1248,13 +1457,24 @@ class _TimetableQuickBreakDialogState extends ConsumerState<TimetableQuickBreakD
           children: [
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Break Name *', prefixIcon: Icon(LucideIcons.tag)),
+              decoration: const InputDecoration(
+                labelText: 'Break Name *',
+                prefixIcon: Icon(LucideIcons.tag),
+              ),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<TimetableBreakType>(
               value: _breakType,
-              decoration: const InputDecoration(labelText: 'Break Type', prefixIcon: Icon(LucideIcons.layoutGrid)),
-              items: TimetableBreakType.values.map((t) => DropdownMenuItem(value: t, child: Text(t.displayName))).toList(),
+              decoration: const InputDecoration(
+                labelText: 'Break Type',
+                prefixIcon: Icon(LucideIcons.layoutGrid),
+              ),
+              items: TimetableBreakType.values
+                  .map(
+                    (t) =>
+                        DropdownMenuItem(value: t, child: Text(t.displayName)),
+                  )
+                  .toList(),
               onChanged: (val) {
                 if (val != null) setState(() => _breakType = val);
               },
@@ -1265,7 +1485,9 @@ class _TimetableQuickBreakDialogState extends ConsumerState<TimetableQuickBreakD
                 Expanded(
                   child: TextFormField(
                     initialValue: _startTime,
-                    decoration: const InputDecoration(labelText: 'Start Time (HH:MM)'),
+                    decoration: const InputDecoration(
+                      labelText: 'Start Time (HH:MM)',
+                    ),
                     onChanged: (val) => _startTime = val.trim(),
                   ),
                 ),
@@ -1273,14 +1495,21 @@ class _TimetableQuickBreakDialogState extends ConsumerState<TimetableQuickBreakD
                 Expanded(
                   child: TextFormField(
                     initialValue: _endTime,
-                    decoration: const InputDecoration(labelText: 'End Time (HH:MM)'),
+                    decoration: const InputDecoration(
+                      labelText: 'End Time (HH:MM)',
+                    ),
                     onChanged: (val) => _endTime = val.trim(),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            Text('Applicable Days:', style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600)),
+            Text(
+              'Applicable Days:',
+              style: AcadexTypography.caption().copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 6),
             Wrap(
               spacing: 6,
@@ -1309,37 +1538,57 @@ class _TimetableQuickBreakDialogState extends ConsumerState<TimetableQuickBreakD
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              ref.read(timetableAuthoringProvider(widget.timetableId).notifier).deleteBreak(widget.existingBreak!.id);
+              ref
+                  .read(timetableAuthoringProvider(widget.timetableId).notifier)
+                  .deleteBreak(widget.existingBreak!.id);
             },
-            child: const Text('Delete Break', style: TextStyle(color: AcadexColors.error)),
+            child: const Text(
+              'Delete Break',
+              style: TextStyle(color: AcadexColors.error),
+            ),
           ),
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
         ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AcadexColors.primary,
+          ),
           onPressed: () {
-            if (_nameController.text.trim().isEmpty || _appliesToDays.isEmpty) return;
+            if (_nameController.text.trim().isEmpty || _appliesToDays.isEmpty)
+              return;
             Navigator.of(context).pop();
-            final notifier = ref.read(timetableAuthoringProvider(widget.timetableId).notifier);
+            final notifier = ref.read(
+              timetableAuthoringProvider(widget.timetableId).notifier,
+            );
             if (_isEditing) {
-              notifier.updateBreak(widget.existingBreak!.copyWith(
-                name: _nameController.text.trim(),
-                breakType: _breakType,
-                startTime: _startTime,
-                endTime: _endTime,
-                appliesToDays: _appliesToDays,
-              ));
+              notifier.updateBreak(
+                widget.existingBreak!.copyWith(
+                  name: _nameController.text.trim(),
+                  breakType: _breakType,
+                  startTime: _startTime,
+                  endTime: _endTime,
+                  appliesToDays: _appliesToDays,
+                ),
+              );
             } else {
-              notifier.addBreak(TimetableBreakModel(
-                id: const Uuid().v4(),
-                name: _nameController.text.trim(),
-                breakType: _breakType,
-                startTime: _startTime,
-                endTime: _endTime,
-                appliesToDays: _appliesToDays,
-              ));
+              notifier.addBreak(
+                TimetableBreakModel(
+                  id: const Uuid().v4(),
+                  name: _nameController.text.trim(),
+                  breakType: _breakType,
+                  startTime: _startTime,
+                  endTime: _endTime,
+                  appliesToDays: _appliesToDays,
+                ),
+              );
             }
           },
-          child: Text(_isEditing ? 'Save Changes' : 'Add Break', style: const TextStyle(color: Colors.white)),
+          child: Text(
+            _isEditing ? 'Save Changes' : 'Add Break',
+            style: const TextStyle(color: Colors.white),
+          ),
         ),
       ],
     );

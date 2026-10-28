@@ -6,7 +6,8 @@ import '../../../../core/presentation/navigation/acadex_nav_item.dart';
 import '../../domain/repositories/search_repository.dart';
 
 class MockSearchRepository implements SearchRepository {
-  Future<void> _delay() async => await Future.delayed(const Duration(milliseconds: 300));
+  Future<void> _delay() async =>
+      await Future.delayed(const Duration(milliseconds: 300));
 
   @override
   Future<List<SearchResult>> search(
@@ -16,7 +17,7 @@ class MockSearchRepository implements SearchRepository {
     int limit = 10,
   }) async {
     await _delay();
-    
+
     if (query.trim().isEmpty) return [];
 
     final lowercaseQuery = query.toLowerCase().trim();
@@ -24,7 +25,10 @@ class MockSearchRepository implements SearchRepository {
 
     // --- Search Navigation Destinations ---
     if (filterType == null || filterType == SearchResultType.navigation) {
-      final navResults = AcadexNavigationService.searchNavigationDestinations(query, currentUser.role);
+      final navResults = AcadexNavigationService.searchNavigationDestinations(
+        query,
+        currentUser.role,
+      );
       results.addAll(navResults);
     }
 
@@ -32,22 +36,31 @@ class MockSearchRepository implements SearchRepository {
     if (filterType == null || filterType == SearchResultType.student) {
       final students = await mockAcademicRepo.getStudents();
       for (var student in students) {
-        if (_matches(student.name, lowercaseQuery) || _matches(student.rollNumber, lowercaseQuery)) {
+        if (_matches(student.name, lowercaseQuery) ||
+            _matches(student.rollNumber, lowercaseQuery)) {
           // Role-based filtering for students:
           bool canView = true;
-          if (currentUser.role == AppRole.student && student.id != currentUser.id) { // Mock using student.id as userId
+          if (currentUser.role == AppRole.student &&
+              student.id != currentUser.id) {
+            // Mock using student.id as userId
             canView = false;
           }
-          
+
           if (canView) {
-            results.add(SearchResult(
-              id: student.id,
-              title: student.name,
-              subtitle: 'Roll No: ${student.rollNumber}',
-              type: SearchResultType.student,
-              destinationRoute: '/academics/students/${student.id}',
-              relevanceScore: _calculateScore(student.name, student.rollNumber, lowercaseQuery),
-            ));
+            results.add(
+              SearchResult(
+                id: student.id,
+                title: student.name,
+                subtitle: 'Roll No: ${student.rollNumber}',
+                type: SearchResultType.student,
+                destinationRoute: '/academics/students/${student.id}',
+                relevanceScore: _calculateScore(
+                  student.name,
+                  student.rollNumber,
+                  lowercaseQuery,
+                ),
+              ),
+            );
           }
         }
       }
@@ -57,15 +70,22 @@ class MockSearchRepository implements SearchRepository {
     if (filterType == null || filterType == SearchResultType.faculty) {
       final faculties = await mockAcademicRepo.getFaculty();
       for (var faculty in faculties) {
-        if (_matches(faculty.name, lowercaseQuery) || _matches(faculty.employeeId, lowercaseQuery)) {
-          results.add(SearchResult(
-            id: faculty.id,
-            title: faculty.name,
-            subtitle: 'Faculty ID: ${faculty.employeeId}',
-            type: SearchResultType.faculty,
-            destinationRoute: '/academics/faculty/${faculty.id}',
-            relevanceScore: _calculateScore(faculty.name, faculty.employeeId, lowercaseQuery),
-          ));
+        if (_matches(faculty.name, lowercaseQuery) ||
+            _matches(faculty.employeeId, lowercaseQuery)) {
+          results.add(
+            SearchResult(
+              id: faculty.id,
+              title: faculty.name,
+              subtitle: 'Faculty ID: ${faculty.employeeId}',
+              type: SearchResultType.faculty,
+              destinationRoute: '/academics/faculty/${faculty.id}',
+              relevanceScore: _calculateScore(
+                faculty.name,
+                faculty.employeeId,
+                lowercaseQuery,
+              ),
+            ),
+          );
         }
       }
     }
@@ -74,32 +94,46 @@ class MockSearchRepository implements SearchRepository {
     if (filterType == null || filterType == SearchResultType.subject) {
       final subjects = await mockAcademicRepo.getSubjects();
       for (var subject in subjects) {
-        if (_matches(subject.name, lowercaseQuery) || _matches(subject.code, lowercaseQuery)) {
-          results.add(SearchResult(
-            id: subject.id,
-            title: subject.name,
-            subtitle: 'Subject Code: ${subject.code}',
-            type: SearchResultType.subject,
-            destinationRoute: '/academics/subjects/${subject.id}',
-            relevanceScore: _calculateScore(subject.name, subject.code, lowercaseQuery),
-          ));
+        if (_matches(subject.name, lowercaseQuery) ||
+            _matches(subject.code, lowercaseQuery)) {
+          results.add(
+            SearchResult(
+              id: subject.id,
+              title: subject.name,
+              subtitle: 'Subject Code: ${subject.code}',
+              type: SearchResultType.subject,
+              destinationRoute: '/academics/subjects/${subject.id}',
+              relevanceScore: _calculateScore(
+                subject.name,
+                subject.code,
+                lowercaseQuery,
+              ),
+            ),
+          );
         }
       }
     }
-    
+
     // --- Search Departments ---
     if (filterType == null || filterType == SearchResultType.department) {
       final departments = await mockAcademicRepo.getDepartments();
       for (var dept in departments) {
-        if (_matches(dept.name, lowercaseQuery) || _matches(dept.code, lowercaseQuery)) {
-          results.add(SearchResult(
-            id: dept.id,
-            title: dept.name,
-            subtitle: 'Department Code: ${dept.code}',
-            type: SearchResultType.department,
-            destinationRoute: '/academics/departments/${dept.id}',
-            relevanceScore: _calculateScore(dept.name, dept.code, lowercaseQuery),
-          ));
+        if (_matches(dept.name, lowercaseQuery) ||
+            _matches(dept.code, lowercaseQuery)) {
+          results.add(
+            SearchResult(
+              id: dept.id,
+              title: dept.name,
+              subtitle: 'Department Code: ${dept.code}',
+              type: SearchResultType.department,
+              destinationRoute: '/academics/departments/${dept.id}',
+              relevanceScore: _calculateScore(
+                dept.name,
+                dept.code,
+                lowercaseQuery,
+              ),
+            ),
+          );
         }
       }
     }
@@ -116,7 +150,7 @@ class MockSearchRepository implements SearchRepository {
   int _calculateScore(String primary, String secondary, String query) {
     primary = primary.toLowerCase();
     secondary = secondary.toLowerCase();
-    
+
     if (primary == query || secondary == query) return 100;
     if (primary.startsWith(query) || secondary.startsWith(query)) return 50;
     return 10;

@@ -53,11 +53,13 @@ class AiMarkdownView extends StatelessWidget {
           codeLines.add(lines[i]);
           i++;
         }
-        blocks.add(_MdBlock(
-          type: _BlockType.code,
-          content: codeLines.join('\n'),
-          extra: lang.isEmpty ? 'code' : lang,
-        ));
+        blocks.add(
+          _MdBlock(
+            type: _BlockType.code,
+            content: codeLines.join('\n'),
+            extra: lang.isEmpty ? 'code' : lang,
+          ),
+        );
         if (i < lines.length && lines[i].trim().startsWith('```')) {
           i++;
         }
@@ -66,21 +68,27 @@ class AiMarkdownView extends StatelessWidget {
 
       // Heading 1
       if (line.startsWith('# ')) {
-        blocks.add(_MdBlock(type: _BlockType.h1, content: line.substring(2).trim()));
+        blocks.add(
+          _MdBlock(type: _BlockType.h1, content: line.substring(2).trim()),
+        );
         i++;
         continue;
       }
 
       // Heading 2
       if (line.startsWith('## ')) {
-        blocks.add(_MdBlock(type: _BlockType.h2, content: line.substring(3).trim()));
+        blocks.add(
+          _MdBlock(type: _BlockType.h2, content: line.substring(3).trim()),
+        );
         i++;
         continue;
       }
 
       // Heading 3
       if (line.startsWith('### ')) {
-        blocks.add(_MdBlock(type: _BlockType.h3, content: line.substring(4).trim()));
+        blocks.add(
+          _MdBlock(type: _BlockType.h3, content: line.substring(4).trim()),
+        );
         i++;
         continue;
       }
@@ -98,7 +106,9 @@ class AiMarkdownView extends StatelessWidget {
         final match = RegExp(r'^\s*(\d+)\.\s+(.*)').firstMatch(line);
         final numStr = match?.group(1) ?? '1';
         final content = match?.group(2) ?? '';
-        blocks.add(_MdBlock(type: _BlockType.numbered, content: content, extra: numStr));
+        blocks.add(
+          _MdBlock(type: _BlockType.numbered, content: content, extra: numStr),
+        );
         i++;
         continue;
       }
@@ -124,7 +134,9 @@ class AiMarkdownView extends StatelessWidget {
         paragraphLines.add(lines[i]);
         i++;
       }
-      blocks.add(_MdBlock(type: _BlockType.paragraph, content: paragraphLines.join(' ')));
+      blocks.add(
+        _MdBlock(type: _BlockType.paragraph, content: paragraphLines.join(' ')),
+      );
     }
 
     return blocks;
@@ -264,11 +276,7 @@ class AiMarkdownView extends StatelessWidget {
             TextSpan(
               children: _parseInlineSpans(
                 block.content,
-                TextStyle(
-                  fontSize: fontSize,
-                  color: baseColor,
-                  height: 1.6,
-                ),
+                TextStyle(fontSize: fontSize, color: baseColor, height: 1.6),
               ),
             ),
           ),
@@ -283,53 +291,60 @@ class AiMarkdownView extends StatelessWidget {
 
     for (final match in regex.allMatches(text)) {
       if (match.start > lastMatchEnd) {
-        spans.add(TextSpan(
-          text: text.substring(lastMatchEnd, match.start),
-          style: baseStyle,
-        ));
+        spans.add(
+          TextSpan(
+            text: text.substring(lastMatchEnd, match.start),
+            style: baseStyle,
+          ),
+        );
       }
 
       if (match.group(2) != null) {
-        spans.add(TextSpan(
-          text: match.group(2),
-          style: baseStyle.copyWith(fontWeight: FontWeight.bold),
-        ));
+        spans.add(
+          TextSpan(
+            text: match.group(2),
+            style: baseStyle.copyWith(fontWeight: FontWeight.bold),
+          ),
+        );
       } else if (match.group(3) != null) {
-        spans.add(TextSpan(
-          text: match.group(3),
-          style: baseStyle.copyWith(fontStyle: FontStyle.italic),
-        ));
+        spans.add(
+          TextSpan(
+            text: match.group(3),
+            style: baseStyle.copyWith(fontStyle: FontStyle.italic),
+          ),
+        );
       } else if (match.group(4) != null) {
-        spans.add(WidgetSpan(
-          alignment: PlaceholderAlignment.middle,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-            margin: const EdgeInsets.symmetric(horizontal: 2),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: Text(
-              match.group(4)!,
-              style: GoogleFonts.firaCode(
-                fontSize: baseStyle.fontSize != null ? baseStyle.fontSize! * 0.9 : 13,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF0F172A),
+        spans.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Text(
+                match.group(4)!,
+                style: GoogleFonts.firaCode(
+                  fontSize: baseStyle.fontSize != null
+                      ? baseStyle.fontSize! * 0.9
+                      : 13,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF0F172A),
+                ),
               ),
             ),
           ),
-        ));
+        );
       }
 
       lastMatchEnd = match.end;
     }
 
     if (lastMatchEnd < text.length) {
-      spans.add(TextSpan(
-        text: text.substring(lastMatchEnd),
-        style: baseStyle,
-      ));
+      spans.add(TextSpan(text: text.substring(lastMatchEnd), style: baseStyle));
     }
 
     return spans;
@@ -343,21 +358,14 @@ class _MdBlock {
   final String content;
   final String? extra;
 
-  _MdBlock({
-    required this.type,
-    required this.content,
-    this.extra,
-  });
+  _MdBlock({required this.type, required this.content, this.extra});
 }
 
 class _CodeBlockWidget extends StatefulWidget {
   final String code;
   final String language;
 
-  const _CodeBlockWidget({
-    required this.code,
-    required this.language,
-  });
+  const _CodeBlockWidget({required this.code, required this.language});
 
   @override
   State<_CodeBlockWidget> createState() => _CodeBlockWidgetState();
@@ -407,14 +415,19 @@ class _CodeBlockWidgetState extends State<_CodeBlockWidget> {
                   onTap: _copyToClipboard,
                   borderRadius: BorderRadius.circular(4),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 3,
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           _copied ? LucideIcons.check : LucideIcons.copy,
                           size: 13,
-                          color: _copied ? AcadexColors.success : const Color(0xFF94A3B8),
+                          color: _copied
+                              ? AcadexColors.success
+                              : const Color(0xFF94A3B8),
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -422,7 +435,9 @@ class _CodeBlockWidgetState extends State<_CodeBlockWidget> {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
-                            color: _copied ? AcadexColors.success : const Color(0xFF94A3B8),
+                            color: _copied
+                                ? AcadexColors.success
+                                : const Color(0xFF94A3B8),
                           ),
                         ),
                       ],

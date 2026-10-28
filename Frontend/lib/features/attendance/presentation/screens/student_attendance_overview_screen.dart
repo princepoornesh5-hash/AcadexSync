@@ -28,7 +28,8 @@ class StudentAttendanceOverviewScreen extends ConsumerWidget {
         maxWidth: AcadexLayout.contentMaxWidth,
         header: AcadexSliverPageHeader(
           title: "My Attendance",
-          subtitle: "Track your semester standing, subject metrics, and absence records.",
+          subtitle:
+              "Track your semester standing, subject metrics, and absence records.",
           actions: [
             AcadexButton(
               label: "Attendance History",
@@ -46,115 +47,138 @@ class StudentAttendanceOverviewScreen extends ConsumerWidget {
           // Overall Gauge Card
           SliverToBoxAdapter(
             child: overallPercAsync.when(
-                  loading: () => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(32),
-                      child: AcadexLoadingState(message: "Calculating overall attendance standing..."),
-                    ),
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: AcadexLoadingState(
+                    message: "Calculating overall attendance standing...",
                   ),
-                  error: (err, stack) => AcadexErrorState(
-                    message: "Unable to load attendance summary: $err",
-                    onRetry: () => ref.refresh(studentSubjectAttendanceProvider),
-                  ),
-                  data: (perc) {
-                    return subjectsAsync.when(
-                      loading: () => const SizedBox.shrink(),
-                      error: (_, _) => const SizedBox.shrink(),
-                      data: (subs) {
-                        int totalAttended = 0;
-                        int totalMissed = 0;
-                        for (final s in subs) {
-                          totalAttended += s.attendedClasses;
-                          totalMissed += s.missedClasses;
-                        }
-                        return OverallAttendanceCard(
-                          percentage: perc,
-                          classesAttended: totalAttended,
-                          classesMissed: totalMissed,
-                          subjectsCount: subs.length,
-                        );
-                      },
+                ),
+              ),
+              error: (err, stack) => AcadexErrorState(
+                message: "Unable to load attendance summary: $err",
+                onRetry: () => ref.refresh(studentSubjectAttendanceProvider),
+              ),
+              data: (perc) {
+                return subjectsAsync.when(
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, _) => const SizedBox.shrink(),
+                  data: (subs) {
+                    int totalAttended = 0;
+                    int totalMissed = 0;
+                    for (final s in subs) {
+                      totalAttended += s.attendedClasses;
+                      totalMissed += s.missedClasses;
+                    }
+                    return OverallAttendanceCard(
+                      percentage: perc,
+                      classesAttended: totalAttended,
+                      classesMissed: totalMissed,
+                      subjectsCount: subs.length,
                     );
                   },
-                ),
+                );
+              },
             ),
+          ),
           const SliverToBoxAdapter(child: SizedBox(height: 32)),
 
-          const SliverToBoxAdapter(child: AcadexSectionHeader(title: "Course Subjects")),
+          const SliverToBoxAdapter(
+            child: AcadexSectionHeader(title: "Course Subjects"),
+          ),
           const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
           // Subject List / Grid
           SliverToBoxAdapter(
             child: subjectsAsync.when(
-                  loading: () => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(24),
-                      child: CircularProgressIndicator(),
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              error: (err, stack) => Center(
+                child: Text(
+                  "Error: $err",
+                  style: TextStyle(color: AcadexColors.error),
+                ),
+              ),
+              data: (subjects) {
+                if (subjects.isEmpty) {
+                  return const Center(
+                    child: AcadexEmptyState(
+                      title: "No Course Subjects Found",
+                      subtitle:
+                          "You are not currently enrolled in any active course subjects.",
+                      icon: LucideIcons.bookX,
                     ),
-                  ),
-                  error: (err, stack) => Center(
-                    child: Text("Error: $err", style: TextStyle(color: AcadexColors.error)),
-                  ),
-                  data: (subjects) {
-                    if (subjects.isEmpty) {
-                      return const Center(
-                        child: AcadexEmptyState(
-                          title: "No Course Subjects Found",
-                          subtitle: "You are not currently enrolled in any active course subjects.",
-                          icon: LucideIcons.bookX,
-                        ),
+                  );
+                }
+
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    final width = constraints.maxWidth;
+                    final crossAxisCount = width > 900 ? 2 : 1;
+
+                    if (crossAxisCount == 1) {
+                      return ListView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        itemCount: subjects.length,
+                        itemBuilder: (context, index) {
+                          final subject = subjects[index];
+                          return SubjectAttendanceCard(
+                            subject: subject,
+                            onTap: () {
+                              ref
+                                  .read(selectedHistorySubjectProvider.notifier)
+                                  .state = subject
+                                  .subjectId;
+                              ref
+                                      .read(
+                                        selectedHistoryMonthProvider.notifier,
+                                      )
+                                      .state =
+                                  null;
+                              context.push('/attendance/student/history');
+                            },
+                          );
+                        },
                       );
                     }
 
-                    return LayoutBuilder(
-                      builder: (context, constraints) {
-                        final width = constraints.maxWidth;
-                        final crossAxisCount = width > 900 ? 2 : 1;
-
-                        if (crossAxisCount == 1) {
-                          return ListView.builder(
-                            physics: const NeverScrollableScrollPhysics(),
-                            shrinkWrap: true,
-                            itemCount: subjects.length,
-                            itemBuilder: (context, index) {
-                              final subject = subjects[index];
-                              return SubjectAttendanceCard(
-                                subject: subject,
-                                onTap: () {
-                                  ref.read(selectedHistorySubjectProvider.notifier).state = subject.subjectId;
-                                  ref.read(selectedHistoryMonthProvider.notifier).state = null;
-                                  context.push('/attendance/student/history');
-                                },
-                              );
-                            },
-                          );
-                        }
-
-                        return GridView.builder(
-                          physics: const NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          itemCount: subjects.length,
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    return GridView.builder(
+                      physics: const NeverScrollableScrollPhysics(),
+                      shrinkWrap: true,
+                      itemCount: subjects.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
                             crossAxisSpacing: 16,
                             mainAxisSpacing: 16,
                             childAspectRatio: 2.1,
                           ),
-                          itemBuilder: (context, index) {
-                            final subject = subjects[index];
-                            return SubjectAttendanceCard(
-                              subject: subject,
-                              onTap: () {
-                                ref.read(selectedHistorySubjectProvider.notifier).state = subject.subjectId;
-                                ref.read(selectedHistoryMonthProvider.notifier).state = null;
-                                context.push('/attendance/student/history');
-                              },
-                            );
+                      itemBuilder: (context, index) {
+                        final subject = subjects[index];
+                        return SubjectAttendanceCard(
+                          subject: subject,
+                          onTap: () {
+                            ref
+                                .read(selectedHistorySubjectProvider.notifier)
+                                .state = subject
+                                .subjectId;
+                            ref
+                                    .read(selectedHistoryMonthProvider.notifier)
+                                    .state =
+                                null;
+                            context.push('/attendance/student/history');
                           },
                         );
                       },
                     );
                   },
+                );
+              },
             ),
           ),
         ],

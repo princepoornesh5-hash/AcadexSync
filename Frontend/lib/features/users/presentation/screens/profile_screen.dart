@@ -82,7 +82,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final file = result.files.first;
       if (file.bytes == null) {
         if (mounted) {
-          AcadexSnackBar.showWarning(context, 'Unable to read the selected file. Please select another image.');
+          AcadexSnackBar.showWarning(
+            context,
+            'Unable to read the selected file. Please select another image.',
+          );
         }
         return;
       }
@@ -90,7 +93,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       // 1. Extension validation
       if (!ProfileRepository.isImageExtensionSupported(file.name)) {
         if (mounted) {
-          AcadexSnackBar.showWarning(context, 'Unsupported image format. Please select a JPG, JPEG, PNG, or WebP image.');
+          AcadexSnackBar.showWarning(
+            context,
+            'Unsupported image format. Please select a JPG, JPEG, PNG, or WebP image.',
+          );
         }
         return;
       }
@@ -98,7 +104,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       // 2. Size validation (max 5MB)
       if (file.size > ProfileRepository.maxProfileImageSizeBytes) {
         if (mounted) {
-          AcadexSnackBar.showWarning(context, 'The selected image exceeds the 5MB size limit. Please choose a smaller image.');
+          AcadexSnackBar.showWarning(
+            context,
+            'The selected image exceeds the 5MB size limit. Please choose a smaller image.',
+          );
         }
         return;
       }
@@ -143,7 +152,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         phone: _phoneController.text.trim(),
       );
       if (user is UserProfileModel) {
-        await ref.read(userProfileRepositoryProvider).saveUserProfile(updatedUser as UserProfileModel);
+        await ref
+            .read(userProfileRepositoryProvider)
+            .saveUserProfile(updatedUser as UserProfileModel);
       }
       ref.read(authProvider.notifier).updateCurrentUser(updatedUser);
 
@@ -157,10 +168,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _isSaving = false;
         });
 
-        AcadexSnackBar.showSuccess(
-          context,
-          'Profile updated successfully!',
-        );
+        AcadexSnackBar.showSuccess(context, 'Profile updated successfully!');
       }
     } catch (e) {
       if (mounted) {
@@ -227,7 +235,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         children: [
           AcadexPageHeader(
             title: 'My Profile',
-            subtitle: 'Manage your personal account details and profile picture',
+            subtitle:
+                'Manage your personal account details and profile picture',
             actions: [
               if (!_isEditing)
                 AcadexButton(
@@ -267,7 +276,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   Expanded(
                     child: Text(
                       _errorMessage!,
-                      style: const TextStyle(color: AcadexColors.coral, fontWeight: FontWeight.w500),
+                      style: const TextStyle(
+                        color: AcadexColors.coral,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],
@@ -285,7 +297,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Stack(
                   children: [
                     AcadexAvatar(
-                      key: ValueKey('avatar_${user.id}_${user.profilePictureUrl}'),
+                      key: ValueKey(
+                        'avatar_${user.id}_${user.profilePictureUrl}',
+                      ),
                       name: user.name,
                       imageUrl: user.profilePictureUrl,
                       size: 80,
@@ -322,7 +336,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       Text(
                         user.name,
                         style: AcadexTypography.h2.copyWith(
-                          color: isDark ? Colors.white : AcadexColors.textPrimaryLight,
+                          color: isDark
+                              ? Colors.white
+                              : AcadexColors.textPrimaryLight,
                         ),
                       ),
                       const SizedBox(height: AcadexSpacing.xs),
@@ -367,7 +383,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const AcadexSectionHeader(title: 'Personal & Contact Information'),
+                  const AcadexSectionHeader(
+                    title: 'Personal & Contact Information',
+                  ),
                   const SizedBox(height: AcadexSpacing.md),
                   if (_isEditing) ...[
                     TextFormField(
@@ -376,7 +394,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         labelText: 'Full Name',
                         prefixIcon: Icon(Icons.person_outline),
                       ),
-                      validator: (val) => (val == null || val.trim().isEmpty) ? 'Name cannot be empty' : null,
+                      validator: (val) => (val == null || val.trim().isEmpty)
+                          ? 'Name cannot be empty'
+                          : null,
                     ),
                     const SizedBox(height: AcadexSpacing.md),
                     TextFormField(
@@ -386,22 +406,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         labelText: 'Phone Number',
                         prefixIcon: Icon(Icons.phone_outlined),
                       ),
-                      validator: (val) => (val == null || val.trim().isEmpty) ? 'Phone cannot be empty' : null,
+                      validator: (val) => (val == null || val.trim().isEmpty)
+                          ? 'Phone cannot be empty'
+                          : null,
                     ),
                   ] else ...[
                     _buildDetailRow('Email Address', user.email),
-                    _buildDetailRow('Phone Number', (user is UserProfileModel && user.phone.isNotEmpty) ? user.phone : '—'),
+                    _buildDetailRow(
+                      'Phone Number',
+                      (user is UserProfileModel && user.phone.isNotEmpty)
+                          ? user.phone
+                          : '—',
+                    ),
                   ],
                   const Divider(height: AcadexSpacing.xl),
 
-                  const AcadexSectionHeader(title: 'Academic & Institutional Record'),
+                  const AcadexSectionHeader(
+                    title: 'Academic & Institutional Record',
+                  ),
                   const SizedBox(height: AcadexSpacing.sm),
                   _buildDetailRow('Institutional Role', user.role.displayName),
-                  if (collegeName != '—') _buildDetailRow('College / Campus', collegeName),
+                  if (collegeName != '—')
+                    _buildDetailRow('College / Campus', collegeName),
                   if (deptName != '—') _buildDetailRow('Department', deptName),
-                  _buildDetailRow('Account Status', user.accountStatus.name.toUpperCase()),
+                  _buildDetailRow(
+                    'Account Status',
+                    user.accountStatus.name.toUpperCase(),
+                  ),
                   if (user.createdAt != null)
-                    _buildDetailRow('Member Since', user.createdAt!.toLocal().toString().substring(0, 10)),
+                    _buildDetailRow(
+                      'Member Since',
+                      user.createdAt!.toLocal().toString().substring(0, 10),
+                    ),
                 ],
               ),
             ),
@@ -429,7 +465,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: AcadexTypography.body.copyWith(fontWeight: FontWeight.w500),
+                  style: AcadexTypography.body.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             )
@@ -449,7 +487,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Expanded(
                   child: Text(
                     value,
-                    style: AcadexTypography.body.copyWith(fontWeight: FontWeight.w500),
+                    style: AcadexTypography.body.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],

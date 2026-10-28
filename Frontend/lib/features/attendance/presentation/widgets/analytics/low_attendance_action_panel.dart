@@ -23,7 +23,11 @@ class LowAttendanceActionPanel extends StatelessWidget {
 
   void _handleExport(BuildContext context) {
     final lowStudents = students
-        .where((s) => AttendanceAnalyticsConstants.isLowAttendance(s.attendancePercentage))
+        .where(
+          (s) => AttendanceAnalyticsConstants.isLowAttendance(
+            s.attendancePercentage,
+          ),
+        )
         .toList();
     final csv = AttendanceReportExporter.generateLowAttendanceReportCsv(
       lowAttendanceStudents: lowStudents,
@@ -34,7 +38,9 @@ class LowAttendanceActionPanel extends StatelessWidget {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Exported ${lowStudents.length} shortage records to CSV'),
+          content: Text(
+            'Exported ${lowStudents.length} shortage records to CSV',
+          ),
           backgroundColor: AcadexColors.success,
         ),
       );
@@ -44,10 +50,17 @@ class LowAttendanceActionPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final lowStudents = students
-        .where((s) => AttendanceAnalyticsConstants.isLowAttendance(s.attendancePercentage))
-        .toList()
-      ..sort((a, b) => a.attendancePercentage.compareTo(b.attendancePercentage));
+    final lowStudents =
+        students
+            .where(
+              (s) => AttendanceAnalyticsConstants.isLowAttendance(
+                s.attendancePercentage,
+              ),
+            )
+            .toList()
+          ..sort(
+            (a, b) => a.attendancePercentage.compareTo(b.attendancePercentage),
+          );
 
     return AcadexCard(
       child: Column(
@@ -60,7 +73,11 @@ class LowAttendanceActionPanel extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.alertOctagon, size: 20, color: AcadexColors.error),
+                    const Icon(
+                      LucideIcons.alertOctagon,
+                      size: 20,
+                      color: AcadexColors.error,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -69,13 +86,17 @@ class LowAttendanceActionPanel extends StatelessWidget {
                           Text(
                             title,
                             style: AcadexTypography.heading2(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ),
                           ),
                           Text(
                             'Students requiring urgent attendance intervention (< 75%)',
                             style: AcadexTypography.caption(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
                             ),
                           ),
                         ],
@@ -113,13 +134,21 @@ class LowAttendanceActionPanel extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AcadexColors.success.withValues(alpha: isDark ? 0.12 : 0.06),
+                color: AcadexColors.success.withValues(
+                  alpha: isDark ? 0.12 : 0.06,
+                ),
                 borderRadius: AcadexRadius.borderRadiusMd,
-                border: Border.all(color: AcadexColors.success.withValues(alpha: 0.25)),
+                border: Border.all(
+                  color: AcadexColors.success.withValues(alpha: 0.25),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.shieldCheck, color: AcadexColors.success, size: 28),
+                  const Icon(
+                    LucideIcons.shieldCheck,
+                    color: AcadexColors.success,
+                    size: 28,
+                  ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
@@ -128,14 +157,18 @@ class LowAttendanceActionPanel extends StatelessWidget {
                         Text(
                           'All Students Compliant',
                           style: AcadexTypography.body(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ).copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'No students are currently in critical shortage below the 75% requirement.',
                           style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                         ),
                       ],
@@ -152,147 +185,200 @@ class LowAttendanceActionPanel extends StatelessWidget {
                   Builder(
                     builder: (context) {
                       final student = lowStudents[index];
-                      final displayName = student.studentName.isNotEmpty ? student.studentName : student.studentId;
-                      final rollNumber = student.rollNumber.isNotEmpty ? student.rollNumber : 'Roll: --';
+                      final displayName = student.studentName.isNotEmpty
+                          ? student.studentName
+                          : student.studentId;
+                      final rollNumber = student.rollNumber.isNotEmpty
+                          ? student.rollNumber
+                          : 'Roll: --';
                       final recoveryNeeded = student.recoverySessionsNeeded;
 
                       return Material(
                         type: MaterialType.transparency,
                         child: InkWell(
-                          onTap: onStudentSelected != null ? () => onStudentSelected!(student) : null,
+                          onTap: onStudentSelected != null
+                              ? () => onStudentSelected!(student)
+                              : null,
                           borderRadius: AcadexRadius.borderRadiusSm,
                           child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              // Priority Badge
-                              Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  color: AcadexColors.error.withValues(alpha: 0.15),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '#${index + 1}',
-                                    style: AcadexTypography.caption(color: AcadexColors.error).copyWith(
-                                      fontWeight: FontWeight.w700,
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                // Priority Badge
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: AcadexColors.error.withValues(
+                                      alpha: 0.15,
+                                    ),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '#${index + 1}',
+                                      style: AcadexTypography.caption(
+                                        color: AcadexColors.error,
+                                      ).copyWith(fontWeight: FontWeight.w700),
                                     ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 12),
+                                const SizedBox(width: 12),
 
-                              // Student Info & Recovery Projection
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Flexible(
-                                          child: Text(
-                                            displayName,
-                                            style: AcadexTypography.body(
-                                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                                            ).copyWith(fontWeight: FontWeight.w700),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          '($rollNumber)',
-                                          style: AcadexTypography.caption(
-                                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Wrap(
-                                      spacing: 8,
-                                      runSpacing: 4,
-                                      crossAxisAlignment: WrapCrossAlignment.center,
-                                      children: [
-                                        if (student.sectionId.isNotEmpty)
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
-                                              borderRadius: AcadexRadius.borderRadiusSm,
-                                            ),
+                                // Student Info & Recovery Projection
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Flexible(
                                             child: Text(
-                                              'Sec: ${student.sectionId}',
-                                              style: AcadexTypography.caption(
-                                                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                                              ).copyWith(fontSize: 10),
+                                              displayName,
+                                              style:
+                                                  AcadexTypography.body(
+                                                    color: isDark
+                                                        ? AcadexColors.darkInk
+                                                        : AcadexColors.ink,
+                                                  ).copyWith(
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
-                                        // Recovery Projection Chip
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: AcadexColors.warning.withValues(alpha: 0.15),
-                                            borderRadius: AcadexRadius.borderRadiusSm,
-                                            border: Border.all(color: AcadexColors.warning.withValues(alpha: 0.3)),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            '($rollNumber)',
+                                            style: AcadexTypography.caption(
+                                              color: isDark
+                                                  ? AcadexColors.darkInkMuted
+                                                  : AcadexColors.inkMuted,
+                                            ),
                                           ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Icon(LucideIcons.target, size: 10, color: AcadexColors.warning),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                'Needs $recoveryNeeded consecutive classes for 75%',
-                                                style: AcadexTypography.caption(color: AcadexColors.warning).copyWith(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 4,
+                                        crossAxisAlignment:
+                                            WrapCrossAlignment.center,
+                                        children: [
+                                          if (student.sectionId.isNotEmpty)
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 6,
+                                                    vertical: 2,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: isDark
+                                                    ? AcadexColors
+                                                          .darkCanvasSoft
+                                                    : AcadexColors.canvasSoft,
+                                                borderRadius:
+                                                    AcadexRadius.borderRadiusSm,
                                               ),
-                                            ],
+                                              child: Text(
+                                                'Sec: ${student.sectionId}',
+                                                style: AcadexTypography.caption(
+                                                  color: isDark
+                                                      ? AcadexColors
+                                                            .darkInkSecondary
+                                                      : AcadexColors
+                                                            .inkSecondary,
+                                                ).copyWith(fontSize: 10),
+                                              ),
+                                            ),
+                                          // Recovery Projection Chip
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: AcadexColors.warning
+                                                  .withValues(alpha: 0.15),
+                                              borderRadius:
+                                                  AcadexRadius.borderRadiusSm,
+                                              border: Border.all(
+                                                color: AcadexColors.warning
+                                                    .withValues(alpha: 0.3),
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(
+                                                  LucideIcons.target,
+                                                  size: 10,
+                                                  color: AcadexColors.warning,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  'Needs $recoveryNeeded consecutive classes for 75%',
+                                                  style:
+                                                      AcadexTypography.caption(
+                                                        color: AcadexColors
+                                                            .warning,
+                                                      ).copyWith(
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(width: 12),
+
+                                // Percentage & Action
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      '${student.attendancePercentage.toStringAsFixed(1)}%',
+                                      style:
+                                          AcadexTypography.body(
+                                            color: AcadexColors.error,
+                                          ).copyWith(
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 16,
+                                          ),
+                                    ),
+                                    Text(
+                                      '${student.presentCount}/${student.totalSessions} present',
+                                      style: AcadexTypography.caption(
+                                        color: isDark
+                                            ? AcadexColors.darkInkMuted
+                                            : AcadexColors.inkMuted,
+                                      ).copyWith(fontSize: 10),
                                     ),
                                   ],
                                 ),
-                              ),
-
-                              const SizedBox(width: 12),
-
-                              // Percentage & Action
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    '${student.attendancePercentage.toStringAsFixed(1)}%',
-                                    style: AcadexTypography.body(color: AcadexColors.error).copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${student.presentCount}/${student.totalSessions} present',
-                                    style: AcadexTypography.caption(
-                                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                                    ).copyWith(fontSize: 10),
+                                if (onStudentSelected != null) ...[
+                                  const SizedBox(width: 8),
+                                  Icon(
+                                    LucideIcons.chevronRight,
+                                    size: 16,
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
                                   ),
                                 ],
-                              ),
-                              if (onStudentSelected != null) ...[
-                                const SizedBox(width: 8),
-                                Icon(
-                                  LucideIcons.chevronRight,
-                                  size: 16,
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                                ),
                               ],
-                            ],
+                            ),
                           ),
                         ),
-                      ),
-                    );
+                      );
                     },
                   ),
                 ],

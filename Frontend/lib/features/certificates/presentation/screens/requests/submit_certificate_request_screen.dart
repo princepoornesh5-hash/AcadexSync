@@ -15,10 +15,12 @@ class SubmitCertificateRequestScreen extends ConsumerStatefulWidget {
   const SubmitCertificateRequestScreen({super.key});
 
   @override
-  ConsumerState<SubmitCertificateRequestScreen> createState() => _SubmitCertificateRequestScreenState();
+  ConsumerState<SubmitCertificateRequestScreen> createState() =>
+      _SubmitCertificateRequestScreenState();
 }
 
-class _SubmitCertificateRequestScreenState extends ConsumerState<SubmitCertificateRequestScreen> {
+class _SubmitCertificateRequestScreenState
+    extends ConsumerState<SubmitCertificateRequestScreen> {
   final _formKey = GlobalKey<FormState>();
 
   ConfiguredCertificateType? _selectedType;
@@ -44,8 +46,11 @@ class _SubmitCertificateRequestScreenState extends ConsumerState<SubmitCertifica
 
     final deptMap = ref.watch(certificateDepartmentMapProvider);
     final courseMap = ref.watch(certificateCourseMapProvider);
-    final departmentName = user.departmentId != null ? deptMap[user.departmentId]?.name ?? user.departmentId : 'Department of Engineering';
-    final courseName = courseMap.values.firstOrNull?.name ?? 'Bachelor of Technology';
+    final departmentName = user.departmentId != null
+        ? deptMap[user.departmentId]?.name ?? user.departmentId
+        : 'Department of Engineering';
+    final courseName =
+        courseMap.values.firstOrNull?.name ?? 'Bachelor of Technology';
 
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
@@ -57,19 +62,24 @@ class _SubmitCertificateRequestScreenState extends ConsumerState<SubmitCertifica
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
         ),
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             LucideIcons.arrowLeft,
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
-          onPressed: () => context.safePop(fallbackRoute: '/certificates/requests'),
+          onPressed: () =>
+              context.safePop(fallbackRoute: '/certificates/requests'),
         ),
       ),
       body: typesAsync.when(
         loading: () => const Center(
-          child: AcadexLoadingState(message: 'Loading available certificate types...'),
+          child: AcadexLoadingState(
+            message: 'Loading available certificate types...',
+          ),
         ),
         error: (e, _) => Center(
           child: AcadexErrorState(
@@ -84,9 +94,11 @@ class _SubmitCertificateRequestScreenState extends ConsumerState<SubmitCertifica
               child: AcadexEmptyState(
                 icon: LucideIcons.fileQuestion,
                 title: 'No Certificate Types Available',
-                subtitle: 'The administration has not configured any requestable certificate templates.',
+                subtitle:
+                    'The administration has not configured any requestable certificate templates.',
                 actionLabel: 'Return',
-                onActionTap: () => context.safePop(fallbackRoute: '/certificates/requests'),
+                onActionTap: () =>
+                    context.safePop(fallbackRoute: '/certificates/requests'),
               ),
             );
           }
@@ -97,39 +109,59 @@ class _SubmitCertificateRequestScreenState extends ConsumerState<SubmitCertifica
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 800),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 28,
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // SECTION 1: Certificate Selection
-                      _buildSectionHeader('1. Select Certificate Template', isDark),
+                      _buildSectionHeader(
+                        '1. Select Certificate Template',
+                        isDark,
+                      ),
                       const SizedBox(height: 14),
                       _buildCard(
                         isDark,
                         children: [
                           DropdownButtonFormField<ConfiguredCertificateType>(
                             initialValue: _selectedType,
-                            decoration: _inputDecoration('Certificate Type *', isDark),
-                            dropdownColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                            decoration: _inputDecoration(
+                              'Certificate Type *',
+                              isDark,
+                            ),
+                            dropdownColor: isDark
+                                ? AcadexColors.darkSurface
+                                : AcadexColors.surface,
                             items: types.map((t) {
                               return DropdownMenuItem(
                                 value: t,
-                                child: Text(t.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                                child: Text(
+                                  t.name,
+                                  style: GoogleFonts.inter(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               );
                             }).toList(),
                             onChanged: (val) {
-                              if (val != null) setState(() => _selectedType = val);
+                              if (val != null)
+                                setState(() => _selectedType = val);
                             },
                           ),
-                          if (_selectedType?.description != null && _selectedType!.description.isNotEmpty) ...[
+                          if (_selectedType?.description != null &&
+                              _selectedType!.description.isNotEmpty) ...[
                             const SizedBox(height: 10),
                             Text(
                               _selectedType!.description,
                               style: GoogleFonts.inter(
                                 fontSize: 13,
-                                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                                color: isDark
+                                    ? AcadexColors.darkInkSecondary
+                                    : AcadexColors.inkSecondary,
                               ),
                             ),
                           ],
@@ -140,10 +172,13 @@ class _SubmitCertificateRequestScreenState extends ConsumerState<SubmitCertifica
                               decoration: _inputDecoration(
                                 'Purpose of Certificate *',
                                 isDark,
-                                hintText: 'e.g., Visa application, Higher studies admission, Loan application',
+                                hintText:
+                                    'e.g., Visa application, Higher studies admission, Loan application',
                               ),
                               validator: (val) =>
-                                  val == null || val.trim().isEmpty ? 'Purpose is required for this certificate.' : null,
+                                  val == null || val.trim().isEmpty
+                                  ? 'Purpose is required for this certificate.'
+                                  : null,
                             ),
                             const SizedBox(height: 16),
                           ],
@@ -153,11 +188,14 @@ class _SubmitCertificateRequestScreenState extends ConsumerState<SubmitCertifica
                               decoration: _inputDecoration(
                                 'Detailed Reason / Notes *',
                                 isDark,
-                                hintText: 'Please provide full justification or institutional details...',
+                                hintText:
+                                    'Please provide full justification or institutional details...',
                               ),
                               maxLines: 3,
                               validator: (val) =>
-                                  val == null || val.trim().isEmpty ? 'Reason is required for this certificate.' : null,
+                                  val == null || val.trim().isEmpty
+                                  ? 'Reason is required for this certificate.'
+                                  : null,
                             ),
                             const SizedBox(height: 16),
                           ],
@@ -166,7 +204,10 @@ class _SubmitCertificateRequestScreenState extends ConsumerState<SubmitCertifica
                       const SizedBox(height: 28),
 
                       // SECTION 2: Academic Identity Verification (Resolved in O(1) from UserModel)
-                      _buildSectionHeader('2. Verified Student Identity', isDark),
+                      _buildSectionHeader(
+                        '2. Verified Student Identity',
+                        isDark,
+                      ),
                       const SizedBox(height: 14),
                       _buildCard(
                         isDark,
@@ -224,16 +265,32 @@ class _SubmitCertificateRequestScreenState extends ConsumerState<SubmitCertifica
                           Expanded(
                             child: OutlinedButton(
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                side: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                side: BorderSide(
+                                  color: isDark
+                                      ? AcadexColors.darkHairline
+                                      : AcadexColors.hairline,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    AcadexRadius.md,
+                                  ),
+                                ),
                               ),
-                              onPressed: _isSubmitting ? null : () => context.safePop(fallbackRoute: '/certificates/requests'),
+                              onPressed: _isSubmitting
+                                  ? null
+                                  : () => context.safePop(
+                                      fallbackRoute: '/certificates/requests',
+                                    ),
                               child: Text(
                                 'Cancel',
                                 style: GoogleFonts.inter(
                                   fontWeight: FontWeight.w600,
-                                  color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                                  color: isDark
+                                      ? AcadexColors.darkInkSecondary
+                                      : AcadexColors.inkSecondary,
                                 ),
                               ),
                             ),
@@ -245,20 +302,34 @@ class _SubmitCertificateRequestScreenState extends ConsumerState<SubmitCertifica
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AcadexColors.primary,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    AcadexRadius.md,
+                                  ),
+                                ),
                                 elevation: 0,
                               ),
-                              onPressed: _isSubmitting ? null : () => _submitRequest(user),
+                              onPressed: _isSubmitting
+                                  ? null
+                                  : () => _submitRequest(user),
                               child: _isSubmitting
                                   ? const SizedBox(
                                       height: 20,
                                       width: 20,
-                                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
                                     )
                                   : Text(
                                       'Submit Request',
-                                      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                             ),
                           ),
@@ -291,15 +362,21 @@ class _SubmitCertificateRequestScreenState extends ConsumerState<SubmitCertifica
         academicYearId: (user.sectionId ?? '') as String,
         certificateTypeId: _selectedType!.id,
         certificateTypeName: _selectedType!.name,
-        reason: _reasonController.text.trim().isEmpty ? null : _reasonController.text.trim(),
-        purpose: _purposeController.text.trim().isEmpty ? null : _purposeController.text.trim(),
+        reason: _reasonController.text.trim().isEmpty
+            ? null
+            : _reasonController.text.trim(),
+        purpose: _purposeController.text.trim().isEmpty
+            ? null
+            : _purposeController.text.trim(),
         status: CertificateRequestStatus.pending,
         requestedAt: DateTime.now(),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
 
-      await ref.read(certificateRequestManagementProvider.notifier).createRequest(request);
+      await ref
+          .read(certificateRequestManagementProvider.notifier)
+          .createRequest(request);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -341,7 +418,9 @@ class _SubmitCertificateRequestScreenState extends ConsumerState<SubmitCertifica
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: BorderRadius.circular(AcadexRadius.lg),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,7 +429,11 @@ class _SubmitCertificateRequestScreenState extends ConsumerState<SubmitCertifica
     );
   }
 
-  InputDecoration _inputDecoration(String label, bool isDark, {String? hintText}) {
+  InputDecoration _inputDecoration(
+    String label,
+    bool isDark, {
+    String? hintText,
+  }) {
     return InputDecoration(
       labelText: label,
       hintText: hintText,
@@ -358,11 +441,15 @@ class _SubmitCertificateRequestScreenState extends ConsumerState<SubmitCertifica
       fillColor: isDark ? AcadexColors.darkCanvas : Colors.white,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AcadexRadius.md),
-        borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        borderSide: BorderSide(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AcadexRadius.md),
-        borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        borderSide: BorderSide(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AcadexRadius.md),
@@ -393,11 +480,17 @@ class _IdentityTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkCanvas : AcadexColors.canvasSoft,
         borderRadius: BorderRadius.circular(AcadexRadius.md),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+          Icon(
+            icon,
+            size: 16,
+            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -407,7 +500,9 @@ class _IdentityTile extends StatelessWidget {
                   label,
                   style: GoogleFonts.inter(
                     fontSize: 10,
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                 ),
                 Text(

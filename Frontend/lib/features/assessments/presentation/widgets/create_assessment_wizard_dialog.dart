@@ -11,10 +11,7 @@ import '../providers/assessment_providers.dart';
 class CreateAssessmentWizardDialog extends ConsumerStatefulWidget {
   final VoidCallback? onCreated;
 
-  const CreateAssessmentWizardDialog({
-    super.key,
-    this.onCreated,
-  });
+  const CreateAssessmentWizardDialog({super.key, this.onCreated});
 
   @override
   ConsumerState<CreateAssessmentWizardDialog> createState() =>
@@ -48,13 +45,17 @@ class _CreateAssessmentWizardDialogState
   int _currentStep = 0;
 
   // Step 1: Basic Info
-  final _titleController = TextEditingController(text: 'Continuous Internal Assessment I');
+  final _titleController = TextEditingController(
+    text: 'Continuous Internal Assessment I',
+  );
   String _assessmentType = 'INTERNAL';
   final _descriptionController = TextEditingController();
 
   // Step 2: Subject & Academic Scope
   final _subjectIdController = TextEditingController();
-  final _subjectNameController = TextEditingController(text: 'Engineering Mathematics III');
+  final _subjectNameController = TextEditingController(
+    text: 'Engineering Mathematics III',
+  );
   final _subjectCodeController = TextEditingController(text: 'MATH301');
   bool _isCommonExam = true;
   final List<_ScopeItem> _scopes = [
@@ -96,12 +97,28 @@ class _CreateAssessmentWizardDialogState
   final _passMarksController = TextEditingController(text: '20');
   final _weightageController = TextEditingController(text: '25');
   final _instructionsController = TextEditingController(
-    text: 'Candidates must report to exam hall 15 minutes before scheduled start time. Scientific calculators are permitted.',
+    text:
+        'Candidates must report to exam hall 15 minutes before scheduled start time. Scientific calculators are permitted.',
   );
   final List<AssessmentComponentModel> _components = [
-    const AssessmentComponentModel(key: 'theory', name: 'Theory Examination', maxMarks: 35, weightage: 70),
-    const AssessmentComponentModel(key: 'assignment', name: 'Continuous Assignment', maxMarks: 10, weightage: 20),
-    const AssessmentComponentModel(key: 'attendance', name: 'Attendance & Class Participation', maxMarks: 5, weightage: 10),
+    const AssessmentComponentModel(
+      key: 'theory',
+      name: 'Theory Examination',
+      maxMarks: 35,
+      weightage: 70,
+    ),
+    const AssessmentComponentModel(
+      key: 'assignment',
+      name: 'Continuous Assignment',
+      maxMarks: 10,
+      weightage: 20,
+    ),
+    const AssessmentComponentModel(
+      key: 'attendance',
+      name: 'Attendance & Class Participation',
+      maxMarks: 5,
+      weightage: 10,
+    ),
   ];
 
   bool _isSubmitting = false;
@@ -131,11 +148,19 @@ class _CreateAssessmentWizardDialogState
       final repo = ref.read(assessmentRepositoryProvider);
       final scopesPayload = _scopes.map((s) {
         return AcademicScopeTargetModel(
-          departmentId: s.departmentId.isNotEmpty ? s.departmentId : 'dept_${s.departmentName.toLowerCase().replaceAll(' ', '_')}',
-          courseId: s.courseId.isNotEmpty ? s.courseId : 'course_${s.courseName.toLowerCase().replaceAll(' ', '_')}',
+          departmentId: s.departmentId.isNotEmpty
+              ? s.departmentId
+              : 'dept_${s.departmentName.toLowerCase().replaceAll(' ', '_')}',
+          courseId: s.courseId.isNotEmpty
+              ? s.courseId
+              : 'course_${s.courseName.toLowerCase().replaceAll(' ', '_')}',
           academicYearId: 'ay_current',
-          semesterId: s.semesterId.isNotEmpty ? s.semesterId : 'sem_${s.semesterNumber}',
-          sectionId: s.sectionId.isNotEmpty ? s.sectionId : 'sec_${s.sectionName.toLowerCase().replaceAll(' ', '_')}',
+          semesterId: s.semesterId.isNotEmpty
+              ? s.semesterId
+              : 'sem_${s.semesterNumber}',
+          sectionId: s.sectionId.isNotEmpty
+              ? s.sectionId
+              : 'sec_${s.sectionName.toLowerCase().replaceAll(' ', '_')}',
           departmentName: s.departmentName,
           sectionName: s.sectionName,
           semesterNumber: s.semesterNumber,
@@ -143,7 +168,9 @@ class _CreateAssessmentWizardDialogState
       }).toList();
 
       final res = await repo.previewScope(
-        subjectId: _subjectIdController.text.isNotEmpty ? _subjectIdController.text : 'subject_sample',
+        subjectId: _subjectIdController.text.isNotEmpty
+            ? _subjectIdController.text
+            : 'subject_sample',
         academicScopes: scopesPayload,
       );
 
@@ -160,11 +187,15 @@ class _CreateAssessmentWizardDialogState
           totalStudents: count,
           uniqueStudents: count - 1,
           duplicateEnrollments: 1,
-          breakdown: _scopes.map((s) => ScopePreviewBreakdownItem(
-            departmentId: s.departmentName,
-            sectionId: s.sectionName,
-            count: 60,
-          )).toList(),
+          breakdown: _scopes
+              .map(
+                (s) => ScopePreviewBreakdownItem(
+                  departmentId: s.departmentName,
+                  sectionId: s.sectionName,
+                  count: 60,
+                ),
+              )
+              .toList(),
         );
       });
     }
@@ -179,8 +210,10 @@ class _CreateAssessmentWizardDialogState
       final repo = ref.read(assessmentRepositoryProvider);
       final report = await repo.checkScheduleConflicts(
         date: _examDate,
-        startTime: '${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}',
-        endTime: '${_endTime.hour.toString().padLeft(2, '0')}:${_endTime.minute.toString().padLeft(2, '0')}',
+        startTime:
+            '${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}',
+        endTime:
+            '${_endTime.hour.toString().padLeft(2, '0')}:${_endTime.minute.toString().padLeft(2, '0')}',
         roomId: _roomController.text,
         invigilatorFacultyId: _invigilatorController.text,
       );
@@ -190,7 +223,10 @@ class _CreateAssessmentWizardDialogState
       });
     } catch (_) {
       setState(() {
-        _conflictReport = const ScheduleConflictReportModel(hasConflict: false, conflicts: []);
+        _conflictReport = const ScheduleConflictReportModel(
+          hasConflict: false,
+          conflicts: [],
+        );
         _isCheckingConflict = false;
       });
     }
@@ -203,11 +239,19 @@ class _CreateAssessmentWizardDialogState
       final repo = ref.read(assessmentRepositoryProvider);
       final scopesPayload = _scopes.map((s) {
         return AcademicScopeTargetModel(
-          departmentId: s.departmentId.isNotEmpty ? s.departmentId : 'dept_${s.departmentName}',
-          courseId: s.courseId.isNotEmpty ? s.courseId : 'course_${s.courseName}',
+          departmentId: s.departmentId.isNotEmpty
+              ? s.departmentId
+              : 'dept_${s.departmentName}',
+          courseId: s.courseId.isNotEmpty
+              ? s.courseId
+              : 'course_${s.courseName}',
           academicYearId: 'ay_current',
-          semesterId: s.semesterId.isNotEmpty ? s.semesterId : 'sem_${s.semesterNumber}',
-          sectionId: s.sectionId.isNotEmpty ? s.sectionId : 'sec_${s.sectionName}',
+          semesterId: s.semesterId.isNotEmpty
+              ? s.semesterId
+              : 'sem_${s.semesterNumber}',
+          sectionId: s.sectionId.isNotEmpty
+              ? s.sectionId
+              : 'sec_${s.sectionName}',
           departmentName: s.departmentName,
           sectionName: s.sectionName,
           semesterNumber: s.semesterNumber,
@@ -265,7 +309,9 @@ class _CreateAssessmentWizardDialogState
     final isMobile = size.width < 768;
 
     return Dialog(
-      backgroundColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+      backgroundColor: isDark
+          ? AcadexColors.darkSurfaceCard
+          : AcadexColors.surface,
       insetPadding: EdgeInsets.all(isMobile ? 12 : 32),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
@@ -283,7 +329,11 @@ class _CreateAssessmentWizardDialogState
                     color: AcadexColors.primary.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(LucideIcons.fileSpreadsheet, color: AcadexColors.primary, size: 22),
+                  child: const Icon(
+                    LucideIcons.fileSpreadsheet,
+                    color: AcadexColors.primary,
+                    size: 22,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -295,14 +345,18 @@ class _CreateAssessmentWizardDialogState
                         style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       Text(
                         'Configure common exam scopes, conflict checks, and evaluation rubrics',
                         style: GoogleFonts.inter(
                           fontSize: 12,
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                       ),
                     ],
@@ -310,7 +364,12 @@ class _CreateAssessmentWizardDialogState
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: Icon(LucideIcons.x, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                  icon: Icon(
+                    LucideIcons.x,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
+                  ),
                 ),
               ],
             ),
@@ -319,7 +378,10 @@ class _CreateAssessmentWizardDialogState
             // Stepper indicator
             _buildStepper(isDark),
             const SizedBox(height: 16),
-            Divider(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline, height: 1),
+            Divider(
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+              height: 1,
+            ),
             const SizedBox(height: 16),
 
             // Body step content
@@ -330,7 +392,10 @@ class _CreateAssessmentWizardDialogState
             ),
 
             const SizedBox(height: 16),
-            Divider(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline, height: 1),
+            Divider(
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+              height: 1,
+            ),
             const SizedBox(height: 16),
 
             // Footer navigation
@@ -342,7 +407,13 @@ class _CreateAssessmentWizardDialogState
   }
 
   Widget _buildStepper(bool isDark) {
-    final steps = ['Basic Info', 'Academic Scope', 'Date & Venue', 'Marks & Rubrics', 'Review'];
+    final steps = [
+      'Basic Info',
+      'Academic Scope',
+      'Date & Venue',
+      'Marks & Rubrics',
+      'Review',
+    ];
 
     return Row(
       children: List.generate(steps.length * 2 - 1, (index) {
@@ -354,7 +425,9 @@ class _CreateAssessmentWizardDialogState
               height: 2,
               color: isCompleted
                   ? AcadexColors.primary
-                  : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                  : (isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline),
             ),
           );
         }
@@ -381,18 +454,26 @@ class _CreateAssessmentWizardDialogState
                     color: isCompleted
                         ? AcadexColors.primary
                         : (isActive
-                            ? AcadexColors.primary.withOpacity(0.18)
-                            : (isDark ? AcadexColors.darkSurface : AcadexColors.canvasSoft)),
+                              ? AcadexColors.primary.withOpacity(0.18)
+                              : (isDark
+                                    ? AcadexColors.darkSurface
+                                    : AcadexColors.canvasSoft)),
                     border: Border.all(
                       color: (isActive || isCompleted)
                           ? AcadexColors.primary
-                          : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                          : (isDark
+                                ? AcadexColors.darkHairline
+                                : AcadexColors.hairline),
                     ),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
                     child: isCompleted
-                        ? const Icon(LucideIcons.check, size: 14, color: Colors.white)
+                        ? const Icon(
+                            LucideIcons.check,
+                            size: 14,
+                            color: Colors.white,
+                          )
                         : Text(
                             '${stepIndex + 1}',
                             style: GoogleFonts.inter(
@@ -400,7 +481,9 @@ class _CreateAssessmentWizardDialogState
                               fontWeight: FontWeight.w700,
                               color: isActive
                                   ? AcadexColors.primary
-                                  : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                  : (isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted),
                             ),
                           ),
                   ),
@@ -413,7 +496,9 @@ class _CreateAssessmentWizardDialogState
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                     color: isActive
                         ? (isDark ? AcadexColors.darkInk : AcadexColors.ink)
-                        : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                        : (isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted),
                   ),
                 ),
               ],
@@ -445,7 +530,11 @@ class _CreateAssessmentWizardDialogState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('Assessment Details', 'Define title, type, and operational context', isDark),
+        _buildSectionHeader(
+          'Assessment Details',
+          'Define title, type, and operational context',
+          isDark,
+        ),
         const SizedBox(height: 16),
         _buildTextField(
           controller: _titleController,
@@ -458,14 +547,31 @@ class _CreateAssessmentWizardDialogState
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
           value: _assessmentType,
-          dropdownColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+          dropdownColor: isDark
+              ? AcadexColors.darkSurface
+              : AcadexColors.surface,
           decoration: _inputDecoration(isDark),
           items: const [
-            DropdownMenuItem(value: 'INTERNAL', child: Text('Internal Examination (IA-1, IA-2)')),
-            DropdownMenuItem(value: 'SLIP_TEST', child: Text('Slip Test / Unit Test')),
-            DropdownMenuItem(value: 'SEMESTER_EXAM', child: Text('Semester End Examination')),
-            DropdownMenuItem(value: 'LAB_INTERNAL', child: Text('Practical / Lab Internal')),
-            DropdownMenuItem(value: 'VIVA_VOCE', child: Text('Viva Voce / Oral Examination')),
+            DropdownMenuItem(
+              value: 'INTERNAL',
+              child: Text('Internal Examination (IA-1, IA-2)'),
+            ),
+            DropdownMenuItem(
+              value: 'SLIP_TEST',
+              child: Text('Slip Test / Unit Test'),
+            ),
+            DropdownMenuItem(
+              value: 'SEMESTER_EXAM',
+              child: Text('Semester End Examination'),
+            ),
+            DropdownMenuItem(
+              value: 'LAB_INTERNAL',
+              child: Text('Practical / Lab Internal'),
+            ),
+            DropdownMenuItem(
+              value: 'VIVA_VOCE',
+              child: Text('Viva Voce / Oral Examination'),
+            ),
           ],
           onChanged: (val) {
             if (val != null) setState(() => _assessmentType = val);
@@ -475,7 +581,8 @@ class _CreateAssessmentWizardDialogState
         _buildTextField(
           controller: _descriptionController,
           label: 'Description / Syllabus Scope (Optional)',
-          hint: 'e.g., Units 1, 2, and 3: Matrices, Fourier Series, Differential Calculus',
+          hint:
+              'e.g., Units 1, 2, and 3: Matrices, Fourier Series, Differential Calculus',
           maxLines: 3,
           isDark: isDark,
         ),
@@ -531,14 +638,20 @@ class _CreateAssessmentWizardDialogState
             border: Border.all(
               color: _isCommonExam
                   ? AcadexColors.primary.withOpacity(0.3)
-                  : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                  : (isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline),
             ),
           ),
           child: Row(
             children: [
               Icon(
                 LucideIcons.users,
-                color: _isCommonExam ? AcadexColors.primary : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                color: _isCommonExam
+                    ? AcadexColors.primary
+                    : (isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -557,7 +670,9 @@ class _CreateAssessmentWizardDialogState
                       'Enable if you teach this subject across CSE, MECH, CIVIL etc. and are scheduling a single common exam.',
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                     ),
                   ],
@@ -574,7 +689,10 @@ class _CreateAssessmentWizardDialogState
         const SizedBox(height: 16),
 
         // Scopes list
-        _buildLabel('Target Departments & Sections (${_scopes.length} selected)', isDark),
+        _buildLabel(
+          'Target Departments & Sections (${_scopes.length} selected)',
+          isDark,
+        ),
         const SizedBox(height: 8),
 
         ..._scopes.asMap().entries.map((entry) {
@@ -584,9 +702,15 @@ class _CreateAssessmentWizardDialogState
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkSurface : AcadexColors.canvasSoft,
+              color: isDark
+                  ? AcadexColors.darkSurface
+                  : AcadexColors.canvasSoft,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+              border: Border.all(
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
+              ),
             ),
             child: Row(
               children: [
@@ -600,7 +724,11 @@ class _CreateAssessmentWizardDialogState
                   child: Center(
                     child: Text(
                       '${idx + 1}',
-                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AcadexColors.primary),
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AcadexColors.primary,
+                      ),
                     ),
                   ),
                 ),
@@ -614,14 +742,18 @@ class _CreateAssessmentWizardDialogState
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       Text(
                         'Semester ${s.semesterNumber} • ${s.sectionName}',
                         style: GoogleFonts.inter(
                           fontSize: 11,
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                       ),
                     ],
@@ -629,7 +761,11 @@ class _CreateAssessmentWizardDialogState
                 ),
                 if (_scopes.length > 1)
                   IconButton(
-                    icon: const Icon(LucideIcons.trash2, size: 16, color: AcadexColors.error),
+                    icon: const Icon(
+                      LucideIcons.trash2,
+                      size: 16,
+                      color: AcadexColors.error,
+                    ),
                     onPressed: () {
                       setState(() {
                         _scopes.removeAt(idx);
@@ -676,7 +812,14 @@ class _CreateAssessmentWizardDialogState
             ElevatedButton.icon(
               onPressed: _isPreviewingScope ? null : _previewScopeRoster,
               icon: _isPreviewingScope
-                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : const Icon(LucideIcons.scanLine, size: 16),
               label: const Text('Preview Eligible Students'),
               style: ElevatedButton.styleFrom(
@@ -687,7 +830,12 @@ class _CreateAssessmentWizardDialogState
             const SizedBox(width: 12),
             Text(
               'Resolves multi-department roster & checks for duplicate enrollments',
-              style: GoogleFonts.inter(fontSize: 11, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
             ),
           ],
         ),
@@ -706,7 +854,11 @@ class _CreateAssessmentWizardDialogState
               children: [
                 Row(
                   children: [
-                    const Icon(LucideIcons.checkCircle2, color: AcadexColors.success, size: 18),
+                    const Icon(
+                      LucideIcons.checkCircle2,
+                      color: AcadexColors.success,
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'Multi-Scope Resolution Preview Success',
@@ -721,9 +873,17 @@ class _CreateAssessmentWizardDialogState
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    _buildStatChip('Total Enrolled', '${_scopePreview!.totalStudents}', isDark),
+                    _buildStatChip(
+                      'Total Enrolled',
+                      '${_scopePreview!.totalStudents}',
+                      isDark,
+                    ),
                     const SizedBox(width: 8),
-                    _buildStatChip('Unique Eligible Students', '${_scopePreview!.uniqueStudents}', isDark),
+                    _buildStatChip(
+                      'Unique Eligible Students',
+                      '${_scopePreview!.uniqueStudents}',
+                      isDark,
+                    ),
                     const SizedBox(width: 8),
                     if (_scopePreview!.duplicateEnrollments > 0)
                       _buildStatChip(
@@ -740,15 +900,27 @@ class _CreateAssessmentWizardDialogState
                   runSpacing: 6,
                   children: _scopePreview!.breakdown.map((b) {
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                        color: isDark
+                            ? AcadexColors.darkSurface
+                            : AcadexColors.surface,
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                        border: Border.all(
+                          color: isDark
+                              ? AcadexColors.darkHairline
+                              : AcadexColors.hairline,
+                        ),
                       ),
                       child: Text(
                         '${b.departmentId} (${b.sectionId ?? ''}): ${b.count} students',
-                        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500),
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     );
                   }).toList(),
@@ -812,7 +984,10 @@ class _CreateAssessmentWizardDialogState
             Expanded(
               child: InkWell(
                 onTap: () async {
-                  final picked = await showTimePicker(context: context, initialTime: _startTime);
+                  final picked = await showTimePicker(
+                    context: context,
+                    initialTime: _startTime,
+                  );
                   if (picked != null) {
                     setState(() {
                       _startTime = picked;
@@ -822,7 +997,10 @@ class _CreateAssessmentWizardDialogState
                 },
                 child: InputDecorator(
                   decoration: _inputDecoration(isDark, label: 'Start Time'),
-                  child: Text(_startTime.format(context), style: GoogleFonts.inter(fontSize: 14)),
+                  child: Text(
+                    _startTime.format(context),
+                    style: GoogleFonts.inter(fontSize: 14),
+                  ),
                 ),
               ),
             ),
@@ -830,7 +1008,10 @@ class _CreateAssessmentWizardDialogState
             Expanded(
               child: InkWell(
                 onTap: () async {
-                  final picked = await showTimePicker(context: context, initialTime: _endTime);
+                  final picked = await showTimePicker(
+                    context: context,
+                    initialTime: _endTime,
+                  );
                   if (picked != null) {
                     setState(() {
                       _endTime = picked;
@@ -840,7 +1021,10 @@ class _CreateAssessmentWizardDialogState
                 },
                 child: InputDecorator(
                   decoration: _inputDecoration(isDark, label: 'End Time'),
-                  child: Text(_endTime.format(context), style: GoogleFonts.inter(fontSize: 14)),
+                  child: Text(
+                    _endTime.format(context),
+                    style: GoogleFonts.inter(fontSize: 14),
+                  ),
                 ),
               ),
             ),
@@ -878,7 +1062,14 @@ class _CreateAssessmentWizardDialogState
             ElevatedButton.icon(
               onPressed: _isCheckingConflict ? null : _checkConflicts,
               icon: _isCheckingConflict
-                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : const Icon(LucideIcons.shieldCheck, size: 16),
               label: const Text('Check Schedule Conflicts'),
               style: ElevatedButton.styleFrom(
@@ -889,7 +1080,12 @@ class _CreateAssessmentWizardDialogState
             const SizedBox(width: 12),
             Text(
               'Validates venue availability and ensures no student in target scopes has overlapping exams',
-              style: GoogleFonts.inter(fontSize: 11, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
             ),
           ],
         ),
@@ -902,16 +1098,26 @@ class _CreateAssessmentWizardDialogState
               decoration: BoxDecoration(
                 color: AcadexColors.success.withOpacity(0.09),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AcadexColors.success.withOpacity(0.3)),
+                border: Border.all(
+                  color: AcadexColors.success.withOpacity(0.3),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.checkCircle2, color: AcadexColors.success, size: 20),
+                  const Icon(
+                    LucideIcons.checkCircle2,
+                    color: AcadexColors.success,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'No Conflicts Detected! Room "${_roomController.text}" and all target sections are completely free during this slot.',
-                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AcadexColors.success),
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AcadexColors.success,
+                      ),
                     ),
                   ),
                 ],
@@ -930,16 +1136,29 @@ class _CreateAssessmentWizardDialogState
                 children: [
                   Row(
                     children: [
-                      const Icon(LucideIcons.alertTriangle, color: AcadexColors.error, size: 20),
+                      const Icon(
+                        LucideIcons.alertTriangle,
+                        color: AcadexColors.error,
+                        size: 20,
+                      ),
                       const SizedBox(width: 10),
                       Text(
                         'Scheduling Conflict Warning',
-                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AcadexColors.error),
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AcadexColors.error,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 6),
-                  ..._conflictReport!.conflicts.map((c) => Text('• ${c.description}', style: GoogleFonts.inter(fontSize: 12))),
+                  ..._conflictReport!.conflicts.map(
+                    (c) => Text(
+                      '• ${c.description}',
+                      style: GoogleFonts.inter(fontSize: 12),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -1003,16 +1222,26 @@ class _CreateAssessmentWizardDialogState
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkSurface : AcadexColors.canvasSoft,
+              color: isDark
+                  ? AcadexColors.darkSurface
+                  : AcadexColors.canvasSoft,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+              border: Border.all(
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   children: [
-                    const Icon(LucideIcons.listChecks, size: 16, color: AcadexColors.primary),
+                    const Icon(
+                      LucideIcons.listChecks,
+                      size: 16,
+                      color: AcadexColors.primary,
+                    ),
                     const SizedBox(width: 10),
                     Text(
                       c.name,
@@ -1026,7 +1255,10 @@ class _CreateAssessmentWizardDialogState
                 ),
                 Text(
                   '${c.maxMarks.toStringAsFixed(0)} Marks (${c.weightage.toStringAsFixed(0)}%)',
-                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500),
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -1062,7 +1294,9 @@ class _CreateAssessmentWizardDialogState
           decoration: BoxDecoration(
             color: isDark ? AcadexColors.darkSurface : AcadexColors.canvasSoft,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+            border: Border.all(
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1072,21 +1306,36 @@ class _CreateAssessmentWizardDialogState
                 children: [
                   Text(
                     _titleController.text,
-                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   AcadexBadge(
                     label: _isCommonExam ? 'Common Exam' : 'Single Section',
-                    variant: _isCommonExam ? AcadexBadgeVariant.warning : AcadexBadgeVariant.info,
+                    variant: _isCommonExam
+                        ? AcadexBadgeVariant.warning
+                        : AcadexBadgeVariant.info,
                   ),
                 ],
               ),
               const SizedBox(height: 6),
               Text(
                 '${_subjectNameController.text} (${_subjectCodeController.text}) • ${_assessmentType.replaceAll('_', ' ')}',
-                style: GoogleFonts.inter(fontSize: 13, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
+                ),
               ),
               const SizedBox(height: 14),
-              Divider(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline, height: 1),
+              Divider(
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
+                height: 1,
+              ),
               const SizedBox(height: 14),
 
               _buildSummaryRow(
@@ -1100,9 +1349,21 @@ class _CreateAssessmentWizardDialogState
                 isDark,
               ),
               _buildSummaryRow('Room / Venue', _roomController.text, isDark),
-              _buildSummaryRow('Invigilator', _invigilatorController.text, isDark),
-              _buildSummaryRow('Maximum Marks', '${_maxMarksController.text} (Pass: ${_passMarksController.text})', isDark),
-              _buildSummaryRow('Candidate Instructions', _instructionsController.text, isDark),
+              _buildSummaryRow(
+                'Invigilator',
+                _invigilatorController.text,
+                isDark,
+              ),
+              _buildSummaryRow(
+                'Maximum Marks',
+                '${_maxMarksController.text} (Pass: ${_passMarksController.text})',
+                isDark,
+              ),
+              _buildSummaryRow(
+                'Candidate Instructions',
+                _instructionsController.text,
+                isDark,
+              ),
             ],
           ),
         ),
@@ -1122,7 +1383,10 @@ class _CreateAssessmentWizardDialogState
               Expanded(
                 child: Text(
                   'Choosing "Schedule & Publish to Students" immediately sets status to SCHEDULED, sends instant app notifications to all enrolled students with deep links, and creates canonical marks entry records.',
-                  style: GoogleFonts.inter(fontSize: 11, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ),
                 ),
               ),
             ],
@@ -1145,14 +1409,19 @@ class _CreateAssessmentWizardDialogState
               style: GoogleFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500),
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -1166,7 +1435,9 @@ class _CreateAssessmentWizardDialogState
       children: [
         if (_currentStep > 0)
           OutlinedButton.icon(
-            onPressed: _isSubmitting ? null : () => setState(() => _currentStep--),
+            onPressed: _isSubmitting
+                ? null
+                : () => setState(() => _currentStep--),
             icon: const Icon(LucideIcons.chevronLeft, size: 16),
             label: const Text('Back'),
           )
@@ -1190,14 +1461,25 @@ class _CreateAssessmentWizardDialogState
               )
             else ...[
               OutlinedButton(
-                onPressed: _isSubmitting ? null : () => _submitAssessment(publishImmediately: false),
+                onPressed: _isSubmitting
+                    ? null
+                    : () => _submitAssessment(publishImmediately: false),
                 child: const Text('Save as Draft'),
               ),
               const SizedBox(width: 12),
               ElevatedButton.icon(
-                onPressed: _isSubmitting ? null : () => _submitAssessment(publishImmediately: true),
+                onPressed: _isSubmitting
+                    ? null
+                    : () => _submitAssessment(publishImmediately: true),
                 icon: _isSubmitting
-                    ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Icon(LucideIcons.send, size: 16),
                 label: const Text('Schedule & Publish to Students'),
                 style: ElevatedButton.styleFrom(
@@ -1247,7 +1529,12 @@ class _CreateAssessmentWizardDialogState
     );
   }
 
-  Widget _buildStatChip(String label, String value, bool isDark, {Color color = AcadexColors.primary}) {
+  Widget _buildStatChip(
+    String label,
+    String value,
+    bool isDark, {
+    Color color = AcadexColors.primary,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -1260,11 +1547,18 @@ class _CreateAssessmentWizardDialogState
         children: [
           Text(
             '$label: ',
-            style: GoogleFonts.inter(fontSize: 11, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            ),
           ),
           Text(
             value,
-            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: color),
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
           ),
         ],
       ),
@@ -1299,17 +1593,24 @@ class _CreateAssessmentWizardDialogState
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      hintStyle: GoogleFonts.inter(fontSize: 12, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+      hintStyle: GoogleFonts.inter(
+        fontSize: 12,
+        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+      ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       filled: true,
       fillColor: isDark ? AcadexColors.darkSurface : AcadexColors.canvasSoft,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        borderSide: BorderSide(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        borderSide: BorderSide(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),

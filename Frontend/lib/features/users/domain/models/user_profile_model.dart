@@ -114,16 +114,30 @@ class UserProfileModel extends UserModel {
           ? AccountStatusExtension.fromString(json['accountStatus'] as String)
           : AccountStatus.active,
       activationStatus: json['activationStatus'] as String?,
-      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'].toString()) : null,
-      lastLoginAt: json['lastLoginAt'] != null ? DateTime.tryParse(json['lastLoginAt'].toString()) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'].toString())
+          : null,
+      lastLoginAt: json['lastLoginAt'] != null
+          ? DateTime.tryParse(json['lastLoginAt'].toString())
+          : null,
       status: json['status'] != null
           ? UserStatusExtension.fromValue(json['status'] as String)
           : UserStatus.active,
       employeeId: (json['employeeId'] ?? json['instituteId']) as String?,
       rollNumber: json['rollNumber'] as String?,
-      assignedSubjects: (json['assignedSubjects'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
-      assignedClasses: (json['assignedClasses'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
+      assignedSubjects:
+          (json['assignedSubjects'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+      assignedClasses:
+          (json['assignedClasses'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
       attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble(),
     );
   }

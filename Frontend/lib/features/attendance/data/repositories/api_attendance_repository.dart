@@ -37,33 +37,58 @@ class ApiAttendanceRepository implements AttendanceRepository {
   }
 
   @override
-  Future<List<AssignedClass>> getAssignedClasses(String facultyId, DateTime date) async {
+  Future<List<AssignedClass>> getAssignedClasses(
+    String facultyId,
+    DateTime date,
+  ) async {
     try {
-      final target = (facultyId.isEmpty || facultyId == 'me') ? 'me' : facultyId;
-      final dateStr = '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      final target = (facultyId.isEmpty || facultyId == 'me')
+          ? 'me'
+          : facultyId;
+      final dateStr =
+          '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
       final response = await _client.dio.get(
         '/timetables/faculty/$target',
         queryParameters: {'date': dateStr},
       );
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
-      final list = data is List ? data : (data is Map && data['entries'] is List ? data['entries'] as List : null);
+      final list = data is List
+          ? data
+          : (data is Map && data['entries'] is List
+                ? data['entries'] as List
+                : null);
       if (list != null) {
         return list.asMap().entries.map((entry) {
           final idx = entry.key;
           final item = entry.value as Map<String, dynamic>;
-          final subjectName = (item['subjectName'] ?? item['subject']?['name'] ?? 'Subject').toString();
-          final sectionName = (item['sectionName'] ?? item['section']?['name'] ?? 'A').toString();
-          final subjectId = (item['subjectId'] ?? item['subject']?['_id'] ?? '').toString();
-          final sectionId = (item['sectionId'] ?? item['section']?['_id'] ?? '').toString();
-          final timeSlot = (item['timeSlot'] ?? '${item['startTime'] ?? '09:00'} - ${item['endTime'] ?? '10:00'}').toString();
-          final entryId = (item['id'] ?? item['_id'] ?? 'class_$idx').toString();
-          final timetableId = (item['timetableId'] ?? item['timetable']?['_id'])?.toString();
-          final facultyAssignmentId = (item['facultyAssignmentId'] ?? item['facultyAssignment']?['_id'])?.toString();
-          final facultyIdVal = (item['facultyId'] ?? item['faculty']?['_id'])?.toString();
+          final subjectName =
+              (item['subjectName'] ?? item['subject']?['name'] ?? 'Subject')
+                  .toString();
+          final sectionName =
+              (item['sectionName'] ?? item['section']?['name'] ?? 'A')
+                  .toString();
+          final subjectId = (item['subjectId'] ?? item['subject']?['_id'] ?? '')
+              .toString();
+          final sectionId = (item['sectionId'] ?? item['section']?['_id'] ?? '')
+              .toString();
+          final timeSlot =
+              (item['timeSlot'] ??
+                      '${item['startTime'] ?? '09:00'} - ${item['endTime'] ?? '10:00'}')
+                  .toString();
+          final entryId = (item['id'] ?? item['_id'] ?? 'class_$idx')
+              .toString();
+          final timetableId = (item['timetableId'] ?? item['timetable']?['_id'])
+              ?.toString();
+          final facultyAssignmentId =
+              (item['facultyAssignmentId'] ?? item['facultyAssignment']?['_id'])
+                  ?.toString();
+          final facultyIdVal = (item['facultyId'] ?? item['faculty']?['_id'])
+              ?.toString();
           final startTime = item['startTime']?.toString();
           final endTime = item['endTime']?.toString();
-          final roomNumber = (item['roomNumber'] ?? item['room'] ?? '101').toString();
+          final roomNumber = (item['roomNumber'] ?? item['room'] ?? '101')
+              .toString();
           final building = item['building']?.toString();
           final cohort = item['cohort']?.toString();
           final academicStage = item['academicStage']?.toString();
@@ -78,7 +103,12 @@ class ApiAttendanceRepository implements AttendanceRepository {
             subjectId: subjectId,
             sectionName: sectionName,
             sectionId: sectionId,
-            semester: (item['semesterName'] ?? item['semester'] ?? item['semesterId'] ?? 'Semester 1').toString(),
+            semester:
+                (item['semesterName'] ??
+                        item['semester'] ??
+                        item['semesterId'] ??
+                        'Semester 1')
+                    .toString(),
             timeSlot: timeSlot,
             startTime: startTime,
             endTime: endTime,
@@ -88,7 +118,8 @@ class ApiAttendanceRepository implements AttendanceRepository {
             academicStage: academicStage,
             date: date,
             isAttendanceMarked: item['isAttendanceMarked'] == true,
-            isSubstitution: item['isSubstitution'] == true || item['isSubstituted'] == true,
+            isSubstitution:
+                item['isSubstitution'] == true || item['isSubstituted'] == true,
             originalFacultyName: item['originalFacultyName']?.toString(),
             originalFacultyId: item['originalFacultyId']?.toString(),
             substitutionReason: item['substitutionReason']?.toString(),
@@ -98,7 +129,9 @@ class ApiAttendanceRepository implements AttendanceRepository {
       }
       return [];
     } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
+      if (e.response?.statusCode == 404 ||
+          e.response?.statusCode == 400 ||
+          e.type == DioExceptionType.connectionError) {
         return [];
       }
       throw _extractError(e, 'Failed to fetch assigned classes');
@@ -106,21 +139,37 @@ class ApiAttendanceRepository implements AttendanceRepository {
   }
 
   @override
-  Stream<List<AssignedClass>> watchAssignedClasses(String facultyId, DateTime date) =>
-      Stream.fromFuture(getAssignedClasses(facultyId, date));
+  Stream<List<AssignedClass>> watchAssignedClasses(
+    String facultyId,
+    DateTime date,
+  ) => Stream.fromFuture(getAssignedClasses(facultyId, date));
 
   @override
-  Future<List<SubjectAttendance>> getStudentSubjectAttendance(String studentId) async {
+  Future<List<SubjectAttendance>> getStudentSubjectAttendance(
+    String studentId,
+  ) async {
     try {
-      final response = await _client.dio.get('/attendance/students/me/subjects');
+      final response = await _client.dio.get(
+        '/attendance/students/me/subjects',
+      );
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
-      final subjects = data is List ? data : (data is Map && data['subjects'] is List ? data['subjects'] as List : null);
+      final subjects = data is List
+          ? data
+          : (data is Map && data['subjects'] is List
+                ? data['subjects'] as List
+                : null);
       if (subjects != null) {
         return subjects.map((s) {
           final m = s as Map<String, dynamic>;
-          final present = (m['presentCount'] as num?)?.toInt() ?? (m['present'] as num?)?.toInt() ?? 0;
-          final total = (m['totalClasses'] as num?)?.toInt() ?? (m['total'] as num?)?.toInt() ?? 0;
+          final present =
+              (m['presentCount'] as num?)?.toInt() ??
+              (m['present'] as num?)?.toInt() ??
+              0;
+          final total =
+              (m['totalClasses'] as num?)?.toInt() ??
+              (m['total'] as num?)?.toInt() ??
+              0;
           final missed = total >= present ? total - present : 0;
           return SubjectAttendance(
             subjectId: (m['subjectId'] ?? '').toString(),
@@ -141,7 +190,9 @@ class ApiAttendanceRepository implements AttendanceRepository {
   }
 
   @override
-  Future<StudentAttendanceOverview> getStudentAttendanceOverview(String studentId) async {
+  Future<StudentAttendanceOverview> getStudentAttendanceOverview(
+    String studentId,
+  ) async {
     try {
       final response = await _client.dio.get('/attendance/students/me/summary');
       final body = response.data;
@@ -149,14 +200,15 @@ class ApiAttendanceRepository implements AttendanceRepository {
       if (data is Map<String, dynamic>) {
         final total = (data['totalClasses'] as num?)?.toInt() ?? 0;
         final present = (data['presentCount'] as num?)?.toInt() ?? 0;
-        final percentage = (data['percentage'] as num?)?.toDouble() ?? (total > 0 ? (present / total) * 100 : 0.0);
-        return StudentAttendanceOverview(
-          overallPercentage: percentage,
-        );
+        final percentage =
+            (data['percentage'] as num?)?.toDouble() ??
+            (total > 0 ? (present / total) * 100 : 0.0);
+        return StudentAttendanceOverview(overallPercentage: percentage);
       }
       return StudentAttendanceOverview(overallPercentage: 0.0);
     } on DioException catch (e) {
-      if (e.response?.statusCode == 404) return StudentAttendanceOverview(overallPercentage: 0.0);
+      if (e.response?.statusCode == 404)
+        return StudentAttendanceOverview(overallPercentage: 0.0);
       throw _extractError(e, 'Failed to fetch student attendance overview');
     }
   }
@@ -201,9 +253,21 @@ class ApiAttendanceRepository implements AttendanceRepository {
               ? DateTime.tryParse(m['date'].toString()) ?? DateTime.now()
               : DateTime.now();
 
-          final subjectIdStr = (m['subjectId'] is Map ? (m['subjectId']['_id'] ?? m['subjectId']['id']) : m['subjectId'] ?? '').toString();
-          final subjectNameStr = (m['subjectName'] ?? (m['subjectId'] is Map ? m['subjectId']['name'] : null) ?? 'Subject').toString();
-          final facultyNameStr = (m['facultyName'] ?? (m['facultyId'] is Map ? m['facultyId']['name'] : null) ?? 'Faculty').toString();
+          final subjectIdStr =
+              (m['subjectId'] is Map
+                      ? (m['subjectId']['_id'] ?? m['subjectId']['id'])
+                      : m['subjectId'] ?? '')
+                  .toString();
+          final subjectNameStr =
+              (m['subjectName'] ??
+                      (m['subjectId'] is Map ? m['subjectId']['name'] : null) ??
+                      'Subject')
+                  .toString();
+          final facultyNameStr =
+              (m['facultyName'] ??
+                      (m['facultyId'] is Map ? m['facultyId']['name'] : null) ??
+                      'Faculty')
+                  .toString();
 
           return AttendanceHistoryRecord(
             id: (m['id'] ?? m['_id'] ?? '').toString(),
@@ -218,7 +282,9 @@ class ApiAttendanceRepository implements AttendanceRepository {
       }
       return [];
     } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
+      if (e.response?.statusCode == 404 ||
+          e.response?.statusCode == 400 ||
+          e.type == DioExceptionType.connectionError) {
         return [];
       }
       throw _extractError(e, 'Failed to fetch attendance history');
@@ -226,7 +292,9 @@ class ApiAttendanceRepository implements AttendanceRepository {
   }
 
   @override
-  Future<List<MonthlyAttendanceSummary>> getStudentMonthlySummary(String studentId) async {
+  Future<List<MonthlyAttendanceSummary>> getStudentMonthlySummary(
+    String studentId,
+  ) async {
     return [];
   }
 
@@ -239,7 +307,10 @@ class ApiAttendanceRepository implements AttendanceRepository {
   }) async {
     try {
       // 1. Fetch real active enrollments for this section directly
-      final Map<String, dynamic> enrollParams = {'status': 'active', 'limit': 100};
+      final Map<String, dynamic> enrollParams = {
+        'status': 'active',
+        'limit': 100,
+      };
       if (sectionId.isNotEmpty && sectionId != 'none' && sectionId != 'null') {
         enrollParams['sectionId'] = sectionId;
       }
@@ -248,8 +319,14 @@ class ApiAttendanceRepository implements AttendanceRepository {
         queryParameters: enrollParams,
       );
       final enrollBody = enrollResponse.data;
-      final enrollData = enrollBody is Map<String, dynamic> ? (enrollBody['data'] ?? enrollBody) : enrollBody;
-      final enrollList = enrollData is List ? enrollData : (enrollData is Map && enrollData['items'] is List ? enrollData['items'] as List : null);
+      final enrollData = enrollBody is Map<String, dynamic>
+          ? (enrollBody['data'] ?? enrollBody)
+          : enrollBody;
+      final enrollList = enrollData is List
+          ? enrollData
+          : (enrollData is Map && enrollData['items'] is List
+                ? enrollData['items'] as List
+                : null);
 
       if (enrollList == null || enrollList.isEmpty) {
         return [];
@@ -266,7 +343,9 @@ class ApiAttendanceRepository implements AttendanceRepository {
           'to': toDate.toIso8601String(),
           'limit': 1,
         };
-        if (sectionId.isNotEmpty && sectionId != 'none' && sectionId != 'null') {
+        if (sectionId.isNotEmpty &&
+            sectionId != 'none' &&
+            sectionId != 'null') {
           sessionParams['sectionId'] = sectionId;
         }
         final sessionResp = await _client.dio.get(
@@ -274,8 +353,14 @@ class ApiAttendanceRepository implements AttendanceRepository {
           queryParameters: sessionParams,
         );
         final sessionBody = sessionResp.data;
-        final sData = sessionBody is Map<String, dynamic> ? (sessionBody['data'] ?? sessionBody) : sessionBody;
-        final sItems = sData is List ? sData : (sData is Map && sData['items'] is List ? sData['items'] as List : null);
+        final sData = sessionBody is Map<String, dynamic>
+            ? (sessionBody['data'] ?? sessionBody)
+            : sessionBody;
+        final sItems = sData is List
+            ? sData
+            : (sData is Map && sData['items'] is List
+                  ? sData['items'] as List
+                  : null);
         if (sItems != null && sItems.isNotEmpty) {
           final firstSession = sItems[0] as Map<String, dynamic>;
           final recs = firstSession['records'] as List?;
@@ -307,24 +392,28 @@ class ApiAttendanceRepository implements AttendanceRepository {
         if (item is! Map) continue;
         final stuMap = item['student'] is Map
             ? item['student'] as Map
-            : (item['studentId'] is Map
-                ? item['studentId'] as Map
-                : null);
+            : (item['studentId'] is Map ? item['studentId'] as Map : null);
 
-        final studentId = (stuMap?['_id'] ?? stuMap?['id'] ?? item['studentId'] ?? '').toString();
+        final studentId =
+            (stuMap?['_id'] ?? stuMap?['id'] ?? item['studentId'] ?? '')
+                .toString();
         if (studentId.isEmpty) continue;
 
         final studentName = (stuMap?['name'] ?? 'Student').toString();
-        final rollNumber = (stuMap?['rollNumber'] ?? stuMap?['admissionNumber'] ?? 'N/A').toString();
+        final rollNumber =
+            (stuMap?['rollNumber'] ?? stuMap?['admissionNumber'] ?? 'N/A')
+                .toString();
 
-        records.add(AttendanceRecord(
-          id: 'rec_$studentId',
-          studentId: studentId,
-          studentName: studentName,
-          rollNumber: rollNumber,
-          sectionId: sectionId,
-          status: existingStatusMap[studentId],
-        ));
+        records.add(
+          AttendanceRecord(
+            id: 'rec_$studentId',
+            studentId: studentId,
+            studentName: studentName,
+            rollNumber: rollNumber,
+            sectionId: sectionId,
+            status: existingStatusMap[studentId],
+          ),
+        );
       }
 
       // 4. Stable ordering: roll number, then student name
@@ -351,47 +440,72 @@ class ApiAttendanceRepository implements AttendanceRepository {
         'subjectName': session.subjectName,
         'timeSlot': session.timeSlot,
         'date': session.date.toIso8601String().substring(0, 10),
-        'records': session.records.map((r) => {
-          'studentId': r.studentId,
-          'studentName': r.studentName,
-          'rollNumber': r.rollNumber,
-          'status': (r.status?.name ?? 'present').toLowerCase(),
-        }).toList(),
+        'records': session.records
+            .map(
+              (r) => {
+                'studentId': r.studentId,
+                'studentName': r.studentName,
+                'rollNumber': r.rollNumber,
+                'status': (r.status?.name ?? 'present').toLowerCase(),
+              },
+            )
+            .toList(),
       };
-      if (session.sectionId.isNotEmpty && session.sectionId != 'none' && session.sectionId != 'null') {
+      if (session.sectionId.isNotEmpty &&
+          session.sectionId != 'none' &&
+          session.sectionId != 'null') {
         payload['sectionId'] = session.sectionId;
         payload['sectionName'] = session.sectionName;
       }
       if (session.timetableId != null && session.timetableId!.isNotEmpty) {
         payload['timetableId'] = session.timetableId;
       }
-      if (session.timetableEntryId != null && session.timetableEntryId!.isNotEmpty) {
+      if (session.timetableEntryId != null &&
+          session.timetableEntryId!.isNotEmpty) {
         payload['timetableEntryId'] = session.timetableEntryId;
       }
-      if (session.facultyAssignmentId != null && session.facultyAssignmentId!.isNotEmpty) {
+      if (session.facultyAssignmentId != null &&
+          session.facultyAssignmentId!.isNotEmpty) {
         payload['facultyAssignmentId'] = session.facultyAssignmentId;
       }
       if (session.isSubstitution) {
         payload['isSubstitution'] = true;
-        if (session.substitutionId != null && session.substitutionId!.isNotEmpty) {
+        if (session.substitutionId != null &&
+            session.substitutionId!.isNotEmpty) {
           payload['substitutionId'] = session.substitutionId;
         }
       }
-      final response = await _client.dio.post('/attendance/sessions', data: payload);
+      final response = await _client.dio.post(
+        '/attendance/sessions',
+        data: payload,
+      );
       return response.statusCode == 200 || response.statusCode == 201;
     } on DioException catch (e) {
       if (e.response?.statusCode == 409) {
         // If session already exists, update records on existing session
         try {
-          final fromDate = DateTime(session.date.year, session.date.month, session.date.day);
-          final toDate = DateTime(session.date.year, session.date.month, session.date.day, 23, 59, 59);
+          final fromDate = DateTime(
+            session.date.year,
+            session.date.month,
+            session.date.day,
+          );
+          final toDate = DateTime(
+            session.date.year,
+            session.date.month,
+            session.date.day,
+            23,
+            59,
+            59,
+          );
           final Map<String, dynamic> fallbackParams = {
             'subjectId': session.subjectId,
             'from': fromDate.toIso8601String(),
             'to': toDate.toIso8601String(),
             'limit': 1,
           };
-          if (session.sectionId.isNotEmpty && session.sectionId != 'none' && session.sectionId != 'null') {
+          if (session.sectionId.isNotEmpty &&
+              session.sectionId != 'none' &&
+              session.sectionId != 'null') {
             fallbackParams['sectionId'] = session.sectionId;
           }
           final existingResp = await _client.dio.get(
@@ -399,18 +513,29 @@ class ApiAttendanceRepository implements AttendanceRepository {
             queryParameters: fallbackParams,
           );
           final eBody = existingResp.data;
-          final eData = eBody is Map<String, dynamic> ? (eBody['data'] ?? eBody) : eBody;
-          final eItems = eData is List ? eData : (eData is Map && eData['items'] is List ? eData['items'] as List : null);
+          final eData = eBody is Map<String, dynamic>
+              ? (eBody['data'] ?? eBody)
+              : eBody;
+          final eItems = eData is List
+              ? eData
+              : (eData is Map && eData['items'] is List
+                    ? eData['items'] as List
+                    : null);
           if (eItems != null && eItems.isNotEmpty) {
-            final existingSessionId = (eItems[0]['id'] ?? eItems[0]['_id']).toString();
+            final existingSessionId = (eItems[0]['id'] ?? eItems[0]['_id'])
+                .toString();
             final updateResp = await _client.dio.post(
               '/attendance/sessions/$existingSessionId/records',
               data: {
-                'records': session.records.map((r) => {
-                  'studentId': r.studentId,
-                  'status': (r.status?.name ?? 'present').toLowerCase(),
-                  'remarks': r.remarks,
-                }).toList(),
+                'records': session.records
+                    .map(
+                      (r) => {
+                        'studentId': r.studentId,
+                        'status': (r.status?.name ?? 'present').toLowerCase(),
+                        'remarks': r.remarks,
+                      },
+                    )
+                    .toList(),
               },
             );
             return updateResp.statusCode == 200 || updateResp.statusCode == 201;
@@ -434,10 +559,19 @@ class ApiAttendanceRepository implements AttendanceRepository {
       final response = await _client.dio.get('/attendance/faculty/me');
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
-      final list = data is List ? data : (data is Map && data['sessions'] is List ? data['sessions'] as List : null);
+      final list = data is List
+          ? data
+          : (data is Map && data['sessions'] is List
+                ? data['sessions'] as List
+                : null);
 
       if (list != null) {
-        return list.map((item) => AttendanceSession.fromJson(item as Map<String, dynamic>)).toList();
+        return list
+            .map(
+              (item) =>
+                  AttendanceSession.fromJson(item as Map<String, dynamic>),
+            )
+            .toList();
       }
       return [];
     } on DioException catch (e) {
@@ -472,17 +606,24 @@ class ApiAttendanceRepository implements AttendanceRepository {
   }) async {
     try {
       final queryParams = <String, dynamic>{};
-      if (departmentId != null && departmentId.isNotEmpty) queryParams['departmentId'] = departmentId;
-      if (sectionId != null && sectionId.isNotEmpty) queryParams['sectionId'] = sectionId;
-      if (subjectId != null && subjectId.isNotEmpty) queryParams['subjectId'] = subjectId;
-      if (facultyId != null && facultyId.isNotEmpty) queryParams['facultyId'] = facultyId;
+      if (departmentId != null && departmentId.isNotEmpty)
+        queryParams['departmentId'] = departmentId;
+      if (sectionId != null && sectionId.isNotEmpty)
+        queryParams['sectionId'] = sectionId;
+      if (subjectId != null && subjectId.isNotEmpty)
+        queryParams['subjectId'] = subjectId;
+      if (facultyId != null && facultyId.isNotEmpty)
+        queryParams['facultyId'] = facultyId;
       if (status != null && status.isNotEmpty) queryParams['status'] = status;
       if (from != null) queryParams['from'] = from.toIso8601String();
       if (to != null) queryParams['to'] = to.toIso8601String();
       if (page != null) queryParams['page'] = page;
       if (limit != null) queryParams['limit'] = limit;
 
-      final response = await _client.dio.get('/attendance/sessions', queryParameters: queryParams);
+      final response = await _client.dio.get(
+        '/attendance/sessions',
+        queryParameters: queryParams,
+      );
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
       final items = data is Map && data['items'] is List
@@ -490,7 +631,12 @@ class ApiAttendanceRepository implements AttendanceRepository {
           : (data is List ? data : null);
 
       if (items != null) {
-        return items.map((item) => AttendanceSession.fromJson(item as Map<String, dynamic>)).toList();
+        return items
+            .map(
+              (item) =>
+                  AttendanceSession.fromJson(item as Map<String, dynamic>),
+            )
+            .toList();
       }
       return [];
     } on DioException catch (e) {
@@ -502,7 +648,9 @@ class ApiAttendanceRepository implements AttendanceRepository {
   @override
   Future<AttendanceSession> lockSession(String sessionId) async {
     try {
-      final response = await _client.dio.post('/attendance/sessions/$sessionId/lock');
+      final response = await _client.dio.post(
+        '/attendance/sessions/$sessionId/lock',
+      );
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
       return AttendanceSession.fromJson(data as Map<String, dynamic>);
@@ -514,7 +662,9 @@ class ApiAttendanceRepository implements AttendanceRepository {
   @override
   Future<AttendanceSession> closeSession(String sessionId) async {
     try {
-      final response = await _client.dio.post('/attendance/sessions/$sessionId/close');
+      final response = await _client.dio.post(
+        '/attendance/sessions/$sessionId/close',
+      );
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
       return AttendanceSession.fromJson(data as Map<String, dynamic>);
@@ -526,7 +676,9 @@ class ApiAttendanceRepository implements AttendanceRepository {
   @override
   Future<AttendanceSession> cancelSession(String sessionId) async {
     try {
-      final response = await _client.dio.post('/attendance/sessions/$sessionId/cancel');
+      final response = await _client.dio.post(
+        '/attendance/sessions/$sessionId/cancel',
+      );
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
       return AttendanceSession.fromJson(data as Map<String, dynamic>);
@@ -542,10 +694,10 @@ class ApiAttendanceRepository implements AttendanceRepository {
     required String reason,
   }) async {
     try {
-      final response = await _client.dio.patch('/attendance/records/$recordId/correct', data: {
-        'newStatus': newStatus.name,
-        'reason': reason,
-      });
+      final response = await _client.dio.patch(
+        '/attendance/records/$recordId/correct',
+        data: {'newStatus': newStatus.name, 'reason': reason},
+      );
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
       return AttendanceRecord.fromJson(data as Map<String, dynamic>);
@@ -555,21 +707,27 @@ class ApiAttendanceRepository implements AttendanceRepository {
   }
 
   @override
-  Future<DepartmentAttendanceSummary> getDepartmentSummary(String departmentId) async {
+  Future<DepartmentAttendanceSummary> getDepartmentSummary(
+    String departmentId,
+  ) async {
     try {
-      final response = await _client.dio.get('/reports/attendance/department/$departmentId');
+      final response = await _client.dio.get(
+        '/reports/attendance/department/$departmentId',
+      );
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
       if (data is Map<String, dynamic>) {
         final summary = data['summary'] as Map<String, dynamic>? ?? data;
         return DepartmentAttendanceSummary(
-          overallPercentage: (summary['percentage'] as num?)?.toDouble() ??
+          overallPercentage:
+              (summary['percentage'] as num?)?.toDouble() ??
               (summary['attendancePercentage'] as num?)?.toDouble() ??
               0.0,
           studentsBelow75: (summary['studentsBelow75'] as num?)?.toInt() ?? 0,
           facultyCompleted: (summary['facultyCompleted'] as num?)?.toInt() ?? 0,
           facultyPending: (summary['facultyPending'] as num?)?.toInt() ?? 0,
-          todayClasses: (summary['todayClasses'] as num?)?.toInt() ??
+          todayClasses:
+              (summary['todayClasses'] as num?)?.toInt() ??
               (summary['totalClasses'] as num?)?.toInt() ??
               0,
           totalStudents: (summary['totalStudents'] as num?)?.toInt() ?? 0,
@@ -599,17 +757,26 @@ class ApiAttendanceRepository implements AttendanceRepository {
   }
 
   @override
-  Stream<DepartmentAttendanceSummary> watchDepartmentSummary(String departmentId) =>
-      Stream.fromFuture(getDepartmentSummary(departmentId));
+  Stream<DepartmentAttendanceSummary> watchDepartmentSummary(
+    String departmentId,
+  ) => Stream.fromFuture(getDepartmentSummary(departmentId));
 
   @override
-  Future<List<FacultyAttendanceCompletion>> getFacultyCompletionStatus(String departmentId, DateTime date) async => [];
+  Future<List<FacultyAttendanceCompletion>> getFacultyCompletionStatus(
+    String departmentId,
+    DateTime date,
+  ) async => [];
 
   @override
-  Future<List<StudentShortage>> getStudentShortages(String departmentId) async => [];
+  Future<List<StudentShortage>> getStudentShortages(
+    String departmentId,
+  ) async => [];
 
   @override
-  Future<List<SectionAttendanceSummary>> getSectionAttendance(String departmentId, DateTime date) async => [];
+  Future<List<SectionAttendanceSummary>> getSectionAttendance(
+    String departmentId,
+    DateTime date,
+  ) async => [];
 
   @override
   Future<CollegeAttendanceSummary> getCollegeSummary() async {
@@ -618,25 +785,32 @@ class ApiAttendanceRepository implements AttendanceRepository {
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
       if (data is Map<String, dynamic>) {
-        final metrics = (data['metrics'] as Map<String, dynamic>?) ??
+        final metrics =
+            (data['metrics'] as Map<String, dynamic>?) ??
             (data['kpis'] as Map<String, dynamic>?) ??
             data;
         return CollegeAttendanceSummary(
-          todayAttendancePercentage: (metrics['collegeAttendancePercentage'] as num?)?.toDouble() ??
+          todayAttendancePercentage:
+              (metrics['collegeAttendancePercentage'] as num?)?.toDouble() ??
               (metrics['avgAttendance'] as num?)?.toDouble() ??
               0.0,
-          totalStudents: (metrics['studentsCount'] as num?)?.toInt() ??
+          totalStudents:
+              (metrics['studentsCount'] as num?)?.toInt() ??
               (metrics['totalStudents'] as num?)?.toInt() ??
               0,
-          totalFaculty: (metrics['facultyCount'] as num?)?.toInt() ??
+          totalFaculty:
+              (metrics['facultyCount'] as num?)?.toInt() ??
               (metrics['totalFaculty'] as num?)?.toInt() ??
               0,
-          totalDepartments: (metrics['departmentsCount'] as num?)?.toInt() ??
+          totalDepartments:
+              (metrics['departmentsCount'] as num?)?.toInt() ??
               (metrics['totalDepartments'] as num?)?.toInt() ??
               0,
-          studentsBelowThreshold: (metrics['studentsBelowThreshold'] as num?)?.toInt() ?? 0,
+          studentsBelowThreshold:
+              (metrics['studentsBelowThreshold'] as num?)?.toInt() ?? 0,
           pendingFaculty: 0,
-          completedFaculty: (metrics['facultyCount'] as num?)?.toInt() ??
+          completedFaculty:
+              (metrics['facultyCount'] as num?)?.toInt() ??
               (metrics['totalFaculty'] as num?)?.toInt() ??
               0,
         );
@@ -668,13 +842,16 @@ class ApiAttendanceRepository implements AttendanceRepository {
       Stream.fromFuture(getCollegeSummary());
 
   @override
-  Future<List<DepartmentAttendanceComparison>> getDepartmentComparisons() async => [];
+  Future<List<DepartmentAttendanceComparison>>
+  getDepartmentComparisons() async => [];
 
   @override
   Future<List<CollegeInsight>> getCollegeInsights() async => [];
 
   @override
-  Future<List<CollegeFacultyCompletion>> getCollegeFacultyCompletion(DateTime date) async => [];
+  Future<List<CollegeFacultyCompletion>> getCollegeFacultyCompletion(
+    DateTime date,
+  ) async => [];
 
   @override
   Future<List<CollegeStudentShortage>> getCollegeStudentShortages() async => [];
@@ -686,26 +863,33 @@ class ApiAttendanceRepository implements AttendanceRepository {
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
       if (data is Map<String, dynamic>) {
-        final metrics = (data['metrics'] as Map<String, dynamic>?) ??
+        final metrics =
+            (data['metrics'] as Map<String, dynamic>?) ??
             (data['kpis'] as Map<String, dynamic>?) ??
             data;
         return SuperAdminAttendanceSummary(
-          totalColleges: (metrics['totalColleges'] as num?)?.toInt() ??
+          totalColleges:
+              (metrics['totalColleges'] as num?)?.toInt() ??
               (metrics['collegesCount'] as num?)?.toInt() ??
               0,
-          totalDepartments: (metrics['totalDepartments'] as num?)?.toInt() ??
+          totalDepartments:
+              (metrics['totalDepartments'] as num?)?.toInt() ??
               (metrics['departmentsCount'] as num?)?.toInt() ??
               0,
-          totalStudents: (metrics['totalStudents'] as num?)?.toInt() ??
+          totalStudents:
+              (metrics['totalStudents'] as num?)?.toInt() ??
               (metrics['studentsCount'] as num?)?.toInt() ??
               0,
-          totalFaculty: (metrics['totalFaculty'] as num?)?.toInt() ??
+          totalFaculty:
+              (metrics['totalFaculty'] as num?)?.toInt() ??
               (metrics['facultyCount'] as num?)?.toInt() ??
               0,
-          totalCollegeAdmins: (metrics['totalCollegeAdmins'] as num?)?.toInt() ??
+          totalCollegeAdmins:
+              (metrics['totalCollegeAdmins'] as num?)?.toInt() ??
               (metrics['collegeAdminsCount'] as num?)?.toInt() ??
               0,
-          todayAttendancePercentage: (metrics['systemAttendancePercentage'] as num?)?.toDouble() ??
+          todayAttendancePercentage:
+              (metrics['systemAttendancePercentage'] as num?)?.toDouble() ??
               (metrics['avgAttendance'] as num?)?.toDouble() ??
               0.0,
           pendingColleges: 0,
@@ -752,13 +936,19 @@ class ApiAttendanceRepository implements AttendanceRepository {
       );
 
   @override
-  Future<List<SuperAdminFacultyCompletion>> getSuperAdminFacultyCompletion(DateTime date) async => [];
+  Future<List<SuperAdminFacultyCompletion>> getSuperAdminFacultyCompletion(
+    DateTime date,
+  ) async => [];
 
   @override
-  Future<List<SuperAdminStudentShortage>> getSuperAdminStudentShortages() async => [];
+  Future<List<SuperAdminStudentShortage>>
+  getSuperAdminStudentShortages() async => [];
 
   @override
-  Future<StudentAttendanceAnalytics> getStudentAttendanceAnalytics(String studentId, {AttendanceDateRange? dateRange}) async {
+  Future<StudentAttendanceAnalytics> getStudentAttendanceAnalytics(
+    String studentId, {
+    AttendanceDateRange? dateRange,
+  }) async {
     final overview = await getStudentAttendanceOverview(studentId);
     return StudentAttendanceAnalytics(
       studentId: studentId,
@@ -769,7 +959,11 @@ class ApiAttendanceRepository implements AttendanceRepository {
   }
 
   @override
-  Future<SubjectAttendanceAnalytics> getSubjectAttendanceAnalytics(String subjectId, {String? sectionId, AttendanceDateRange? dateRange}) async {
+  Future<SubjectAttendanceAnalytics> getSubjectAttendanceAnalytics(
+    String subjectId, {
+    String? sectionId,
+    AttendanceDateRange? dateRange,
+  }) async {
     return SubjectAttendanceAnalytics(
       subjectId: subjectId,
       attendancePercentage: 0.0,
@@ -778,7 +972,10 @@ class ApiAttendanceRepository implements AttendanceRepository {
   }
 
   @override
-  Future<SectionAttendanceAnalytics> getSectionAttendanceAnalytics(String sectionId, {AttendanceDateRange? dateRange}) async {
+  Future<SectionAttendanceAnalytics> getSectionAttendanceAnalytics(
+    String sectionId, {
+    AttendanceDateRange? dateRange,
+  }) async {
     return SectionAttendanceAnalytics(
       sectionId: sectionId,
       attendancePercentage: 0.0,
@@ -787,7 +984,10 @@ class ApiAttendanceRepository implements AttendanceRepository {
   }
 
   @override
-  Future<FacultyAttendanceAnalytics> getFacultyAttendanceAnalytics(String facultyId, {AttendanceDateRange? dateRange}) async {
+  Future<FacultyAttendanceAnalytics> getFacultyAttendanceAnalytics(
+    String facultyId, {
+    AttendanceDateRange? dateRange,
+  }) async {
     return FacultyAttendanceAnalytics(
       facultyId: facultyId,
       attendancePercentage: 100.0,
@@ -796,7 +996,11 @@ class ApiAttendanceRepository implements AttendanceRepository {
   }
 
   @override
-  Future<AttendanceDateRangeSummary> getAttendanceDateRangeSummary({AttendanceDateRange? dateRange, String? departmentId, String? sectionId}) async {
+  Future<AttendanceDateRangeSummary> getAttendanceDateRangeSummary({
+    AttendanceDateRange? dateRange,
+    String? departmentId,
+    String? sectionId,
+  }) async {
     final now = DateTime.now();
     return AttendanceDateRangeSummary(
       startDate: dateRange?.startDate ?? DateTime(now.year, now.month, 1),
@@ -844,13 +1048,15 @@ class ApiAttendanceRepository implements AttendanceRepository {
     String? remarks,
   }) async {
     try {
-      final dateStr = '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      final dateStr =
+          '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
       final payload = <String, dynamic>{
         'academicYearId': academicYearId,
         'semesterId': semesterId,
         if (sectionId != null && sectionId.isNotEmpty) 'sectionId': sectionId,
         'subjectId': subjectId,
-        if (facultyAssignmentId != null && facultyAssignmentId.isNotEmpty) 'facultyAssignmentId': facultyAssignmentId,
+        if (facultyAssignmentId != null && facultyAssignmentId.isNotEmpty)
+          'facultyAssignmentId': facultyAssignmentId,
         'date': dateStr,
         'timeSlot': timeSlot,
         'records': records,
@@ -864,7 +1070,10 @@ class ApiAttendanceRepository implements AttendanceRepository {
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
       return AttendanceSession.fromJson(data as Map<String, dynamic>);
     } on DioException catch (e) {
-      throw _extractError(e, 'Failed to record detailed historical attendance session');
+      throw _extractError(
+        e,
+        'Failed to record detailed historical attendance session',
+      );
     }
   }
 
@@ -887,9 +1096,11 @@ class ApiAttendanceRepository implements AttendanceRepository {
         'subjectId': subjectId,
         'periodLabel': periodLabel,
         if (periodStart != null)
-          'periodStart': '${periodStart.year.toString().padLeft(4, '0')}-${periodStart.month.toString().padLeft(2, '0')}-${periodStart.day.toString().padLeft(2, '0')}',
+          'periodStart':
+              '${periodStart.year.toString().padLeft(4, '0')}-${periodStart.month.toString().padLeft(2, '0')}-${periodStart.day.toString().padLeft(2, '0')}',
         if (periodEnd != null)
-          'periodEnd': '${periodEnd.year.toString().padLeft(4, '0')}-${periodEnd.month.toString().padLeft(2, '0')}-${periodEnd.day.toString().padLeft(2, '0')}',
+          'periodEnd':
+              '${periodEnd.year.toString().padLeft(4, '0')}-${periodEnd.month.toString().padLeft(2, '0')}-${periodEnd.day.toString().padLeft(2, '0')}',
         'entries': entries,
       };
       final response = await _client.dio.post(
@@ -904,7 +1115,10 @@ class ApiAttendanceRepository implements AttendanceRepository {
       if (data is List) return data;
       return [];
     } on DioException catch (e) {
-      throw _extractError(e, 'Failed to record historical attendance summaries');
+      throw _extractError(
+        e,
+        'Failed to record historical attendance summaries',
+      );
     }
   }
 
@@ -920,7 +1134,8 @@ class ApiAttendanceRepository implements AttendanceRepository {
       final payload = <String, dynamic>{
         if (recordId != null) 'recordId': recordId,
         if (sessionId != null) 'sessionId': sessionId,
-        if (studentEnrollmentId != null) 'studentEnrollmentId': studentEnrollmentId,
+        if (studentEnrollmentId != null)
+          'studentEnrollmentId': studentEnrollmentId,
         'newStatus': newStatus.name,
         'reason': reason,
       };

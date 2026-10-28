@@ -70,7 +70,5 @@ abstract class AchievementRepository {
   });
 
   /// Computes metrics for an admin/HOD verification dashboard.
-  Future<AchievementMetrics> getAdminMetrics({
-    required UserModel requester,
-  });
+  Future<AchievementMetrics> getAdminMetrics({required UserModel requester});
 }

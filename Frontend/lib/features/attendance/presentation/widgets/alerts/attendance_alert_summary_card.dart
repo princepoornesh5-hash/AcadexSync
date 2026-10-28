@@ -11,10 +11,7 @@ import 'package:campus_management/features/attendance/presentation/screens/atten
 class AttendanceAlertSummaryCard extends ConsumerWidget {
   final VoidCallback? onViewAlerts;
 
-  const AttendanceAlertSummaryCard({
-    super.key,
-    this.onViewAlerts,
-  });
+  const AttendanceAlertSummaryCard({super.key, this.onViewAlerts});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -77,14 +74,18 @@ class AttendanceAlertSummaryCard extends ConsumerWidget {
                               Text(
                                 'Attendance Early Warnings',
                                 style: AcadexTypography.heading2(
-                                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                               Text(
                                 'Automated risk monitoring & compliance alerts',
                                 style: AcadexTypography.caption(
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -100,16 +101,19 @@ class AttendanceAlertSummaryCard extends ConsumerWidget {
                     icon: LucideIcons.arrowRight,
                     variant: AcadexButtonVariant.secondary,
                     size: AcadexButtonSize.sm,
-                    onPressed: onViewAlerts ?? () {
-                      if (context.mounted) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AttendanceAlertsScreen(),
-                          ),
-                        );
-                      }
-                    },
+                    onPressed:
+                        onViewAlerts ??
+                        () {
+                          if (context.mounted) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const AttendanceAlertsScreen(),
+                              ),
+                            );
+                          }
+                        },
                   ),
                 ],
               ),
@@ -207,9 +211,9 @@ class AttendanceAlertSummaryCard extends ConsumerWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: AcadexTypography.caption(color: color).copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: AcadexTypography.caption(
+              color: color,
+            ).copyWith(fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -247,14 +251,16 @@ class AttendanceAlertSummaryCard extends ConsumerWidget {
               children: [
                 Text(
                   '$count',
-                  style: AcadexTypography.heading2(color: color).copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: AcadexTypography.heading2(
+                    color: color,
+                  ).copyWith(fontWeight: FontWeight.w800),
                 ),
                 Text(
                   label,
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),

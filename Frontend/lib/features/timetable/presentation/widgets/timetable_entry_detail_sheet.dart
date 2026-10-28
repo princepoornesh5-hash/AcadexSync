@@ -36,16 +36,16 @@ class TimetableEntryDetailSheet extends ConsumerWidget {
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (ctx) => TimetableEntryDetailSheet(
-          entry: entry,
-          selectedDate: selectedDate,
-        ),
+        builder: (ctx) =>
+            TimetableEntryDetailSheet(entry: entry, selectedDate: selectedDate),
       );
     } else {
       await showDialog<void>(
         context: context,
         builder: (ctx) => Dialog(
-          shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusXl),
+          shape: RoundedRectangleBorder(
+            borderRadius: AcadexRadius.borderRadiusXl,
+          ),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
             child: TimetableEntryDetailSheet(
@@ -67,10 +67,13 @@ class TimetableEntryDetailSheet extends ConsumerWidget {
     String? resolvedFaId = entry.facultyAssignmentId;
     if (resolvedFaId == null || resolvedFaId.isEmpty) {
       final myAssignments = ref.read(myFacultyAssignmentsProvider);
-      final match = myAssignments.where((a) =>
-        a.subjectId == entry.subjectId &&
-        (a.sectionId == null || a.sectionId == entry.sectionId)
-      ).firstOrNull;
+      final match = myAssignments
+          .where(
+            (a) =>
+                a.subjectId == entry.subjectId &&
+                (a.sectionId == null || a.sectionId == entry.sectionId),
+          )
+          .firstOrNull;
       if (match != null) {
         resolvedFaId = match.id;
       }
@@ -79,7 +82,9 @@ class TimetableEntryDetailSheet extends ConsumerWidget {
     if (resolvedFaId == null || resolvedFaId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Cannot mark attendance: This timetable entry is not associated with an authorized teaching assignment.'),
+          content: Text(
+            'Cannot mark attendance: This timetable entry is not associated with an authorized teaching assignment.',
+          ),
           backgroundColor: AcadexColors.error,
         ),
       );
@@ -153,9 +158,12 @@ class TimetableEntryDetailSheet extends ConsumerWidget {
     String? academicContext = entry.contextualDescription;
     if (academicContext == null || academicContext.isEmpty) {
       final parts = <String>[];
-      if (entry.cohort != null && entry.cohort!.isNotEmpty) parts.add(entry.cohort!);
-      if (entry.academicStage != null && entry.academicStage!.isNotEmpty) parts.add(entry.academicStage!);
-      if (entry.semesterName != null && entry.semesterName!.isNotEmpty) parts.add(entry.semesterName!);
+      if (entry.cohort != null && entry.cohort!.isNotEmpty)
+        parts.add(entry.cohort!);
+      if (entry.academicStage != null && entry.academicStage!.isNotEmpty)
+        parts.add(entry.academicStage!);
+      if (entry.semesterName != null && entry.semesterName!.isNotEmpty)
+        parts.add(entry.semesterName!);
       if (parts.isNotEmpty) {
         academicContext = parts.join(' · ');
       }
@@ -227,11 +235,16 @@ class TimetableEntryDetailSheet extends ConsumerWidget {
               ),
               if (status == TimetableEntryStatus.now) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AcadexColors.error.withValues(alpha: 0.12),
                     borderRadius: AcadexRadius.borderRadiusSm,
-                    border: Border.all(color: AcadexColors.error.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: AcadexColors.error.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: const Text(
                     'LIVE NOW',
@@ -244,11 +257,16 @@ class TimetableEntryDetailSheet extends ConsumerWidget {
                 ),
               ] else if (status == TimetableEntryStatus.upNext) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AcadexColors.primary.withValues(alpha: 0.12),
                     borderRadius: AcadexRadius.borderRadiusSm,
-                    border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: AcadexColors.primary.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: const Text(
                     'UP NEXT',
@@ -264,7 +282,10 @@ class TimetableEntryDetailSheet extends ConsumerWidget {
           ),
 
           const SizedBox(height: 16),
-          Divider(height: 1, color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
+          Divider(
+            height: 1,
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+          ),
           const SizedBox(height: 16),
 
           // Substitution notice if applicable
@@ -275,11 +296,17 @@ class TimetableEntryDetailSheet extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: AcadexColors.warning.withValues(alpha: 0.12),
                 borderRadius: AcadexRadius.borderRadiusMd,
-                border: Border.all(color: AcadexColors.warning.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: AcadexColors.warning.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.swap_horiz_rounded, size: 18, color: AcadexColors.warning),
+                  const Icon(
+                    Icons.swap_horiz_rounded,
+                    size: 18,
+                    color: AcadexColors.warning,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -308,7 +335,8 @@ class TimetableEntryDetailSheet extends ConsumerWidget {
             context,
             icon: LucideIcons.calendar,
             label: 'Day & Time',
-            value: '${entry.dayOfWeek.displayName} · ${entry.startTime} – ${entry.endTime}',
+            value:
+                '${entry.dayOfWeek.displayName} · ${entry.startTime} – ${entry.endTime}',
           ),
           const SizedBox(height: 10),
           _buildDetailItem(
@@ -355,15 +383,21 @@ class TimetableEntryDetailSheet extends ConsumerWidget {
               // Faculty: Mark Attendance
               if (role == AppRole.faculty) ...[
                 ElevatedButton.icon(
-                  onPressed: () => _onMarkAttendance(context, ref, subjectName, sectionName),
+                  onPressed: () =>
+                      _onMarkAttendance(context, ref, subjectName, sectionName),
                   icon: const Icon(LucideIcons.clipboardCheck, size: 16),
                   label: const Text('Mark Attendance'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AcadexColors.primary,
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                    ),
                   ),
                 ),
                 OutlinedButton.icon(
@@ -374,8 +408,13 @@ class TimetableEntryDetailSheet extends ConsumerWidget {
                   icon: const Icon(LucideIcons.fileText, size: 16),
                   label: const Text('Notes'),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                    ),
                   ),
                 ),
                 OutlinedButton.icon(
@@ -386,8 +425,13 @@ class TimetableEntryDetailSheet extends ConsumerWidget {
                   icon: const Icon(LucideIcons.bookOpen, size: 16),
                   label: const Text('Assignments'),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                    ),
                   ),
                 ),
               ],
@@ -405,8 +449,13 @@ class TimetableEntryDetailSheet extends ConsumerWidget {
                     backgroundColor: AcadexColors.primary,
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                    ),
                   ),
                 ),
                 OutlinedButton.icon(
@@ -417,15 +466,23 @@ class TimetableEntryDetailSheet extends ConsumerWidget {
                   icon: const Icon(LucideIcons.fileText, size: 16),
                   label: const Text('Subject Notes'),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                    ),
                   ),
                 ),
               ],
 
               // HOD / Admin: Manage & View
-              if (role == AppRole.hod || role == AppRole.collegeAdmin || role == AppRole.superAdmin) ...[
-                if (entry.facultyAssignmentId != null && entry.facultyAssignmentId!.isNotEmpty) ...[
+              if (role == AppRole.hod ||
+                  role == AppRole.collegeAdmin ||
+                  role == AppRole.superAdmin) ...[
+                if (entry.facultyAssignmentId != null &&
+                    entry.facultyAssignmentId!.isNotEmpty) ...[
                   ElevatedButton.icon(
                     onPressed: () {
                       Navigator.of(context).pop();
@@ -437,8 +494,13 @@ class TimetableEntryDetailSheet extends ConsumerWidget {
                       backgroundColor: AcadexColors.primary,
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AcadexRadius.borderRadiusMd,
+                      ),
                     ),
                   ),
                 ],
@@ -450,8 +512,13 @@ class TimetableEntryDetailSheet extends ConsumerWidget {
                   icon: const Icon(LucideIcons.layoutGrid, size: 16),
                   label: const Text('Section Overview'),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                    ),
                   ),
                 ),
               ],
@@ -480,7 +547,9 @@ class TimetableEntryDetailSheet extends ConsumerWidget {
         Icon(
           icon,
           size: 15,
-          color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+          color:
+              Theme.of(context).textTheme.bodySmall?.color ??
+              AcadexColors.inkMuted,
         ),
         const SizedBox(width: 10),
         Text(

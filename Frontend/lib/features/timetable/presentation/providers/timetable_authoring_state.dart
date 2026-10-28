@@ -7,10 +7,7 @@ class TimetableCellCoordinate {
   final TimetableDay day;
   final int periodIndex;
 
-  const TimetableCellCoordinate({
-    required this.day,
-    required this.periodIndex,
-  });
+  const TimetableCellCoordinate({required this.day, required this.periodIndex});
 
   @override
   bool operator ==(Object other) =>
@@ -43,22 +40,22 @@ class TimetableAuthoringPermissions {
   });
 
   const TimetableAuthoringPermissions.readOnly()
-      : canView = true,
-        canEdit = false,
-        canPublish = false,
-        canDelete = false;
+    : canView = true,
+      canEdit = false,
+      canPublish = false,
+      canDelete = false;
 
   const TimetableAuthoringPermissions.full()
-      : canView = true,
-        canEdit = true,
-        canPublish = true,
-        canDelete = true;
+    : canView = true,
+      canEdit = true,
+      canPublish = true,
+      canDelete = true;
 
   const TimetableAuthoringPermissions.none()
-      : canView = false,
-        canEdit = false,
-        canPublish = false,
-        canDelete = false;
+    : canView = false,
+      canEdit = false,
+      canPublish = false,
+      canDelete = false;
 }
 
 /// Comprehensive immutable state for the Timetable Spreadsheet Designer authoring workflow.
@@ -114,13 +111,17 @@ class TimetableAuthoringState {
 
   /// Whether a specific day and period index is occupied by any teaching entry.
   bool isCellOccupied(TimetableDay day, int periodIndex) {
-    return entries.any((e) => e.dayOfWeek == day && e.occupiesPeriod(periodIndex));
+    return entries.any(
+      (e) => e.dayOfWeek == day && e.occupiesPeriod(periodIndex),
+    );
   }
 
   /// Retrieves the teaching entry that occupies the given cell, if one exists.
   TimetableGridEntryModel? getEntryAtCell(TimetableDay day, int periodIndex) {
     try {
-      return entries.firstWhere((e) => e.dayOfWeek == day && e.occupiesPeriod(periodIndex));
+      return entries.firstWhere(
+        (e) => e.dayOfWeek == day && e.occupiesPeriod(periodIndex),
+      );
     } catch (_) {
       return null;
     }
@@ -145,18 +146,26 @@ class TimetableAuthoringState {
 
     final nextPeriodIndex = entry.startPeriodIndex + entry.periodSpan;
     final dayPeriods = getPeriodsForDay(entry.dayOfWeek);
-    final nextPeriod = dayPeriods.where((p) => p.index == nextPeriodIndex).firstOrNull;
+    final nextPeriod = dayPeriods
+        .where((p) => p.index == nextPeriodIndex)
+        .firstOrNull;
     if (nextPeriod == null) return false;
 
     // Verify next period is not occupied by another class
-    final isOccupied = entries.any((e) =>
-        e.id != entry.id &&
-        e.dayOfWeek == entry.dayOfWeek &&
-        e.occupiesPeriod(nextPeriodIndex));
+    final isOccupied = entries.any(
+      (e) =>
+          e.id != entry.id &&
+          e.dayOfWeek == entry.dayOfWeek &&
+          e.occupiesPeriod(nextPeriodIndex),
+    );
     if (isOccupied) return false;
 
     // Verify next period is not a break
-    final breakOnNext = getBreakAtCell(entry.dayOfWeek, nextPeriod.startTime, nextPeriod.endTime);
+    final breakOnNext = getBreakAtCell(
+      entry.dayOfWeek,
+      nextPeriod.startTime,
+      nextPeriod.endTime,
+    );
     if (breakOnNext != null) return false;
 
     return true;
@@ -169,28 +178,49 @@ class TimetableAuthoringState {
   }
 
   /// Calculates a new cell coordinate offset by [deltaDay] and [deltaPeriod] from [current].
-  TimetableCellCoordinate? moveSelection(TimetableCellCoordinate current, int deltaDay, int deltaPeriod) {
+  TimetableCellCoordinate? moveSelection(
+    TimetableCellCoordinate current,
+    int deltaDay,
+    int deltaPeriod,
+  ) {
     final activeDays = container?.activeDays ?? [];
     if (activeDays.isEmpty) return current;
 
     final currentDayIdx = activeDays.indexOf(current.day);
     if (currentDayIdx == -1) return current;
 
-    final targetDayIdx = (currentDayIdx + deltaDay).clamp(0, activeDays.length - 1);
+    final targetDayIdx = (currentDayIdx + deltaDay).clamp(
+      0,
+      activeDays.length - 1,
+    );
     final targetDay = activeDays[targetDayIdx];
 
     final dayPeriods = getPeriodsForDay(targetDay);
     if (dayPeriods.isEmpty) return current;
 
-    final maxPeriodIdx = dayPeriods.map((p) => p.index).reduce((a, b) => a > b ? a : b);
-    final minPeriodIdx = dayPeriods.map((p) => p.index).reduce((a, b) => a < b ? a : b);
+    final maxPeriodIdx = dayPeriods
+        .map((p) => p.index)
+        .reduce((a, b) => a > b ? a : b);
+    final minPeriodIdx = dayPeriods
+        .map((p) => p.index)
+        .reduce((a, b) => a < b ? a : b);
 
-    final targetPeriodIdx = (current.periodIndex + deltaPeriod).clamp(minPeriodIdx, maxPeriodIdx);
-    return TimetableCellCoordinate(day: targetDay, periodIndex: targetPeriodIdx);
+    final targetPeriodIdx = (current.periodIndex + deltaPeriod).clamp(
+      minPeriodIdx,
+      maxPeriodIdx,
+    );
+    return TimetableCellCoordinate(
+      day: targetDay,
+      periodIndex: targetPeriodIdx,
+    );
   }
 
   /// Finds any defined break applicable to the given day and overlapping with time.
-  TimetableBreakModel? getBreakAtCell(TimetableDay day, String startTime, String endTime) {
+  TimetableBreakModel? getBreakAtCell(
+    TimetableDay day,
+    String startTime,
+    String endTime,
+  ) {
     try {
       return breaks.firstWhere(
         (b) => b.appliesTo(day) && b.overlapsWithTime(startTime, endTime),
@@ -224,7 +254,9 @@ class TimetableAuthoringState {
     final list = <TimetableCellCoordinate>[];
     for (final entry in entries) {
       for (final pIdx in entry.occupiedPeriodIndexes) {
-        list.add(TimetableCellCoordinate(day: entry.dayOfWeek, periodIndex: pIdx));
+        list.add(
+          TimetableCellCoordinate(day: entry.dayOfWeek, periodIndex: pIdx),
+        );
       }
     }
     return list;
@@ -264,13 +296,17 @@ class TimetableAuthoringState {
     // Validate individual periods
     for (final p in periods) {
       if (p.index < 1) {
-        errors.add('Period "${p.name}" has an invalid index (${p.index}). Index must be >= 1.');
+        errors.add(
+          'Period "${p.name}" has an invalid index (${p.index}). Index must be >= 1.',
+        );
       }
       if (p.name.trim().isEmpty) {
         errors.add('Period index ${p.index} must have a name.');
       }
       if (p.startTime.compareTo(p.endTime) >= 0) {
-        errors.add('Period "${p.name}" start time (${p.startTime}) must be earlier than end time (${p.endTime}).');
+        errors.add(
+          'Period "${p.name}" start time (${p.startTime}) must be earlier than end time (${p.endTime}).',
+        );
       }
     }
 
@@ -280,9 +316,13 @@ class TimetableAuthoringState {
         final p1 = periods[i];
         final p2 = periods[j];
         if (p1.dayOfWeek == p2.dayOfWeek) {
-          final isTimeOverlap = p1.startTime.compareTo(p2.endTime) < 0 && p1.endTime.compareTo(p2.startTime) > 0;
+          final isTimeOverlap =
+              p1.startTime.compareTo(p2.endTime) < 0 &&
+              p1.endTime.compareTo(p2.startTime) > 0;
           if (isTimeOverlap) {
-            errors.add('Period collision: "${p1.name}" (${p1.startTime}-${p1.endTime}) overlaps with "${p2.name}" (${p2.startTime}-${p2.endTime}).');
+            errors.add(
+              'Period collision: "${p1.name}" (${p1.startTime}-${p1.endTime}) overlaps with "${p2.name}" (${p2.startTime}-${p2.endTime}).',
+            );
           }
         }
       }
@@ -297,23 +337,33 @@ class TimetableAuthoringState {
         errors.add('Break "${b.name}" must apply to at least one day.');
       }
       if (b.startTime.compareTo(b.endTime) >= 0) {
-        errors.add('Break "${b.name}" start time (${b.startTime}) must be earlier than end time (${b.endTime}).');
+        errors.add(
+          'Break "${b.name}" start time (${b.startTime}) must be earlier than end time (${b.endTime}).',
+        );
       }
     }
 
     // Validate entries
     for (final e in entries) {
       if (e.subjectId.trim().isEmpty) {
-        errors.add('Class on ${e.dayOfWeek.displayName} Period ${e.startPeriodIndex} is missing a Subject.');
+        errors.add(
+          'Class on ${e.dayOfWeek.displayName} Period ${e.startPeriodIndex} is missing a Subject.',
+        );
       }
       if (e.facultyId.trim().isEmpty) {
-        errors.add('Class on ${e.dayOfWeek.displayName} Period ${e.startPeriodIndex} is missing a Faculty assignment.');
+        errors.add(
+          'Class on ${e.dayOfWeek.displayName} Period ${e.startPeriodIndex} is missing a Faculty assignment.',
+        );
       }
       if (e.startPeriodIndex < 1) {
-        errors.add('Class on ${e.dayOfWeek.displayName} has an invalid start period index (${e.startPeriodIndex}).');
+        errors.add(
+          'Class on ${e.dayOfWeek.displayName} has an invalid start period index (${e.startPeriodIndex}).',
+        );
       }
       if (e.periodSpan < 1) {
-        errors.add('Class on ${e.dayOfWeek.displayName} has an invalid period span (${e.periodSpan}).');
+        errors.add(
+          'Class on ${e.dayOfWeek.displayName} has an invalid period span (${e.periodSpan}).',
+        );
       }
     }
 
@@ -333,13 +383,17 @@ class TimetableAuthoringState {
             );
           }
 
-          if (e1.facultyId.isNotEmpty && e1.facultyId == e2.facultyId && (isHorizOverlap || isTimeOverlap)) {
+          if (e1.facultyId.isNotEmpty &&
+              e1.facultyId == e2.facultyId &&
+              (isHorizOverlap || isTimeOverlap)) {
             errors.add(
               'Faculty collision: Faculty is scheduled for multiple classes on ${e1.dayOfWeek.displayName} (${e1.startTime}-${e1.endTime}).',
             );
           }
 
-          if (e1.roomNumber.isNotEmpty && e1.roomNumber == e2.roomNumber && (isHorizOverlap || isTimeOverlap)) {
+          if (e1.roomNumber.isNotEmpty &&
+              e1.roomNumber == e2.roomNumber &&
+              (isHorizOverlap || isTimeOverlap)) {
             errors.add(
               'Room collision: Room ${e1.roomNumber} is double-booked on ${e1.dayOfWeek.displayName} (${e1.startTime}-${e1.endTime}).',
             );
@@ -391,8 +445,12 @@ class TimetableAuthoringState {
       periods: periods ?? this.periods,
       breaks: breaks ?? this.breaks,
       entries: entries ?? this.entries,
-      selectedCell: clearSelectedCell ? null : (selectedCell ?? this.selectedCell),
-      selectedEntryId: clearSelectedEntryId ? null : (selectedEntryId ?? this.selectedEntryId),
+      selectedCell: clearSelectedCell
+          ? null
+          : (selectedCell ?? this.selectedCell),
+      selectedEntryId: clearSelectedEntryId
+          ? null
+          : (selectedEntryId ?? this.selectedEntryId),
       canUndo: canUndo ?? this.canUndo,
       canRedo: canRedo ?? this.canRedo,
       isDirty: isDirty ?? this.isDirty,
@@ -401,7 +459,9 @@ class TimetableAuthoringState {
       isPublishing: isPublishing ?? this.isPublishing,
       validationErrors: validationErrors ?? this.validationErrors,
       lastSavedAt: lastSavedAt ?? this.lastSavedAt,
-      errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+      errorMessage: clearErrorMessage
+          ? null
+          : (errorMessage ?? this.errorMessage),
     );
   }
 }

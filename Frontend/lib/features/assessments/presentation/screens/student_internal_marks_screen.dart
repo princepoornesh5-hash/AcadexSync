@@ -11,10 +11,7 @@ import '../providers/assessment_providers.dart';
 class StudentInternalMarksScreen extends ConsumerWidget {
   final String? semesterId;
 
-  const StudentInternalMarksScreen({
-    super.key,
-    this.semesterId,
-  });
+  const StudentInternalMarksScreen({super.key, this.semesterId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,14 +21,21 @@ class StudentInternalMarksScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/dashboard'),
         ),
         title: Text(
           'My Internal Marks',
-          style: AcadexTypography.title(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          style: AcadexTypography.title(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
         ),
         actions: [
           IconButton(
@@ -51,13 +55,17 @@ class StudentInternalMarksScreen extends ConsumerWidget {
               child: Text(
                 'Published internal assessment breakdown across your enrolled subjects.',
                 style: AcadexTypography.bodySmall(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
             ),
 
             marksAsync.when(
-              loading: () => const AcadexLoadingState(message: 'Loading your internal assessment marks...'),
+              loading: () => const AcadexLoadingState(
+                message: 'Loading your internal assessment marks...',
+              ),
               error: (err, _) => Center(
                 child: AcadexErrorState(
                   message: "Couldn't load your internal marks.",
@@ -72,7 +80,8 @@ class StudentInternalMarksScreen extends ConsumerWidget {
                     child: Center(
                       child: AcadexEmptyState(
                         title: 'No Marks Published Yet',
-                        subtitle: 'Your course instructors have not finalized or published internal marks for this term yet.',
+                        subtitle:
+                            'Your course instructors have not finalized or published internal marks for this term yet.',
                         icon: LucideIcons.award,
                       ),
                     ),
@@ -86,7 +95,8 @@ class StudentInternalMarksScreen extends ConsumerWidget {
                   separatorBuilder: (_, __) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
                     final item = items[index];
-                    final subName = item.subject['name']?.toString() ?? 'Subject';
+                    final subName =
+                        item.subject['name']?.toString() ?? 'Subject';
                     final subCode = item.subject['code']?.toString() ?? '';
                     final secName = item.section?['name']?.toString();
 
@@ -111,10 +121,17 @@ class StudentInternalMarksScreen extends ConsumerWidget {
                                 children: [
                                   if (subCode.isNotEmpty)
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: AcadexColors.primary.withValues(alpha: 0.12),
-                                        borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                                        color: AcadexColors.primary.withValues(
+                                          alpha: 0.12,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          AcadexRadius.xs,
+                                        ),
                                       ),
                                       child: Text(
                                         subCode,
@@ -130,7 +147,9 @@ class StudentInternalMarksScreen extends ConsumerWidget {
                                     Text(
                                       'Section $secName',
                                       style: AcadexTypography.caption(
-                                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                        color: isDark
+                                            ? AcadexColors.darkInkMuted
+                                            : AcadexColors.inkMuted,
                                       ),
                                     ),
                                   ],
@@ -138,10 +157,17 @@ class StudentInternalMarksScreen extends ConsumerWidget {
                               ),
                               // Total score badge
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AcadexColors.success.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(AcadexRadius.sm),
+                                  color: AcadexColors.success.withValues(
+                                    alpha: 0.12,
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    AcadexRadius.sm,
+                                  ),
                                 ),
                                 child: Text(
                                   '${item.totalMarks % 1 == 0 ? item.totalMarks.toInt() : item.totalMarks} / ${totalMax.toInt()}',
@@ -159,7 +185,11 @@ class StudentInternalMarksScreen extends ConsumerWidget {
                           // Subject Title
                           Text(
                             subName,
-                            style: AcadexTypography.title(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontSize: 18),
+                            style: AcadexTypography.title(
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
+                            ).copyWith(fontSize: 18),
                           ),
                           const SizedBox(height: 16),
                           const Divider(height: 1),
@@ -168,7 +198,11 @@ class StudentInternalMarksScreen extends ConsumerWidget {
                           // Component breakdown chips
                           Text(
                             'Component Breakdown',
-                            style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                            style: AcadexTypography.caption(
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
+                            ),
                           ),
                           const SizedBox(height: 8),
 
@@ -178,16 +212,27 @@ class StudentInternalMarksScreen extends ConsumerWidget {
                             children: item.components.map((comp) {
                               final mark = item.marks[comp.key];
                               final markText = mark != null
-                                  ? (mark % 1 == 0 ? mark.toInt().toString() : mark.toString())
+                                  ? (mark % 1 == 0
+                                        ? mark.toInt().toString()
+                                        : mark.toString())
                                   : '—';
 
                               return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
-                                  borderRadius: BorderRadius.circular(AcadexRadius.sm),
+                                  color: isDark
+                                      ? AcadexColors.darkSurfaceCard
+                                      : AcadexColors.canvasSoft,
+                                  borderRadius: BorderRadius.circular(
+                                    AcadexRadius.sm,
+                                  ),
                                   border: Border.all(
-                                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                    color: isDark
+                                        ? AcadexColors.darkHairline
+                                        : AcadexColors.hairline,
                                   ),
                                 ),
                                 child: Column(
@@ -198,7 +243,9 @@ class StudentInternalMarksScreen extends ConsumerWidget {
                                       comp.name,
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                        color: isDark
+                                            ? AcadexColors.darkInkMuted
+                                            : AcadexColors.inkMuted,
                                       ),
                                     ),
                                     const SizedBox(height: 2),
@@ -216,11 +263,16 @@ class StudentInternalMarksScreen extends ConsumerWidget {
                             }).toList(),
                           ),
 
-                          if (item.remarks != null && item.remarks!.isNotEmpty) ...[
+                          if (item.remarks != null &&
+                              item.remarks!.isNotEmpty) ...[
                             const SizedBox(height: 12),
                             Text(
                               'Instructor Remarks: ${item.remarks!}',
-                              style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                              style: AcadexTypography.caption(
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
+                              ),
                             ),
                           ],
                         ],

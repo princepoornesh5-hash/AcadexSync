@@ -158,7 +158,7 @@ export class AiService {
     }
 
     const systemInstruction = [
-      'You are Acadex Assistant, an academic AI assistant in the ACADEX campus management platform.',
+      'You are ACADEXSYNC Assistant, an academic AI assistant in the ACADEXSYNC campus management platform.',
       'The current user is securely authenticated with the following authoritative profile:',
       `- Name: ${params.user.name}`,
       `- Role: ${params.user.role}`,

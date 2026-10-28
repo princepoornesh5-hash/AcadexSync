@@ -52,7 +52,9 @@ class AcadexTheme {
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          shape: const RoundedRectangleBorder(borderRadius: AcadexRadius.mdBorder),
+          shape: const RoundedRectangleBorder(
+            borderRadius: AcadexRadius.mdBorder,
+          ),
           textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ),
@@ -61,7 +63,9 @@ class AcadexTheme {
           foregroundColor: AcadexColors.ink,
           side: const BorderSide(color: AcadexColors.hairline, width: 1),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          shape: const RoundedRectangleBorder(borderRadius: AcadexRadius.mdBorder),
+          shape: const RoundedRectangleBorder(
+            borderRadius: AcadexRadius.mdBorder,
+          ),
           textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ),

@@ -72,7 +72,10 @@ class _CreateCalendarEventDialogState
     }
   }
 
-  Future<void> _submit(UserModel user, List<FacultyAssignment> myAssignments) async {
+  Future<void> _submit(
+    UserModel user,
+    List<FacultyAssignment> myAssignments,
+  ) async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -107,10 +110,13 @@ class _CreateCalendarEventDialogState
       };
 
       if (user.role == AppRole.faculty) {
-        if (_selectedFacultyAssignmentId == null || _selectedFacultyAssignmentId!.isEmpty) {
+        if (_selectedFacultyAssignmentId == null ||
+            _selectedFacultyAssignmentId!.isEmpty) {
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please select an authorized teaching context')),
+            const SnackBar(
+              content: Text('Please select an authorized teaching context'),
+            ),
           );
           return;
         }
@@ -142,9 +148,9 @@ class _CreateCalendarEventDialogState
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error creating event: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error creating event: $e')));
       }
     }
   }
@@ -164,7 +170,11 @@ class _CreateCalendarEventDialogState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(LucideIcons.shieldAlert, size: 48, color: AcadexColors.error),
+              const Icon(
+                LucideIcons.shieldAlert,
+                size: 48,
+                color: AcadexColors.error,
+              ),
               const SizedBox(height: 16),
               const Text(
                 'Access Restricted',
@@ -192,14 +202,23 @@ class _CreateCalendarEventDialogState
       _eventType = allowedTypes.first;
     }
 
-    final myAssignments = role == AppRole.faculty ? ref.watch(myFacultyAssignmentsProvider) : <FacultyAssignment>[];
-    final subjectMap = role == AppRole.faculty ? ref.watch(subjectMapProvider) : <String, Subject>{};
-    final sectionMap = role == AppRole.faculty ? ref.watch(sectionMapProvider) : <String, Section>{};
-    final departments = (role == AppRole.collegeAdmin || role == AppRole.superAdmin)
+    final myAssignments = role == AppRole.faculty
+        ? ref.watch(myFacultyAssignmentsProvider)
+        : <FacultyAssignment>[];
+    final subjectMap = role == AppRole.faculty
+        ? ref.watch(subjectMapProvider)
+        : <String, Subject>{};
+    final sectionMap = role == AppRole.faculty
+        ? ref.watch(sectionMapProvider)
+        : <String, Section>{};
+    final departments =
+        (role == AppRole.collegeAdmin || role == AppRole.superAdmin)
         ? (ref.watch(departmentsProvider).asData?.value ?? <Department>[])
         : <Department>[];
 
-    if (role == AppRole.faculty && _selectedFacultyAssignmentId == null && myAssignments.isNotEmpty) {
+    if (role == AppRole.faculty &&
+        _selectedFacultyAssignmentId == null &&
+        myAssignments.isNotEmpty) {
       _selectedFacultyAssignmentId = myAssignments.first.id;
     }
 
@@ -222,8 +241,8 @@ class _CreateCalendarEventDialogState
                       role == AppRole.collegeAdmin || role == AppRole.superAdmin
                           ? 'Add College Event'
                           : (role == AppRole.hod
-                              ? 'Add Department Event'
-                              : 'Add Class Event'),
+                                ? 'Add Department Event'
+                                : 'Add Class Event'),
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -255,18 +274,27 @@ class _CreateCalendarEventDialogState
                       ),
                       child: const Text(
                         'No active teaching assignments found. You can only create events for your assigned classes.',
-                        style: TextStyle(color: Color(0xFF92400E), fontSize: 13),
+                        style: TextStyle(
+                          color: Color(0xFF92400E),
+                          fontSize: 13,
+                        ),
                       ),
                     )
                   else
                     DropdownButtonFormField<String>(
                       value: _selectedFacultyAssignmentId,
                       decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                       items: myAssignments.map((a) {
-                        final subj = subjectMap[a.subjectId]?.name ?? a.subjectId;
+                        final subj =
+                            subjectMap[a.subjectId]?.name ?? a.subjectId;
                         final sec = sectionMap[a.sectionId]?.name ?? '';
                         final label = sec.isNotEmpty ? '$subj ($sec)' : subj;
                         return DropdownMenuItem(
@@ -277,13 +305,16 @@ class _CreateCalendarEventDialogState
                       onChanged: (val) {
                         setState(() => _selectedFacultyAssignmentId = val);
                       },
-                      validator: (v) => v == null || v.isEmpty ? 'Please select a teaching context' : null,
+                      validator: (v) => v == null || v.isEmpty
+                          ? 'Please select a teaching context'
+                          : null,
                     ),
                   const SizedBox(height: 14),
                 ],
 
                 // Admin Scope Selection
-                if (role == AppRole.collegeAdmin || role == AppRole.superAdmin) ...[
+                if (role == AppRole.collegeAdmin ||
+                    role == AppRole.superAdmin) ...[
                   const Text(
                     'Scope',
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
@@ -292,12 +323,23 @@ class _CreateCalendarEventDialogState
                   DropdownButtonFormField<String>(
                     value: _selectedScope,
                     decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     items: const [
-                      DropdownMenuItem(value: 'COLLEGE', child: Text('Entire College')),
-                      DropdownMenuItem(value: 'DEPARTMENT', child: Text('Specific Department')),
+                      DropdownMenuItem(
+                        value: 'COLLEGE',
+                        child: Text('Entire College'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'DEPARTMENT',
+                        child: Text('Specific Department'),
+                      ),
                     ],
                     onChanged: (val) {
                       if (val != null) {
@@ -312,23 +354,36 @@ class _CreateCalendarEventDialogState
                   if (_selectedScope == 'DEPARTMENT') ...[
                     const Text(
                       'Department *',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       value: _selectedDepartmentId,
                       decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                       items: departments
-                          .map((d) => DropdownMenuItem(
-                                value: d.id,
-                                child: Text(d.name),
-                              ))
+                          .map(
+                            (d) => DropdownMenuItem(
+                              value: d.id,
+                              child: Text(d.name),
+                            ),
+                          )
                           .toList(),
-                      onChanged: (val) => setState(() => _selectedDepartmentId = val),
-                      validator: (v) => _selectedScope == 'DEPARTMENT' && (v == null || v.isEmpty)
+                      onChanged: (val) =>
+                          setState(() => _selectedDepartmentId = val),
+                      validator: (v) =>
+                          _selectedScope == 'DEPARTMENT' &&
+                              (v == null || v.isEmpty)
                           ? 'Please select a department'
                           : null,
                     ),
@@ -345,14 +400,21 @@ class _CreateCalendarEventDialogState
                 DropdownButtonFormField<CalendarEventType>(
                   value: _eventType,
                   decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   items: allowedTypes
-                      .map((t) => DropdownMenuItem(
-                            value: t,
-                            child: Text(t.displayName),
-                          ))
+                      .map(
+                        (t) => DropdownMenuItem(
+                          value: t,
+                          child: Text(t.displayName),
+                        ),
+                      )
                       .toList(),
                   onChanged: (val) {
                     if (val != null) {
@@ -379,11 +441,17 @@ class _CreateCalendarEventDialogState
                   controller: _titleController,
                   decoration: InputDecoration(
                     hintText: 'e.g. Annual Day, DBMS Lab Viva, Mid-Term Exam',
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
-                  validator: (v) =>
-                      v == null || v.trim().length < 2 ? 'Title must be at least 2 characters' : null,
+                  validator: (v) => v == null || v.trim().length < 2
+                      ? 'Title must be at least 2 characters'
+                      : null,
                 ),
                 const SizedBox(height: 14),
 
@@ -406,7 +474,10 @@ class _CreateCalendarEventDialogState
                     }
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.grey.shade400),
                       borderRadius: BorderRadius.circular(8),
@@ -429,7 +500,13 @@ class _CreateCalendarEventDialogState
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('All Day Event', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    const Text(
+                      'All Day Event',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     Switch(
                       value: _allDay,
                       onChanged: (val) => setState(() => _allDay = val),
@@ -445,22 +522,40 @@ class _CreateCalendarEventDialogState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Start Time', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            const Text(
+                              'Start Time',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                             const SizedBox(height: 4),
                             InkWell(
                               onTap: () async {
                                 final t = await showTimePicker(
-                                    context: context,
-                                    initialTime: _startTime ?? const TimeOfDay(hour: 10, minute: 0));
+                                  context: context,
+                                  initialTime:
+                                      _startTime ??
+                                      const TimeOfDay(hour: 10, minute: 0),
+                                );
                                 if (t != null) setState(() => _startTime = t);
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 10,
+                                ),
                                 decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.grey.shade400),
+                                  border: Border.all(
+                                    color: Colors.grey.shade400,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: Text(_startTime != null ? _startTime!.format(context) : 'Select Time'),
+                                child: Text(
+                                  _startTime != null
+                                      ? _startTime!.format(context)
+                                      : 'Select Time',
+                                ),
                               ),
                             ),
                           ],
@@ -471,22 +566,40 @@ class _CreateCalendarEventDialogState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('End Time', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            const Text(
+                              'End Time',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                             const SizedBox(height: 4),
                             InkWell(
                               onTap: () async {
                                 final t = await showTimePicker(
-                                    context: context,
-                                    initialTime: _endTime ?? const TimeOfDay(hour: 12, minute: 0));
+                                  context: context,
+                                  initialTime:
+                                      _endTime ??
+                                      const TimeOfDay(hour: 12, minute: 0),
+                                );
                                 if (t != null) setState(() => _endTime = t);
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 10,
+                                ),
                                 decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.grey.shade400),
+                                  border: Border.all(
+                                    color: Colors.grey.shade400,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: Text(_endTime != null ? _endTime!.format(context) : 'Select Time'),
+                                child: Text(
+                                  _endTime != null
+                                      ? _endTime!.format(context)
+                                      : 'Select Time',
+                                ),
                               ),
                             ),
                           ],
@@ -507,8 +620,13 @@ class _CreateCalendarEventDialogState
                   controller: _locationController,
                   decoration: InputDecoration(
                     hintText: 'e.g. Auditorium, Lab 3',
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -525,7 +643,9 @@ class _CreateCalendarEventDialogState
                   decoration: InputDecoration(
                     hintText: 'Add details or instructions for this event...',
                     contentPadding: const EdgeInsets.all(12),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -534,19 +654,29 @@ class _CreateCalendarEventDialogState
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _isLoading || user == null ? null : () => _submit(user, myAssignments),
+                    onPressed: _isLoading || user == null
+                        ? null
+                        : () => _submit(user, myAssignments),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AcadexColors.primary,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     child: _isLoading
                         ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
-                        : const Text('Create & Publish Event', style: TextStyle(fontWeight: FontWeight.w600)),
+                        : const Text(
+                            'Create & Publish Event',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
                   ),
                 ),
               ],

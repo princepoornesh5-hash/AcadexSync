@@ -22,19 +22,19 @@ class MinuteDisplayBounds {
 
   /// Dedicated bounding box for the first digit (tens place: 0..5)
   Rect get firstDigitRect => Rect.fromLTWH(
-        left + (width * 0.08),
-        top + (height * 0.12),
-        width * 0.40,
-        height * 0.76,
-      );
+    left + (width * 0.08),
+    top + (height * 0.12),
+    width * 0.40,
+    height * 0.76,
+  );
 
   /// Dedicated bounding box for the second digit (ones place: 0..9)
   Rect get secondDigitRect => Rect.fromLTWH(
-        left + (width * 0.52),
-        top + (height * 0.12),
-        width * 0.40,
-        height * 0.76,
-      );
+    left + (width * 0.52),
+    top + (height * 0.12),
+    width * 0.40,
+    height * 0.76,
+  );
 
   static const MinuteDisplayBounds zero = MinuteDisplayBounds(
     left: 0.0,
@@ -90,24 +90,36 @@ class AcadexDigitPath {
         // Counter-clockwise continuous oval starting from top center
         p.moveTo(l + (w * 0.50), t + (h * 0.12));
         p.cubicTo(
-          l + (w * 0.20), t + (h * 0.12),
-          l + (w * 0.14), t + (h * 0.35),
-          l + (w * 0.14), t + (h * 0.50),
+          l + (w * 0.20),
+          t + (h * 0.12),
+          l + (w * 0.14),
+          t + (h * 0.35),
+          l + (w * 0.14),
+          t + (h * 0.50),
         );
         p.cubicTo(
-          l + (w * 0.14), t + (h * 0.70),
-          l + (w * 0.20), t + (h * 0.90),
-          l + (w * 0.50), t + (h * 0.90),
+          l + (w * 0.14),
+          t + (h * 0.70),
+          l + (w * 0.20),
+          t + (h * 0.90),
+          l + (w * 0.50),
+          t + (h * 0.90),
         );
         p.cubicTo(
-          l + (w * 0.80), t + (h * 0.90),
-          l + (w * 0.86), t + (h * 0.70),
-          l + (w * 0.86), t + (h * 0.50),
+          l + (w * 0.80),
+          t + (h * 0.90),
+          l + (w * 0.86),
+          t + (h * 0.70),
+          l + (w * 0.86),
+          t + (h * 0.50),
         );
         p.cubicTo(
-          l + (w * 0.86), t + (h * 0.35),
-          l + (w * 0.80), t + (h * 0.12),
-          l + (w * 0.50), t + (h * 0.12),
+          l + (w * 0.86),
+          t + (h * 0.35),
+          l + (w * 0.80),
+          t + (h * 0.12),
+          l + (w * 0.50),
+          t + (h * 0.12),
         );
         break;
 
@@ -122,14 +134,20 @@ class AcadexDigitPath {
         // Top arch, diagonal down-left stroke, horizontal baseline
         p.moveTo(l + (w * 0.20), t + (h * 0.30));
         p.cubicTo(
-          l + (w * 0.22), t + (h * 0.12),
-          l + (w * 0.80), t + (h * 0.12),
-          l + (w * 0.82), t + (h * 0.30),
+          l + (w * 0.22),
+          t + (h * 0.12),
+          l + (w * 0.80),
+          t + (h * 0.12),
+          l + (w * 0.82),
+          t + (h * 0.30),
         );
         p.cubicTo(
-          l + (w * 0.82), t + (h * 0.46),
-          l + (w * 0.65), t + (h * 0.62),
-          l + (w * 0.18), t + (h * 0.88),
+          l + (w * 0.82),
+          t + (h * 0.46),
+          l + (w * 0.65),
+          t + (h * 0.62),
+          l + (w * 0.18),
+          t + (h * 0.88),
         );
         p.lineTo(l + (w * 0.84), t + (h * 0.88));
         break;
@@ -138,24 +156,36 @@ class AcadexDigitPath {
         // Top curve, middle junction, bottom circular loop
         p.moveTo(l + (w * 0.22), t + (h * 0.16));
         p.cubicTo(
-          l + (w * 0.42), t + (h * 0.10),
-          l + (w * 0.78), t + (h * 0.12),
-          l + (w * 0.78), t + (h * 0.34),
+          l + (w * 0.42),
+          t + (h * 0.10),
+          l + (w * 0.78),
+          t + (h * 0.12),
+          l + (w * 0.78),
+          t + (h * 0.34),
         );
         p.cubicTo(
-          l + (w * 0.78), t + (h * 0.48),
-          l + (w * 0.60), t + (h * 0.50),
-          l + (w * 0.46), t + (h * 0.50),
+          l + (w * 0.78),
+          t + (h * 0.48),
+          l + (w * 0.60),
+          t + (h * 0.50),
+          l + (w * 0.46),
+          t + (h * 0.50),
         );
         p.cubicTo(
-          l + (w * 0.72), t + (h * 0.50),
-          l + (w * 0.82), t + (h * 0.60),
-          l + (w * 0.82), t + (h * 0.74),
+          l + (w * 0.72),
+          t + (h * 0.50),
+          l + (w * 0.82),
+          t + (h * 0.60),
+          l + (w * 0.82),
+          t + (h * 0.74),
         );
         p.cubicTo(
-          l + (w * 0.82), t + (h * 0.90),
-          l + (w * 0.44), t + (h * 0.92),
-          l + (w * 0.20), t + (h * 0.84),
+          l + (w * 0.82),
+          t + (h * 0.90),
+          l + (w * 0.44),
+          t + (h * 0.92),
+          l + (w * 0.20),
+          t + (h * 0.84),
         );
         break;
 
@@ -176,14 +206,20 @@ class AcadexDigitPath {
         p.lineTo(l + (w * 0.26), t + (h * 0.12));
         p.lineTo(l + (w * 0.24), t + (h * 0.44));
         p.cubicTo(
-          l + (w * 0.38), t + (h * 0.40),
-          l + (w * 0.82), t + (h * 0.46),
-          l + (w * 0.82), t + (h * 0.70),
+          l + (w * 0.38),
+          t + (h * 0.40),
+          l + (w * 0.82),
+          t + (h * 0.46),
+          l + (w * 0.82),
+          t + (h * 0.70),
         );
         p.cubicTo(
-          l + (w * 0.82), t + (h * 0.90),
-          l + (w * 0.44), t + (h * 0.92),
-          l + (w * 0.20), t + (h * 0.84),
+          l + (w * 0.82),
+          t + (h * 0.90),
+          l + (w * 0.44),
+          t + (h * 0.92),
+          l + (w * 0.20),
+          t + (h * 0.84),
         );
         break;
 
@@ -191,29 +227,44 @@ class AcadexDigitPath {
         // Top entry arch down to bottom circular loop
         p.moveTo(l + (w * 0.74), t + (h * 0.14));
         p.cubicTo(
-          l + (w * 0.46), t + (h * 0.12),
-          l + (w * 0.16), t + (h * 0.36),
-          l + (w * 0.16), t + (h * 0.62),
+          l + (w * 0.46),
+          t + (h * 0.12),
+          l + (w * 0.16),
+          t + (h * 0.36),
+          l + (w * 0.16),
+          t + (h * 0.62),
         );
         p.cubicTo(
-          l + (w * 0.16), t + (h * 0.88),
-          l + (w * 0.42), t + (h * 0.92),
-          l + (w * 0.58), t + (h * 0.92),
+          l + (w * 0.16),
+          t + (h * 0.88),
+          l + (w * 0.42),
+          t + (h * 0.92),
+          l + (w * 0.58),
+          t + (h * 0.92),
         );
         p.cubicTo(
-          l + (w * 0.80), t + (h * 0.92),
-          l + (w * 0.86), t + (h * 0.78),
-          l + (w * 0.86), t + (h * 0.64),
+          l + (w * 0.80),
+          t + (h * 0.92),
+          l + (w * 0.86),
+          t + (h * 0.78),
+          l + (w * 0.86),
+          t + (h * 0.64),
         );
         p.cubicTo(
-          l + (w * 0.86), t + (h * 0.48),
-          l + (w * 0.66), t + (h * 0.44),
-          l + (w * 0.46), t + (h * 0.44),
+          l + (w * 0.86),
+          t + (h * 0.48),
+          l + (w * 0.66),
+          t + (h * 0.44),
+          l + (w * 0.46),
+          t + (h * 0.44),
         );
         p.cubicTo(
-          l + (w * 0.28), t + (h * 0.44),
-          l + (w * 0.18), t + (h * 0.54),
-          l + (w * 0.16), t + (h * 0.62),
+          l + (w * 0.28),
+          t + (h * 0.44),
+          l + (w * 0.18),
+          t + (h * 0.54),
+          l + (w * 0.16),
+          t + (h * 0.62),
         );
         break;
 
@@ -228,44 +279,68 @@ class AcadexDigitPath {
         // Smooth continuous figure-eight starting at center junction
         p.moveTo(l + (w * 0.50), t + (h * 0.48));
         p.cubicTo(
-          l + (w * 0.30), t + (h * 0.48),
-          l + (w * 0.18), t + (h * 0.35),
-          l + (w * 0.18), t + (h * 0.26),
+          l + (w * 0.30),
+          t + (h * 0.48),
+          l + (w * 0.18),
+          t + (h * 0.35),
+          l + (w * 0.18),
+          t + (h * 0.26),
         );
         p.cubicTo(
-          l + (w * 0.18), t + (h * 0.12),
-          l + (w * 0.34), t + (h * 0.10),
-          l + (w * 0.50), t + (h * 0.10),
+          l + (w * 0.18),
+          t + (h * 0.12),
+          l + (w * 0.34),
+          t + (h * 0.10),
+          l + (w * 0.50),
+          t + (h * 0.10),
         );
         p.cubicTo(
-          l + (w * 0.66), t + (h * 0.10),
-          l + (w * 0.82), t + (h * 0.12),
-          l + (w * 0.82), t + (h * 0.26),
+          l + (w * 0.66),
+          t + (h * 0.10),
+          l + (w * 0.82),
+          t + (h * 0.12),
+          l + (w * 0.82),
+          t + (h * 0.26),
         );
         p.cubicTo(
-          l + (w * 0.82), t + (h * 0.36),
-          l + (w * 0.70), t + (h * 0.48),
-          l + (w * 0.50), t + (h * 0.48),
+          l + (w * 0.82),
+          t + (h * 0.36),
+          l + (w * 0.70),
+          t + (h * 0.48),
+          l + (w * 0.50),
+          t + (h * 0.48),
         );
         p.cubicTo(
-          l + (w * 0.30), t + (h * 0.48),
-          l + (w * 0.14), t + (h * 0.60),
-          l + (w * 0.14), t + (h * 0.74),
+          l + (w * 0.30),
+          t + (h * 0.48),
+          l + (w * 0.14),
+          t + (h * 0.60),
+          l + (w * 0.14),
+          t + (h * 0.74),
         );
         p.cubicTo(
-          l + (w * 0.14), t + (h * 0.90),
-          l + (w * 0.34), t + (h * 0.92),
-          l + (w * 0.50), t + (h * 0.92),
+          l + (w * 0.14),
+          t + (h * 0.90),
+          l + (w * 0.34),
+          t + (h * 0.92),
+          l + (w * 0.50),
+          t + (h * 0.92),
         );
         p.cubicTo(
-          l + (w * 0.66), t + (h * 0.92),
-          l + (w * 0.86), t + (h * 0.90),
-          l + (w * 0.86), t + (h * 0.74),
+          l + (w * 0.66),
+          t + (h * 0.92),
+          l + (w * 0.86),
+          t + (h * 0.90),
+          l + (w * 0.86),
+          t + (h * 0.74),
         );
         p.cubicTo(
-          l + (w * 0.86), t + (h * 0.60),
-          l + (w * 0.70), t + (h * 0.48),
-          l + (w * 0.50), t + (h * 0.48),
+          l + (w * 0.86),
+          t + (h * 0.60),
+          l + (w * 0.70),
+          t + (h * 0.48),
+          l + (w * 0.50),
+          t + (h * 0.48),
         );
         break;
 
@@ -273,25 +348,37 @@ class AcadexDigitPath {
         // Upper circular loop then curving descent
         p.moveTo(l + (w * 0.82), t + (h * 0.48));
         p.cubicTo(
-          l + (w * 0.68), t + (h * 0.54),
-          l + (w * 0.46), t + (h * 0.54),
-          l + (w * 0.30), t + (h * 0.44),
+          l + (w * 0.68),
+          t + (h * 0.54),
+          l + (w * 0.46),
+          t + (h * 0.54),
+          l + (w * 0.30),
+          t + (h * 0.44),
         );
         p.cubicTo(
-          l + (w * 0.14), t + (h * 0.34),
-          l + (w * 0.18), t + (h * 0.16),
-          l + (w * 0.40), t + (h * 0.10),
+          l + (w * 0.14),
+          t + (h * 0.34),
+          l + (w * 0.18),
+          t + (h * 0.16),
+          l + (w * 0.40),
+          t + (h * 0.10),
         );
         p.cubicTo(
-          l + (w * 0.62), t + (h * 0.08),
-          l + (w * 0.84), t + (h * 0.18),
-          l + (w * 0.84), t + (h * 0.42),
+          l + (w * 0.62),
+          t + (h * 0.08),
+          l + (w * 0.84),
+          t + (h * 0.18),
+          l + (w * 0.84),
+          t + (h * 0.42),
         );
         p.lineTo(l + (w * 0.84), t + (h * 0.62));
         p.cubicTo(
-          l + (w * 0.84), t + (h * 0.84),
-          l + (w * 0.60), t + (h * 0.92),
-          l + (w * 0.32), t + (h * 0.90),
+          l + (w * 0.84),
+          t + (h * 0.84),
+          l + (w * 0.60),
+          t + (h * 0.92),
+          l + (w * 0.32),
+          t + (h * 0.90),
         );
         break;
 
@@ -324,7 +411,8 @@ class AcadexDigitPath {
     }
 
     if (progress <= 0.0) {
-      final startTip = metrics.first.getTangentForOffset(0.0)?.position ?? rect.center;
+      final startTip =
+          metrics.first.getTangentForOffset(0.0)?.position ?? rect.center;
       return DigitStrokeExtraction(
         revealedPath: Path(),
         stylusTip: startTip,
@@ -334,7 +422,8 @@ class AcadexDigitPath {
 
     if (progress >= 1.0) {
       final endTip =
-          metrics.last.getTangentForOffset(metrics.last.length)?.position ?? rect.center;
+          metrics.last.getTangentForOffset(metrics.last.length)?.position ??
+          rect.center;
       return DigitStrokeExtraction(
         revealedPath: fullPath,
         stylusTip: endTip,
@@ -388,15 +477,31 @@ class MinuteWritingGeometry {
 
     if (writeProgress <= 0.0) {
       // Resting on the starting stroke of digit 1
-      return AcadexDigitPath.extractProgress(char1, 0.0, bounds.firstDigitRect).stylusTip;
+      return AcadexDigitPath.extractProgress(
+        char1,
+        0.0,
+        bounds.firstDigitRect,
+      ).stylusTip;
     } else if (writeProgress < 0.48) {
       // Writing digit 1
       final p1 = (writeProgress / 0.48).clamp(0.0, 1.0);
-      return AcadexDigitPath.extractProgress(char1, p1, bounds.firstDigitRect).stylusTip;
+      return AcadexDigitPath.extractProgress(
+        char1,
+        p1,
+        bounds.firstDigitRect,
+      ).stylusTip;
     } else if (writeProgress < 0.52) {
       // Pen-lift transition: smoothly interpolating from end of digit 1 to start of digit 2
-      final tip1 = AcadexDigitPath.extractProgress(char1, 1.0, bounds.firstDigitRect).stylusTip;
-      final tip2 = AcadexDigitPath.extractProgress(char2, 0.0, bounds.secondDigitRect).stylusTip;
+      final tip1 = AcadexDigitPath.extractProgress(
+        char1,
+        1.0,
+        bounds.firstDigitRect,
+      ).stylusTip;
+      final tip2 = AcadexDigitPath.extractProgress(
+        char2,
+        0.0,
+        bounds.secondDigitRect,
+      ).stylusTip;
       final t = ((writeProgress - 0.48) / 0.04).clamp(0.0, 1.0);
       final curve = Curves.easeInOut.transform(t);
       // Slight arc upward during pen travel
@@ -405,7 +510,11 @@ class MinuteWritingGeometry {
     } else {
       // Writing digit 2
       final p2 = ((writeProgress - 0.52) / 0.48).clamp(0.0, 1.0);
-      return AcadexDigitPath.extractProgress(char2, p2, bounds.secondDigitRect).stylusTip;
+      return AcadexDigitPath.extractProgress(
+        char2,
+        p2,
+        bounds.secondDigitRect,
+      ).stylusTip;
     }
   }
 
@@ -493,7 +602,11 @@ class MinuteWritingPainter extends CustomPainter {
           )
           ..strokeWidth = 2.0
           ..style = PaintingStyle.stroke;
-        canvas.drawLine(Offset(wipeX, 2), Offset(wipeX, size.height - 2), glowPaint);
+        canvas.drawLine(
+          Offset(wipeX, 2),
+          Offset(wipeX, size.height - 2),
+          glowPaint,
+        );
       }
       return;
     }
@@ -530,8 +643,16 @@ class MinuteWritingPainter extends CustomPainter {
 
       // When write reaches 1.0, show complete vector strokes cleanly with magic glow
       if (writeProgress >= 1.0) {
-        final ext1 = AcadexDigitPath.extractProgress(char1, 1.0, bounds.firstDigitRect);
-        final ext2 = AcadexDigitPath.extractProgress(char2, 1.0, bounds.secondDigitRect);
+        final ext1 = AcadexDigitPath.extractProgress(
+          char1,
+          1.0,
+          bounds.firstDigitRect,
+        );
+        final ext2 = AcadexDigitPath.extractProgress(
+          char2,
+          1.0,
+          bounds.secondDigitRect,
+        );
         canvas.drawPath(ext1.revealedPath, glowPaint);
         canvas.drawPath(ext1.revealedPath, inkPaint);
         canvas.drawPath(ext2.revealedPath, glowPaint);
@@ -550,7 +671,11 @@ class MinuteWritingPainter extends CustomPainter {
 
       // Draw Digit 1
       if (p1 > 0.0) {
-        final ext1 = AcadexDigitPath.extractProgress(char1, p1, bounds.firstDigitRect);
+        final ext1 = AcadexDigitPath.extractProgress(
+          char1,
+          p1,
+          bounds.firstDigitRect,
+        );
         canvas.drawPath(ext1.revealedPath, glowPaint);
         canvas.drawPath(ext1.revealedPath, inkPaint);
 
@@ -561,7 +686,11 @@ class MinuteWritingPainter extends CustomPainter {
 
       // Draw Digit 2 (Only appears after Digit 1 is complete!)
       if (p2 > 0.0) {
-        final ext2 = AcadexDigitPath.extractProgress(char2, p2, bounds.secondDigitRect);
+        final ext2 = AcadexDigitPath.extractProgress(
+          char2,
+          p2,
+          bounds.secondDigitRect,
+        );
         canvas.drawPath(ext2.revealedPath, glowPaint);
         canvas.drawPath(ext2.revealedPath, inkPaint);
 
@@ -589,11 +718,7 @@ class MinuteWritingPainter extends CustomPainter {
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.2),
     );
     // Brilliant white point
-    canvas.drawCircle(
-      tip,
-      1.2,
-      Paint()..color = Colors.white,
-    );
+    canvas.drawCircle(tip, 1.2, Paint()..color = Colors.white);
   }
 
   void _paintMinuteText(Canvas canvas, Size size, String text) {
@@ -691,7 +816,11 @@ class HourWritingPainter extends CustomPainter {
           )
           ..strokeWidth = 2.0
           ..style = PaintingStyle.stroke;
-        canvas.drawLine(Offset(wipeX, 2), Offset(wipeX, size.height - 2), glowPaint);
+        canvas.drawLine(
+          Offset(wipeX, 2),
+          Offset(wipeX, size.height - 2),
+          glowPaint,
+        );
       }
       return;
     }
@@ -811,11 +940,7 @@ class HourWritingPainter extends CustomPainter {
         ..color = const Color(0xFF60A5FA).withOpacity(0.85)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.2),
     );
-    canvas.drawCircle(
-      tip,
-      1.2,
-      Paint()..color = Colors.white,
-    );
+    canvas.drawCircle(tip, 1.2, Paint()..color = Colors.white);
   }
 
   void _paintHourText(Canvas canvas, Size size, String text) {
@@ -912,7 +1037,11 @@ class PeriodWritingPainter extends CustomPainter {
           )
           ..strokeWidth = 2.0
           ..style = PaintingStyle.stroke;
-        canvas.drawLine(Offset(wipeX, 2), Offset(wipeX, size.height - 2), glowPaint);
+        canvas.drawLine(
+          Offset(wipeX, 2),
+          Offset(wipeX, size.height - 2),
+          glowPaint,
+        );
       }
       return;
     }
@@ -947,7 +1076,11 @@ class PeriodWritingPainter extends CustomPainter {
           )
           ..strokeWidth = 2.0
           ..style = PaintingStyle.stroke;
-        canvas.drawLine(Offset(wipeX, 2), Offset(wipeX, size.height - 2), glowPaint);
+        canvas.drawLine(
+          Offset(wipeX, 2),
+          Offset(wipeX, size.height - 2),
+          glowPaint,
+        );
       }
       return;
     }

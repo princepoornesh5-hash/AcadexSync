@@ -24,8 +24,12 @@ class AttendanceRecordCard extends StatelessWidget {
     final excused = session.excusedCount;
     final unmarked = session.unmarkedCount;
     final total = session.totalStudents;
-    final normalizedTimeSlot = session.timeSlot.replaceAll('–', '-').replaceAll('—', '-');
-    final shortRef = session.id.length >= 6 ? session.id.substring(session.id.length - 6) : session.id;
+    final normalizedTimeSlot = session.timeSlot
+        .replaceAll('–', '-')
+        .replaceAll('—', '-');
+    final shortRef = session.id.length >= 6
+        ? session.id.substring(session.id.length - 6)
+        : session.id;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -58,25 +62,39 @@ class AttendanceRecordCard extends StatelessWidget {
                           Text(
                             session.subjectName,
                             style: AcadexTypography.title(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ),
                           ),
                           const SizedBox(height: 3),
                           Text(
                             "${session.sectionName} • $normalizedTimeSlot • #$shortRef",
                             style: AcadexTypography.caption(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
                             ),
                           ),
                           if (session.isSubstitution) ...[
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                const Icon(LucideIcons.repeat, size: 12, color: AcadexColors.warning),
+                                const Icon(
+                                  LucideIcons.repeat,
+                                  size: 12,
+                                  color: AcadexColors.warning,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   "Covered via Substitution",
-                                  style: AcadexTypography.caption(color: AcadexColors.warning).copyWith(fontWeight: FontWeight.w600, fontSize: 11),
+                                  style:
+                                      AcadexTypography.caption(
+                                        color: AcadexColors.warning,
+                                      ).copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 11,
+                                      ),
                                 ),
                               ],
                             ),
@@ -94,29 +112,69 @@ class AttendanceRecordCard extends StatelessWidget {
                           ).copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 6),
-                        AttendanceLockChip(isLocked: session.isLocked, status: session.status),
+                        AttendanceLockChip(
+                          isLocked: session.isLocked,
+                          status: session.status,
+                        ),
                       ],
-                    )
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+                    color: isDark
+                        ? AcadexColors.darkSurfaceHover
+                        : AcadexColors.canvasSoft,
                     borderRadius: AcadexRadius.borderRadiusMd,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildStat("Present", present.toString(), AcadexColors.success, isDark),
-                      _buildStat("Late", lateCount.toString(), AcadexColors.warning, isDark),
-                      _buildStat("Absent", absent.toString(), AcadexColors.error, isDark),
+                      _buildStat(
+                        "Present",
+                        present.toString(),
+                        AcadexColors.success,
+                        isDark,
+                      ),
+                      _buildStat(
+                        "Late",
+                        lateCount.toString(),
+                        AcadexColors.warning,
+                        isDark,
+                      ),
+                      _buildStat(
+                        "Absent",
+                        absent.toString(),
+                        AcadexColors.error,
+                        isDark,
+                      ),
                       if (excused > 0)
-                        _buildStat("Excused", excused.toString(), const Color(0xFF6366F1), isDark),
+                        _buildStat(
+                          "Excused",
+                          excused.toString(),
+                          const Color(0xFF6366F1),
+                          isDark,
+                        ),
                       if (unmarked > 0)
-                        _buildStat("Unmarked", unmarked.toString(), isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted, isDark),
-                      _buildStat("Total", total.toString(), isDark ? AcadexColors.darkInk : AcadexColors.ink, isDark),
+                        _buildStat(
+                          "Unmarked",
+                          unmarked.toString(),
+                          isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
+                          isDark,
+                        ),
+                      _buildStat(
+                        "Total",
+                        total.toString(),
+                        isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                        isDark,
+                      ),
                     ],
                   ),
                 ),
@@ -131,10 +189,7 @@ class AttendanceRecordCard extends StatelessWidget {
   Widget _buildStat(String label, String val, Color color, bool isDark) {
     return Column(
       children: [
-        Text(
-          val,
-          style: AcadexTypography.title(color: color),
-        ),
+        Text(val, style: AcadexTypography.title(color: color)),
         const SizedBox(height: 2),
         Text(
           label,

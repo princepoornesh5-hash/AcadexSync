@@ -27,7 +27,10 @@ class FirebaseSearchRepository implements SearchRepository {
     // If user typed "students", "timetable", "attendance", etc., immediately resolve
     // to authorized destination modules
     if (filterType == null || filterType == SearchResultType.navigation) {
-      final navResults = AcadexNavigationService.searchNavigationDestinations(query, currentUser.role);
+      final navResults = AcadexNavigationService.searchNavigationDestinations(
+        query,
+        currentUser.role,
+      );
       results.addAll(navResults);
     }
 
@@ -41,11 +44,17 @@ class FirebaseSearchRepository implements SearchRepository {
 
     final futures = <Future<List<SearchResult>>>[];
 
-    Future<List<SearchResult>> runSafe(String collectionName, Future<List<SearchResult>> queryFuture) async {
+    Future<List<SearchResult>> runSafe(
+      String collectionName,
+      Future<List<SearchResult>> queryFuture,
+    ) async {
       try {
         return await queryFuture;
       } catch (e) {
-        developer.log('Search collection error for $collectionName: $e', name: 'Acadex.Search');
+        developer.log(
+          'Search collection error for $collectionName: $e',
+          name: 'Acadex.Search',
+        );
         return [];
       }
     }
@@ -60,22 +69,36 @@ class FirebaseSearchRepository implements SearchRepository {
         filters['departmentId'] = currentUser.departmentId;
       }
 
-      futures.add(runSafe(
-        'users_students',
-        _firestoreService.queryCollectionPrefix(
-          'users',
-          'nameLower',
-          prefix,
-          filters: filters,
-          limit: limit,
-        ).then((docs) => docs.map((d) => SearchResult(
-          id: d['id'] ?? '',
-          title: d['name'] ?? '',
-          subtitle: d['email'] ?? (d['rollNumber'] != null ? 'Roll No: ${d['rollNumber']}' : 'Student'),
-          type: SearchResultType.student,
-          destinationRoute: '/academics/students/${d['id']}',
-        )).toList()),
-      ));
+      futures.add(
+        runSafe(
+          'users_students',
+          _firestoreService
+              .queryCollectionPrefix(
+                'users',
+                'nameLower',
+                prefix,
+                filters: filters,
+                limit: limit,
+              )
+              .then(
+                (docs) => docs
+                    .map(
+                      (d) => SearchResult(
+                        id: d['id'] ?? '',
+                        title: d['name'] ?? '',
+                        subtitle:
+                            d['email'] ??
+                            (d['rollNumber'] != null
+                                ? 'Roll No: ${d['rollNumber']}'
+                                : 'Student'),
+                        type: SearchResultType.student,
+                        destinationRoute: '/academics/students/${d['id']}',
+                      ),
+                    )
+                    .toList(),
+              ),
+        ),
+      );
     }
 
     // --- Search Faculty ---
@@ -85,82 +108,132 @@ class FirebaseSearchRepository implements SearchRepository {
       final filters = Map<String, dynamic>.from(tenantFilters);
       filters['role'] = AppRole.faculty.value;
 
-      futures.add(runSafe(
-        'users_faculty',
-        _firestoreService.queryCollectionPrefix(
-          'users',
-          'nameLower',
-          prefix,
-          filters: filters,
-          limit: limit,
-        ).then((docs) => docs.map((d) => SearchResult(
-          id: d['id'] ?? '',
-          title: d['name'] ?? '',
-          subtitle: d['email'] ?? (d['employeeId'] != null ? 'Faculty ID: ${d['employeeId']}' : 'Faculty'),
-          type: SearchResultType.faculty,
-          destinationRoute: '/academics/faculty/${d['id']}',
-        )).toList()),
-      ));
+      futures.add(
+        runSafe(
+          'users_faculty',
+          _firestoreService
+              .queryCollectionPrefix(
+                'users',
+                'nameLower',
+                prefix,
+                filters: filters,
+                limit: limit,
+              )
+              .then(
+                (docs) => docs
+                    .map(
+                      (d) => SearchResult(
+                        id: d['id'] ?? '',
+                        title: d['name'] ?? '',
+                        subtitle:
+                            d['email'] ??
+                            (d['employeeId'] != null
+                                ? 'Faculty ID: ${d['employeeId']}'
+                                : 'Faculty'),
+                        type: SearchResultType.faculty,
+                        destinationRoute: '/academics/faculty/${d['id']}',
+                      ),
+                    )
+                    .toList(),
+              ),
+        ),
+      );
     }
 
     // --- Search Subjects ---
     if (filterType == null || filterType == SearchResultType.subject) {
-      futures.add(runSafe(
-        'subjects',
-        _firestoreService.queryCollectionPrefix(
+      futures.add(
+        runSafe(
           'subjects',
-          'nameLower',
-          prefix,
-          filters: tenantFilters,
-          limit: limit,
-        ).then((docs) => docs.map((d) => SearchResult(
-          id: d['id'] ?? '',
-          title: d['name'] ?? '',
-          subtitle: d['code'] != null ? 'Code: ${d['code']}' : 'Subject',
-          type: SearchResultType.subject,
-          destinationRoute: '/academics/subjects/${d['id']}',
-        )).toList()),
-      ));
+          _firestoreService
+              .queryCollectionPrefix(
+                'subjects',
+                'nameLower',
+                prefix,
+                filters: tenantFilters,
+                limit: limit,
+              )
+              .then(
+                (docs) => docs
+                    .map(
+                      (d) => SearchResult(
+                        id: d['id'] ?? '',
+                        title: d['name'] ?? '',
+                        subtitle: d['code'] != null
+                            ? 'Code: ${d['code']}'
+                            : 'Subject',
+                        type: SearchResultType.subject,
+                        destinationRoute: '/academics/subjects/${d['id']}',
+                      ),
+                    )
+                    .toList(),
+              ),
+        ),
+      );
     }
 
     // --- Search Departments ---
     if (filterType == null || filterType == SearchResultType.department) {
-      futures.add(runSafe(
-        'departments',
-        _firestoreService.queryCollectionPrefix(
+      futures.add(
+        runSafe(
           'departments',
-          'nameLower',
-          prefix,
-          filters: tenantFilters,
-          limit: limit,
-        ).then((docs) => docs.map((d) => SearchResult(
-          id: d['id'] ?? '',
-          title: d['name'] ?? '',
-          subtitle: d['code'] != null ? 'Code: ${d['code']}' : 'Department',
-          type: SearchResultType.department,
-          destinationRoute: '/academics/departments/${d['id']}',
-        )).toList()),
-      ));
+          _firestoreService
+              .queryCollectionPrefix(
+                'departments',
+                'nameLower',
+                prefix,
+                filters: tenantFilters,
+                limit: limit,
+              )
+              .then(
+                (docs) => docs
+                    .map(
+                      (d) => SearchResult(
+                        id: d['id'] ?? '',
+                        title: d['name'] ?? '',
+                        subtitle: d['code'] != null
+                            ? 'Code: ${d['code']}'
+                            : 'Department',
+                        type: SearchResultType.department,
+                        destinationRoute: '/academics/departments/${d['id']}',
+                      ),
+                    )
+                    .toList(),
+              ),
+        ),
+      );
     }
 
     // --- Search Courses ---
     if (filterType == null || filterType == SearchResultType.course) {
-      futures.add(runSafe(
-        'courses',
-        _firestoreService.queryCollectionPrefix(
+      futures.add(
+        runSafe(
           'courses',
-          'nameLower',
-          prefix,
-          filters: tenantFilters,
-          limit: limit,
-        ).then((docs) => docs.map((d) => SearchResult(
-          id: d['id'] ?? '',
-          title: d['name'] ?? '',
-          subtitle: d['code'] != null ? 'Code: ${d['code']}' : 'Program/Course',
-          type: SearchResultType.course,
-          destinationRoute: '/academics/courses/${d['id']}',
-        )).toList()),
-      ));
+          _firestoreService
+              .queryCollectionPrefix(
+                'courses',
+                'nameLower',
+                prefix,
+                filters: tenantFilters,
+                limit: limit,
+              )
+              .then(
+                (docs) => docs
+                    .map(
+                      (d) => SearchResult(
+                        id: d['id'] ?? '',
+                        title: d['name'] ?? '',
+                        subtitle: d['code'] != null
+                            ? 'Code: ${d['code']}'
+                            : 'Program/Course',
+                        type: SearchResultType.course,
+                        destinationRoute: '/academics/courses/${d['id']}',
+                      ),
+                    )
+                    .toList(),
+              ),
+        ),
+      );
     }
 
     // --- Search Notes ---
@@ -172,26 +245,37 @@ class FirebaseSearchRepository implements SearchRepository {
         filters['departmentId'] = currentUser.departmentId;
       }
       // Student & Faculty read rules require published status for general browsing
-      if (currentUser.role == AppRole.student || currentUser.role == AppRole.faculty) {
+      if (currentUser.role == AppRole.student ||
+          currentUser.role == AppRole.faculty) {
         filters['status'] = 'published';
       }
 
-      futures.add(runSafe(
-        'notes',
-        _firestoreService.queryCollectionPrefix(
+      futures.add(
+        runSafe(
           'notes',
-          'titleLower',
-          prefix,
-          filters: filters,
-          limit: limit,
-        ).then((docs) => docs.map((d) => SearchResult(
-          id: d['id'] ?? '',
-          title: d['title'] ?? '',
-          subtitle: d['subjectId'] ?? 'Note',
-          type: SearchResultType.academicYear,
-          destinationRoute: '/notes',
-        )).toList()),
-      ));
+          _firestoreService
+              .queryCollectionPrefix(
+                'notes',
+                'titleLower',
+                prefix,
+                filters: filters,
+                limit: limit,
+              )
+              .then(
+                (docs) => docs
+                    .map(
+                      (d) => SearchResult(
+                        id: d['id'] ?? '',
+                        title: d['title'] ?? '',
+                        subtitle: d['subjectId'] ?? 'Note',
+                        type: SearchResultType.academicYear,
+                        destinationRoute: '/notes',
+                      ),
+                    )
+                    .toList(),
+              ),
+        ),
+      );
     }
 
     final resultsList = await Future.wait(futures);

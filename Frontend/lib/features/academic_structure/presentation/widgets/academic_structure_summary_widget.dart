@@ -26,16 +26,25 @@ class AcademicStructureSummaryWidget extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final activeSections = sections.where((s) {
-      if (departmentId != null && departmentId!.isNotEmpty && s.departmentId != departmentId) return false;
+      if (departmentId != null &&
+          departmentId!.isNotEmpty &&
+          s.departmentId != departmentId)
+        return false;
       return s.isActive;
     }).toList();
 
     final activeSemesters = semesters.where((s) {
-      if (departmentId != null && departmentId!.isNotEmpty && s.departmentId != departmentId) return false;
+      if (departmentId != null &&
+          departmentId!.isNotEmpty &&
+          s.departmentId != departmentId)
+        return false;
       return s.isCurrent || s.status == 'active';
     }).toList();
 
-    final totalCapacity = activeSections.fold<int>(0, (sum, s) => sum + s.capacity);
+    final totalCapacity = activeSections.fold<int>(
+      0,
+      (sum, s) => sum + s.capacity,
+    );
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -55,7 +64,11 @@ class AcademicStructureSummaryWidget extends ConsumerWidget {
                   color: AcadexColors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(AcadexRadius.md),
                 ),
-                child: const Icon(LucideIcons.calendarDays, color: AcadexColors.primary, size: 20),
+                child: const Icon(
+                  LucideIcons.calendarDays,
+                  color: AcadexColors.primary,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -64,18 +77,29 @@ class AcademicStructureSummaryWidget extends ConsumerWidget {
                   children: [
                     Text(
                       "Academic Calendar & Structure",
-                      style: AcadexTypography.heading3(color: theme.colorScheme.onSurface),
+                      style: AcadexTypography.heading3(
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      currentYear != null ? "Active Academic Year: ${currentYear.name}" : "No Active Academic Year Configured",
-                      style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+                      currentYear != null
+                          ? "Active Academic Year: ${currentYear.name}"
+                          : "No Active Academic Year Configured",
+                      style: AcadexTypography.caption(
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.7,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
               if (currentYear != null) ...[
-                const AcadexBadge(label: "ACTIVE SESSION", variant: AcadexBadgeVariant.success),
+                const AcadexBadge(
+                  label: "ACTIVE SESSION",
+                  variant: AcadexBadgeVariant.success,
+                ),
                 const SizedBox(width: 8),
               ],
               if (isHod) ...[
@@ -91,8 +115,11 @@ class AcademicStructureSummaryWidget extends ConsumerWidget {
                   label: 'Add Academic Year',
                   icon: LucideIcons.calendarPlus,
                   size: AcadexButtonSize.sm,
-                  variant: currentYear == null ? AcadexButtonVariant.primary : AcadexButtonVariant.secondary,
-                  onPressed: () => context.push('/academics/academic_years/new'),
+                  variant: currentYear == null
+                      ? AcadexButtonVariant.primary
+                      : AcadexButtonVariant.secondary,
+                  onPressed: () =>
+                      context.push('/academics/academic_years/new'),
                 ),
               ],
             ],
@@ -171,7 +198,13 @@ class AcademicStructureSummaryWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildMetricTile(ThemeData theme, String label, String value, IconData icon, Color color) {
+  Widget _buildMetricTile(
+    ThemeData theme,
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
@@ -187,9 +220,19 @@ class AcademicStructureSummaryWidget extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+                Text(
+                  label,
+                  style: AcadexTypography.caption(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(value, style: AcadexTypography.body(color: theme.colorScheme.onSurface).copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  value,
+                  style: AcadexTypography.body(
+                    color: theme.colorScheme.onSurface,
+                  ).copyWith(fontWeight: FontWeight.bold),
+                ),
               ],
             ),
           ),

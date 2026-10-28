@@ -24,10 +24,12 @@ class CertificateRequestDetailScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<CertificateRequestDetailScreen> createState() => _CertificateRequestDetailScreenState();
+  ConsumerState<CertificateRequestDetailScreen> createState() =>
+      _CertificateRequestDetailScreenState();
 }
 
-class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequestDetailScreen> {
+class _CertificateRequestDetailScreenState
+    extends ConsumerState<CertificateRequestDetailScreen> {
   bool _isProcessing = false;
 
   Color _statusColor(CertificateRequestStatus s) {
@@ -59,14 +61,18 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
     }
     final user = authState.user;
 
-    final request = widget.request ?? ref.watch(certificateRequestByIdProvider(widget.requestId));
+    final request =
+        widget.request ??
+        ref.watch(certificateRequestByIdProvider(widget.requestId));
 
     if (request == null) {
       return Scaffold(
         backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
         appBar: AppBar(
           title: const Text('Request Details'),
-          backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+          backgroundColor: isDark
+              ? AcadexColors.darkSurface
+              : AcadexColors.surface,
           elevation: 0,
         ),
         body: Center(
@@ -75,13 +81,17 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
             title: 'Request Not Found',
             subtitle: 'The requested certificate request could not be located.',
             actionLabel: 'Return to Requests',
-            onActionTap: () => context.safePop(fallbackRoute: '/certificates/requests'),
+            onActionTap: () =>
+                context.safePop(fallbackRoute: '/certificates/requests'),
           ),
         ),
       );
     }
 
-    final canReview = user.role == AppRole.collegeAdmin || user.role == AppRole.hod || user.role == AppRole.superAdmin;
+    final canReview =
+        user.role == AppRole.collegeAdmin ||
+        user.role == AppRole.hod ||
+        user.role == AppRole.superAdmin;
     final statusColor = _statusColor(request.status);
 
     return Scaffold(
@@ -94,14 +104,17 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
         ),
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             LucideIcons.arrowLeft,
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
-          onPressed: () => context.safePop(fallbackRoute: '/certificates/requests'),
+          onPressed: () =>
+              context.safePop(fallbackRoute: '/certificates/requests'),
         ),
       ),
       body: Center(
@@ -116,9 +129,15 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
                 Container(
                   padding: const EdgeInsets.all(22),
                   decoration: BoxDecoration(
-                    color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                    color: isDark
+                        ? AcadexColors.darkSurface
+                        : AcadexColors.surface,
                     borderRadius: BorderRadius.circular(AcadexRadius.lg),
-                    border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                    border: Border.all(
+                      color: isDark
+                          ? AcadexColors.darkHairline
+                          : AcadexColors.hairline,
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,12 +145,21 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: isDark ? statusColor.withValues(alpha: 0.2) : statusColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(AcadexRadius.full),
+                              color: isDark
+                                  ? statusColor.withValues(alpha: 0.2)
+                                  : statusColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(
+                                AcadexRadius.full,
+                              ),
                               border: Border.all(
-                                color: isDark ? statusColor.withValues(alpha: 0.4) : statusColor.withValues(alpha: 0.25),
+                                color: isDark
+                                    ? statusColor.withValues(alpha: 0.4)
+                                    : statusColor.withValues(alpha: 0.25),
                               ),
                             ),
                             child: Text(
@@ -148,7 +176,9 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
                             'Request #${request.id.length > 8 ? request.id.substring(0, 8) : request.id}',
                             style: GoogleFonts.inter(
                               fontSize: 12,
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
                             ),
                           ),
                         ],
@@ -159,7 +189,9 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
                         style: GoogleFonts.inter(
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -167,7 +199,9 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
                         'Student ID: ${request.studentId}',
                         style: GoogleFonts.inter(
                           fontSize: 14,
-                          color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                          color: isDark
+                              ? AcadexColors.darkInkSecondary
+                              : AcadexColors.inkSecondary,
                         ),
                       ),
                     ],
@@ -176,18 +210,27 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
                 const SizedBox(height: 20),
 
                 // Rejection Reason Alert
-                if (request.status == CertificateRequestStatus.rejected && request.rejectionReason != null) ...[
+                if (request.status == CertificateRequestStatus.rejected &&
+                    request.rejectionReason != null) ...[
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.error.withValues(alpha: 0.15) : AcadexColors.errorLight,
+                      color: isDark
+                          ? AcadexColors.error.withValues(alpha: 0.15)
+                          : AcadexColors.errorLight,
                       borderRadius: BorderRadius.circular(AcadexRadius.md),
-                      border: Border.all(color: AcadexColors.error.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: AcadexColors.error.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 20),
+                        const Icon(
+                          LucideIcons.alertCircle,
+                          color: AcadexColors.error,
+                          size: 20,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -206,7 +249,9 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
                                 request.rejectionReason!,
                                 style: GoogleFonts.inter(
                                   fontSize: 13,
-                                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
                                 ),
                               ),
                             ],
@@ -224,20 +269,49 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
                 _buildCard(
                   isDark,
                   children: [
-                    _detailRow('Submitted', DateFormat('dd MMMM yyyy, hh:mm a').format(request.requestedAt), LucideIcons.calendar, isDark),
-                    _detailRow('Last Updated', timeago.format(request.updatedAt), LucideIcons.clock, isDark),
+                    _detailRow(
+                      'Submitted',
+                      DateFormat(
+                        'dd MMMM yyyy, hh:mm a',
+                      ).format(request.requestedAt),
+                      LucideIcons.calendar,
+                      isDark,
+                    ),
+                    _detailRow(
+                      'Last Updated',
+                      timeago.format(request.updatedAt),
+                      LucideIcons.clock,
+                      isDark,
+                    ),
                     if (request.purpose != null && request.purpose!.isNotEmpty)
-                      _detailRow('Purpose', request.purpose!, LucideIcons.target, isDark),
+                      _detailRow(
+                        'Purpose',
+                        request.purpose!,
+                        LucideIcons.target,
+                        isDark,
+                      ),
                     if (request.reason != null && request.reason!.isNotEmpty)
-                      _detailRow('Reason / Notes', request.reason!, LucideIcons.fileText, isDark),
-                    if (request.reviewedBy != null && request.reviewedBy!.isNotEmpty)
-                      _detailRow('Reviewed By', request.reviewedBy!, LucideIcons.userCheck, isDark),
+                      _detailRow(
+                        'Reason / Notes',
+                        request.reason!,
+                        LucideIcons.fileText,
+                        isDark,
+                      ),
+                    if (request.reviewedBy != null &&
+                        request.reviewedBy!.isNotEmpty)
+                      _detailRow(
+                        'Reviewed By',
+                        request.reviewedBy!,
+                        LucideIcons.userCheck,
+                        isDark,
+                      ),
                   ],
                 ),
                 const SizedBox(height: 24),
 
                 // Administrative Review Actions (For College Admin & HOD)
-                if (canReview && request.status == CertificateRequestStatus.pending) ...[
+                if (canReview &&
+                    request.status == CertificateRequestStatus.pending) ...[
                   _buildSectionTitle('Administrative Decision', isDark),
                   const SizedBox(height: 12),
                   Row(
@@ -248,11 +322,20 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
                             foregroundColor: AcadexColors.error,
                             side: const BorderSide(color: AcadexColors.error),
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                AcadexRadius.md,
+                              ),
+                            ),
                           ),
-                          onPressed: _isProcessing ? null : () => _showRejectDialog(context, request),
+                          onPressed: _isProcessing
+                              ? null
+                              : () => _showRejectDialog(context, request),
                           icon: const Icon(LucideIcons.xCircle, size: 16),
-                          label: const Text('Reject Request', style: TextStyle(fontWeight: FontWeight.w600)),
+                          label: const Text(
+                            'Reject Request',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -262,18 +345,28 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
                             backgroundColor: AcadexColors.success,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                AcadexRadius.md,
+                              ),
+                            ),
                             elevation: 0,
                           ),
-                          onPressed: _isProcessing ? null : () => _approveRequest(request),
+                          onPressed: _isProcessing
+                              ? null
+                              : () => _approveRequest(request),
                           icon: const Icon(LucideIcons.checkCircle2, size: 16),
-                          label: const Text('Approve Request', style: TextStyle(fontWeight: FontWeight.w600)),
+                          label: const Text(
+                            'Approve Request',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 20),
-                ] else if (canReview && request.status == CertificateRequestStatus.approved) ...[
+                ] else if (canReview &&
+                    request.status == CertificateRequestStatus.approved) ...[
                   _buildSectionTitle('Fulfillment', isDark),
                   const SizedBox(height: 12),
                   Row(
@@ -284,14 +377,24 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
                             backgroundColor: AcadexColors.accentPurple,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                AcadexRadius.md,
+                              ),
+                            ),
                             elevation: 0,
                           ),
                           onPressed: _isProcessing
                               ? null
-                              : () => _updateStatus(request, CertificateRequestStatus.ready),
+                              : () => _updateStatus(
+                                  request,
+                                  CertificateRequestStatus.ready,
+                                ),
                           icon: const Icon(LucideIcons.packageCheck, size: 16),
-                          label: const Text('Mark Ready for Pickup', style: TextStyle(fontWeight: FontWeight.w600)),
+                          label: const Text(
+                            'Mark Ready for Pickup',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -301,14 +404,24 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
                             backgroundColor: AcadexColors.success,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                AcadexRadius.md,
+                              ),
+                            ),
                             elevation: 0,
                           ),
                           onPressed: _isProcessing
                               ? null
-                              : () => _updateStatus(request, CertificateRequestStatus.completed),
+                              : () => _updateStatus(
+                                  request,
+                                  CertificateRequestStatus.completed,
+                                ),
                           icon: const Icon(LucideIcons.badgeCheck, size: 16),
-                          label: const Text('Mark Issued / Collected', style: TextStyle(fontWeight: FontWeight.w600)),
+                          label: const Text(
+                            'Mark Issued / Collected',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
                         ),
                       ),
                     ],
@@ -340,7 +453,9 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: BorderRadius.circular(AcadexRadius.lg),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -355,7 +470,11 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+          Icon(
+            icon,
+            size: 16,
+            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          ),
           const SizedBox(width: 10),
           SizedBox(
             width: 120,
@@ -363,7 +482,9 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
               label,
               style: GoogleFonts.inter(
                 fontSize: 13,
-                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                color: isDark
+                    ? AcadexColors.darkInkSecondary
+                    : AcadexColors.inkSecondary,
               ),
             ),
           ),
@@ -385,7 +506,9 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
   Future<void> _approveRequest(CertificateRequest request) async {
     setState(() => _isProcessing = true);
     try {
-      await ref.read(certificateRequestManagementProvider.notifier).updateStatus(
+      await ref
+          .read(certificateRequestManagementProvider.notifier)
+          .updateStatus(
             requestId: request.id,
             status: CertificateRequestStatus.approved,
           );
@@ -398,19 +521,24 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
         );
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
   }
 
-  Future<void> _updateStatus(CertificateRequest request, CertificateRequestStatus status) async {
+  Future<void> _updateStatus(
+    CertificateRequest request,
+    CertificateRequestStatus status,
+  ) async {
     setState(() => _isProcessing = true);
     try {
-      await ref.read(certificateRequestManagementProvider.notifier).updateStatus(
-            requestId: request.id,
-            status: status,
-          );
+      await ref
+          .read(certificateRequestManagementProvider.notifier)
+          .updateStatus(requestId: request.id, status: status);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -420,21 +548,32 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
         );
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
   }
 
-  Future<void> _showRejectDialog(BuildContext context, CertificateRequest request) async {
+  Future<void> _showRejectDialog(
+    BuildContext context,
+    CertificateRequest request,
+  ) async {
     final reasonController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.lg)),
-        title: Text('Reject Certificate Request', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AcadexRadius.lg),
+        ),
+        title: Text(
+          'Reject Certificate Request',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+        ),
         content: Form(
           key: formKey,
           child: Column(
@@ -450,19 +589,30 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
                 controller: reasonController,
                 decoration: InputDecoration(
                   labelText: 'Rejection Reason *',
-                  hintText: 'e.g., Pending fee dues, Incomplete academic prerequisites',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                  hintText:
+                      'e.g., Pending fee dues, Incomplete academic prerequisites',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AcadexRadius.md),
+                  ),
                 ),
                 maxLines: 3,
-                validator: (val) => val == null || val.trim().isEmpty ? 'Rejection reason is required' : null,
+                validator: (val) => val == null || val.trim().isEmpty
+                    ? 'Rejection reason is required'
+                    : null,
               ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.error, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.error,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () {
               if (formKey.currentState!.validate()) {
                 Navigator.pop(ctx, true);
@@ -477,7 +627,9 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
     if (confirmed == true && mounted) {
       setState(() => _isProcessing = true);
       try {
-        await ref.read(certificateRequestManagementProvider.notifier).updateStatus(
+        await ref
+            .read(certificateRequestManagementProvider.notifier)
+            .updateStatus(
               requestId: request.id,
               status: CertificateRequestStatus.rejected,
               rejectionReason: reasonController.text.trim(),
@@ -491,7 +643,10 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
           );
         }
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        if (mounted)
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
       } finally {
         if (mounted) setState(() => _isProcessing = false);
       }

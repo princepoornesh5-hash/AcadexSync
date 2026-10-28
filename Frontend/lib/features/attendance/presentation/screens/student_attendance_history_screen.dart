@@ -12,10 +12,12 @@ class StudentAttendanceHistoryScreen extends ConsumerStatefulWidget {
   const StudentAttendanceHistoryScreen({super.key});
 
   @override
-  ConsumerState<StudentAttendanceHistoryScreen> createState() => _StudentAttendanceHistoryScreenState();
+  ConsumerState<StudentAttendanceHistoryScreen> createState() =>
+      _StudentAttendanceHistoryScreenState();
 }
 
-class _StudentAttendanceHistoryScreenState extends ConsumerState<StudentAttendanceHistoryScreen> {
+class _StudentAttendanceHistoryScreenState
+    extends ConsumerState<StudentAttendanceHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final historyAsync = ref.watch(filteredStudentHistoryProvider);
@@ -31,17 +33,12 @@ class _StudentAttendanceHistoryScreenState extends ConsumerState<StudentAttendan
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
-            LucideIcons.arrowLeft,
-            color: Colors.white,
-          ),
+          icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
           onPressed: () => context.safePop(fallbackRoute: '/attendance'),
         ),
         title: Text(
           "Attendance History",
-          style: AcadexTypography.title(
-            color: Colors.white,
-          ),
+          style: AcadexTypography.title(color: Colors.white),
         ),
       ),
       body: Column(
@@ -50,10 +47,14 @@ class _StudentAttendanceHistoryScreenState extends ConsumerState<StudentAttendan
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+              color: isDark
+                  ? AcadexColors.darkSurfaceCard
+                  : AcadexColors.surface,
               borderRadius: AcadexRadius.borderRadiusLg,
               border: Border.all(
-                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
               ),
               boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
             ),
@@ -66,7 +67,8 @@ class _StudentAttendanceHistoryScreenState extends ConsumerState<StudentAttendan
                   subjects: subs.map((e) => e.subjectName).toList(),
                   selectedSubject: selectedSub,
                   onSubjectSelected: (val) {
-                    ref.read(selectedHistorySubjectProvider.notifier).state = val;
+                    ref.read(selectedHistorySubjectProvider.notifier).state =
+                        val;
                   },
                   selectedMonth: selectedMonth,
                   onMonthSelected: (val) {
@@ -80,12 +82,14 @@ class _StudentAttendanceHistoryScreenState extends ConsumerState<StudentAttendan
             height: 1,
             color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
           ),
-          
+
           // History Log List
           Expanded(
             child: historyAsync.when(
               loading: () => const Center(
-                child: AcadexLoadingState(message: "Loading attendance records..."),
+                child: AcadexLoadingState(
+                  message: "Loading attendance records...",
+                ),
               ),
               error: (err, stack) => Center(
                 child: AcadexErrorState(
@@ -98,7 +102,8 @@ class _StudentAttendanceHistoryScreenState extends ConsumerState<StudentAttendan
                   return const Center(
                     child: AcadexEmptyState(
                       title: "No Attendance Records",
-                      subtitle: "No attendance entries match your selected subject or month filters.",
+                      subtitle:
+                          "No attendance entries match your selected subject or month filters.",
                       icon: LucideIcons.calendarOff,
                     ),
                   );

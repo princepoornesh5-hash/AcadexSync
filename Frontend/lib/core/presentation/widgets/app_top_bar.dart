@@ -39,7 +39,8 @@ class AppTopBar extends ConsumerWidget implements PreferredSizeWidget {
       elevation: 0,
       title: LayoutBuilder(
         builder: (context, constraints) {
-          final showRoleBadge = currentUser != null && constraints.maxWidth > 340;
+          final showRoleBadge =
+              currentUser != null && constraints.maxWidth > 340;
           return Row(
             children: [
               Expanded(
@@ -88,7 +89,10 @@ class AppTopBar extends ConsumerWidget implements PreferredSizeWidget {
         Stack(
           children: [
             IconButton(
-              icon: const Icon(Icons.notifications_outlined, color: AcadexColors.inkSecondary),
+              icon: const Icon(
+                Icons.notifications_outlined,
+                color: AcadexColors.inkSecondary,
+              ),
               onPressed: onNotificationTap,
             ),
             if (unreadCount > 0)
@@ -101,7 +105,10 @@ class AppTopBar extends ConsumerWidget implements PreferredSizeWidget {
                     color: AcadexColors.error,
                     shape: BoxShape.circle,
                   ),
-                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                  constraints: const BoxConstraints(
+                    minWidth: 16,
+                    minHeight: 16,
+                  ),
                   child: Text(
                     unreadCount > 99 ? '99+' : unreadCount.toString(),
                     style: const TextStyle(

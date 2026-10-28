@@ -30,17 +30,24 @@ class SuperAdminAttendanceDashboardScreen extends ConsumerWidget {
           children: [
             const AcadexPageHeader(
               title: "Multi-Campus Attendance",
-              subtitle: "Platform-wide attendance monitoring, college comparisons, and system health oversight.",
+              subtitle:
+                  "Platform-wide attendance monitoring, college comparisons, and system health oversight.",
             ),
             const SizedBox(height: 12),
             Container(
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                color: isDark
+                    ? AcadexColors.darkSurfaceCard
+                    : AcadexColors.surface,
                 borderRadius: AcadexRadius.borderRadiusLg,
                 border: Border.all(
-                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
                 ),
-                boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+                boxShadow: isDark
+                    ? AcadexShadows.darkSm
+                    : AcadexShadows.lightSm,
               ),
               child: TabBar(
                 isScrollable: true,
@@ -81,7 +88,7 @@ class SuperAdminAttendanceDashboardScreen extends ConsumerWidget {
 
   Widget _buildOverviewTab(WidgetRef ref) {
     final summaryAsync = ref.watch(superAdminSummaryProvider);
-    
+
     return summaryAsync.when(
       loading: () => const Center(
         child: AcadexLoadingState(message: "Loading platform overview..."),
@@ -97,9 +104,7 @@ class SuperAdminAttendanceDashboardScreen extends ConsumerWidget {
           maxWidth: AcadexLayout.contentMaxWidth,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SuperAdminSummaryCard(summary: summary),
-            ],
+            children: [SuperAdminSummaryCard(summary: summary)],
           ),
         );
       },
@@ -108,10 +113,12 @@ class SuperAdminAttendanceDashboardScreen extends ConsumerWidget {
 
   Widget _buildCollegesTab(WidgetRef ref) {
     final collegesAsync = ref.watch(collegeComparisonProvider);
-    
+
     return collegesAsync.when(
       loading: () => const Center(
-        child: AcadexLoadingState(message: "Loading college performance comparison..."),
+        child: AcadexLoadingState(
+          message: "Loading college performance comparison...",
+        ),
       ),
       error: (err, stack) => Center(
         child: AcadexErrorState(
@@ -140,10 +147,12 @@ class SuperAdminAttendanceDashboardScreen extends ConsumerWidget {
 
   Widget _buildFacultyTab(WidgetRef ref) {
     final facultyAsync = ref.watch(superAdminFacultyProvider);
-    
+
     return facultyAsync.when(
       loading: () => const Center(
-        child: AcadexLoadingState(message: "Loading faculty tracking records..."),
+        child: AcadexLoadingState(
+          message: "Loading faculty tracking records...",
+        ),
       ),
       error: (err, stack) => Center(
         child: AcadexErrorState(
@@ -169,7 +178,7 @@ class SuperAdminAttendanceDashboardScreen extends ConsumerWidget {
 
   Widget _buildShortagesTab(WidgetRef ref) {
     final shortageAsync = ref.watch(superAdminShortageProvider);
-    
+
     return shortageAsync.when(
       loading: () => const Center(
         child: AcadexLoadingState(message: "Loading cross-campus shortages..."),
@@ -198,7 +207,7 @@ class SuperAdminAttendanceDashboardScreen extends ConsumerWidget {
 
   Widget _buildInsightsTab(WidgetRef ref) {
     final insightsAsync = ref.watch(superAdminInsightsProvider);
-    
+
     return insightsAsync.when(
       loading: () => const Center(
         child: AcadexLoadingState(message: "Loading platform insights..."),
@@ -227,7 +236,7 @@ class SuperAdminAttendanceDashboardScreen extends ConsumerWidget {
 
   Widget _buildHealthTab(WidgetRef ref) {
     final healthAsync = ref.watch(superAdminSystemHealthProvider);
-    
+
     return healthAsync.when(
       loading: () => const Center(
         child: AcadexLoadingState(message: "Checking system telemetry..."),

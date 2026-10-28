@@ -25,10 +25,8 @@ class ResponseDialog extends ConsumerStatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => ResponseDialog(
-        requestId: requestId,
-        initialAction: initialAction,
-      ),
+      builder: (ctx) =>
+          ResponseDialog(requestId: requestId, initialAction: initialAction),
     );
   }
 
@@ -86,7 +84,9 @@ class _ResponseDialogState extends ConsumerState<ResponseDialog> {
     setState(() => _isSubmitting = true);
 
     try {
-      final res = await ref.read(requestActionProvider.notifier).respondToRequest(
+      final res = await ref
+          .read(requestActionProvider.notifier)
+          .respondToRequest(
             id: widget.requestId,
             action: _selectedAction,
             message: message,
@@ -94,7 +94,10 @@ class _ResponseDialogState extends ConsumerState<ResponseDialog> {
 
       if (mounted) {
         if (res != null) {
-          AcadexSnackBar.showSuccess(context, 'Response submitted successfully.');
+          AcadexSnackBar.showSuccess(
+            context,
+            'Response submitted successfully.',
+          );
           Navigator.of(context).pop(true);
         } else {
           AcadexSnackBar.showError(
@@ -144,7 +147,9 @@ class _ResponseDialogState extends ConsumerState<ResponseDialog> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _getActionColor(_selectedAction).withValues(alpha: 0.12),
+                  color: _getActionColor(
+                    _selectedAction,
+                  ).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -166,7 +171,9 @@ class _ResponseDialogState extends ConsumerState<ResponseDialog> {
 
           Text(
             'Select Decision',
-            style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+            style: AcadexTypography.caption().copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 8),
 
@@ -202,7 +209,9 @@ class _ResponseDialogState extends ConsumerState<ResponseDialog> {
 
           Text(
             'Response Message',
-            style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+            style: AcadexTypography.caption().copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 8),
 
@@ -210,8 +219,11 @@ class _ResponseDialogState extends ConsumerState<ResponseDialog> {
             controller: _messageController,
             maxLines: 3,
             decoration: InputDecoration(
-              hintText: 'Add an optional note or reasoning for the requester...',
-              hintStyle: AcadexTypography.bodySmall(color: AcadexColors.inkMuted),
+              hintText:
+                  'Add an optional note or reasoning for the requester...',
+              hintStyle: AcadexTypography.bodySmall(
+                color: AcadexColors.inkMuted,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: const BorderSide(color: AcadexColors.hairline),
@@ -222,7 +234,10 @@ class _ResponseDialogState extends ConsumerState<ResponseDialog> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AcadexColors.primary, width: 1.5),
+                borderSide: const BorderSide(
+                  color: AcadexColors.primary,
+                  width: 1.5,
+                ),
               ),
               contentPadding: const EdgeInsets.all(12),
             ),
@@ -304,7 +319,9 @@ class _ActionChoice extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? color.withValues(alpha: 0.12) : AcadexColors.canvasSoft,
+            color: isSelected
+                ? color.withValues(alpha: 0.12)
+                : AcadexColors.canvasSoft,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: isSelected ? color : AcadexColors.hairline,

@@ -33,7 +33,9 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
     final depts = (ref.read(departmentsProvider).valueOrNull ?? <Department>[])
         .where((d) => d.isActive)
         .toList();
-    final facultyList = ref.read(facultyProvider(null)).items
+    final facultyList = ref
+        .read(facultyProvider(null))
+        .items
         .where((f) => f.isActive && f.accountStatus == AccountStatus.active)
         .toList();
 
@@ -72,24 +74,38 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: selectedFacultyId,
-                decoration: const InputDecoration(labelText: 'Select Faculty Member'),
+                decoration: const InputDecoration(
+                  labelText: 'Select Faculty Member',
+                ),
                 items: facultyList
-                    .map((f) => DropdownMenuItem(
-                          value: f.id,
-                          child: Text('${f.name} (${f.employeeId})', overflow: TextOverflow.ellipsis),
-                        ))
+                    .map(
+                      (f) => DropdownMenuItem(
+                        value: f.id,
+                        child: Text(
+                          '${f.name} (${f.employeeId})',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) => setDialogState(() => selectedFacultyId = v),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: selectedDeptId,
-                decoration: const InputDecoration(labelText: 'Assign to Department'),
+                decoration: const InputDecoration(
+                  labelText: 'Assign to Department',
+                ),
                 items: depts
-                    .map((d) => DropdownMenuItem(
-                          value: d.id,
-                          child: Text('${d.name} (${d.code})', overflow: TextOverflow.ellipsis),
-                        ))
+                    .map(
+                      (d) => DropdownMenuItem(
+                        value: d.id,
+                        child: Text(
+                          '${d.name} (${d.code})',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) => setDialogState(() => selectedDeptId = v),
               ),
@@ -109,7 +125,9 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
                 if (selectedFacultyId == null || selectedDeptId == null) return;
                 Navigator.of(ctx).pop();
                 try {
-                  await ref.read(hodsProvider.notifier).assignExistingUser(
+                  await ref
+                      .read(hodsProvider.notifier)
+                      .assignExistingUser(
                         userId: selectedFacultyId!,
                         departmentId: selectedDeptId!,
                       );
@@ -144,7 +162,9 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = AcadexBreakpoints.isMobile(context);
 
-    final deptsMap = {for (final d in deptsAsync.valueOrNull ?? <Department>[]) d.id: d.name};
+    final deptsMap = {
+      for (final d in deptsAsync.valueOrNull ?? <Department>[]) d.id: d.name,
+    };
 
     return AcadexPageContainer(
       scrollable: false,
@@ -153,7 +173,8 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
         children: [
           const AcadexPageHeader(
             title: "Department Heads (HODs)",
-            subtitle: "Provision academic department leaders, manage credentials, and monitor department metrics.",
+            subtitle:
+                "Provision academic department leaders, manage credentials, and monitor department metrics.",
           ),
           AcadexSearchFilterBar(
             searchHint: "Search HODs by name, PIN number, or email...",
@@ -182,15 +203,27 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
                             label: Text(f.$2),
                             selected: _filter == f.$1,
                             onSelected: (_) => setState(() => _filter = f.$1),
-                            selectedColor: AcadexColors.primary.withValues(alpha: 0.15),
+                            selectedColor: AcadexColors.primary.withValues(
+                              alpha: 0.15,
+                            ),
                             checkmarkColor: AcadexColors.primary,
                             labelStyle: TextStyle(
-                              color: _filter == f.$1 ? AcadexColors.primary : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                              fontWeight: _filter == f.$1 ? FontWeight.w600 : FontWeight.w400,
+                              color: _filter == f.$1
+                                  ? AcadexColors.primary
+                                  : (isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted),
+                              fontWeight: _filter == f.$1
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
                               fontSize: 12,
                             ),
                             side: BorderSide(
-                              color: _filter == f.$1 ? AcadexColors.primary : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                              color: _filter == f.$1
+                                  ? AcadexColors.primary
+                                  : (isDark
+                                        ? AcadexColors.darkHairline
+                                        : AcadexColors.hairline),
                             ),
                           ),
                         ),
@@ -219,12 +252,17 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
               ),
               data: (hods) {
                 final filtered = hods.where((h) {
-                  if (_filter == 'active' && h.accountStatus != AccountStatus.active) return false;
-                  if (_filter == 'pending' && h.accountStatus != AccountStatus.pendingActivation) return false;
+                  if (_filter == 'active' &&
+                      h.accountStatus != AccountStatus.active)
+                    return false;
+                  if (_filter == 'pending' &&
+                      h.accountStatus != AccountStatus.pendingActivation)
+                    return false;
 
                   if (_searchQuery.isEmpty) return true;
                   final q = _searchQuery.toLowerCase();
-                  final deptName = (deptsMap[h.departmentId ?? ''] ?? '').toLowerCase();
+                  final deptName = (deptsMap[h.departmentId ?? ''] ?? '')
+                      .toLowerCase();
                   return h.name.toLowerCase().contains(q) ||
                       (h.instituteId ?? '').toLowerCase().contains(q) ||
                       h.email.toLowerCase().contains(q) ||
@@ -235,7 +273,8 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
                   if (hods.isNotEmpty) {
                     return AcadexEmptyState.filterEmpty(
                       title: "No department heads match criteria",
-                      subtitle: "Try clearing search or filters to see all department heads.",
+                      subtitle:
+                          "Try clearing search or filters to see all department heads.",
                       onClearFilters: () {
                         setState(() {
                           _searchQuery = '';
@@ -246,10 +285,12 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
                   }
                   return AcadexEmptyState(
                     title: "No Department Heads Found",
-                    subtitle: "Provision a Head of Department to lead academic departments and curriculum.",
+                    subtitle:
+                        "Provision a Head of Department to lead academic departments and curriculum.",
                     icon: LucideIcons.userCheck,
                     actionLabel: "Provision HOD",
-                    onActionTap: () => context.push('/academics/hods/provision'),
+                    onActionTap: () =>
+                        context.push('/academics/hods/provision'),
                   );
                 }
 
@@ -260,34 +301,47 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, i) {
                       final h = filtered[i];
-                      final deptName = deptsMap[h.departmentId ?? ''] ?? 'Unassigned Dept';
-                      final isPending = h.accountStatus == AccountStatus.pendingActivation;
+                      final deptName =
+                          deptsMap[h.departmentId ?? ''] ?? 'Unassigned Dept';
+                      final isPending =
+                          h.accountStatus == AccountStatus.pendingActivation;
 
                       return GestureDetector(
                         onTap: () => context.push('/academics/hods/${h.id}'),
                         child: Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                            color: isDark
+                                ? AcadexColors.darkSurfaceCard
+                                : AcadexColors.surface,
                             borderRadius: AcadexRadius.borderRadiusLg,
                             border: Border.all(
-                              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                              color: isDark
+                                  ? AcadexColors.darkHairline
+                                  : AcadexColors.hairline,
                             ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
                                     child: Row(
                                       children: [
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: AcadexColors.primary.withValues(alpha: 0.12),
-                                            borderRadius: BorderRadius.circular(4),
+                                            color: AcadexColors.primary
+                                                .withValues(alpha: 0.12),
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
                                           ),
                                           child: Text(
                                             h.instituteId ?? 'HOD',
@@ -302,9 +356,14 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
                                         Expanded(
                                           child: Text(
                                             h.name,
-                                            style: AcadexTypography.body(
-                                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                                            ).copyWith(fontWeight: FontWeight.w700),
+                                            style:
+                                                AcadexTypography.body(
+                                                  color: isDark
+                                                      ? AcadexColors.darkInk
+                                                      : AcadexColors.ink,
+                                                ).copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
@@ -312,17 +371,28 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
                                     ),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: isPending
                                           ? AcadexColors.warningLight
-                                          : (isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight),
-                                      borderRadius: AcadexRadius.borderRadiusFull,
+                                          : (isDark
+                                                ? AcadexColors
+                                                      .successDarkContainer
+                                                : AcadexColors.successLight),
+                                      borderRadius:
+                                          AcadexRadius.borderRadiusFull,
                                     ),
                                     child: Text(
-                                      isPending ? "Pending Activation" : "Active",
+                                      isPending
+                                          ? "Pending Activation"
+                                          : "Active",
                                       style: TextStyle(
-                                        color: isPending ? AcadexColors.warning : AcadexColors.success,
+                                        color: isPending
+                                            ? AcadexColors.warning
+                                            : AcadexColors.success,
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -333,13 +403,21 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
                               const SizedBox(height: 6),
                               Row(
                                 children: [
-                                  Icon(LucideIcons.building2, size: 14, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                  Icon(
+                                    LucideIcons.building2,
+                                    size: 14,
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
+                                  ),
                                   const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
                                       deptName,
                                       style: AcadexTypography.caption(
-                                        color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                                        color: isDark
+                                            ? AcadexColors.darkInkSecondary
+                                            : AcadexColors.inkSecondary,
                                       ).copyWith(fontWeight: FontWeight.w600),
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -349,13 +427,21 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
                               const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  Icon(LucideIcons.mail, size: 13, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                  Icon(
+                                    LucideIcons.mail,
+                                    size: 13,
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
+                                  ),
                                   const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
                                       h.email,
                                       style: AcadexTypography.caption(
-                                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                        color: isDark
+                                            ? AcadexColors.darkInkMuted
+                                            : AcadexColors.inkMuted,
                                       ),
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -367,9 +453,14 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   IconButton(
-                                    icon: const Icon(LucideIcons.arrowRight, size: 16, color: AcadexColors.primary),
+                                    icon: const Icon(
+                                      LucideIcons.arrowRight,
+                                      size: 16,
+                                      color: AcadexColors.primary,
+                                    ),
                                     tooltip: "View Details",
-                                    onPressed: () => context.push('/academics/hods/${h.id}'),
+                                    onPressed: () =>
+                                        context.push('/academics/hods/${h.id}'),
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
                                   ),
@@ -378,10 +469,14 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
                                     icon: Icon(
                                       LucideIcons.edit,
                                       size: 18,
-                                      color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                                      color: isDark
+                                          ? AcadexColors.darkInkSecondary
+                                          : AcadexColors.inkSecondary,
                                     ),
                                     tooltip: "Edit Profile",
-                                    onPressed: () => context.push('/academics/hods/edit/${h.id}'),
+                                    onPressed: () => context.push(
+                                      '/academics/hods/edit/${h.id}',
+                                    ),
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
                                   ),
@@ -396,48 +491,89 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
                 }
 
                 return AcadexDataTable(
-                  columns: const ["HOD Name", "PIN Number", "Department", "Email Address", "Phone", "Account Status", "Actions"],
+                  columns: const [
+                    "HOD Name",
+                    "PIN Number",
+                    "Department",
+                    "Email Address",
+                    "Phone",
+                    "Account Status",
+                    "Actions",
+                  ],
                   rows: filtered.map((h) {
-                    final isPending = h.accountStatus == AccountStatus.pendingActivation;
+                    final isPending =
+                        h.accountStatus == AccountStatus.pendingActivation;
                     return DataRow(
-                      onSelectChanged: (_) => context.push('/academics/hods/${h.id}'),
+                      onSelectChanged: (_) =>
+                          context.push('/academics/hods/${h.id}'),
                       cells: [
                         DataCell(
                           Row(
                             children: [
-                              const Icon(LucideIcons.userCheck, size: 16, color: AcadexColors.primary),
+                              const Icon(
+                                LucideIcons.userCheck,
+                                size: 16,
+                                color: AcadexColors.primary,
+                              ),
                               const SizedBox(width: 8),
-                              Text(h.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Text(
+                                h.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                         ),
                         DataCell(
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
-                              color: AcadexColors.primary.withValues(alpha: 0.1),
+                              color: AcadexColors.primary.withValues(
+                                alpha: 0.1,
+                              ),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               h.instituteId ?? '—',
-                              style: const TextStyle(color: AcadexColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
+                              style: const TextStyle(
+                                color: AcadexColors.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ),
-                        DataCell(Text(deptsMap[h.departmentId ?? ''] ?? h.departmentId ?? 'Unassigned')),
+                        DataCell(
+                          Text(
+                            deptsMap[h.departmentId ?? ''] ??
+                                h.departmentId ??
+                                'Unassigned',
+                          ),
+                        ),
                         DataCell(Text(h.email)),
                         DataCell(Text(h.phone ?? '—')),
                         DataCell(
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: isPending ? AcadexColors.warningLight : AcadexColors.successLight,
+                              color: isPending
+                                  ? AcadexColors.warningLight
+                                  : AcadexColors.successLight,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               isPending ? "Pending Activation" : "Active",
                               style: TextStyle(
-                                color: isPending ? AcadexColors.warning : AcadexColors.success,
+                                color: isPending
+                                    ? AcadexColors.warning
+                                    : AcadexColors.success,
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -450,12 +586,15 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
                               IconButton(
                                 icon: const Icon(LucideIcons.eye, size: 18),
                                 tooltip: "View Details",
-                                onPressed: () => context.push('/academics/hods/${h.id}'),
+                                onPressed: () =>
+                                    context.push('/academics/hods/${h.id}'),
                               ),
                               IconButton(
                                 icon: const Icon(LucideIcons.edit, size: 18),
                                 tooltip: "Edit Profile",
-                                onPressed: () => context.push('/academics/hods/edit/${h.id}'),
+                                onPressed: () => context.push(
+                                  '/academics/hods/edit/${h.id}',
+                                ),
                               ),
                             ],
                           ),
@@ -530,13 +669,17 @@ class _ProvisionHodScreenState extends ConsumerState<ProvisionHodScreen> {
       final actualCollegeCode = college?.code ?? '';
       final actualCollegeName = college?.name ?? "Department of ${dept.name}";
 
-      final result = await ref.read(hodsProvider.notifier).provisionHod(
-        departmentId: _selectedDepartmentId!,
-        name: _nameCtrl.text.trim(),
-        instituteId: _instituteIdCtrl.text.trim().toUpperCase(),
-        email: _emailCtrl.text.trim().toLowerCase(),
-        phone: _phoneCtrl.text.trim().isNotEmpty ? _phoneCtrl.text.trim() : null,
-      );
+      final result = await ref
+          .read(hodsProvider.notifier)
+          .provisionHod(
+            departmentId: _selectedDepartmentId!,
+            name: _nameCtrl.text.trim(),
+            instituteId: _instituteIdCtrl.text.trim().toUpperCase(),
+            email: _emailCtrl.text.trim().toLowerCase(),
+            phone: _phoneCtrl.text.trim().isNotEmpty
+                ? _phoneCtrl.text.trim()
+                : null,
+          );
 
       final enrichedResult = result.copyWith(
         collegeCode: actualCollegeCode,
@@ -583,7 +726,10 @@ class _ProvisionHodScreenState extends ConsumerState<ProvisionHodScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/academics/hods'),
         ),
         title: Text(
@@ -594,139 +740,194 @@ class _ProvisionHodScreenState extends ConsumerState<ProvisionHodScreen> {
         ),
       ),
       body: AcadexPageContainer(
-              maxWidth: AcadexLayout.formMaxWidth,
-              child: Form(
-                key: _formKey,
-                child: AcadexFormCard(
-                  title: "HOD Credentials & Department Assignment",
-                  isSaving: _isLoading,
-                  saveLabel: "Provision HOD",
-                  onCancel: () => context.safePop(fallbackRoute: '/academics/hods'),
-                  onSave: _submit,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Department Selector
-                      AcadexFormField(
-                        label: "Assigned Department *",
-                        child: departmentsAsync.when(
-                          loading: () => const LinearProgressIndicator(),
-                          error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error)),
-                          data: (depts) {
-                            final activeDepts = depts.where((d) => d.isActive).toList();
-                            if (activeDepts.isEmpty) {
-                              return Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.warningLight,
-                                  borderRadius: AcadexRadius.borderRadiusMd,
-                                  border: Border.all(color: AcadexColors.warning),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text("No Active Departments", style: TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.warning)),
-                                    const SizedBox(height: 4),
-                                    const Text("You must create an active department before provisioning an HOD."),
-                                    const SizedBox(height: 8),
-                                    ElevatedButton(
-                                      onPressed: () => context.push('/academics/departments/new'),
-                                      child: const Text("Create Department"),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-
-                            return DropdownButtonFormField<String>(
-                              dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                              value: _selectedDepartmentId,
-                              decoration: const InputDecoration(hintText: "Select Academic Department"),
-                              validator: (v) => v == null ? 'Department is required' : null,
-                              items: activeDepts.map((d) => DropdownMenuItem(value: d.id, child: Text("${d.name} (${d.code})"))).toList(),
-                              onChanged: (v) => setState(() => _selectedDepartmentId = v),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Full Name
-                      AcadexFormField(
-                        label: "Full Name (with Title) *",
-                        child: TextFormField(
-                          controller: _nameCtrl,
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Name is required';
-                            if (v.trim().length < 2) return 'Min 2 characters';
-                            if (v.trim().length > 100) return 'Max 100 characters';
-                            return null;
-                          },
-                          style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-                          decoration: const InputDecoration(hintText: "e.g. Dr. Alan Turing"),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      // PIN Number & Phone Row
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: AcadexFormField(
-                              label: "HOD PIN Number *",
-                              child: TextFormField(
-                                controller: _instituteIdCtrl,
-                                textCapitalization: TextCapitalization.characters,
-                                validator: (v) {
-                                  if (v == null || v.trim().isEmpty) return 'PIN Number is required';
-                                  if (v.trim().length < 2) return 'Min 2 characters';
-                                  if (v.trim().length > 50) return 'Max 50 characters';
-                                  return null;
-                                },
-                                style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-                                decoration: const InputDecoration(hintText: "e.g. HOD-CS-01"),
-                              ),
-                            ),
+        maxWidth: AcadexLayout.formMaxWidth,
+        child: Form(
+          key: _formKey,
+          child: AcadexFormCard(
+            title: "HOD Credentials & Department Assignment",
+            isSaving: _isLoading,
+            saveLabel: "Provision HOD",
+            onCancel: () => context.safePop(fallbackRoute: '/academics/hods'),
+            onSave: _submit,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Department Selector
+                AcadexFormField(
+                  label: "Assigned Department *",
+                  child: departmentsAsync.when(
+                    loading: () => const LinearProgressIndicator(),
+                    error: (e, _) => Text(
+                      AcadexException.sanitizedMessage(e),
+                      style: const TextStyle(color: AcadexColors.error),
+                    ),
+                    data: (depts) {
+                      final activeDepts = depts
+                          .where((d) => d.isActive)
+                          .toList();
+                      if (activeDepts.isEmpty) {
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? AcadexColors.darkSurfaceCard
+                                : AcadexColors.warningLight,
+                            borderRadius: AcadexRadius.borderRadiusMd,
+                            border: Border.all(color: AcadexColors.warning),
                           ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: AcadexFormField(
-                              label: "Phone Number (Optional)",
-                              child: TextFormField(
-                                controller: _phoneCtrl,
-                                keyboardType: TextInputType.phone,
-                                style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-                                decoration: const InputDecoration(hintText: "9876543210"),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                "No Active Departments",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AcadexColors.warning,
+                                ),
                               ),
-                            ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                "You must create an active department before provisioning an HOD.",
+                              ),
+                              const SizedBox(height: 8),
+                              ElevatedButton(
+                                onPressed: () =>
+                                    context.push('/academics/departments/new'),
+                                child: const Text("Create Department"),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
+                        );
+                      }
 
-                      // Official Email Address
-                      AcadexFormField(
-                        label: "Official Academic Email *",
-                        child: TextFormField(
-                          controller: _emailCtrl,
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Email is required';
-                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v.trim())) {
-                              return 'Enter a valid email address';
-                            }
-                            return null;
-                          },
-                          style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-                          decoration: const InputDecoration(hintText: "hod.cs@college.edu"),
+                      return DropdownButtonFormField<String>(
+                        dropdownColor: isDark
+                            ? AcadexColors.darkSurfaceCard
+                            : AcadexColors.surface,
+                        value: _selectedDepartmentId,
+                        decoration: const InputDecoration(
+                          hintText: "Select Academic Department",
                         ),
-                      ),
-                    ],
+                        validator: (v) =>
+                            v == null ? 'Department is required' : null,
+                        items: activeDepts
+                            .map(
+                              (d) => DropdownMenuItem(
+                                value: d.id,
+                                child: Text("${d.name} (${d.code})"),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (v) =>
+                            setState(() => _selectedDepartmentId = v),
+                      );
+                    },
                   ),
                 ),
-              ),
+                const SizedBox(height: 14),
+
+                // Full Name
+                AcadexFormField(
+                  label: "Full Name (with Title) *",
+                  child: TextFormField(
+                    controller: _nameCtrl,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty)
+                        return 'Name is required';
+                      if (v.trim().length < 2) return 'Min 2 characters';
+                      if (v.trim().length > 100) return 'Max 100 characters';
+                      return null;
+                    },
+                    style: AcadexTypography.body(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ),
+                    decoration: const InputDecoration(
+                      hintText: "e.g. Dr. Alan Turing",
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // PIN Number & Phone Row
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: AcadexFormField(
+                        label: "HOD PIN Number *",
+                        child: TextFormField(
+                          controller: _instituteIdCtrl,
+                          textCapitalization: TextCapitalization.characters,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty)
+                              return 'PIN Number is required';
+                            if (v.trim().length < 2) return 'Min 2 characters';
+                            if (v.trim().length > 50)
+                              return 'Max 50 characters';
+                            return null;
+                          },
+                          style: AcadexTypography.body(
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: "e.g. HOD-CS-01",
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: AcadexFormField(
+                        label: "Phone Number (Optional)",
+                        child: TextFormField(
+                          controller: _phoneCtrl,
+                          keyboardType: TextInputType.phone,
+                          style: AcadexTypography.body(
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: "9876543210",
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // Official Email Address
+                AcadexFormField(
+                  label: "Official Academic Email *",
+                  child: TextFormField(
+                    controller: _emailCtrl,
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty)
+                        return 'Email is required';
+                      if (!RegExp(
+                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                      ).hasMatch(v.trim())) {
+                        return 'Enter a valid email address';
+                      }
+                      return null;
+                    },
+                    style: AcadexTypography.body(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ),
+                    decoration: const InputDecoration(
+                      hintText: "hod.cs@college.edu",
+                    ),
+                  ),
+                ),
+              ],
             ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -781,12 +982,16 @@ class _HodEditScreenState extends ConsumerState<HodEditScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
-      await ref.read(hodsProvider.notifier).updateProfile(
-        widget.id,
-        name: _nameCtrl.text.trim(),
-        email: _emailCtrl.text.trim().toLowerCase(),
-        phone: _phoneCtrl.text.trim().isNotEmpty ? _phoneCtrl.text.trim() : null,
-      );
+      await ref
+          .read(hodsProvider.notifier)
+          .updateProfile(
+            widget.id,
+            name: _nameCtrl.text.trim(),
+            email: _emailCtrl.text.trim().toLowerCase(),
+            phone: _phoneCtrl.text.trim().isNotEmpty
+                ? _phoneCtrl.text.trim()
+                : null,
+          );
 
       if (mounted) {
         AcadexSnackBar.showSuccess(
@@ -814,7 +1019,10 @@ class _HodEditScreenState extends ConsumerState<HodEditScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/academics/hods'),
         ),
         title: Text(
@@ -834,7 +1042,8 @@ class _HodEditScreenState extends ConsumerState<HodEditScreen> {
                   title: "Update Contact Information",
                   isSaving: _isLoading,
                   saveLabel: "Update Profile",
-                  onCancel: () => context.safePop(fallbackRoute: '/academics/hods'),
+                  onCancel: () =>
+                      context.safePop(fallbackRoute: '/academics/hods'),
                   onSave: _save,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -843,8 +1052,14 @@ class _HodEditScreenState extends ConsumerState<HodEditScreen> {
                         label: "Full Name *",
                         child: TextFormField(
                           controller: _nameCtrl,
-                          validator: (v) => (v == null || v.trim().isEmpty) ? 'Name is required' : null,
-                          style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Name is required'
+                              : null,
+                          style: AcadexTypography.body(
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -854,13 +1069,20 @@ class _HodEditScreenState extends ConsumerState<HodEditScreen> {
                           controller: _emailCtrl,
                           keyboardType: TextInputType.emailAddress,
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Email is required';
-                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v.trim())) {
+                            if (v == null || v.trim().isEmpty)
+                              return 'Email is required';
+                            if (!RegExp(
+                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                            ).hasMatch(v.trim())) {
                               return 'Enter a valid email address';
                             }
                             return null;
                           },
-                          style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                          style: AcadexTypography.body(
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -869,7 +1091,11 @@ class _HodEditScreenState extends ConsumerState<HodEditScreen> {
                         child: TextFormField(
                           controller: _phoneCtrl,
                           keyboardType: TextInputType.phone,
-                          style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                          style: AcadexTypography.body(
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
+                          ),
                         ),
                       ),
                     ],

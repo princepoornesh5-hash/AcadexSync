@@ -6,10 +6,7 @@ import '../../../../../core/presentation/widgets/acadex_badge.dart';
 class AttendanceBadge extends StatelessWidget {
   final AttendanceStatus status;
 
-  const AttendanceBadge({
-    super.key,
-    required this.status,
-  });
+  const AttendanceBadge({super.key, required this.status});
 
   @override
   Widget build(BuildContext context) {

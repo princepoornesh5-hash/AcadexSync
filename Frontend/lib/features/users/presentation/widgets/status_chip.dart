@@ -5,14 +5,14 @@ import '../../domain/models/user_status_enum.dart';
 
 class StatusChip extends StatelessWidget {
   final UserStatus status;
-  
+
   const StatusChip({super.key, required this.status});
 
   @override
   Widget build(BuildContext context) {
     Color bgColor;
     Color textColor;
-    
+
     switch (status) {
       case UserStatus.active:
         bgColor = DashboardColors.successLight;
@@ -54,10 +54,7 @@ class StatusChip extends StatelessWidget {
           Container(
             width: 6,
             height: 6,
-            decoration: BoxDecoration(
-              color: textColor,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: textColor, shape: BoxShape.circle),
           ),
           const SizedBox(width: 6),
           Text(

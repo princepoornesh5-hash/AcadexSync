@@ -12,14 +12,19 @@ class FirebaseActivationRepository implements AccountActivationRepository {
   final FirestoreService _firestoreService;
   final FirebaseAuth _firebaseAuth;
 
-  FirebaseActivationRepository(this._firestoreService, {FirebaseAuth? firebaseAuth})
-      : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
+  FirebaseActivationRepository(
+    this._firestoreService, {
+    FirebaseAuth? firebaseAuth,
+  }) : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
 
   @override
   Future<String> generateActivationCode(Student student) async {
-    final String plaintextCode = const Uuid().v4().substring(0, 8).toUpperCase();
+    final String plaintextCode = const Uuid()
+        .v4()
+        .substring(0, 8)
+        .toUpperCase();
     final recordId = ActivationRecord.hashCodeString(plaintextCode);
-    
+
     final record = ActivationRecord(
       id: recordId,
       studentId: student.id,
@@ -42,9 +47,12 @@ class FirebaseActivationRepository implements AccountActivationRepository {
 
   @override
   Future<String> generateFacultyActivationCode(Faculty faculty) async {
-    final String plaintextCode = const Uuid().v4().substring(0, 8).toUpperCase();
+    final String plaintextCode = const Uuid()
+        .v4()
+        .substring(0, 8)
+        .toUpperCase();
     final recordId = ActivationRecord.hashCodeString(plaintextCode);
-    
+
     final record = ActivationRecord(
       id: recordId,
       facultyId: faculty.id,
@@ -68,7 +76,7 @@ class FirebaseActivationRepository implements AccountActivationRepository {
   @override
   Future<dynamic> validateActivation(String identifier, String code) async {
     final inputHash = ActivationRecord.hashCodeString(code);
-    
+
     final docSnapshot = await FirebaseFirestore.instance
         .collection('activationCodes')
         .doc(inputHash)
@@ -94,13 +102,19 @@ class FirebaseActivationRepository implements AccountActivationRepository {
     }
 
     if (record.role == AppRole.student) {
-      final studentDoc = await FirebaseFirestore.instance.collection('students').doc(record.studentId).get();
+      final studentDoc = await FirebaseFirestore.instance
+          .collection('students')
+          .doc(record.studentId)
+          .get();
       if (!studentDoc.exists || studentDoc.data() == null) {
         throw Exception("Associated student record not found.");
       }
       return Student.fromJson(studentDoc.data()!).toJson();
     } else {
-      final facultyDoc = await FirebaseFirestore.instance.collection('faculty').doc(record.facultyId).get();
+      final facultyDoc = await FirebaseFirestore.instance
+          .collection('faculty')
+          .doc(record.facultyId)
+          .get();
       if (!facultyDoc.exists || facultyDoc.data() == null) {
         throw Exception("Associated faculty record not found.");
       }
@@ -109,9 +123,13 @@ class FirebaseActivationRepository implements AccountActivationRepository {
   }
 
   @override
-  Future<String> completeActivation(String identifier, String code, String newPassword) async {
+  Future<String> completeActivation(
+    String identifier,
+    String code,
+    String newPassword,
+  ) async {
     final inputHash = ActivationRecord.hashCodeString(code);
-    
+
     final docSnapshot = await FirebaseFirestore.instance
         .collection('activationCodes')
         .doc(inputHash)
@@ -129,7 +147,9 @@ class FirebaseActivationRepository implements AccountActivationRepository {
     }
 
     if (record.status != ActivationStatus.pending || record.isExpired) {
-      throw Exception("This activation code is no longer valid for activation.");
+      throw Exception(
+        "This activation code is no longer valid for activation.",
+      );
     }
 
     // Determine target record
@@ -139,7 +159,10 @@ class FirebaseActivationRepository implements AccountActivationRepository {
     String? departmentId;
 
     if (record.role == AppRole.student) {
-      final studentDoc = await FirebaseFirestore.instance.collection('students').doc(record.studentId).get();
+      final studentDoc = await FirebaseFirestore.instance
+          .collection('students')
+          .doc(record.studentId)
+          .get();
       if (!studentDoc.exists || studentDoc.data() == null) {
         throw Exception("Associated student record not found.");
       }
@@ -149,7 +172,10 @@ class FirebaseActivationRepository implements AccountActivationRepository {
       collegeId = student.collegeId;
       departmentId = student.departmentId;
     } else {
-      final facultyDoc = await FirebaseFirestore.instance.collection('faculty').doc(record.facultyId).get();
+      final facultyDoc = await FirebaseFirestore.instance
+          .collection('faculty')
+          .doc(record.facultyId)
+          .get();
       if (!facultyDoc.exists || facultyDoc.data() == null) {
         throw Exception("Associated faculty record not found.");
       }
@@ -157,8 +183,11 @@ class FirebaseActivationRepository implements AccountActivationRepository {
       email = faculty.email;
       name = faculty.name;
       departmentId = faculty.departmentId;
-      
-      final deptDoc = await FirebaseFirestore.instance.collection('departments').doc(departmentId).get();
+
+      final deptDoc = await FirebaseFirestore.instance
+          .collection('departments')
+          .doc(departmentId)
+          .get();
       collegeId = deptDoc.data()?['collegeId'] as String? ?? 'col-1';
     }
 
@@ -188,7 +217,7 @@ class FirebaseActivationRepository implements AccountActivationRepository {
         if (!freshRecordDoc.exists) {
           throw Exception("Activation record deleted.");
         }
-        
+
         final freshRecord = ActivationRecord.fromJson(freshRecordDoc.data()!);
         if (freshRecord.status != ActivationStatus.pending) {
           throw Exception("Activation code already used.");
@@ -208,7 +237,7 @@ class FirebaseActivationRepository implements AccountActivationRepository {
         );
 
         final userRef = FirebaseFirestore.instance.collection('users').doc(uid);
-        
+
         // Ensure user doesn't already exist
         final userCheck = await transaction.get(userRef);
         if (userCheck.exists) {
@@ -223,7 +252,7 @@ class FirebaseActivationRepository implements AccountActivationRepository {
           'usedAt': DateTime.now().toIso8601String(),
         });
       });
-      
+
       return uid;
     } catch (e) {
       // If Firestore transaction fails, we should ideally clean up the Firebase Auth user

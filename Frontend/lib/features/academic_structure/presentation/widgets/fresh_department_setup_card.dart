@@ -78,7 +78,11 @@ class FreshDepartmentSetupCard extends StatelessWidget {
                             color: AcadexColors.primary.withValues(alpha: 0.12),
                             borderRadius: AcadexRadius.borderRadiusMd,
                           ),
-                          child: const Icon(LucideIcons.sparkles, color: AcadexColors.primary, size: 20),
+                          child: const Icon(
+                            LucideIcons.sparkles,
+                            color: AcadexColors.primary,
+                            size: 20,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -88,14 +92,18 @@ class FreshDepartmentSetupCard extends StatelessWidget {
                               Text(
                                 "Academic Foundation Setup",
                                 style: AcadexTypography.heading3(
-                                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                               Text(
                                 "Fresh Department Onboarding",
                                 style: AcadexTypography.caption(
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -118,13 +126,20 @@ class FreshDepartmentSetupCard extends StatelessWidget {
                 customMessage ??
                     "Recommended next steps: Establish core academic foundations in whatever order makes sense. When a dependent operation needs missing data, you will be guided directly.",
                 style: AcadexTypography.body(
-                  color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                  color: isDark
+                      ? AcadexColors.darkInkSecondary
+                      : AcadexColors.inkSecondary,
                 ),
               ),
               const SizedBox(height: 18),
 
               // TIER 1: CORE FOUNDATION (REQUIRED)
-              _buildTierHeader("CORE FOUNDATIONS", "Required", AcadexColors.primary, isDark),
+              _buildTierHeader(
+                "CORE FOUNDATIONS",
+                "Required",
+                AcadexColors.primary,
+                isDark,
+              ),
               const SizedBox(height: 8),
               _buildStepItem(
                 context,
@@ -141,9 +156,11 @@ class FreshDepartmentSetupCard extends StatelessWidget {
                 context,
                 stepNumber: currentStepNum++,
                 title: ayName,
-                description: "Associate or confirm the active institutional academic calendar (e.g. 2026–27).",
+                description:
+                    "Associate or confirm the active institutional academic calendar (e.g. 2026–27).",
                 icon: LucideIcons.calendar,
-                isCompleted: currentStep.index > AcademicSetupStep.academicYear.index,
+                isCompleted:
+                    currentStep.index > AcademicSetupStep.academicYear.index,
                 isCurrent: currentStep == AcademicSetupStep.academicYear,
                 isDark: isDark,
               ),
@@ -152,25 +169,34 @@ class FreshDepartmentSetupCard extends StatelessWidget {
                 context,
                 stepNumber: currentStepNum++,
                 title: semsName,
-                description: "Create sequential ${semsName.toLowerCase()} for your ${progName.toLowerCase()} and ${ayName.toLowerCase()}.",
+                description:
+                    "Create sequential ${semsName.toLowerCase()} for your ${progName.toLowerCase()} and ${ayName.toLowerCase()}.",
                 icon: LucideIcons.calendarClock,
-                isCompleted: currentStep.index > AcademicSetupStep.semester.index,
+                isCompleted:
+                    currentStep.index > AcademicSetupStep.semester.index,
                 isCurrent: currentStep == AcademicSetupStep.semester,
                 isDark: isDark,
               ),
               const SizedBox(height: 18),
 
               // TIER 2: OPERATIONAL MODULES (RECOMMENDED)
-              _buildTierHeader("OPERATIONAL MODULES", "Recommended", AcadexColors.accentGreen, isDark),
+              _buildTierHeader(
+                "OPERATIONAL MODULES",
+                "Recommended",
+                AcadexColors.accentGreen,
+                isDark,
+              ),
               const SizedBox(height: 8),
               if (isSecEnabled) ...[
                 _buildStepItem(
                   context,
                   stepNumber: currentStepNum++,
                   title: secsName,
-                  description: "Create student cohorts (e.g. $secName A, B) with seat capacity under each ${semName.toLowerCase()}.",
+                  description:
+                      "Create student cohorts (e.g. $secName A, B) with seat capacity under each ${semName.toLowerCase()}.",
                   icon: LucideIcons.users,
-                  isCompleted: currentStep.index > AcademicSetupStep.section.index,
+                  isCompleted:
+                      currentStep.index > AcademicSetupStep.section.index,
                   isCurrent: currentStep == AcademicSetupStep.section,
                   isDark: isDark,
                 ),
@@ -180,9 +206,11 @@ class FreshDepartmentSetupCard extends StatelessWidget {
                 context,
                 stepNumber: currentStepNum++,
                 title: subsName,
-                description: "Add theory and lab curriculum ${subsName.toLowerCase()} with credit hours for your ${semsName.toLowerCase()}.",
+                description:
+                    "Add theory and lab curriculum ${subsName.toLowerCase()} with credit hours for your ${semsName.toLowerCase()}.",
                 icon: LucideIcons.bookOpen,
-                isCompleted: currentStep.index > AcademicSetupStep.subject.index,
+                isCompleted:
+                    currentStep.index > AcademicSetupStep.subject.index,
                 isCurrent: currentStep == AcademicSetupStep.subject,
                 isDark: isDark,
               ),
@@ -191,9 +219,12 @@ class FreshDepartmentSetupCard extends StatelessWidget {
                 context,
                 stepNumber: currentStepNum++,
                 title: "Assign Faculty",
-                description: "Assign qualified faculty to teach ${subsName.toLowerCase()} for each ${isSecEnabled ? '$secName and ' : ''}academic context.",
+                description:
+                    "Assign qualified faculty to teach ${subsName.toLowerCase()} for each ${isSecEnabled ? '$secName and ' : ''}academic context.",
                 icon: LucideIcons.userCheck,
-                isCompleted: currentStep.index > AcademicSetupStep.facultyAssignment.index,
+                isCompleted:
+                    currentStep.index >
+                    AcademicSetupStep.facultyAssignment.index,
                 isCurrent: currentStep == AcademicSetupStep.facultyAssignment,
                 isDark: isDark,
               ),
@@ -202,24 +233,34 @@ class FreshDepartmentSetupCard extends StatelessWidget {
                 context,
                 stepNumber: currentStepNum++,
                 title: "Enroll Students",
-                description: "Connect existing department students to academic ${isSecEnabled ? secsName.toLowerCase() : semsName.toLowerCase()} to build the authoritative roster.",
+                description:
+                    "Connect existing department students to academic ${isSecEnabled ? secsName.toLowerCase() : semsName.toLowerCase()} to build the authoritative roster.",
                 icon: LucideIcons.userPlus,
-                isCompleted: currentStep.index > AcademicSetupStep.studentEnrollment.index,
+                isCompleted:
+                    currentStep.index >
+                    AcademicSetupStep.studentEnrollment.index,
                 isCurrent: currentStep == AcademicSetupStep.studentEnrollment,
                 isDark: isDark,
               ),
               const SizedBox(height: 18),
 
               // TIER 3: SCHEDULING & RESOURCES (OPTIONAL)
-              _buildTierHeader("SCHEDULING & RESOURCES", "Optional", AcadexColors.inkMuted, isDark),
+              _buildTierHeader(
+                "SCHEDULING & RESOURCES",
+                "Optional",
+                AcadexColors.inkMuted,
+                isDark,
+              ),
               const SizedBox(height: 8),
               _buildStepItem(
                 context,
                 stepNumber: currentStepNum++,
                 title: "Create Timetable",
-                description: "Schedule teaching periods using validated faculty assignments and room allocations.",
+                description:
+                    "Schedule teaching periods using validated faculty assignments and room allocations.",
                 icon: LucideIcons.calendarClock,
-                isCompleted: currentStep.index > AcademicSetupStep.timetable.index,
+                isCompleted:
+                    currentStep.index > AcademicSetupStep.timetable.index,
                 isCurrent: currentStep == AcademicSetupStep.timetable,
                 isDark: isDark,
               ),
@@ -228,9 +269,12 @@ class FreshDepartmentSetupCard extends StatelessWidget {
                 context,
                 stepNumber: currentStepNum++,
                 title: "Publish Timetable",
-                description: "Validate conflict-free department schedule and publish authoritative periods for faculty and students.",
+                description:
+                    "Validate conflict-free department schedule and publish authoritative periods for faculty and students.",
                 icon: LucideIcons.send,
-                isCompleted: currentStep.index > AcademicSetupStep.publishTimetable.index,
+                isCompleted:
+                    currentStep.index >
+                    AcademicSetupStep.publishTimetable.index,
                 isCurrent: currentStep == AcademicSetupStep.publishTimetable,
                 isDark: isDark,
               ),
@@ -244,12 +288,17 @@ class FreshDepartmentSetupCard extends StatelessWidget {
                     backgroundColor: AcadexColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                    ),
                   ),
                   icon: const Icon(LucideIcons.plus, size: 18),
                   label: Text(
                     actionLabel,
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
                   ),
                   onPressed: onAction,
                 ),
@@ -261,7 +310,12 @@ class FreshDepartmentSetupCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTierHeader(String title, String badge, Color badgeColor, bool isDark) {
+  Widget _buildTierHeader(
+    String title,
+    String badge,
+    Color badgeColor,
+    bool isDark,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -308,10 +362,14 @@ class FreshDepartmentSetupCard extends StatelessWidget {
 
     if (isCompleted) {
       borderColor = AcadexColors.success.withValues(alpha: 0.5);
-      bgColor = isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight;
+      bgColor = isDark
+          ? AcadexColors.successDarkContainer
+          : AcadexColors.successLight;
     } else if (isCurrent) {
       borderColor = AcadexColors.primary;
-      bgColor = isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight;
+      bgColor = isDark
+          ? AcadexColors.primary.withValues(alpha: 0.2)
+          : AcadexColors.primaryLight;
     } else {
       borderColor = isDark ? AcadexColors.darkHairline : AcadexColors.hairline;
       bgColor = isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft;
@@ -334,7 +392,11 @@ class FreshDepartmentSetupCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: isCompleted
                   ? AcadexColors.success
-                  : (isCurrent ? AcadexColors.primary : (isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft)),
+                  : (isCurrent
+                        ? AcadexColors.primary
+                        : (isDark
+                              ? AcadexColors.darkSurfaceHover
+                              : AcadexColors.canvasSoft)),
               shape: BoxShape.circle,
             ),
             child: isCompleted
@@ -342,7 +404,11 @@ class FreshDepartmentSetupCard extends StatelessWidget {
                 : Text(
                     "$stepNumber",
                     style: TextStyle(
-                      color: isCurrent ? Colors.white : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                      color: isCurrent
+                          ? Colors.white
+                          : (isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted),
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -358,18 +424,26 @@ class FreshDepartmentSetupCard extends StatelessWidget {
                     Flexible(
                       child: Text(
                         title,
-                        style: AcadexTypography.body(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                        ).copyWith(
-                          fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
-                          fontSize: 13,
-                        ),
+                        style:
+                            AcadexTypography.body(
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
+                            ).copyWith(
+                              fontWeight: isCurrent
+                                  ? FontWeight.w700
+                                  : FontWeight.w600,
+                              fontSize: 13,
+                            ),
                       ),
                     ),
                     if (isCurrent) ...[
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: AcadexColors.primary.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(4),
@@ -390,7 +464,9 @@ class FreshDepartmentSetupCard extends StatelessWidget {
                 Text(
                   description,
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ).copyWith(fontSize: 11),
                 ),
               ],

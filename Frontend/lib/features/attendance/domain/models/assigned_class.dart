@@ -58,12 +58,16 @@ class AssignedClass {
   String get contextualDescription {
     final parts = <String>[];
     if (cohort != null && cohort!.isNotEmpty) parts.add(cohort!);
-    if (academicStage != null && academicStage!.isNotEmpty) parts.add(academicStage!);
-    if (semester.isNotEmpty) parts.add(semester.startsWith('Sem') ? semester : 'Semester $semester');
+    if (academicStage != null && academicStage!.isNotEmpty)
+      parts.add(academicStage!);
+    if (semester.isNotEmpty)
+      parts.add(semester.startsWith('Sem') ? semester : 'Semester $semester');
     if (sectionName.isNotEmpty) {
-      parts.add(sectionName.startsWith('Class') || sectionName.startsWith('Sec')
-          ? sectionName
-          : 'Class $sectionName');
+      parts.add(
+        sectionName.startsWith('Class') || sectionName.startsWith('Sec')
+            ? sectionName
+            : 'Class $sectionName',
+      );
     }
     return parts.join(' · ');
   }
@@ -133,7 +137,8 @@ class AssignedClass {
       subjectName: json['subjectName'] as String? ?? '',
       sectionId: json['sectionId'] as String? ?? '',
       sectionName: json['sectionName'] as String? ?? '',
-      semester: json['semester'] as String? ?? json['semesterId'] as String? ?? '',
+      semester:
+          json['semester'] as String? ?? json['semesterId'] as String? ?? '',
       timeSlot: json['timeSlot'] as String? ?? '',
       startTime: json['startTime'] as String?,
       endTime: json['endTime'] as String?,
@@ -141,9 +146,14 @@ class AssignedClass {
       building: json['building'] as String?,
       cohort: json['cohort'] as String?,
       academicStage: json['academicStage'] as String?,
-      date: json['date'] != null ? DateTime.parse(json['date'] as String) : DateTime.now(),
+      date: json['date'] != null
+          ? DateTime.parse(json['date'] as String)
+          : DateTime.now(),
       isAttendanceMarked: json['isAttendanceMarked'] as bool? ?? false,
-      isSubstitution: json['isSubstitution'] as bool? ?? json['isSubstituted'] as bool? ?? false,
+      isSubstitution:
+          json['isSubstitution'] as bool? ??
+          json['isSubstituted'] as bool? ??
+          false,
       originalFacultyName: json['originalFacultyName'] as String?,
       originalFacultyId: json['originalFacultyId'] as String?,
       substitutionReason: json['substitutionReason'] as String?,
@@ -157,7 +167,8 @@ class AssignedClass {
       if (timetableId != null) 'timetableId': timetableId,
       if (timetableEntryId != null) 'timetableEntryId': timetableEntryId,
       if (facultyId != null) 'facultyId': facultyId,
-      if (facultyAssignmentId != null) 'facultyAssignmentId': facultyAssignmentId,
+      if (facultyAssignmentId != null)
+        'facultyAssignmentId': facultyAssignmentId,
       'subjectId': subjectId,
       'subjectName': subjectName,
       'sectionId': sectionId,
@@ -173,7 +184,8 @@ class AssignedClass {
       'date': date.toIso8601String(),
       'isAttendanceMarked': isAttendanceMarked,
       'isSubstitution': isSubstitution,
-      if (originalFacultyName != null) 'originalFacultyName': originalFacultyName,
+      if (originalFacultyName != null)
+        'originalFacultyName': originalFacultyName,
       if (originalFacultyId != null) 'originalFacultyId': originalFacultyId,
       if (substitutionReason != null) 'substitutionReason': substitutionReason,
       if (substitutionId != null) 'substitutionId': substitutionId,

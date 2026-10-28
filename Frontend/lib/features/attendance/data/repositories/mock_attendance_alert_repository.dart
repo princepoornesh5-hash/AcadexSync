@@ -24,7 +24,9 @@ class MockAttendanceAlertRepository implements AttendanceAlertRepository {
     var alerts = _store.values.toList();
 
     // 1. Tenant Scoping
-    if (user.role != AppRole.superAdmin && user.collegeId != null && user.collegeId!.isNotEmpty) {
+    if (user.role != AppRole.superAdmin &&
+        user.collegeId != null &&
+        user.collegeId!.isNotEmpty) {
       alerts = alerts.where((a) => a.collegeId == user.collegeId).toList();
     }
 
@@ -38,7 +40,9 @@ class MockAttendanceAlertRepository implements AttendanceAlertRepository {
         break;
       case AppRole.hod:
         if (user.departmentId != null && user.departmentId!.isNotEmpty) {
-          alerts = alerts.where((a) => a.departmentId == user.departmentId).toList();
+          alerts = alerts
+              .where((a) => a.departmentId == user.departmentId)
+              .toList();
         }
         break;
       case AppRole.collegeAdmin:
@@ -78,7 +82,12 @@ class MockAttendanceAlertRepository implements AttendanceAlertRepository {
         final sectionMatch = a.sectionId?.toLowerCase().contains(q) ?? false;
         final titleMatch = a.title.toLowerCase().contains(q);
         final messageMatch = a.message.toLowerCase().contains(q);
-        return studentMatch || rollMatch || subjectMatch || sectionMatch || titleMatch || messageMatch;
+        return studentMatch ||
+            rollMatch ||
+            subjectMatch ||
+            sectionMatch ||
+            titleMatch ||
+            messageMatch;
       }).toList();
     }
 
@@ -140,14 +149,13 @@ class MockAttendanceAlertRepository implements AttendanceAlertRepository {
 
   @override
   Future<void> markAllAsRead({required UserModel user}) async {
-    final alerts = await getAlerts(user: user, filter: const AttendanceAlertFilter(unreadOnly: true));
+    final alerts = await getAlerts(
+      user: user,
+      filter: const AttendanceAlertFilter(unreadOnly: true),
+    );
     final now = DateTime.now();
     for (final a in alerts) {
-      _store[a.id] = a.copyWith(
-        isRead: true,
-        readAt: now,
-        updatedAt: now,
-      );
+      _store[a.id] = a.copyWith(isRead: true, readAt: now, updatedAt: now);
     }
   }
 
@@ -177,7 +185,9 @@ class MockAttendanceAlertRepository implements AttendanceAlertRepository {
   }
 
   @override
-  Future<AttendanceAlertSummary> getAlertSummary({required UserModel user}) async {
+  Future<AttendanceAlertSummary> getAlertSummary({
+    required UserModel user,
+  }) async {
     final alerts = await getAlerts(user: user);
     return AttendanceAlertSummary.fromAlerts(alerts);
   }

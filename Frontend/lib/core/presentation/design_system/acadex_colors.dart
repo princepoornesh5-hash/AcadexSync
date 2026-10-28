@@ -10,9 +10,13 @@ class AcadexColors {
   static const Color primaryHover = Color(0xFF1D4ED8); // Blue 700 (Hover/Focus)
   static const Color primaryDark = Color(0xFF1D4ED8); // Blue 700
   static const Color primaryPressed = Color(0xFF1E40AF); // Blue 800 (Pressed)
-  static const Color primaryLight = Color(0xFFDBEAFE); // Blue 100 (Soft Highlight)
+  static const Color primaryLight = Color(
+    0xFFDBEAFE,
+  ); // Blue 100 (Soft Highlight)
   static const Color primarySoft = Color(0xFFDBEAFE); // Blue 100
-  static const Color primaryTint = Color(0xFFEFF6FF); // Blue 50 (Subtle Surface)
+  static const Color primaryTint = Color(
+    0xFFEFF6FF,
+  ); // Blue 50 (Subtle Surface)
   static const Color primaryMuted = Color(0xFF60A5FA); // Blue 400
 
   // ── 2. Secondary & Neutral Brand Accents ──
@@ -21,11 +25,21 @@ class AcadexColors {
   static const Color primaryNavy = Color(0xFF0F172A); // Deep Slate 900 alias
 
   // ── 3. Super Admin Action Blue Hierarchy ──
-  static const Color superAdminDeepAction = Color(0xFF003366); // Deep Action Blue (Primary CTA)
-  static const Color superAdminDeepPressed = Color(0xFF00264D); // Deep Pressed Blue
-  static const Color superAdminPrimaryAction = Color(0xFF0066CC); // Primary Action Blue
-  static const Color superAdminSoftAction = Color(0xFFE6F2FF); // Soft Blue (Soft Actions / Badges)
-  static const Color superAdminVerySoft = Color(0xFFEFF6FF); // Very Soft Blue (Card Tint)
+  static const Color superAdminDeepAction = Color(
+    0xFF003366,
+  ); // Deep Action Blue (Primary CTA)
+  static const Color superAdminDeepPressed = Color(
+    0xFF00264D,
+  ); // Deep Pressed Blue
+  static const Color superAdminPrimaryAction = Color(
+    0xFF0066CC,
+  ); // Primary Action Blue
+  static const Color superAdminSoftAction = Color(
+    0xFFE6F2FF,
+  ); // Soft Blue (Soft Actions / Badges)
+  static const Color superAdminVerySoft = Color(
+    0xFFEFF6FF,
+  ); // Very Soft Blue (Card Tint)
 
   // ── 4. Light Canvas & Surfaces (Calm, Pure & Crisp) ──
   static const Color canvas = Color(0xFFFFFFFF); // Pure White canonical canvas
@@ -48,13 +62,17 @@ class AcadexColors {
   static const Color ink = Color(0xFF07111F); // Dark Navy #07111F primary text
   static const Color textPrimary = Color(0xFF07111F);
   static const Color textPrimaryLight = Color(0xFF07111F);
-  static const Color inkSecondary = Color(0xFF475569); // Slate 600 secondary text
+  static const Color inkSecondary = Color(
+    0xFF475569,
+  ); // Slate 600 secondary text
   static const Color textSecondary = Color(0xFF475569);
   static const Color textSecondaryLight = Color(0xFF475569);
   static const Color inkMuted = Color(0xFF64748B); // Slate 500 captions/labels
   static const Color textMuted = Color(0xFF64748B);
   static const Color textMutedLight = Color(0xFF64748B);
-  static const Color inkFaint = Color(0xFF94A3B8); // Slate 400 placeholder/disabled
+  static const Color inkFaint = Color(
+    0xFF94A3B8,
+  ); // Slate 400 placeholder/disabled
   static const Color textInverseLight = Color(0xFFFFFFFF);
 
   // ── 6. Dark Canvas & Surfaces (Deep Slate Architecture) ──
@@ -119,7 +137,28 @@ class AcadexColors {
   static const Color late = Color(0xFFD97706); // Amber 600
   static const Color excused = Color(0xFF64748B); // Slate 500
 
-  // ── 11. Accent Colors & Convenience Aliases ──
+  // ── 11. Accent Colors & Semantic Highlight System (Blue, Pink, Yellow) ──
+  static const Color accentBlue = Color(
+    0xFF2563EB,
+  ); // Blue 600 (Primary actions & active states)
+  static const Color accentBlueLight = Color(0xFFDBEAFE); // Blue 100
+  static const Color accentBlueDark = Color(0xFF1D4ED8); // Blue 700
+  static const Color accentBlueTint = Color(0xFFEFF6FF); // Blue 50
+
+  static const Color accentPink = Color(
+    0xFFDB2777,
+  ); // Pink 600 (Restrained secondary highlights & accents)
+  static const Color accentPinkLight = Color(0xFFFCE7F3); // Pink 100
+  static const Color accentPinkDark = Color(0xFF9D174D); // Pink 800
+  static const Color accentPinkTint = Color(0xFFFDF2F8); // Pink 50
+
+  static const Color accentYellow = Color(
+    0xFFEAB308,
+  ); // Yellow 500 (Warnings, pending items & attention)
+  static const Color accentYellowLight = Color(0xFFFEF9C3); // Yellow 100
+  static const Color accentYellowDark = Color(0xFFA16207); // Yellow 800
+  static const Color accentYellowTint = Color(0xFFFEFCE8); // Yellow 50
+
   static const Color accentPurple = Color(0xFF8B5CF6);
   static const Color accentPurpleLight = Color(0xFFF5F3FF);
   static const Color accentTeal = Color(0xFF0D9488);
@@ -127,7 +166,6 @@ class AcadexColors {
   static const Color accentOrange = Color(0xFFEA580C);
   static const Color accentOrangeLight = Color(0xFFFFF7ED);
   static const Color accentSky = Color(0xFF0284C7);
-  static const Color accentPink = Color(0xFFDB2777);
   static const Color accentGreen = Color(0xFF16A34A);
   static const Color accentBrown = Color(0xFF78350F);
   static const Color accentDeepPurple = Color(0xFF4C1D95);

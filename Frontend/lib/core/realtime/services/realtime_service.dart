@@ -23,7 +23,8 @@ class RealtimeService {
   bool _isDisposed = false;
 
   RealtimeConnectionStatus _status = RealtimeConnectionStatus.disconnected;
-  final _statusController = StreamController<RealtimeConnectionStatus>.broadcast();
+  final _statusController =
+      StreamController<RealtimeConnectionStatus>.broadcast();
   final _eventController = StreamController<RealtimeEvent>.broadcast();
 
   // Deduplication cache: bounded set of processed eventIds
@@ -31,11 +32,9 @@ class RealtimeService {
   final Set<String> _processedEventIdSet = {};
   static const int _maxDeduplicationHistory = 500;
 
-  RealtimeService({
-    FlutterSecureStorage? storage,
-    String? wsUrl,
-  })  : _storage = storage ?? const FlutterSecureStorage(),
-        _customWsUrl = wsUrl;
+  RealtimeService({FlutterSecureStorage? storage, String? wsUrl})
+    : _storage = storage ?? const FlutterSecureStorage(),
+      _customWsUrl = wsUrl;
 
   RealtimeConnectionStatus get status => _status;
   Stream<RealtimeConnectionStatus> get statusStream => _statusController.stream;
@@ -127,7 +126,9 @@ class RealtimeService {
       }
 
       if (type == 'authenticated') {
-        debugPrint('[Realtime] Server confirmed authentication: ${decoded['data']}');
+        debugPrint(
+          '[Realtime] Server confirmed authentication: ${decoded['data']}',
+        );
         return;
       }
 
@@ -140,7 +141,9 @@ class RealtimeService {
         // Deduplication: Drop duplicate deliveries
         if (event.eventId.isNotEmpty) {
           if (_processedEventIdSet.contains(event.eventId)) {
-            debugPrint('[Realtime Deduplication] Dropping duplicate event: ${event.eventId}');
+            debugPrint(
+              '[Realtime Deduplication] Dropping duplicate event: ${event.eventId}',
+            );
             return;
           }
           _recordEventId(event.eventId);
@@ -189,9 +192,13 @@ class RealtimeService {
     _reconnectAttempts++;
     final delaySeconds = min(30.0, 1.0 * pow(1.5, min(_reconnectAttempts, 8)));
     final jitterMs = Random().nextInt(500);
-    final delay = Duration(milliseconds: (delaySeconds * 1000).toInt() + jitterMs);
+    final delay = Duration(
+      milliseconds: (delaySeconds * 1000).toInt() + jitterMs,
+    );
 
-    debugPrint('[Realtime] Reconnecting in ${delay.inSeconds}s (attempt #$_reconnectAttempts)...');
+    debugPrint(
+      '[Realtime] Reconnecting in ${delay.inSeconds}s (attempt #$_reconnectAttempts)...',
+    );
     _reconnectTimer = Timer(delay, () {
       if (!_isExplicitlyDisconnected && !_isDisposed) {
         connect();
@@ -225,10 +232,9 @@ class RealtimeService {
   void subscribe(String channelName) {
     if (_status == RealtimeConnectionStatus.connected && _channel != null) {
       try {
-        _channel!.sink.add(jsonEncode({
-          'action': 'subscribe',
-          'channel': channelName,
-        }));
+        _channel!.sink.add(
+          jsonEncode({'action': 'subscribe', 'channel': channelName}),
+        );
       } catch (_) {}
     }
   }
@@ -237,10 +243,9 @@ class RealtimeService {
   void unsubscribe(String channelName) {
     if (_status == RealtimeConnectionStatus.connected && _channel != null) {
       try {
-        _channel!.sink.add(jsonEncode({
-          'action': 'unsubscribe',
-          'channel': channelName,
-        }));
+        _channel!.sink.add(
+          jsonEncode({'action': 'unsubscribe', 'channel': channelName}),
+        );
       } catch (_) {}
     }
   }
@@ -249,10 +254,12 @@ class RealtimeService {
   void switchWorkspace(String targetCollegeId) {
     if (_status == RealtimeConnectionStatus.connected && _channel != null) {
       try {
-        _channel!.sink.add(jsonEncode({
-          'action': 'switch_workspace',
-          'collegeId': targetCollegeId,
-        }));
+        _channel!.sink.add(
+          jsonEncode({
+            'action': 'switch_workspace',
+            'collegeId': targetCollegeId,
+          }),
+        );
       } catch (_) {}
     }
   }
@@ -262,12 +269,18 @@ class RealtimeService {
     // String or AppLifecycleState
     final stateStr = lifecycleState.toString();
 
-    if (stateStr.contains('paused') || stateStr.contains('detached') || stateStr.contains('hidden')) {
-      debugPrint('[Realtime Lifecycle] App backgrounded. Releasing socket connection.');
+    if (stateStr.contains('paused') ||
+        stateStr.contains('detached') ||
+        stateStr.contains('hidden')) {
+      debugPrint(
+        '[Realtime Lifecycle] App backgrounded. Releasing socket connection.',
+      );
       _cleanupChannel();
       _setStatus(RealtimeConnectionStatus.disconnected);
     } else if (stateStr.contains('resumed')) {
-      debugPrint('[Realtime Lifecycle] App resumed to foreground. Reconnecting realtime...');
+      debugPrint(
+        '[Realtime Lifecycle] App resumed to foreground. Reconnecting realtime...',
+      );
       connect();
     }
   }

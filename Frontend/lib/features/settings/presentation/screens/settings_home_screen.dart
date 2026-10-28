@@ -19,7 +19,8 @@ class SettingsHomeScreen extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final authState = ref.watch(authProvider);
     final user = authState is AuthAuthenticated ? authState.user : null;
-    final isCollegeAdmin = user?.role == AppRole.collegeAdmin || user?.role == AppRole.superAdmin;
+    final isCollegeAdmin =
+        user?.role == AppRole.collegeAdmin || user?.role == AppRole.superAdmin;
 
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
@@ -30,7 +31,8 @@ class SettingsHomeScreen extends ConsumerWidget {
           children: [
             const AcadexPageHeader(
               title: "Settings",
-              subtitle: "Manage your preferences, security, and institutional application configurations.",
+              subtitle:
+                  "Manage your preferences, security, and institutional application configurations.",
             ),
             const SizedBox(height: 12),
 
@@ -41,7 +43,8 @@ class SettingsHomeScreen extends ConsumerWidget {
                   SettingsTile(
                     icon: LucideIcons.sliders,
                     title: "Academic Configuration",
-                    subtitle: "Configure academic structure, terminology, and starter presets",
+                    subtitle:
+                        "Configure academic structure, terminology, and starter presets",
                     onTap: () => context.push('/academics/configuration'),
                   ),
                 ],
@@ -95,7 +98,8 @@ class SettingsHomeScreen extends ConsumerWidget {
                 SettingsTile(
                   icon: LucideIcons.shield,
                   title: "Security & Sessions",
-                  subtitle: "Manage active sessions and two-factor authentication",
+                  subtitle:
+                      "Manage active sessions and two-factor authentication",
                   onTap: () => context.push('/settings/security'),
                 ),
                 SettingsTile(
@@ -106,7 +110,8 @@ class SettingsHomeScreen extends ConsumerWidget {
                     final confirmed = await AcadexConfirmationDialog.show(
                       context: context,
                       title: 'Sign Out',
-                      message: 'Are you sure you want to sign out of Acadex?',
+                      message:
+                          'Are you sure you want to sign out of ACADEXSYNC?',
                       confirmLabel: 'Sign Out',
                       isDestructive: true,
                     );

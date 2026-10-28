@@ -19,8 +19,15 @@ class HodDetailScreen extends ConsumerWidget {
 
   const HodDetailScreen({super.key, required this.hodId});
 
-  void _showTransferDialog(BuildContext context, WidgetRef ref, UserModel hod, List<Department> allDepts) {
-    final availableDepts = allDepts.where((d) => d.isActive && d.id != hod.departmentId).toList();
+  void _showTransferDialog(
+    BuildContext context,
+    WidgetRef ref,
+    UserModel hod,
+    List<Department> allDepts,
+  ) {
+    final availableDepts = allDepts
+        .where((d) => d.isActive && d.id != hod.departmentId)
+        .toList();
 
     if (availableDepts.isEmpty) {
       AcadexSnackBar.showWarning(
@@ -48,9 +55,16 @@ class HodDetailScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: selectedDeptId,
-                decoration: const InputDecoration(labelText: 'Destination Department'),
+                decoration: const InputDecoration(
+                  labelText: 'Destination Department',
+                ),
                 items: availableDepts
-                    .map((d) => DropdownMenuItem(value: d.id, child: Text("${d.name} (${d.code})")))
+                    .map(
+                      (d) => DropdownMenuItem(
+                        value: d.id,
+                        child: Text("${d.name} (${d.code})"),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) => setDialogState(() => selectedDeptId = v),
               ),
@@ -70,7 +84,9 @@ class HodDetailScreen extends ConsumerWidget {
                 if (selectedDeptId == null) return;
                 Navigator.of(ctx).pop();
                 try {
-                  await ref.read(hodsProvider.notifier).transferDepartment(hodId, selectedDeptId!);
+                  await ref
+                      .read(hodsProvider.notifier)
+                      .transferDepartment(hodId, selectedDeptId!);
                   ref.invalidate(hodByIdProvider(hodId));
                   ref.invalidate(hodSummaryProvider(hodId));
                   if (context.mounted) {
@@ -97,7 +113,11 @@ class HodDetailScreen extends ConsumerWidget {
     );
   }
 
-  void _showDeactivateOrActivateDialog(BuildContext context, WidgetRef ref, UserModel hod) {
+  void _showDeactivateOrActivateDialog(
+    BuildContext context,
+    WidgetRef ref,
+    UserModel hod,
+  ) {
     final isActive = hod.accountStatus == AccountStatus.active;
     final actionText = isActive ? 'Deactivate' : 'Activate';
 
@@ -117,14 +137,18 @@ class HodDetailScreen extends ConsumerWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: isActive ? AcadexColors.error : AcadexColors.primary,
+              backgroundColor: isActive
+                  ? AcadexColors.error
+                  : AcadexColors.primary,
               foregroundColor: Colors.white,
             ),
             onPressed: () async {
               Navigator.of(ctx).pop();
               try {
                 final newStatus = isActive ? 'DEACTIVATED' : 'ACTIVE';
-                await ref.read(hodsProvider.notifier).updateStatus(hodId, newStatus);
+                await ref
+                    .read(hodsProvider.notifier)
+                    .updateStatus(hodId, newStatus);
                 ref.invalidate(hodByIdProvider(hodId));
                 ref.invalidate(hodSummaryProvider(hodId));
                 if (context.mounted) {
@@ -171,7 +195,9 @@ class HodDetailScreen extends ConsumerWidget {
             onPressed: () async {
               Navigator.of(ctx).pop();
               try {
-                await ref.read(hodsProvider.notifier).unassignHod(hodId, newRole: 'FACULTY');
+                await ref
+                    .read(hodsProvider.notifier)
+                    .unassignHod(hodId, newRole: 'FACULTY');
                 if (context.mounted) {
                   AcadexSnackBar.showSuccess(
                     context,
@@ -227,7 +253,15 @@ class HodDetailScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Hero Header Card ──────────────────────────────────────
-              _buildHeroCard(context, ref, isDark, isMobile, hod, isPending, deptsList),
+              _buildHeroCard(
+                context,
+                ref,
+                isDark,
+                isMobile,
+                hod,
+                isPending,
+                deptsList,
+              ),
               const SizedBox(height: 20),
 
               // ── Department & Leadership Card ──────────────────────────
@@ -257,7 +291,10 @@ class HodDetailScreen extends ConsumerWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/academics/hods'),
         ),
         title: Text(
@@ -304,7 +341,11 @@ class HodDetailScreen extends ConsumerWidget {
                   borderRadius: AcadexRadius.borderRadiusMd,
                 ),
                 child: const Center(
-                  child: Icon(LucideIcons.userCheck, color: AcadexColors.primary, size: 28),
+                  child: Icon(
+                    LucideIcons.userCheck,
+                    color: AcadexColors.primary,
+                    size: 28,
+                  ),
                 ),
               ),
               const SizedBox(width: 14),
@@ -324,7 +365,10 @@ class HodDetailScreen extends ConsumerWidget {
                       runSpacing: 4,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: AcadexColors.primary.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(4),
@@ -339,30 +383,44 @@ class HodDetailScreen extends ConsumerWidget {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                            color: isDark
+                                ? AcadexColors.darkCanvasSoft
+                                : AcadexColors.canvasSoft,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             "Head of Department",
                             style: TextStyle(
-                              color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                              color: isDark
+                                  ? AcadexColors.darkInkSecondary
+                                  : AcadexColors.inkSecondary,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: isPending ? AcadexColors.warningLight : AcadexColors.successLight,
+                            color: isPending
+                                ? AcadexColors.warningLight
+                                : AcadexColors.successLight,
                             borderRadius: AcadexRadius.borderRadiusFull,
                           ),
                           child: Text(
                             isPending ? 'Pending Activation' : 'Active Account',
                             style: TextStyle(
-                              color: isPending ? AcadexColors.warning : AcadexColors.success,
+                              color: isPending
+                                  ? AcadexColors.warning
+                                  : AcadexColors.success,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -393,13 +451,21 @@ class HodDetailScreen extends ConsumerWidget {
                 label: 'Transfer Department',
                 icon: LucideIcons.arrowRightLeft,
                 variant: AcadexButtonVariant.secondary,
-                onPressed: () => _showTransferDialog(context, ref, hod, allDepts),
+                onPressed: () =>
+                    _showTransferDialog(context, ref, hod, allDepts),
               ),
               AcadexButton(
-                label: hod.accountStatus == AccountStatus.active ? 'Deactivate HOD' : 'Activate HOD',
-                icon: hod.accountStatus == AccountStatus.active ? LucideIcons.userX : LucideIcons.userCheck,
-                variant: hod.accountStatus == AccountStatus.active ? AcadexButtonVariant.danger : AcadexButtonVariant.secondary,
-                onPressed: () => _showDeactivateOrActivateDialog(context, ref, hod),
+                label: hod.accountStatus == AccountStatus.active
+                    ? 'Deactivate HOD'
+                    : 'Activate HOD',
+                icon: hod.accountStatus == AccountStatus.active
+                    ? LucideIcons.userX
+                    : LucideIcons.userCheck,
+                variant: hod.accountStatus == AccountStatus.active
+                    ? AcadexButtonVariant.danger
+                    : AcadexButtonVariant.secondary,
+                onPressed: () =>
+                    _showDeactivateOrActivateDialog(context, ref, hod),
               ),
               AcadexButton(
                 label: 'Remove HOD Role',
@@ -432,7 +498,13 @@ class HodDetailScreen extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  Icon(LucideIcons.building2, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                  Icon(
+                    LucideIcons.building2,
+                    size: 16,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'Assigned Academic Department',
@@ -445,7 +517,8 @@ class HodDetailScreen extends ConsumerWidget {
               TextButton.icon(
                 icon: const Icon(LucideIcons.arrowRightLeft, size: 14),
                 label: const Text('Transfer', style: TextStyle(fontSize: 12)),
-                onPressed: () => _showTransferDialog(context, ref, hod, allDepts),
+                onPressed: () =>
+                    _showTransferDialog(context, ref, hod, allDepts),
               ),
             ],
           ),
@@ -454,7 +527,9 @@ class HodDetailScreen extends ConsumerWidget {
             isDark,
             LucideIcons.building2,
             'Department Name',
-            dept != null ? "${dept.name} (${dept.code})" : "Unassigned Department",
+            dept != null
+                ? "${dept.name} (${dept.code})"
+                : "Unassigned Department",
           ),
           if (dept?.description.isNotEmpty == true) ...[
             const Divider(height: 16),
@@ -470,11 +545,7 @@ class HodDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildContactCard(
-    bool isDark,
-    UserModel hod,
-    DateFormat dateFormat,
-  ) {
+  Widget _buildContactCard(bool isDark, UserModel hod, DateFormat dateFormat) {
     return AcadexCard(
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -482,7 +553,13 @@ class HodDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.idCard, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              Icon(
+                LucideIcons.idCard,
+                size: 16,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Contact & Account Credentials',
@@ -495,12 +572,27 @@ class HodDetailScreen extends ConsumerWidget {
           const SizedBox(height: 14),
           _infoRow(isDark, LucideIcons.mail, 'Email Address', hod.email),
           const Divider(height: 16),
-          _infoRow(isDark, LucideIcons.phone, 'Phone Number', hod.phone ?? 'Not configured'),
+          _infoRow(
+            isDark,
+            LucideIcons.phone,
+            'Phone Number',
+            hod.phone ?? 'Not configured',
+          ),
           const Divider(height: 16),
-          _infoRow(isDark, LucideIcons.shieldCheck, 'Access Role', 'HOD (Head of Department)'),
+          _infoRow(
+            isDark,
+            LucideIcons.shieldCheck,
+            'Access Role',
+            'HOD (Head of Department)',
+          ),
           if (hod.createdAt != null) ...[
             const Divider(height: 16),
-            _infoRow(isDark, LucideIcons.clock, 'Provisioned On', dateFormat.format(hod.createdAt!)),
+            _infoRow(
+              isDark,
+              LucideIcons.clock,
+              'Provisioned On',
+              dateFormat.format(hod.createdAt!),
+            ),
           ],
         ],
       ),
@@ -519,7 +611,13 @@ class HodDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.barChart2, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              Icon(
+                LucideIcons.barChart2,
+                size: 16,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Department Leadership Metrics',
@@ -531,17 +629,28 @@ class HodDetailScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 14),
           summaryAsync.when(
-            loading: () => const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator())),
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(12),
+                child: CircularProgressIndicator(),
+              ),
+            ),
             error: (e, _) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.circleAlert, size: 16, color: AcadexColors.error),
+                  const Icon(
+                    LucideIcons.circleAlert,
+                    size: 16,
+                    color: AcadexColors.error,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Department metrics are currently unavailable.',
-                      style: AcadexTypography.caption(color: AcadexColors.error),
+                      style: AcadexTypography.caption(
+                        color: AcadexColors.error,
+                      ),
                     ),
                   ),
                   TextButton(
@@ -559,15 +668,30 @@ class HodDetailScreen extends ConsumerWidget {
               return Row(
                 children: [
                   Expanded(
-                    child: _metricBox(isDark, LucideIcons.users, "$facultyCount", "Faculty Members"),
+                    child: _metricBox(
+                      isDark,
+                      LucideIcons.users,
+                      "$facultyCount",
+                      "Faculty Members",
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _metricBox(isDark, LucideIcons.graduationCap, "$studentCount", "Enrolled Students"),
+                    child: _metricBox(
+                      isDark,
+                      LucideIcons.graduationCap,
+                      "$studentCount",
+                      "Enrolled Students",
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _metricBox(isDark, LucideIcons.bookOpen, "$subjectCount", "Curriculum Courses"),
+                    child: _metricBox(
+                      isDark,
+                      LucideIcons.bookOpen,
+                      "$subjectCount",
+                      "Curriculum Courses",
+                    ),
                   ),
                 ],
               );
@@ -611,7 +735,11 @@ class HodDetailScreen extends ConsumerWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 15, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+        Icon(
+          icon,
+          size: 15,
+          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+        ),
         const SizedBox(width: 10),
         SizedBox(
           width: 140,

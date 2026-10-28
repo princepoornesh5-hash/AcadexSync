@@ -34,7 +34,8 @@ final userNotesProvider = StreamProvider<List<NoteModel>>((ref) async* {
     return;
   }
 
-  if (user.role != AppRole.superAdmin && (user.collegeId == null || user.collegeId!.isEmpty)) {
+  if (user.role != AppRole.superAdmin &&
+      (user.collegeId == null || user.collegeId!.isEmpty)) {
     yield [];
     return;
   }
@@ -100,13 +101,17 @@ class NotesFilterState {
       semesterId: clearSemester ? null : (semesterId ?? this.semesterId),
       courseId: clearCourse ? null : (courseId ?? this.courseId),
       status: clearStatus ? null : (status ?? this.status),
-      resourceType: clearResourceType ? null : (resourceType ?? this.resourceType),
+      resourceType: clearResourceType
+          ? null
+          : (resourceType ?? this.resourceType),
       searchQuery: searchQuery ?? this.searchQuery,
     );
   }
 }
 
-final notesFilterProvider = StateProvider<NotesFilterState>((ref) => NotesFilterState());
+final notesFilterProvider = StateProvider<NotesFilterState>(
+  (ref) => NotesFilterState(),
+);
 
 final filteredNotesProvider = Provider<AsyncValue<List<NoteModel>>>((ref) {
   final asyncNotes = ref.watch(userNotesProvider);
@@ -114,14 +119,25 @@ final filteredNotesProvider = Provider<AsyncValue<List<NoteModel>>>((ref) {
 
   return asyncNotes.whenData((notes) {
     return notes.where((note) {
-      if (filters.subjectId != null && note.subjectId != filters.subjectId) return false;
-      if (filters.facultyId != null && note.facultyId != filters.facultyId) return false;
-      if (filters.sectionId != null && note.sectionId.isNotEmpty && note.sectionId != filters.sectionId) return false;
-      if (filters.semesterId != null && note.semesterId != filters.semesterId) return false;
-      if (filters.courseId != null && note.courseId.isNotEmpty && note.courseId != filters.courseId) return false;
+      if (filters.subjectId != null && note.subjectId != filters.subjectId)
+        return false;
+      if (filters.facultyId != null && note.facultyId != filters.facultyId)
+        return false;
+      if (filters.sectionId != null &&
+          note.sectionId.isNotEmpty &&
+          note.sectionId != filters.sectionId)
+        return false;
+      if (filters.semesterId != null && note.semesterId != filters.semesterId)
+        return false;
+      if (filters.courseId != null &&
+          note.courseId.isNotEmpty &&
+          note.courseId != filters.courseId)
+        return false;
       if (filters.status != null && note.status != filters.status) return false;
-      if (filters.resourceType != null && note.resourceType != filters.resourceType) return false;
-      
+      if (filters.resourceType != null &&
+          note.resourceType != filters.resourceType)
+        return false;
+
       if (filters.searchQuery.isNotEmpty) {
         final query = filters.searchQuery.toLowerCase();
         if (!note.title.toLowerCase().contains(query) &&
@@ -135,10 +151,11 @@ final filteredNotesProvider = Provider<AsyncValue<List<NoteModel>>>((ref) {
   });
 });
 
-final noteDownloadUrlProvider = FutureProvider.family<DownloadUrlResult, String>((ref, noteId) async {
-  final repository = ref.watch(apiNotesRepositoryProvider);
-  return await repository.getDownloadUrl(noteId);
-});
+final noteDownloadUrlProvider =
+    FutureProvider.family<DownloadUrlResult, String>((ref, noteId) async {
+      final repository = ref.watch(apiNotesRepositoryProvider);
+      return await repository.getDownloadUrl(noteId);
+    });
 
 class NoteManagementNotifier extends AsyncNotifier<void> {
   @override
@@ -236,6 +253,7 @@ class NoteManagementNotifier extends AsyncNotifier<void> {
   }
 }
 
-final noteManagementProvider = AsyncNotifierProvider<NoteManagementNotifier, void>(() {
-  return NoteManagementNotifier();
-});
+final noteManagementProvider =
+    AsyncNotifierProvider<NoteManagementNotifier, void>(() {
+      return NoteManagementNotifier();
+    });

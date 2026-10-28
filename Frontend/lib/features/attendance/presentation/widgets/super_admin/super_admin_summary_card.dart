@@ -37,7 +37,9 @@ class SuperAdminSummaryCard extends StatelessWidget {
               _buildMetricCard(
                 "System Attendance",
                 "${summary.todayAttendancePercentage}%",
-                summary.todayAttendancePercentage >= 80 ? AcadexColors.success : AcadexColors.warning,
+                summary.todayAttendancePercentage >= 80
+                    ? AcadexColors.success
+                    : AcadexColors.warning,
                 isDark,
               ),
               const SizedBox(width: 12),
@@ -62,7 +64,9 @@ class SuperAdminSummaryCard extends StatelessWidget {
               _buildMetricCard(
                 "Pending Colleges",
                 summary.pendingColleges.toString(),
-                summary.pendingColleges > 0 ? AcadexColors.error : AcadexColors.success,
+                summary.pendingColleges > 0
+                    ? AcadexColors.error
+                    : AcadexColors.success,
                 isDark,
               ),
             ],
@@ -72,12 +76,19 @@ class SuperAdminSummaryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricCard(String title, String value, Color valueColor, bool isDark) {
+  Widget _buildMetricCard(
+    String title,
+    String value,
+    Color valueColor,
+    bool isDark,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+          color: isDark
+              ? AcadexColors.darkSurfaceHover
+              : AcadexColors.canvasSoft,
           borderRadius: AcadexRadius.borderRadiusMd,
         ),
         child: Column(
@@ -86,14 +97,13 @@ class SuperAdminSummaryCard extends StatelessWidget {
             Text(
               title,
               style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              value,
-              style: AcadexTypography.heading2(color: valueColor),
-            ),
+            Text(value, style: AcadexTypography.heading2(color: valueColor)),
           ],
         ),
       ),

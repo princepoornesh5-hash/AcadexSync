@@ -41,30 +41,40 @@ class AcadexFormCard extends StatelessWidget {
             child: Row(
               children: [
                 if (icon != null) ...[
-                  Icon(icon, color: Theme.of(context).primaryColor, size: isMobile ? 20 : 24),
+                  Icon(
+                    icon,
+                    color: Theme.of(context).primaryColor,
+                    size: isMobile ? 20 : 24,
+                  ),
                   const SizedBox(width: 12),
                 ],
                 Expanded(
                   child: Text(
                     title,
-                    style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface)
-                        .copyWith(fontSize: isMobile ? 16 : 18),
+                    style: AcadexTypography.title(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ).copyWith(fontSize: isMobile ? 16 : 18),
                   ),
                 ),
               ],
             ),
           ),
-          Divider(height: 1, thickness: 1, color: Theme.of(context).dividerColor),
-          
-          // Form Content
-          Padding(
-            padding: padding,
-            child: child,
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: Theme.of(context).dividerColor,
           ),
-          
+
+          // Form Content
+          Padding(padding: padding, child: child),
+
           // Footer Actions
           if (onSave != null || onCancel != null) ...[
-            Divider(height: 1, thickness: 1, color: Theme.of(context).dividerColor),
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: Theme.of(context).dividerColor,
+            ),
             Padding(
               padding: padding,
               child: isMobile
@@ -77,18 +87,26 @@ class AcadexFormCard extends StatelessWidget {
                               minimumSize: const Size.fromHeight(48),
                               backgroundColor: Theme.of(context).primaryColor,
                               foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AcadexRadius.borderRadiusMd,
+                              ),
                             ),
                             onPressed: isSaving ? null : onSave,
                             child: isSaving
                                 ? const SizedBox(
                                     height: 20,
                                     width: 20,
-                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : Text(
                                     saveLabel ?? "Save Changes",
-                                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 15,
+                                    ),
                                   ),
                           ),
                         if (onCancel != null) ...[
@@ -96,13 +114,19 @@ class AcadexFormCard extends StatelessWidget {
                           TextButton(
                             style: TextButton.styleFrom(
                               minimumSize: const Size.fromHeight(44),
-                              shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AcadexRadius.borderRadiusMd,
+                              ),
                             ),
                             onPressed: isSaving ? null : onCancel,
                             child: Text(
                               "Cancel",
                               style: AcadexTypography.button(
-                                color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall?.color ??
+                                    AcadexColors.inkMuted,
                               ),
                             ),
                           ),
@@ -118,7 +142,11 @@ class AcadexFormCard extends StatelessWidget {
                             child: Text(
                               "Cancel",
                               style: AcadexTypography.button(
-                                color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall?.color ??
+                                    AcadexColors.inkMuted,
                               ),
                             ),
                           ),
@@ -128,14 +156,19 @@ class AcadexFormCard extends StatelessWidget {
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               minimumSize: const Size(120, 44),
-                              shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AcadexRadius.borderRadiusMd,
+                              ),
                             ),
                             onPressed: isSaving ? null : onSave,
                             child: isSaving
                                 ? const SizedBox(
                                     height: 20,
                                     width: 20,
-                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : Text(saveLabel ?? "Save Changes"),
                           ),
@@ -153,11 +186,7 @@ class AcadexFormField extends StatelessWidget {
   final String label;
   final Widget child;
 
-  const AcadexFormField({
-    super.key,
-    required this.label,
-    required this.child,
-  });
+  const AcadexFormField({super.key, required this.label, required this.child});
 
   @override
   Widget build(BuildContext context) {

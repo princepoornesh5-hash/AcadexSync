@@ -16,11 +16,11 @@ class AttendanceProgressIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = percentage >= 75 
-        ? AcadexColors.success 
-        : percentage >= 60 
-            ? AcadexColors.warning 
-            : AcadexColors.error;
+    final color = percentage >= 75
+        ? AcadexColors.success
+        : percentage >= 60
+        ? AcadexColors.warning
+        : AcadexColors.error;
 
     return Container(
       height: height,
@@ -31,8 +31,9 @@ class AttendanceProgressIndicator extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final targetWidth = constraints.maxWidth * (percentage / 100).clamp(0.0, 1.0);
-          
+          final targetWidth =
+              constraints.maxWidth * (percentage / 100).clamp(0.0, 1.0);
+
           if (!animate) {
             return Align(
               alignment: Alignment.centerLeft,

@@ -61,6 +61,8 @@ export enum OtpPurpose {
   ACCOUNT_ACTIVATION = 'account_activation',
   PHONE_VERIFICATION = 'phone_verification',
   EMAIL_VERIFICATION = 'email_verification',
+  LOGIN = 'login',
+  REGISTRATION = 'registration',
 }
 
 export enum OtpDeliveryMethod {
@@ -74,6 +76,8 @@ export enum TokenType {
   PASSWORD_RESET = 'password_reset',
   ACTIVATION_FLOW = 'activation_flow',
   ACTIVATION_TOKEN = 'activation_token',
+  REGISTRATION = 'registration',
+  EMAIL_VERIFICATION = 'email_verification',
 }
 
 export enum AcademicYearStatus {

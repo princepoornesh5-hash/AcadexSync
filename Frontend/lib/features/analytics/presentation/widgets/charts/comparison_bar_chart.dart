@@ -8,12 +8,21 @@ class ComparisonBarChart extends StatelessWidget {
   final List<ChartDataPoint> data;
   final double threshold;
 
-  const ComparisonBarChart({super.key, required this.data, this.threshold = 75.0});
+  const ComparisonBarChart({
+    super.key,
+    required this.data,
+    this.threshold = 75.0,
+  });
 
   @override
   Widget build(BuildContext context) {
     if (data.isEmpty) {
-      return Center(child: Text('No data available', style: GoogleFonts.inter(color: DashboardColors.textSecondary)));
+      return Center(
+        child: Text(
+          'No data available',
+          style: GoogleFonts.inter(color: DashboardColors.textSecondary),
+        ),
+      );
     }
 
     return BarChart(
@@ -28,7 +37,10 @@ class ComparisonBarChart extends StatelessWidget {
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               return BarTooltipItem(
                 '${data[group.x.toInt()].label}\n',
-                GoogleFonts.inter(color: DashboardColors.textSecondary, fontSize: 12),
+                GoogleFonts.inter(
+                  color: DashboardColors.textSecondary,
+                  fontSize: 12,
+                ),
                 children: [
                   TextSpan(
                     text: '${rod.toY.toStringAsFixed(1)}%',
@@ -55,7 +67,10 @@ class ComparisonBarChart extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Text(
                       data[value.toInt()].label,
-                      style: GoogleFonts.inter(fontSize: 11, color: DashboardColors.textSecondary),
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: DashboardColors.textSecondary,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -73,14 +88,21 @@ class ComparisonBarChart extends StatelessWidget {
               getTitlesWidget: (value, meta) {
                 return Text(
                   '${value.toInt()}%',
-                  style: GoogleFonts.inter(fontSize: 11, color: DashboardColors.textSecondary),
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: DashboardColors.textSecondary,
+                  ),
                   textAlign: TextAlign.right,
                 );
               },
             ),
           ),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
         ),
         gridData: FlGridData(
           show: true,
@@ -109,9 +131,13 @@ class ComparisonBarChart extends StatelessWidget {
             barRods: [
               BarChartRodData(
                 toY: entry.value.value,
-                color: isBelowThreshold ? DashboardColors.error : DashboardColors.primary,
+                color: isBelowThreshold
+                    ? DashboardColors.error
+                    : DashboardColors.primary,
                 width: 16,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(4),
+                ),
               ),
             ],
           );

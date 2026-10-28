@@ -41,7 +41,9 @@ class ApiAiRepository implements AiRepository {
       if (data is Map<String, dynamic>) {
         final innerData = data['data'];
         if (innerData is Map<String, dynamic>) {
-          final answer = innerData['answer'] as String? ?? 'I have processed your request.';
+          final answer =
+              innerData['answer'] as String? ??
+              'I have processed your request.';
           final proposal = innerData['proposal'] as Map<String, dynamic>?;
           final model = innerData['model'] as String?;
           return AiResponse(answer: answer, model: model, proposal: proposal);
@@ -51,11 +53,13 @@ class ApiAiRepository implements AiRepository {
         }
       }
 
-      return const AiResponse(answer: "No answer received from ACADEX AI Assistant.");
+      return const AiResponse(
+        answer: "No answer received from ACADEXSYNC AI Assistant.",
+      );
     } on DioException catch (dioError) {
       throw _mapDioError(dioError);
     } catch (_) {
-      throw Exception('Acadex AI is temporarily unavailable.');
+      throw Exception('ACADEXSYNC AI is temporarily unavailable.');
     }
   }
 
@@ -69,7 +73,9 @@ class ApiAiRepository implements AiRepository {
     try {
       const storage = FlutterSecureStorage();
       final token = await storage.read(key: ApiClient.keyAccessToken);
-      final workspaceId = await storage.read(key: ApiClient.keyActiveWorkspaceId);
+      final workspaceId = await storage.read(
+        key: ApiClient.keyActiveWorkspaceId,
+      );
 
       final uri = Uri.parse('${ApiClient.defaultBaseUrl}/ai/chat/stream');
       final request = http.Request('POST', uri);
@@ -81,7 +87,8 @@ class ApiAiRepository implements AiRepository {
       if (workspaceId != null && workspaceId.isNotEmpty) {
         request.headers['X-Workspace-Id'] = workspaceId;
       }
-      final clientCorrelationId = 'cli_${DateTime.now().millisecondsSinceEpoch}';
+      final clientCorrelationId =
+          'cli_${DateTime.now().millisecondsSinceEpoch}';
       request.headers['X-Correlation-ID'] = clientCorrelationId;
       request.body = jsonEncode({
         'message': query.trim(),
@@ -93,8 +100,11 @@ class ApiAiRepository implements AiRepository {
       if (streamedResponse.statusCode != 200) {
         final errorBody = await streamedResponse.stream.bytesToString();
         final retryAfterHeader = streamedResponse.headers['retry-after'];
-        int? retryAfterSeconds = retryAfterHeader != null ? int.tryParse(retryAfterHeader) : null;
-        final correlationId = streamedResponse.headers['x-correlation-id'] ?? clientCorrelationId;
+        int? retryAfterSeconds = retryAfterHeader != null
+            ? int.tryParse(retryAfterHeader)
+            : null;
+        final correlationId =
+            streamedResponse.headers['x-correlation-id'] ?? clientCorrelationId;
 
         String message = 'AI Assistant is temporarily unavailable.';
         String code = 'AI_ERROR';
@@ -107,7 +117,9 @@ class ApiAiRepository implements AiRepository {
             message = err['message'] ?? message;
             code = err['code'] ?? code;
             if (err['details'] is Map && err['details']['retryAfter'] != null) {
-              retryAfterSeconds ??= int.tryParse(err['details']['retryAfter'].toString());
+              retryAfterSeconds ??= int.tryParse(
+                err['details']['retryAfter'].toString(),
+              );
             }
           }
         } catch (_) {}
@@ -117,22 +129,26 @@ class ApiAiRepository implements AiRepository {
               code == 'TOO_MANY_REQUESTS' ||
               code == 'CONCURRENT_REQUEST_LIMIT') {
             category = 'application_limit';
-            message = "You've sent several requests. Please wait a moment before trying again.";
+            message =
+                "You've sent several requests. Please wait a moment before trying again.";
             retryAfterSeconds ??= 3;
           } else {
             category = 'gemini_quota_limit';
-            message = "The AI service has reached its current usage limit. Please try again later.";
+            message =
+                "The AI service has reached its current usage limit. Please try again later.";
           }
         } else if (streamedResponse.statusCode == 504) {
           category = 'timeout';
           message = 'The AI service took too long to respond.';
-        } else if (streamedResponse.statusCode == 502 || streamedResponse.statusCode == 503) {
+        } else if (streamedResponse.statusCode == 502 ||
+            streamedResponse.statusCode == 503) {
           if (code == 'AI_AUTH_ERROR' || code == 'AI_CONFIG_ERROR') {
             category = 'auth_config';
             message = 'The AI service is not configured correctly.';
           } else {
             category = 'gemini_quota_limit';
-            message = 'The AI service has reached its current usage limit. Please try again later.';
+            message =
+                'The AI service has reached its current usage limit. Please try again later.';
           }
         }
 
@@ -170,7 +186,9 @@ class ApiAiRepository implements AiRepository {
             } else if (currentEvent == 'delta') {
               yield AiStreamDeltaEvent(text: data['text'] as String? ?? '');
             } else if (currentEvent == 'proposal') {
-              yield AiStreamProposalEvent(proposal: data as Map<String, dynamic>);
+              yield AiStreamProposalEvent(
+                proposal: data as Map<String, dynamic>,
+              );
             } else if (currentEvent == 'done') {
               yield AiStreamDoneEvent(
                 answer: data['answer'] as String? ?? '',
@@ -180,20 +198,25 @@ class ApiAiRepository implements AiRepository {
             } else if (currentEvent == 'error') {
               int? retrySeconds;
               if (data['retryAfterSeconds'] != null) {
-                retrySeconds = int.tryParse(data['retryAfterSeconds'].toString());
+                retrySeconds = int.tryParse(
+                  data['retryAfterSeconds'].toString(),
+                );
               }
               final errCode = data['code'] as String? ?? 'AI_ERROR';
               String category = data['category'] as String? ?? 'generic';
               String errMessage = data['message'] as String? ?? 'Stream failed';
 
               if (data['httpStatus'] == 429) {
-                if (errCode == 'APP_RATE_LIMIT_EXCEEDED' || errCode == 'TOO_MANY_REQUESTS') {
+                if (errCode == 'APP_RATE_LIMIT_EXCEEDED' ||
+                    errCode == 'TOO_MANY_REQUESTS') {
                   category = 'application_limit';
-                  errMessage = "You've sent several requests. Please wait a moment before trying again.";
+                  errMessage =
+                      "You've sent several requests. Please wait a moment before trying again.";
                   retrySeconds ??= 3;
                 } else {
                   category = 'gemini_quota_limit';
-                  errMessage = "The AI service has reached its current usage limit. Please try again later.";
+                  errMessage =
+                      "The AI service has reached its current usage limit. Please try again later.";
                 }
               }
 
@@ -203,7 +226,8 @@ class ApiAiRepository implements AiRepository {
                 httpStatus: data['httpStatus'] as int?,
                 retryAfterSeconds: retrySeconds,
                 category: category,
-                correlationId: data['correlationId'] as String? ?? clientCorrelationId,
+                correlationId:
+                    data['correlationId'] as String? ?? clientCorrelationId,
               );
             }
           } catch (e) {
@@ -217,7 +241,8 @@ class ApiAiRepository implements AiRepository {
       yield AiStreamErrorEvent(
         code: 'AI_NETWORK_ERROR',
         category: 'network',
-        message: 'Network connection failure. Please check your internet connection.',
+        message:
+            'Network connection failure. Please check your internet connection.',
       );
     } finally {
       client.close();
@@ -239,7 +264,8 @@ class ApiAiRepository implements AiRepository {
       );
 
       final data = response.data;
-      if (data is Map<String, dynamic> && data['data'] is Map<String, dynamic>) {
+      if (data is Map<String, dynamic> &&
+          data['data'] is Map<String, dynamic>) {
         return data['data'] as Map<String, dynamic>;
       }
       return {'status': 'EXECUTED'};
@@ -251,19 +277,16 @@ class ApiAiRepository implements AiRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> cancelAction({
-    required String actionId,
-  }) async {
+  Future<Map<String, dynamic>> cancelAction({required String actionId}) async {
     try {
       final response = await _client.dio.post(
         '/ai/action/cancel',
-        data: {
-          'actionId': actionId,
-        },
+        data: {'actionId': actionId},
       );
 
       final data = response.data;
-      if (data is Map<String, dynamic> && data['data'] is Map<String, dynamic>) {
+      if (data is Map<String, dynamic> &&
+          data['data'] is Map<String, dynamic>) {
         return data['data'] as Map<String, dynamic>;
       }
       return {'status': 'CANCELLED'};
@@ -281,7 +304,8 @@ class ApiAiRepository implements AiRepository {
     try {
       final response = await _client.dio.get('/ai/action/$actionId');
       final data = response.data;
-      if (data is Map<String, dynamic> && data['data'] is Map<String, dynamic>) {
+      if (data is Map<String, dynamic> &&
+          data['data'] is Map<String, dynamic>) {
         return data['data'] as Map<String, dynamic>;
       }
       return {'actionId': actionId, 'status': 'UNKNOWN'};
@@ -313,7 +337,9 @@ class ApiAiRepository implements AiRepository {
         backendCode = err['code']?.toString();
         backendMessage = err['message']?.toString();
         if (err['details'] is Map && err['details']['retryAfter'] != null) {
-          retryAfterSeconds ??= int.tryParse(err['details']['retryAfter'].toString());
+          retryAfterSeconds ??= int.tryParse(
+            err['details']['retryAfter'].toString(),
+          );
         }
       }
     }
@@ -331,7 +357,8 @@ class ApiAiRepository implements AiRepository {
         statusCode: 403,
         code: 'FORBIDDEN',
         category: 'auth_config',
-        message: 'Access denied. You do not have permission to execute this action.',
+        message:
+            'Access denied. You do not have permission to execute this action.',
         correlationId: correlationId,
       );
     } else if (statusCode == 409) {
@@ -350,7 +377,9 @@ class ApiAiRepository implements AiRepository {
           statusCode: 429,
           code: backendCode ?? 'APP_RATE_LIMIT_EXCEEDED',
           category: 'application_limit',
-          message: backendMessage ?? "You've sent several requests. Please wait a moment before trying again.",
+          message:
+              backendMessage ??
+              "You've sent several requests. Please wait a moment before trying again.",
           retryAfterSeconds: retryAfterSeconds ?? 3,
           correlationId: correlationId,
         );
@@ -359,7 +388,9 @@ class ApiAiRepository implements AiRepository {
         statusCode: 429,
         code: backendCode ?? 'AI_UPSTREAM_QUOTA_EXCEEDED',
         category: 'gemini_quota_limit',
-        message: backendMessage ?? "The AI service has reached its current usage limit. Please try again later.",
+        message:
+            backendMessage ??
+            "The AI service has reached its current usage limit. Please try again later.",
         retryAfterSeconds: retryAfterSeconds,
         correlationId: correlationId,
       );
@@ -368,7 +399,9 @@ class ApiAiRepository implements AiRepository {
         return AiChatException(
           statusCode: statusCode,
           code: backendCode ?? 'AI_CONFIG_ERROR',
-          category: (backendCode == 'AI_AUTH_ERROR' || backendCode == 'AI_CONFIG_ERROR')
+          category:
+              (backendCode == 'AI_AUTH_ERROR' ||
+                  backendCode == 'AI_CONFIG_ERROR')
               ? 'auth_config'
               : 'gemini_quota_limit',
           message: backendMessage,
@@ -388,7 +421,8 @@ class ApiAiRepository implements AiRepository {
         statusCode: statusCode,
         code: backendCode ?? 'AI_PROVIDER_UNAVAILABLE',
         category: 'gemini_quota_limit',
-        message: 'The AI service has reached its current usage limit. Please try again later.',
+        message:
+            'The AI service has reached its current usage limit. Please try again later.',
         retryAfterSeconds: retryAfterSeconds,
         correlationId: correlationId,
       );
@@ -405,7 +439,8 @@ class ApiAiRepository implements AiRepository {
         dioError.type == DioExceptionType.connectionError) {
       return const AiChatException(
         category: 'network',
-        message: 'Network connection failure. Please check your internet connection.',
+        message:
+            'Network connection failure. Please check your internet connection.',
       );
     }
 
@@ -413,7 +448,7 @@ class ApiAiRepository implements AiRepository {
       statusCode: statusCode,
       code: backendCode ?? 'AI_ERROR',
       category: 'generic',
-      message: backendMessage ?? 'Acadex AI is temporarily unavailable.',
+      message: backendMessage ?? 'ACADEXSYNC AI is temporarily unavailable.',
       correlationId: correlationId,
     );
   }
@@ -422,7 +457,8 @@ class ApiAiRepository implements AiRepository {
 class AiChatException implements Exception {
   final String message;
   final String code;
-  final String category; // 'application_limit', 'gemini_quota_limit', 'timeout', 'auth_config', 'network', 'generic'
+  final String
+  category; // 'application_limit', 'gemini_quota_limit', 'timeout', 'auth_config', 'network', 'generic'
   final int? statusCode;
   final int? retryAfterSeconds;
   final String? correlationId;

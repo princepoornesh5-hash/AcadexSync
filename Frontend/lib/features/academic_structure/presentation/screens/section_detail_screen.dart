@@ -21,7 +21,12 @@ class SectionDetailScreen extends ConsumerWidget {
 
   const SectionDetailScreen({super.key, required this.sectionId});
 
-  void _confirmStatusToggle(BuildContext context, WidgetRef ref, String sectionName, bool isCurrentlyActive) {
+  void _confirmStatusToggle(
+    BuildContext context,
+    WidgetRef ref,
+    String sectionName,
+    bool isCurrentlyActive,
+  ) {
     final action = isCurrentlyActive ? 'Deactivate' : 'Activate';
     showDialog(
       context: context,
@@ -39,16 +44,23 @@ class SectionDetailScreen extends ConsumerWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: isCurrentlyActive ? AcadexColors.error : AcadexColors.success,
+              backgroundColor: isCurrentlyActive
+                  ? AcadexColors.error
+                  : AcadexColors.success,
               foregroundColor: Colors.white,
             ),
             onPressed: () async {
               Navigator.of(ctx).pop();
               try {
-                await ref.read(sectionsProvider.notifier).toggleStatus(sectionId, !isCurrentlyActive);
+                await ref
+                    .read(sectionsProvider.notifier)
+                    .toggleStatus(sectionId, !isCurrentlyActive);
                 ref.invalidate(sectionByIdProvider(sectionId));
                 if (context.mounted) {
-                  AcadexSnackBar.showSuccess(context, 'Section $action successful!');
+                  AcadexSnackBar.showSuccess(
+                    context,
+                    'Section $action successful!',
+                  );
                 }
               } catch (e) {
                 if (context.mounted) {
@@ -74,10 +86,18 @@ class SectionDetailScreen extends ConsumerWidget {
     final deptsAsync = ref.watch(departmentsProvider);
     final dateFormat = DateFormat('MMMM d, yyyy');
 
-    final coursesMap = {for (final c in coursesAsync.valueOrNull ?? <Course>[]) c.id: c};
-    final semsMap = {for (final s in semestersAsync.valueOrNull ?? <Semester>[]) s.id: s};
-    final yearsMap = {for (final y in yearsAsync.valueOrNull ?? <AcademicYear>[]) y.id: y};
-    final deptsMap = {for (final d in deptsAsync.valueOrNull ?? <Department>[]) d.id: d};
+    final coursesMap = {
+      for (final c in coursesAsync.valueOrNull ?? <Course>[]) c.id: c,
+    };
+    final semsMap = {
+      for (final s in semestersAsync.valueOrNull ?? <Semester>[]) s.id: s,
+    };
+    final yearsMap = {
+      for (final y in yearsAsync.valueOrNull ?? <AcademicYear>[]) y.id: y,
+    };
+    final deptsMap = {
+      for (final d in deptsAsync.valueOrNull ?? <Department>[]) d.id: d,
+    };
     final hasEnclosingScaffold = Scaffold.maybeOf(context) != null;
 
     final bodyContent = sectionAsync.when(
@@ -94,9 +114,15 @@ class SectionDetailScreen extends ConsumerWidget {
       ),
       data: (section) {
         final semester = semsMap[section.semesterId];
-        final course = coursesMap[section.courseId] ?? (semester != null ? coursesMap[semester.courseId] : null);
-        final academicYear = yearsMap[section.academicYearId] ?? (semester != null ? yearsMap[semester.academicYearId] : null);
-        final department = deptsMap[section.departmentId] ?? (course != null ? deptsMap[course.departmentId] : null);
+        final course =
+            coursesMap[section.courseId] ??
+            (semester != null ? coursesMap[semester.courseId] : null);
+        final academicYear =
+            yearsMap[section.academicYearId] ??
+            (semester != null ? yearsMap[semester.academicYearId] : null);
+        final department =
+            deptsMap[section.departmentId] ??
+            (course != null ? deptsMap[course.departmentId] : null);
 
         return AcadexPageContainer(
           backgroundColor: Colors.white,
@@ -106,21 +132,28 @@ class SectionDetailScreen extends ConsumerWidget {
             children: [
               // ── Page-Level Consistent Back Navigation ───────────────────
               InkWell(
-                onTap: () => context.safePop(fallbackRoute: '/academics/sections'),
+                onTap: () =>
+                    context.safePop(fallbackRoute: '/academics/sections'),
                 borderRadius: BorderRadius.circular(6),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 4,
+                  ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(LucideIcons.arrowLeft, size: 16, color: AcadexColors.primary),
+                      const Icon(
+                        LucideIcons.arrowLeft,
+                        size: 16,
+                        color: AcadexColors.primary,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Back to Sections',
-                        style: AcadexTypography.body(color: AcadexColors.primary).copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
+                        style: AcadexTypography.body(
+                          color: AcadexColors.primary,
+                        ).copyWith(fontWeight: FontWeight.w600, fontSize: 14),
                       ),
                     ],
                   ),
@@ -129,15 +162,38 @@ class SectionDetailScreen extends ConsumerWidget {
               const SizedBox(height: 12),
 
               // ── Hero Header Card ──────────────────────────────────────
-              _buildHeroCard(context, ref, isDark, isMobile, section, course, semester, academicYear),
+              _buildHeroCard(
+                context,
+                ref,
+                isDark,
+                isMobile,
+                section,
+                course,
+                semester,
+                academicYear,
+              ),
               const SizedBox(height: 20),
 
               // ── Section Student Roster (Authoritative) ────────────────
-              _buildStudentRosterCard(context, ref, isDark, section, course, semester, academicYear),
+              _buildStudentRosterCard(
+                context,
+                ref,
+                isDark,
+                section,
+                course,
+                semester,
+                academicYear,
+              ),
               const SizedBox(height: 20),
 
               // ── Academic Hierarchy Card ───────────────────────────────
-              _buildHierarchyCard(isDark, course, semester, academicYear, department),
+              _buildHierarchyCard(
+                isDark,
+                course,
+                semester,
+                academicYear,
+                department,
+              ),
               const SizedBox(height: 20),
 
               // ── Seating & Metadata Card ───────────────────────────────
@@ -150,10 +206,7 @@ class SectionDetailScreen extends ConsumerWidget {
     );
 
     if (hasEnclosingScaffold || !isMobile) {
-      return Scaffold(
-        backgroundColor: Colors.white,
-        body: bodyContent,
-      );
+      return Scaffold(backgroundColor: Colors.white, body: bodyContent);
     }
 
     return Scaffold(
@@ -162,8 +215,12 @@ class SectionDetailScreen extends ConsumerWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-          onPressed: () => context.safePop(fallbackRoute: '/academics/sections'),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
+          onPressed: () =>
+              context.safePop(fallbackRoute: '/academics/sections'),
         ),
         title: Text(
           'Section Overview',
@@ -186,14 +243,19 @@ class SectionDetailScreen extends ConsumerWidget {
     Semester? semester,
     AcademicYear? academicYear,
   ) {
-    final activeStudentCount = ref.watch(sectionActiveEnrollmentCountProvider(section.id));
+    final activeStudentCount = ref.watch(
+      sectionActiveEnrollmentCountProvider(section.id),
+    );
     final user = ref.watch(currentUserProvider);
     final targetDeptId = course?.departmentId ?? section.departmentId;
-    final canEnroll = section.isActive &&
+    final canEnroll =
+        section.isActive &&
         user != null &&
         (user.role == AppRole.collegeAdmin ||
-         user.role == AppRole.superAdmin ||
-         (user.role == AppRole.hod && (user.departmentId == null || user.departmentId == targetDeptId)));
+            user.role == AppRole.superAdmin ||
+            (user.role == AppRole.hod &&
+                (user.departmentId == null ||
+                    user.departmentId == targetDeptId)));
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -219,7 +281,11 @@ class SectionDetailScreen extends ConsumerWidget {
                   borderRadius: AcadexRadius.borderRadiusMd,
                 ),
                 child: const Center(
-                  child: Icon(LucideIcons.users, color: AcadexColors.primary, size: 24),
+                  child: Icon(
+                    LucideIcons.users,
+                    color: AcadexColors.primary,
+                    size: 24,
+                  ),
                 ),
               ),
               const SizedBox(width: 14),
@@ -240,7 +306,10 @@ class SectionDetailScreen extends ConsumerWidget {
                       children: [
                         Container(
                           key: const Key('section_students_count_badge'),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: AcadexColors.primary.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(4),
@@ -255,7 +324,10 @@ class SectionDetailScreen extends ConsumerWidget {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: AcadexColors.infoLight,
                             borderRadius: BorderRadius.circular(4),
@@ -270,15 +342,22 @@ class SectionDetailScreen extends ConsumerWidget {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: section.isActive ? AcadexColors.successLight : AcadexColors.errorLight,
+                            color: section.isActive
+                                ? AcadexColors.successLight
+                                : AcadexColors.errorLight,
                             borderRadius: AcadexRadius.borderRadiusFull,
                           ),
                           child: Text(
                             section.isActive ? 'Active' : 'Archived',
                             style: TextStyle(
-                              color: section.isActive ? AcadexColors.success : AcadexColors.error,
+                              color: section.isActive
+                                  ? AcadexColors.success
+                                  : AcadexColors.error,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -317,13 +396,21 @@ class SectionDetailScreen extends ConsumerWidget {
                 label: 'Edit Section',
                 icon: LucideIcons.edit,
                 variant: AcadexButtonVariant.secondary,
-                onPressed: () => context.push('/academics/sections/edit/$sectionId'),
+                onPressed: () =>
+                    context.push('/academics/sections/edit/$sectionId'),
               ),
               AcadexButton(
                 label: section.isActive ? 'Deactivate' : 'Activate',
-                icon: section.isActive ? LucideIcons.powerOff : LucideIcons.power,
+                icon: section.isActive
+                    ? LucideIcons.powerOff
+                    : LucideIcons.power,
                 variant: AcadexButtonVariant.secondary,
-                onPressed: () => _confirmStatusToggle(context, ref, section.name, section.isActive),
+                onPressed: () => _confirmStatusToggle(
+                  context,
+                  ref,
+                  section.name,
+                  section.isActive,
+                ),
               ),
             ],
           ),
@@ -341,14 +428,19 @@ class SectionDetailScreen extends ConsumerWidget {
     Semester? semester,
     AcademicYear? academicYear,
   ) {
-    final enrollmentsAsync = ref.watch(sectionEnrollmentsNotifierProvider(section.id));
+    final enrollmentsAsync = ref.watch(
+      sectionEnrollmentsNotifierProvider(section.id),
+    );
     final user = ref.watch(currentUserProvider);
     final targetDeptId = course?.departmentId ?? section.departmentId;
-    final canEnroll = section.isActive &&
+    final canEnroll =
+        section.isActive &&
         user != null &&
         (user.role == AppRole.collegeAdmin ||
-         user.role == AppRole.superAdmin ||
-         (user.role == AppRole.hod && (user.departmentId == null || user.departmentId == targetDeptId)));
+            user.role == AppRole.superAdmin ||
+            (user.role == AppRole.hod &&
+                (user.departmentId == null ||
+                    user.departmentId == targetDeptId)));
 
     return AcadexCard(
       padding: const EdgeInsets.all(18),
@@ -364,14 +456,26 @@ class SectionDetailScreen extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(LucideIcons.graduationCap, size: 18, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                        Icon(
+                          LucideIcons.graduationCap,
+                          size: 18,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Section Student Roster',
-                            style: AcadexTypography.body(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                            ).copyWith(fontWeight: FontWeight.w700, fontSize: 16),
+                            style:
+                                AcadexTypography.body(
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
+                                ).copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                ),
                           ),
                         ),
                       ],
@@ -400,12 +504,18 @@ class SectionDetailScreen extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(LucideIcons.graduationCap, size: 18, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                      Icon(
+                        LucideIcons.graduationCap,
+                        size: 18,
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Section Student Roster',
                         style: AcadexTypography.body(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ).copyWith(fontWeight: FontWeight.w700, fontSize: 16),
                       ),
                     ],
@@ -443,18 +553,25 @@ class SectionDetailScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    Text('Failed to load roster: $err', style: const TextStyle(color: AcadexColors.error)),
+                    Text(
+                      'Failed to load roster: $err',
+                      style: const TextStyle(color: AcadexColors.error),
+                    ),
                     const SizedBox(height: 8),
                     AcadexButton(
                       label: 'Retry',
-                      onPressed: () => ref.invalidate(sectionEnrollmentsNotifierProvider(section.id)),
+                      onPressed: () => ref.invalidate(
+                        sectionEnrollmentsNotifierProvider(section.id),
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
             data: (enrollments) {
-              final activeEnrollments = enrollments.where((e) => e.isActive).toList();
+              final activeEnrollments = enrollments
+                  .where((e) => e.isActive)
+                  .toList();
 
               if (activeEnrollments.isEmpty) {
                 return Center(
@@ -463,16 +580,28 @@ class SectionDetailScreen extends ConsumerWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(LucideIcons.users, size: 36, color: AcadexColors.inkMuted),
+                        const Icon(
+                          LucideIcons.users,
+                          size: 36,
+                          color: AcadexColors.inkMuted,
+                        ),
                         const SizedBox(height: 10),
                         Text(
                           'No students are enrolled in this section yet.',
-                          style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+                          style: AcadexTypography.body(
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
+                          ).copyWith(fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Tap "Enroll Student" to attach active department students to this section.',
-                          style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                          style: AcadexTypography.caption(
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
+                          ),
                         ),
                         if (canEnroll) ...[
                           const SizedBox(height: 12),
@@ -509,10 +638,18 @@ class SectionDetailScreen extends ConsumerWidget {
                     children: [
                       CircleAvatar(
                         radius: 16,
-                        backgroundColor: AcadexColors.primary.withValues(alpha: 0.12),
+                        backgroundColor: AcadexColors.primary.withValues(
+                          alpha: 0.12,
+                        ),
                         child: Text(
-                          enrollment.studentName.isNotEmpty ? enrollment.studentName[0].toUpperCase() : 'S',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AcadexColors.primary),
+                          enrollment.studentName.isNotEmpty
+                              ? enrollment.studentName[0].toUpperCase()
+                              : 'S',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: AcadexColors.primary,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -522,40 +659,71 @@ class SectionDetailScreen extends ConsumerWidget {
                           children: [
                             Text(
                               enrollment.studentName,
-                              style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600, fontSize: 13),
+                              style:
+                                  AcadexTypography.body(
+                                    color: isDark
+                                        ? AcadexColors.darkInk
+                                        : AcadexColors.ink,
+                                  ).copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
                             ),
                             Text(
                               'Roll: ${enrollment.studentRollNumber.isNotEmpty ? enrollment.studentRollNumber : "N/A"} • ${enrollment.studentEmail.isNotEmpty ? enrollment.studentEmail : enrollment.status}',
-                              style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted).copyWith(fontSize: 11),
+                              style: AcadexTypography.caption(
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
+                              ).copyWith(fontSize: 11),
                             ),
                           ],
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: AcadexColors.successLight,
                           borderRadius: AcadexRadius.borderRadiusFull,
                         ),
                         child: const Text(
                           'Active',
-                          style: TextStyle(color: AcadexColors.success, fontSize: 11, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            color: AcadexColors.success,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       IconButton(
                         tooltip: 'Withdraw from Section',
-                        icon: const Icon(LucideIcons.userMinus, size: 16, color: AcadexColors.error),
+                        icon: const Icon(
+                          LucideIcons.userMinus,
+                          size: 16,
+                          color: AcadexColors.error,
+                        ),
                         onPressed: () async {
                           final confirm = await showDialog<bool>(
                             context: context,
                             builder: (ctx) => AlertDialog(
                               title: const Text('Withdraw Student?'),
-                              content: Text('Withdraw ${enrollment.studentName} from Section ${section.name}?'),
+                              content: Text(
+                                'Withdraw ${enrollment.studentName} from Section ${section.name}?',
+                              ),
                               actions: [
-                                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, false),
+                                  child: const Text('Cancel'),
+                                ),
                                 ElevatedButton(
-                                  style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.error, foregroundColor: Colors.white),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AcadexColors.error,
+                                    foregroundColor: Colors.white,
+                                  ),
                                   onPressed: () => Navigator.pop(ctx, true),
                                   child: const Text('Withdraw'),
                                 ),
@@ -563,7 +731,13 @@ class SectionDetailScreen extends ConsumerWidget {
                             ),
                           );
                           if (confirm == true) {
-                            await ref.read(sectionEnrollmentsNotifierProvider(section.id).notifier).withdrawStudent(enrollment.id);
+                            await ref
+                                .read(
+                                  sectionEnrollmentsNotifierProvider(
+                                    section.id,
+                                  ).notifier,
+                                )
+                                .withdrawStudent(enrollment.id);
                           }
                         },
                       ),
@@ -592,7 +766,13 @@ class SectionDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.graduationCap, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              Icon(
+                LucideIcons.graduationCap,
+                size: 16,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -609,14 +789,18 @@ class SectionDetailScreen extends ConsumerWidget {
             isDark,
             LucideIcons.bookOpen,
             'Degree Program',
-            course != null ? "${course.name} (${course.code})" : "Linked Degree Program",
+            course != null
+                ? "${course.name} (${course.code})"
+                : "Linked Degree Program",
           ),
           const Divider(height: 16),
           _infoRow(
             isDark,
             LucideIcons.calendarClock,
             'Semester / Term',
-            semester != null ? "${semester.name} (Term ${semester.number})" : "Linked Semester",
+            semester != null
+                ? "${semester.name} (Term ${semester.number})"
+                : "Linked Semester",
           ),
           if (academicYear != null) ...[
             const Divider(height: 16),
@@ -653,7 +837,13 @@ class SectionDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.armchair, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              Icon(
+                LucideIcons.armchair,
+                size: 16,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -666,7 +856,12 @@ class SectionDetailScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 14),
-          _infoRow(isDark, LucideIcons.users, 'Seating Capacity', "${section.capacity} seats configured"),
+          _infoRow(
+            isDark,
+            LucideIcons.users,
+            'Seating Capacity',
+            "${section.capacity} seats configured",
+          ),
           const Divider(height: 16),
           _infoRow(
             isDark,
@@ -676,7 +871,12 @@ class SectionDetailScreen extends ConsumerWidget {
           ),
           if (section.createdAt != null) ...[
             const Divider(height: 16),
-            _infoRow(isDark, LucideIcons.clock, 'Created On', dateFormat.format(section.createdAt!)),
+            _infoRow(
+              isDark,
+              LucideIcons.clock,
+              'Created On',
+              dateFormat.format(section.createdAt!),
+            ),
           ],
         ],
       ),
@@ -687,7 +887,11 @@ class SectionDetailScreen extends ConsumerWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 15, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+        Icon(
+          icon,
+          size: 15,
+          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+        ),
         const SizedBox(width: 10),
         SizedBox(
           width: 120,

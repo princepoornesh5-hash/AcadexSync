@@ -35,20 +35,29 @@ class AcadexLogger {
       stackTrace: stackTrace,
       level: 1000, // 1000 is SEVERE
     );
-    
+
     if (scrubbedContext != null) {
       developer.log('Context: $scrubbedContext', name: tag);
     }
-    
+
     // TODO: Forward to Firebase Crashlytics if enabled
   }
 
   /// Ensure we don't accidentally log API keys, auth tokens, or PII.
-  static Map<String, dynamic>? _scrubSensitiveContext(Map<String, dynamic>? context) {
+  static Map<String, dynamic>? _scrubSensitiveContext(
+    Map<String, dynamic>? context,
+  ) {
     if (context == null) return null;
-    
+
     final safeContext = Map<String, dynamic>.from(context);
-    final sensitiveKeys = ['password', 'token', 'secret', 'apikey', 'auth', 'credentials'];
+    final sensitiveKeys = [
+      'password',
+      'token',
+      'secret',
+      'apikey',
+      'auth',
+      'credentials',
+    ];
 
     for (var key in safeContext.keys.toList()) {
       final lowercaseKey = key.toLowerCase();
@@ -56,7 +65,7 @@ class AcadexLogger {
         safeContext[key] = '[REDACTED]';
       }
     }
-    
+
     return safeContext;
   }
 }

@@ -4,11 +4,7 @@ import '../../../auth/domain/models/role_enum.dart';
 
 // --- Risk Classification ---
 
-enum AttendanceRiskLevel {
-  goodStanding,
-  warning,
-  critical
-}
+enum AttendanceRiskLevel { goodStanding, warning, critical }
 
 class AttendanceRiskProfile {
   final double attendancePercentage;
@@ -23,28 +19,46 @@ class AttendanceRiskProfile {
 
   factory AttendanceRiskProfile.calculate(double percentage, double threshold) {
     if (percentage >= threshold) {
-      return AttendanceRiskProfile(attendancePercentage: percentage, threshold: threshold, level: AttendanceRiskLevel.goodStanding);
+      return AttendanceRiskProfile(
+        attendancePercentage: percentage,
+        threshold: threshold,
+        level: AttendanceRiskLevel.goodStanding,
+      );
     } else if (percentage >= threshold - 10) {
       // Configurable warning band. e.g. 65% - 75%
-      return AttendanceRiskProfile(attendancePercentage: percentage, threshold: threshold, level: AttendanceRiskLevel.warning);
+      return AttendanceRiskProfile(
+        attendancePercentage: percentage,
+        threshold: threshold,
+        level: AttendanceRiskLevel.warning,
+      );
     } else {
-      return AttendanceRiskProfile(attendancePercentage: percentage, threshold: threshold, level: AttendanceRiskLevel.critical);
+      return AttendanceRiskProfile(
+        attendancePercentage: percentage,
+        threshold: threshold,
+        level: AttendanceRiskLevel.critical,
+      );
     }
   }
 
   Color get color {
     switch (level) {
-      case AttendanceRiskLevel.goodStanding: return DashboardColors.success;
-      case AttendanceRiskLevel.warning: return DashboardColors.warning;
-      case AttendanceRiskLevel.critical: return DashboardColors.error;
+      case AttendanceRiskLevel.goodStanding:
+        return DashboardColors.success;
+      case AttendanceRiskLevel.warning:
+        return DashboardColors.warning;
+      case AttendanceRiskLevel.critical:
+        return DashboardColors.error;
     }
   }
 
   String get label {
     switch (level) {
-      case AttendanceRiskLevel.goodStanding: return 'Good Standing';
-      case AttendanceRiskLevel.warning: return 'Warning';
-      case AttendanceRiskLevel.critical: return 'Critical';
+      case AttendanceRiskLevel.goodStanding:
+        return 'Good Standing';
+      case AttendanceRiskLevel.warning:
+        return 'Warning';
+      case AttendanceRiskLevel.critical:
+        return 'Critical';
     }
   }
 }
@@ -85,17 +99,19 @@ class AttendanceProjection {
     }
 
     double current = (attendedClasses / totalClasses) * 100;
-    
+
     // Formula for required consecutive classes (x):
     // (attended + x) / (total + x) = target / 100
     // 100 * (attended + x) = target * (total + x)
     // 100*attended + 100x = target*total + target*x
     // x(100 - target) = target*total - 100*attended
     // x = (target*total - 100*attended) / (100 - target)
-    
+
     int requiredClasses = 0;
     if (current < targetPercentage && targetPercentage < 100) {
-      double x = ((targetPercentage * totalClasses) - (100 * attendedClasses)) / (100 - targetPercentage);
+      double x =
+          ((targetPercentage * totalClasses) - (100 * attendedClasses)) /
+          (100 - targetPercentage);
       requiredClasses = x.ceil();
       if (requiredClasses < 0) requiredClasses = 0;
     }
@@ -140,11 +156,7 @@ class ChartDataPoint {
   final double value;
   final Color? color;
 
-  const ChartDataPoint({
-    required this.label,
-    required this.value,
-    this.color,
-  });
+  const ChartDataPoint({required this.label, required this.value, this.color});
 }
 
 // --- Reports ---
@@ -159,7 +171,7 @@ enum ReportType {
   student,
   section,
   subject,
-  college
+  college,
 }
 
 class AttendanceReport {

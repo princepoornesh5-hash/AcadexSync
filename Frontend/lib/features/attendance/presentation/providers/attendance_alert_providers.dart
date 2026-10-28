@@ -13,7 +13,9 @@ import '../../data/repositories/mock_attendance_alert_repository.dart';
 import '../../../notifications/presentation/providers/notification_providers.dart';
 
 /// Provider for AttendanceAlertRepository (supports Firestore and Mock)
-final attendanceAlertRepositoryProvider = Provider<AttendanceAlertRepository>((ref) {
+final attendanceAlertRepositoryProvider = Provider<AttendanceAlertRepository>((
+  ref,
+) {
   if (FirebaseInitializer.shouldUseMock) {
     return MockAttendanceAlertRepository();
   }
@@ -22,12 +24,16 @@ final attendanceAlertRepositoryProvider = Provider<AttendanceAlertRepository>((r
 });
 
 /// Provider for AttendanceRiskEvaluator service
-final attendanceRiskEvaluatorProvider = Provider<AttendanceRiskEvaluator>((ref) {
+final attendanceRiskEvaluatorProvider = Provider<AttendanceRiskEvaluator>((
+  ref,
+) {
   return AttendanceRiskEvaluator();
 });
 
 /// StateProvider for current alert filter criteria
-final attendanceAlertFilterProvider = StateProvider<AttendanceAlertFilter>((ref) {
+final attendanceAlertFilterProvider = StateProvider<AttendanceAlertFilter>((
+  ref,
+) {
   return const AttendanceAlertFilter();
 });
 
@@ -37,39 +43,42 @@ final attendanceAlertSearchQueryProvider = StateProvider<String>((ref) {
 });
 
 /// Scoped alerts list provider reacting to auth user, filters, and search
-final attendanceAlertsProvider = FutureProvider.autoDispose<List<AttendanceAlert>>((ref) async {
-  final authState = ref.watch(authProvider);
-  if (authState is! AuthAuthenticated) {
-    return [];
-  }
+final attendanceAlertsProvider =
+    FutureProvider.autoDispose<List<AttendanceAlert>>((ref) async {
+      final authState = ref.watch(authProvider);
+      if (authState is! AuthAuthenticated) {
+        return [];
+      }
 
-  final repository = ref.watch(attendanceAlertRepositoryProvider);
-  final filter = ref.watch(attendanceAlertFilterProvider);
-  final searchQuery = ref.watch(attendanceAlertSearchQueryProvider);
+      final repository = ref.watch(attendanceAlertRepositoryProvider);
+      final filter = ref.watch(attendanceAlertFilterProvider);
+      final searchQuery = ref.watch(attendanceAlertSearchQueryProvider);
 
-  return repository.getAlerts(
-    user: authState.user,
-    filter: filter,
-    searchQuery: searchQuery,
-  );
-});
+      return repository.getAlerts(
+        user: authState.user,
+        filter: filter,
+        searchQuery: searchQuery,
+      );
+    });
 
 /// Summary count provider for dashboard alert badges (Critical, Warning, Unread)
-final attendanceAlertSummaryProvider = FutureProvider.autoDispose<AttendanceAlertSummary>((ref) async {
-  final authState = ref.watch(authProvider);
-  if (authState is! AuthAuthenticated) {
-    return const AttendanceAlertSummary();
-  }
+final attendanceAlertSummaryProvider =
+    FutureProvider.autoDispose<AttendanceAlertSummary>((ref) async {
+      final authState = ref.watch(authProvider);
+      if (authState is! AuthAuthenticated) {
+        return const AttendanceAlertSummary();
+      }
 
-  final repository = ref.watch(attendanceAlertRepositoryProvider);
-  return repository.getAlertSummary(user: authState.user);
-});
+      final repository = ref.watch(attendanceAlertRepositoryProvider);
+      return repository.getAlertSummary(user: authState.user);
+    });
 
 /// Single alert detail provider by alert ID
-final attendanceAlertDetailProvider = FutureProvider.autoDispose.family<AttendanceAlert?, String>((ref, alertId) async {
-  final repository = ref.watch(attendanceAlertRepositoryProvider);
-  return repository.getAlertById(alertId);
-});
+final attendanceAlertDetailProvider = FutureProvider.autoDispose
+    .family<AttendanceAlert?, String>((ref, alertId) async {
+      final repository = ref.watch(attendanceAlertRepositoryProvider);
+      return repository.getAlertById(alertId);
+    });
 
 /// Actions notifier for alert state transitions and evaluations
 class AttendanceAlertActionNotifier extends StateNotifier<AsyncValue<void>> {
@@ -77,8 +86,10 @@ class AttendanceAlertActionNotifier extends StateNotifier<AsyncValue<void>> {
 
   AttendanceAlertActionNotifier(this._ref) : super(const AsyncValue.data(null));
 
-  AttendanceAlertRepository get _repository => _ref.read(attendanceAlertRepositoryProvider);
-  AttendanceRiskEvaluator get _evaluator => _ref.read(attendanceRiskEvaluatorProvider);
+  AttendanceAlertRepository get _repository =>
+      _ref.read(attendanceAlertRepositoryProvider);
+  AttendanceRiskEvaluator get _evaluator =>
+      _ref.read(attendanceRiskEvaluatorProvider);
 
   void _invalidateAlertProviders() {
     _ref.invalidate(attendanceAlertsProvider);
@@ -174,7 +185,9 @@ class AttendanceAlertActionNotifier extends StateNotifier<AsyncValue<void>> {
     if (generatedAlerts.isNotEmpty) {
       await _repository.saveAlerts(generatedAlerts);
       _invalidateAlertProviders();
-      _ref.read(attendanceNotificationDispatcherProvider).safeDispatch(alerts: generatedAlerts);
+      _ref
+          .read(attendanceNotificationDispatcherProvider)
+          .safeDispatch(alerts: generatedAlerts);
     }
 
     return generatedAlerts;
@@ -182,6 +195,9 @@ class AttendanceAlertActionNotifier extends StateNotifier<AsyncValue<void>> {
 }
 
 /// Provider for AttendanceAlertActionNotifier
-final attendanceAlertActionProvider = StateNotifierProvider<AttendanceAlertActionNotifier, AsyncValue<void>>((ref) {
-  return AttendanceAlertActionNotifier(ref);
-});
+final attendanceAlertActionProvider =
+    StateNotifierProvider<AttendanceAlertActionNotifier, AsyncValue<void>>((
+      ref,
+    ) {
+      return AttendanceAlertActionNotifier(ref);
+    });

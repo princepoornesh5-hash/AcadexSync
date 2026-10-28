@@ -23,7 +23,8 @@ class AttendanceDistributionChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final total = presentCount + absentCount + lateCount + excusedCount + unmarkedCount;
+    final total =
+        presentCount + absentCount + lateCount + excusedCount + unmarkedCount;
 
     return AcadexCard(
       child: Column(
@@ -31,7 +32,11 @@ class AttendanceDistributionChart extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(LucideIcons.pieChart, size: 18, color: AcadexColors.primary),
+              const Icon(
+                LucideIcons.pieChart,
+                size: 18,
+                color: AcadexColors.primary,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -54,13 +59,17 @@ class AttendanceDistributionChart extends StatelessWidget {
                     Icon(
                       LucideIcons.pieChart,
                       size: 40,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'No attendance records in this period',
                       style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                     ),
                   ],
@@ -79,56 +88,56 @@ class AttendanceDistributionChart extends StatelessWidget {
                       PieChartSectionData(
                         color: AcadexColors.success,
                         value: presentCount.toDouble(),
-                        title: '${((presentCount / total) * 100).toStringAsFixed(0)}%',
+                        title:
+                            '${((presentCount / total) * 100).toStringAsFixed(0)}%',
                         radius: 28,
-                        titleStyle: AcadexTypography.caption(color: Colors.white).copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 11,
-                        ),
+                        titleStyle: AcadexTypography.caption(
+                          color: Colors.white,
+                        ).copyWith(fontWeight: FontWeight.w700, fontSize: 11),
                       ),
                     if (absentCount > 0)
                       PieChartSectionData(
                         color: AcadexColors.error,
                         value: absentCount.toDouble(),
-                        title: '${((absentCount / total) * 100).toStringAsFixed(0)}%',
+                        title:
+                            '${((absentCount / total) * 100).toStringAsFixed(0)}%',
                         radius: 28,
-                        titleStyle: AcadexTypography.caption(color: Colors.white).copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 11,
-                        ),
+                        titleStyle: AcadexTypography.caption(
+                          color: Colors.white,
+                        ).copyWith(fontWeight: FontWeight.w700, fontSize: 11),
                       ),
                     if (lateCount > 0)
                       PieChartSectionData(
                         color: AcadexColors.warning,
                         value: lateCount.toDouble(),
-                        title: '${((lateCount / total) * 100).toStringAsFixed(0)}%',
+                        title:
+                            '${((lateCount / total) * 100).toStringAsFixed(0)}%',
                         radius: 28,
-                        titleStyle: AcadexTypography.caption(color: Colors.white).copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 11,
-                        ),
+                        titleStyle: AcadexTypography.caption(
+                          color: Colors.white,
+                        ).copyWith(fontWeight: FontWeight.w700, fontSize: 11),
                       ),
                     if (excusedCount > 0)
                       PieChartSectionData(
                         color: const Color(0xFF6366F1), // Indigo
                         value: excusedCount.toDouble(),
-                        title: '${((excusedCount / total) * 100).toStringAsFixed(0)}%',
+                        title:
+                            '${((excusedCount / total) * 100).toStringAsFixed(0)}%',
                         radius: 28,
-                        titleStyle: AcadexTypography.caption(color: Colors.white).copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 11,
-                        ),
+                        titleStyle: AcadexTypography.caption(
+                          color: Colors.white,
+                        ).copyWith(fontWeight: FontWeight.w700, fontSize: 11),
                       ),
                     if (unmarkedCount > 0)
                       PieChartSectionData(
                         color: Colors.grey.shade400,
                         value: unmarkedCount.toDouble(),
-                        title: '${((unmarkedCount / total) * 100).toStringAsFixed(0)}%',
+                        title:
+                            '${((unmarkedCount / total) * 100).toStringAsFixed(0)}%',
                         radius: 28,
-                        titleStyle: AcadexTypography.caption(color: Colors.white).copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 11,
-                        ),
+                        titleStyle: AcadexTypography.caption(
+                          color: Colors.white,
+                        ).copyWith(fontWeight: FontWeight.w700, fontSize: 11),
                       ),
                   ],
                 ),
@@ -141,12 +150,42 @@ class AttendanceDistributionChart extends StatelessWidget {
               runSpacing: 8,
               alignment: WrapAlignment.center,
               children: [
-                _buildLegendItem('Present', presentCount, total, AcadexColors.success, isDark),
-                _buildLegendItem('Absent', absentCount, total, AcadexColors.error, isDark),
-                _buildLegendItem('Late', lateCount, total, AcadexColors.warning, isDark),
-                _buildLegendItem('Excused', excusedCount, total, const Color(0xFF6366F1), isDark),
+                _buildLegendItem(
+                  'Present',
+                  presentCount,
+                  total,
+                  AcadexColors.success,
+                  isDark,
+                ),
+                _buildLegendItem(
+                  'Absent',
+                  absentCount,
+                  total,
+                  AcadexColors.error,
+                  isDark,
+                ),
+                _buildLegendItem(
+                  'Late',
+                  lateCount,
+                  total,
+                  AcadexColors.warning,
+                  isDark,
+                ),
+                _buildLegendItem(
+                  'Excused',
+                  excusedCount,
+                  total,
+                  const Color(0xFF6366F1),
+                  isDark,
+                ),
                 if (unmarkedCount > 0)
-                  _buildLegendItem('Unmarked', unmarkedCount, total, Colors.grey.shade400, isDark),
+                  _buildLegendItem(
+                    'Unmarked',
+                    unmarkedCount,
+                    total,
+                    Colors.grey.shade400,
+                    isDark,
+                  ),
               ],
             ),
           ],
@@ -155,7 +194,13 @@ class AttendanceDistributionChart extends StatelessWidget {
     );
   }
 
-  Widget _buildLegendItem(String label, int count, int total, Color color, bool isDark) {
+  Widget _buildLegendItem(
+    String label,
+    int count,
+    int total,
+    Color color,
+    bool isDark,
+  ) {
     final pct = total > 0 ? ((count / total) * 100).toStringAsFixed(1) : '0';
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -169,7 +214,9 @@ class AttendanceDistributionChart extends StatelessWidget {
         Text(
           '$label: $count ($pct%)',
           style: AcadexTypography.caption(
-            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+            color: isDark
+                ? AcadexColors.darkInkSecondary
+                : AcadexColors.inkSecondary,
           ).copyWith(fontWeight: FontWeight.w500),
         ),
       ],

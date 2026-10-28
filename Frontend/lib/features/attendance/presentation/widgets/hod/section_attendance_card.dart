@@ -39,7 +39,9 @@ class SectionAttendanceCard extends StatelessWidget {
                 Text(
                   summary.semester,
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                 ),
               ],
@@ -48,16 +50,38 @@ class SectionAttendanceCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+                color: isDark
+                    ? AcadexColors.darkSurfaceHover
+                    : AcadexColors.canvasSoft,
                 borderRadius: AcadexRadius.borderRadiusMd,
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildStat("Attendance", "${summary.attendancePercentage}%", AcadexColors.primary, isDark),
-                  _buildStat("Present", summary.present.toString(), AcadexColors.success, isDark),
-                  _buildStat("Late", summary.late.toString(), AcadexColors.warning, isDark),
-                  _buildStat("Absent", summary.absent.toString(), AcadexColors.error, isDark),
+                  _buildStat(
+                    "Attendance",
+                    "${summary.attendancePercentage}%",
+                    AcadexColors.primary,
+                    isDark,
+                  ),
+                  _buildStat(
+                    "Present",
+                    summary.present.toString(),
+                    AcadexColors.success,
+                    isDark,
+                  ),
+                  _buildStat(
+                    "Late",
+                    summary.late.toString(),
+                    AcadexColors.warning,
+                    isDark,
+                  ),
+                  _buildStat(
+                    "Absent",
+                    summary.absent.toString(),
+                    AcadexColors.error,
+                    isDark,
+                  ),
                 ],
               ),
             ),
@@ -70,10 +94,7 @@ class SectionAttendanceCard extends StatelessWidget {
   Widget _buildStat(String label, String value, Color color, bool isDark) {
     return Column(
       children: [
-        Text(
-          value,
-          style: AcadexTypography.title(color: color),
-        ),
+        Text(value, style: AcadexTypography.title(color: color)),
         const SizedBox(height: 2),
         Text(
           label,

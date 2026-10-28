@@ -25,7 +25,9 @@ class ImageKitUploadAuth {
   factory ImageKitUploadAuth.fromJson(Map<String, dynamic> json) {
     return ImageKitUploadAuth(
       token: json['token'] as String,
-      expire: json['expire'] is int ? json['expire'] as int : int.parse(json['expire'].toString()),
+      expire: json['expire'] is int
+          ? json['expire'] as int
+          : int.parse(json['expire'].toString()),
       signature: json['signature'] as String,
       publicKey: json['publicKey'] as String,
       urlEndpoint: json['urlEndpoint'] as String,
@@ -59,22 +61,28 @@ class ImageKitUploadResult {
       name: json['name'] as String,
       url: json['url'] as String,
       thumbnailUrl: json['thumbnailUrl'] as String?,
-      size: json['size'] is int ? json['size'] as int : int.parse(json['size'].toString()),
+      size: json['size'] is int
+          ? json['size'] as int
+          : int.parse(json['size'].toString()),
       filePath: json['filePath'] as String? ?? '',
     );
   }
 }
 
 class ImageKitUploader {
-  static const String uploadEndpoint = 'https://upload.imagekit.io/api/v1/files/upload';
+  static const String uploadEndpoint =
+      'https://upload.imagekit.io/api/v1/files/upload';
   final Dio _dio;
 
   ImageKitUploader([Dio? dio])
-      : _dio = dio ??
-            Dio(BaseOptions(
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
               connectTimeout: const Duration(seconds: 30),
               receiveTimeout: const Duration(seconds: 60),
-            ));
+            ),
+          );
 
   /// Uploads a binary file directly to ImageKit using backend-provided authorization parameters.
   Future<ImageKitUploadResult> uploadFile({
@@ -105,7 +113,9 @@ class ImageKitUploader {
         Map<String, dynamic>.from(response.data as Map),
       );
     } else {
-      throw Exception('ImageKit upload failed with status code ${response.statusCode}');
+      throw Exception(
+        'ImageKit upload failed with status code ${response.statusCode}',
+      );
     }
   }
 }

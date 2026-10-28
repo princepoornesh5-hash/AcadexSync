@@ -37,7 +37,7 @@ class _AiThinkingIndicatorState extends State<AiThinkingIndicator>
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
-          "ACADEX is thinking...",
+          "ACADEXSYNC is thinking...",
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,

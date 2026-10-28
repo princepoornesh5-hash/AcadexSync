@@ -16,12 +16,13 @@ class AttendanceNotificationDispatcher {
   AttendanceNotificationDispatcher({
     required NotificationRepository notificationRepository,
     String Function()? idGenerator,
-  })  : _notificationRepository = notificationRepository,
-        _idGenerator = idGenerator ?? (() => const Uuid().v4());
+  }) : _notificationRepository = notificationRepository,
+       _idGenerator = idGenerator ?? (() => const Uuid().v4());
 
   /// Builds a deterministic deduplication key for an alert and recipient.
   String buildNotificationKey(AttendanceAlert alert, {String? recipientId}) {
-    final base = 'notif_${alert.id}_${alert.status.name}_${alert.severity.name}';
+    final base =
+        'notif_${alert.id}_${alert.status.name}_${alert.severity.name}';
     return recipientId != null ? '${base}_$recipientId' : base;
   }
 
@@ -49,60 +50,71 @@ class AttendanceNotificationDispatcher {
 
     // 1. Personal Student Notification
     if (alert.studentId != null && alert.studentId!.isNotEmpty) {
-      final studentKey = buildNotificationKey(alert, recipientId: alert.studentId);
+      final studentKey = buildNotificationKey(
+        alert,
+        recipientId: alert.studentId,
+      );
       if (!_dispatchedKeys.contains(studentKey)) {
-        final shouldSend = (alert.severity == AttendanceAlertSeverity.critical) ||
+        final shouldSend =
+            (alert.severity == AttendanceAlertSeverity.critical) ||
             (prefs == null || prefs.attendanceAlerts);
 
         if (shouldSend) {
           if (recordKeys) _dispatchedKeys.add(studentKey);
-          notifications.add(NotificationModel(
-            id: _idGenerator(),
-            title: alert.title,
-            message: alert.message,
-            category: NotificationCategory.attendance,
-            priority: priority,
-            audienceType: NotificationAudienceType.personal,
-            timestamp: now,
-            recipientUserId: alert.studentId,
-            recipientRole: AppRole.student,
-            collegeId: alert.collegeId,
-            departmentId: alert.departmentId,
-            sectionId: alert.sectionId,
-            relatedEntityId: alert.id,
-            relatedEntityType: 'attendance_alert',
-            navigationTarget: alert.studentId != null
-                ? '/attendance/analytics/student/${alert.studentId}'
-                : '/attendance/alerts/${alert.id}',
-          ));
+          notifications.add(
+            NotificationModel(
+              id: _idGenerator(),
+              title: alert.title,
+              message: alert.message,
+              category: NotificationCategory.attendance,
+              priority: priority,
+              audienceType: NotificationAudienceType.personal,
+              timestamp: now,
+              recipientUserId: alert.studentId,
+              recipientRole: AppRole.student,
+              collegeId: alert.collegeId,
+              departmentId: alert.departmentId,
+              sectionId: alert.sectionId,
+              relatedEntityId: alert.id,
+              relatedEntityType: 'attendance_alert',
+              navigationTarget: alert.studentId != null
+                  ? '/attendance/analytics/student/${alert.studentId}'
+                  : '/attendance/alerts/${alert.id}',
+            ),
+          );
         }
       }
     }
 
     // 2. Assigned Faculty Notification
     if (alert.facultyId != null && alert.facultyId!.isNotEmpty) {
-      final facultyKey = buildNotificationKey(alert, recipientId: alert.facultyId);
+      final facultyKey = buildNotificationKey(
+        alert,
+        recipientId: alert.facultyId,
+      );
       if (!_dispatchedKeys.contains(facultyKey)) {
         if (recordKeys) _dispatchedKeys.add(facultyKey);
-        notifications.add(NotificationModel(
-          id: _idGenerator(),
-          title: 'Faculty Notice: ${alert.title}',
-          message: alert.message,
-          category: NotificationCategory.attendance,
-          priority: priority,
-          audienceType: NotificationAudienceType.personal,
-          timestamp: now,
-          recipientUserId: alert.facultyId,
-          recipientRole: AppRole.faculty,
-          collegeId: alert.collegeId,
-          departmentId: alert.departmentId,
-          sectionId: alert.sectionId,
-          relatedEntityId: alert.id,
-          relatedEntityType: 'attendance_alert',
-          navigationTarget: alert.subjectId != null
-              ? '/attendance/analytics/subject/${alert.subjectId}'
-              : '/attendance/alerts/${alert.id}',
-        ));
+        notifications.add(
+          NotificationModel(
+            id: _idGenerator(),
+            title: 'Faculty Notice: ${alert.title}',
+            message: alert.message,
+            category: NotificationCategory.attendance,
+            priority: priority,
+            audienceType: NotificationAudienceType.personal,
+            timestamp: now,
+            recipientUserId: alert.facultyId,
+            recipientRole: AppRole.faculty,
+            collegeId: alert.collegeId,
+            departmentId: alert.departmentId,
+            sectionId: alert.sectionId,
+            relatedEntityId: alert.id,
+            relatedEntityType: 'attendance_alert',
+            navigationTarget: alert.subjectId != null
+                ? '/attendance/analytics/subject/${alert.subjectId}'
+                : '/attendance/alerts/${alert.id}',
+          ),
+        );
       }
     }
 
@@ -110,48 +122,59 @@ class AttendanceNotificationDispatcher {
     if (alert.departmentId.isNotEmpty &&
         (alert.severity == AttendanceAlertSeverity.critical ||
             alert.alertType == AttendanceAlertType.unmarkedAttendance)) {
-      final hodKey = buildNotificationKey(alert, recipientId: alert.departmentId);
+      final hodKey = buildNotificationKey(
+        alert,
+        recipientId: alert.departmentId,
+      );
       if (!_dispatchedKeys.contains(hodKey)) {
         if (recordKeys) _dispatchedKeys.add(hodKey);
-        notifications.add(NotificationModel(
-          id: _idGenerator(),
-          title: 'Dept Alert: ${alert.title}',
-          message: alert.message,
-          category: NotificationCategory.attendance,
-          priority: priority,
-          audienceType: NotificationAudienceType.department,
-          timestamp: now,
-          recipientRole: AppRole.hod,
-          collegeId: alert.collegeId,
-          departmentId: alert.departmentId,
-          sectionId: alert.sectionId,
-          relatedEntityId: alert.id,
-          relatedEntityType: 'attendance_alert',
-          navigationTarget: '/attendance/alerts/${alert.id}',
-        ));
+        notifications.add(
+          NotificationModel(
+            id: _idGenerator(),
+            title: 'Dept Alert: ${alert.title}',
+            message: alert.message,
+            category: NotificationCategory.attendance,
+            priority: priority,
+            audienceType: NotificationAudienceType.department,
+            timestamp: now,
+            recipientRole: AppRole.hod,
+            collegeId: alert.collegeId,
+            departmentId: alert.departmentId,
+            sectionId: alert.sectionId,
+            relatedEntityId: alert.id,
+            relatedEntityType: 'attendance_alert',
+            navigationTarget: '/attendance/alerts/${alert.id}',
+          ),
+        );
       }
     }
 
     // 4. College Admin Notification (Critical alerts only)
-    if (alert.severity == AttendanceAlertSeverity.critical && alert.collegeId.isNotEmpty) {
-      final adminKey = buildNotificationKey(alert, recipientId: alert.collegeId);
+    if (alert.severity == AttendanceAlertSeverity.critical &&
+        alert.collegeId.isNotEmpty) {
+      final adminKey = buildNotificationKey(
+        alert,
+        recipientId: alert.collegeId,
+      );
       if (!_dispatchedKeys.contains(adminKey)) {
         if (recordKeys) _dispatchedKeys.add(adminKey);
-        notifications.add(NotificationModel(
-          id: _idGenerator(),
-          title: 'Institutional Compliance: ${alert.title}',
-          message: alert.message,
-          category: NotificationCategory.attendance,
-          priority: NotificationPriority.critical,
-          audienceType: NotificationAudienceType.college,
-          timestamp: now,
-          recipientRole: AppRole.collegeAdmin,
-          collegeId: alert.collegeId,
-          departmentId: alert.departmentId,
-          relatedEntityId: alert.id,
-          relatedEntityType: 'attendance_alert',
-          navigationTarget: '/attendance/alerts/${alert.id}',
-        ));
+        notifications.add(
+          NotificationModel(
+            id: _idGenerator(),
+            title: 'Institutional Compliance: ${alert.title}',
+            message: alert.message,
+            category: NotificationCategory.attendance,
+            priority: NotificationPriority.critical,
+            audienceType: NotificationAudienceType.college,
+            timestamp: now,
+            recipientRole: AppRole.collegeAdmin,
+            collegeId: alert.collegeId,
+            departmentId: alert.departmentId,
+            relatedEntityId: alert.id,
+            relatedEntityType: 'attendance_alert',
+            navigationTarget: '/attendance/alerts/${alert.id}',
+          ),
+        );
       }
     }
 
@@ -180,7 +203,9 @@ class AttendanceNotificationDispatcher {
       title: title,
       message: message,
       category: NotificationCategory.attendance,
-      priority: count >= 5 ? NotificationPriority.critical : NotificationPriority.high,
+      priority: count >= 5
+          ? NotificationPriority.critical
+          : NotificationPriority.high,
       audienceType: NotificationAudienceType.department,
       timestamp: DateTime.now(),
       recipientRole: AppRole.hod,
@@ -203,7 +228,11 @@ class AttendanceNotificationDispatcher {
     final dispatched = <NotificationModel>[];
 
     for (final alert in alerts) {
-      final notifications = buildNotificationsForAlert(alert: alert, prefs: prefs, recordKeys: true);
+      final notifications = buildNotificationsForAlert(
+        alert: alert,
+        prefs: prefs,
+        recordKeys: true,
+      );
       for (final n in notifications) {
         try {
           if (n.audienceType == NotificationAudienceType.personal) {
@@ -222,7 +251,9 @@ class AttendanceNotificationDispatcher {
     // Optionally generate grouped notification for HOD if there are multiple low attendance alerts
     if (groupForDepartment && alerts.length >= 2) {
       final byDept = <String, List<AttendanceAlert>>{};
-      for (final a in alerts.where((a) => a.alertType == AttendanceAlertType.lowAttendance)) {
+      for (final a in alerts.where(
+        (a) => a.alertType == AttendanceAlertType.lowAttendance,
+      )) {
         if (a.departmentId.isNotEmpty) {
           byDept.putIfAbsent(a.departmentId, () => []).add(a);
         }

@@ -13,7 +13,12 @@ class TrendLineChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (data.isEmpty) {
-      return Center(child: Text('No data available', style: GoogleFonts.inter(color: DashboardColors.textSecondary)));
+      return Center(
+        child: Text(
+          'No data available',
+          style: GoogleFonts.inter(color: DashboardColors.textSecondary),
+        ),
+      );
     }
 
     List<FlSpot> spots = [];
@@ -36,8 +41,12 @@ class TrendLineChart extends StatelessWidget {
         ),
         titlesData: FlTitlesData(
           show: true,
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
@@ -49,7 +58,10 @@ class TrendLineChart extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Text(
                       data[value.toInt()].label,
-                      style: GoogleFonts.inter(fontSize: 12, color: DashboardColors.textSecondary),
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: DashboardColors.textSecondary,
+                      ),
                     ),
                   );
                 }
@@ -65,7 +77,10 @@ class TrendLineChart extends StatelessWidget {
               getTitlesWidget: (value, meta) {
                 return Text(
                   '${value.toInt()}%',
-                  style: GoogleFonts.inter(fontSize: 12, color: DashboardColors.textSecondary),
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: DashboardColors.textSecondary,
+                  ),
                   textAlign: TextAlign.right,
                 );
               },
@@ -88,7 +103,10 @@ class TrendLineChart extends StatelessWidget {
                 show: true,
                 alignment: Alignment.topRight,
                 padding: const EdgeInsets.only(right: 5, bottom: 5),
-                style: GoogleFonts.inter(fontSize: 10, color: DashboardColors.error),
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  color: DashboardColors.error,
+                ),
                 labelResolver: (line) => 'Threshold',
               ),
             ),
@@ -116,7 +134,10 @@ class TrendLineChart extends StatelessWidget {
               return touchedSpots.map((spot) {
                 return LineTooltipItem(
                   '${data[spot.x.toInt()].label}\n${spot.y.toStringAsFixed(1)}%',
-                  GoogleFonts.inter(color: DashboardColors.textPrimary, fontWeight: FontWeight.w600),
+                  GoogleFonts.inter(
+                    color: DashboardColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 );
               }).toList();
             },

@@ -26,7 +26,9 @@ class AcadexPageHeader extends StatelessWidget {
     final isMobile = AcadexBreakpoints.isMobile(context);
 
     final standardTitleColor = isDark ? AcadexColors.darkInk : AcadexColors.ink;
-    final standardSubtitleColor = isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted;
+    final standardSubtitleColor = isDark
+        ? AcadexColors.darkInkMuted
+        : AcadexColors.inkMuted;
 
     final headerContent = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,20 +39,27 @@ class AcadexPageHeader extends StatelessWidget {
               for (int i = 0; i < breadcrumbs!.length; i++) ...[
                 Text(
                   breadcrumbs![i],
-                  style: AcadexTypography.caption(
-                    color: i == breadcrumbs!.length - 1
-                        ? standardTitleColor
-                        : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                  ).copyWith(
-                    fontWeight: i == breadcrumbs!.length - 1 ? FontWeight.w600 : FontWeight.w400,
-                  ),
+                  style:
+                      AcadexTypography.caption(
+                        color: i == breadcrumbs!.length - 1
+                            ? standardTitleColor
+                            : (isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted),
+                      ).copyWith(
+                        fontWeight: i == breadcrumbs!.length - 1
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                      ),
                 ),
                 if (i < breadcrumbs!.length - 1) ...[
                   const SizedBox(width: 4),
                   Icon(
                     LucideIcons.chevronRight,
                     size: 11,
-                    color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                    color: isDark
+                        ? AcadexColors.darkInkFaint
+                        : AcadexColors.inkFaint,
                   ),
                   const SizedBox(width: 4),
                 ],
@@ -59,72 +68,80 @@ class AcadexPageHeader extends StatelessWidget {
           ),
           const SizedBox(height: 6),
         ],
-        if (isMobile) () {
-          final isAllIconButtons = actions != null &&
-              actions!.isNotEmpty &&
-              actions!.length <= 2 &&
-              actions!.every((w) => w is IconButton);
+        if (isMobile)
+          () {
+            final isAllIconButtons =
+                actions != null &&
+                actions!.isNotEmpty &&
+                actions!.length <= 2 &&
+                actions!.every((w) => w is IconButton);
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  if (onBack != null) ...[
-                    IconButton(
-                      icon: Icon(LucideIcons.arrowLeft, size: 20, color: standardTitleColor),
-                      onPressed: onBack,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                    ),
-                    const SizedBox(width: 8),
-                  ] else if (leading != null) ...[
-                    leading!,
-                    const SizedBox(width: 8),
-                  ],
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: AcadexTypography.heading2(
-                        color: standardTitleColor,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    if (onBack != null) ...[
+                      IconButton(
+                        icon: Icon(
+                          LucideIcons.arrowLeft,
+                          size: 20,
+                          color: standardTitleColor,
+                        ),
+                        onPressed: onBack,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 36,
+                          minHeight: 36,
+                        ),
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      const SizedBox(width: 8),
+                    ] else if (leading != null) ...[
+                      leading!,
+                      const SizedBox(width: 8),
+                    ],
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: AcadexTypography.heading2(
+                          color: standardTitleColor,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  if (isAllIconButtons) ...[
-                    const SizedBox(width: 8),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: actions!,
-                    ),
+                    if (isAllIconButtons) ...[
+                      const SizedBox(width: 8),
+                      Row(mainAxisSize: MainAxisSize.min, children: actions!),
+                    ],
                   ],
-                ],
-              ),
-              if (subtitle != null && subtitle!.isNotEmpty) ...[
-                const SizedBox(height: 3),
-                Text(
-                  subtitle!,
-                  style: AcadexTypography.bodySmall(
-                    color: standardSubtitleColor,
+                ),
+                if (subtitle != null && subtitle!.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle!,
+                    style: AcadexTypography.bodySmall(
+                      color: standardSubtitleColor,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                ],
+                if (actions != null &&
+                    actions!.isNotEmpty &&
+                    !isAllIconButtons) ...[
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: actions!,
+                  ),
+                ],
               ],
-              if (actions != null && actions!.isNotEmpty && !isAllIconButtons) ...[
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: actions!,
-                ),
-              ],
-            ],
-          );
-        }()
+            );
+          }()
         else
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -135,10 +152,17 @@ class AcadexPageHeader extends StatelessWidget {
                   children: [
                     if (onBack != null) ...[
                       IconButton(
-                        icon: Icon(LucideIcons.arrowLeft, size: 20, color: standardTitleColor),
+                        icon: Icon(
+                          LucideIcons.arrowLeft,
+                          size: 20,
+                          color: standardTitleColor,
+                        ),
                         onPressed: onBack,
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                        constraints: const BoxConstraints(
+                          minWidth: 36,
+                          minHeight: 36,
+                        ),
                       ),
                       const SizedBox(width: 10),
                     ] else if (leading != null) ...[
@@ -151,9 +175,13 @@ class AcadexPageHeader extends StatelessWidget {
                         children: [
                           Text(
                             title,
-                            style: AcadexTypography.heading2(
-                              color: standardTitleColor,
-                            ).copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+                            style:
+                                AcadexTypography.heading2(
+                                  color: standardTitleColor,
+                                ).copyWith(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                ),
                           ),
                           if (subtitle != null) ...[
                             const SizedBox(height: 3),
@@ -216,8 +244,12 @@ class AcadexSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final standardHeaderColor = isDark ? AcadexColors.darkInk : AcadexColors.ink;
-    final standardSubtitleColor = isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted;
+    final standardHeaderColor = isDark
+        ? AcadexColors.darkInk
+        : AcadexColors.ink;
+    final standardSubtitleColor = isDark
+        ? AcadexColors.darkInkMuted
+        : AcadexColors.inkMuted;
 
     Widget? effectiveAction = action;
     if (effectiveAction == null && actionLabel != null && onAction != null) {
@@ -269,17 +301,23 @@ class AcadexSectionHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1.5),
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
+              color: isDark
+                  ? AcadexColors.darkSurfaceCard
+                  : AcadexColors.canvasSoft,
               borderRadius: AcadexRadius.borderRadiusFull,
               border: Border.all(
-                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
                 width: 1,
               ),
             ),
             child: Text(
               count.toString(),
               style: AcadexTypography.eyebrow(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
             ),
           ),
@@ -301,9 +339,7 @@ class AcadexSectionHeader extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subtitle!,
-                  style: AcadexTypography.caption(
-                    color: standardSubtitleColor,
-                  ),
+                  style: AcadexTypography.caption(color: standardSubtitleColor),
                 ),
               ],
             ],

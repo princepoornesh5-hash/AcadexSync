@@ -24,13 +24,24 @@ class ApiClient {
   static const String _envAiUrl = String.fromEnvironment('AI_BASE_URL');
   static const String _envDevHost = String.fromEnvironment('DEV_HOST');
   static const String _envApiHost = String.fromEnvironment('API_HOST');
-  static const bool _envUseLocalhost = bool.fromEnvironment('USE_LOCALHOST', defaultValue: false);
-  static const bool _envUseAdbReverse = bool.fromEnvironment('USE_ADB_REVERSE', defaultValue: false);
-  static const bool _envIsEmulator = bool.fromEnvironment('IS_EMULATOR', defaultValue: false);
+  static const bool _envUseLocalhost = bool.fromEnvironment(
+    'USE_LOCALHOST',
+    defaultValue: false,
+  );
+  static const bool _envUseAdbReverse = bool.fromEnvironment(
+    'USE_ADB_REVERSE',
+    defaultValue: false,
+  );
+  static const bool _envIsEmulator = bool.fromEnvironment(
+    'IS_EMULATOR',
+    defaultValue: false,
+  );
 
   /// Authoritative secure remote staging / development endpoint
-  static const String remoteDevelopmentBaseUrl = 'https://acadex-backend-main.onrender.com/api/v1';
-  static const String remoteDevelopmentAiUrl = 'https://acadex-backend-main.onrender.com/api/v1/ai';
+  static const String remoteDevelopmentBaseUrl =
+      'https://acadex-backend-main.onrender.com/api/v1';
+  static const String remoteDevelopmentAiUrl =
+      'https://acadex-backend-main.onrender.com/api/v1/ai';
 
   static bool? _isEmulatorOverride;
   static bool get isAndroidEmulator => _isEmulatorOverride ?? _envIsEmulator;
@@ -48,8 +59,13 @@ class ApiClient {
     if (kReleaseMode) {
       return remoteDevelopmentBaseUrl;
     }
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android && _isEmulatorOverride == false) {
-      if (_envDevHost.isEmpty && _envApiHost.isEmpty && !_envUseLocalhost && !_envUseAdbReverse) {
+    if (!kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.android &&
+        _isEmulatorOverride == false) {
+      if (_envDevHost.isEmpty &&
+          _envApiHost.isEmpty &&
+          !_envUseLocalhost &&
+          !_envUseAdbReverse) {
         return remoteDevelopmentBaseUrl;
       }
     }
@@ -64,8 +80,13 @@ class ApiClient {
     if (kReleaseMode) {
       return remoteDevelopmentAiUrl;
     }
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android && _isEmulatorOverride == false) {
-      if (_envDevHost.isEmpty && _envApiHost.isEmpty && !_envUseLocalhost && !_envUseAdbReverse) {
+    if (!kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.android &&
+        _isEmulatorOverride == false) {
+      if (_envDevHost.isEmpty &&
+          _envApiHost.isEmpty &&
+          !_envUseLocalhost &&
+          !_envUseAdbReverse) {
         return remoteDevelopmentAiUrl;
       }
     }
@@ -97,30 +118,42 @@ class ApiClient {
   /// local `adb reverse` reachability, and safely selecting the appropriate endpoint.
   static Future<void> initializeEnvironment() async {
     if (_envBaseUrl.isNotEmpty) {
-      debugPrint('[API_CLIENT] Using explicit compile-time API_BASE_URL: $_envBaseUrl');
+      debugPrint(
+        '[API_CLIENT] Using explicit compile-time API_BASE_URL: $_envBaseUrl',
+      );
       return;
     }
 
     if (kReleaseMode) {
-      debugPrint('[API_CLIENT] Production release mode: Using $remoteDevelopmentBaseUrl');
+      debugPrint(
+        '[API_CLIENT] Production release mode: Using $remoteDevelopmentBaseUrl',
+      );
       return;
     }
 
     if (_envDevHost.isNotEmpty || _envApiHost.isNotEmpty) {
       final host = _envDevHost.isNotEmpty ? _envDevHost : _envApiHost;
       debugPrint('[API_CLIENT] Using configured dev host: $host');
-      updateBaseUrl('http://$host:5050/api/v1', newAiUrl: 'http://$host:5001/api/v1/ai');
+      updateBaseUrl(
+        'http://$host:5050/api/v1',
+        newAiUrl: 'http://$host:5001/api/v1/ai',
+      );
       return;
     }
 
     if (_envUseAdbReverse || _envUseLocalhost) {
       debugPrint('[API_CLIENT] Using explicit adb reverse / localhost tunnel');
-      updateBaseUrl('http://localhost:5050/api/v1', newAiUrl: 'http://localhost:5001/api/v1/ai');
+      updateBaseUrl(
+        'http://localhost:5050/api/v1',
+        newAiUrl: 'http://localhost:5001/api/v1/ai',
+      );
       return;
     }
 
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
-      debugPrint('[API_CLIENT] Platform ${defaultTargetPlatform.name}: using localhost');
+      debugPrint(
+        '[API_CLIENT] Platform ${defaultTargetPlatform.name}: using localhost',
+      );
       return;
     }
 
@@ -129,20 +162,27 @@ class ApiClient {
       const channel = MethodChannel('com.acadex.app/device_info');
       final bool? isEmu = await channel.invokeMethod<bool>('isEmulator');
       _isEmulatorOverride = isEmu ?? false;
-      debugPrint('[API_CLIENT] Android detection result: isEmulator=$_isEmulatorOverride');
+      debugPrint(
+        '[API_CLIENT] Android detection result: isEmulator=$_isEmulatorOverride',
+      );
 
       if (_isEmulatorOverride == true) {
         debugPrint('[API_CLIENT] Android Emulator detected: using 10.0.2.2');
-        updateBaseUrl('http://10.0.2.2:5050/api/v1', newAiUrl: 'http://10.0.2.2:5001/api/v1/ai');
+        updateBaseUrl(
+          'http://10.0.2.2:5050/api/v1',
+          newAiUrl: 'http://10.0.2.2:5001/api/v1/ai',
+        );
       } else {
         // Physical Android Phone:
         // 1. Probe localhost:5050 to see if `adb reverse` is active
         bool isLocalAdbReachable = false;
         try {
-          final probeDio = Dio(BaseOptions(
-            connectTimeout: const Duration(milliseconds: 350),
-            receiveTimeout: const Duration(milliseconds: 350),
-          ));
+          final probeDio = Dio(
+            BaseOptions(
+              connectTimeout: const Duration(milliseconds: 350),
+              receiveTimeout: const Duration(milliseconds: 350),
+            ),
+          );
           final res = await probeDio.get('http://127.0.0.1:5050/health');
           if (res.statusCode == 200) {
             isLocalAdbReachable = true;
@@ -152,15 +192,27 @@ class ApiClient {
         }
 
         if (isLocalAdbReachable) {
-          debugPrint('[API_CLIENT] Physical device has active adb reverse tunnel on localhost:5050');
-          updateBaseUrl('http://localhost:5050/api/v1', newAiUrl: 'http://localhost:5001/api/v1/ai');
+          debugPrint(
+            '[API_CLIENT] Physical device has active adb reverse tunnel on localhost:5050',
+          );
+          updateBaseUrl(
+            'http://localhost:5050/api/v1',
+            newAiUrl: 'http://localhost:5001/api/v1/ai',
+          );
         } else {
-          debugPrint('[API_CLIENT] Physical Android device: using secure remote development endpoint: $remoteDevelopmentBaseUrl');
-          updateBaseUrl(remoteDevelopmentBaseUrl, newAiUrl: remoteDevelopmentAiUrl);
+          debugPrint(
+            '[API_CLIENT] Physical Android device: using secure remote development endpoint: $remoteDevelopmentBaseUrl',
+          );
+          updateBaseUrl(
+            remoteDevelopmentBaseUrl,
+            newAiUrl: remoteDevelopmentAiUrl,
+          );
         }
       }
     } catch (e) {
-      debugPrint('[API_CLIENT] Device info query note: $e. Fallback to secure remote development endpoint.');
+      debugPrint(
+        '[API_CLIENT] Device info query note: $e. Fallback to secure remote development endpoint.',
+      );
       updateBaseUrl(remoteDevelopmentBaseUrl, newAiUrl: remoteDevelopmentAiUrl);
     }
   }
@@ -182,7 +234,9 @@ class ApiClient {
     }
     apiClient.dio.options.baseUrl = _dynamicBaseUrl!;
     apiClient.aiDio.options.baseUrl = _dynamicAiUrl!;
-    debugPrint('[API_CLIENT] Synchronized active baseUrl to: ${apiClient.dio.options.baseUrl}');
+    debugPrint(
+      '[API_CLIENT] Synchronized active baseUrl to: ${apiClient.dio.options.baseUrl}',
+    );
   }
 
   /// Resets dynamic overrides for testing and runtime cleanup.
@@ -193,7 +247,6 @@ class ApiClient {
     apiClient.dio.options.baseUrl = defaultBaseUrl;
     apiClient.aiDio.options.baseUrl = defaultAiUrl;
   }
-
 
   static const String keyAccessToken = 'access_token';
   static const String keyRefreshToken = 'refresh_token';
@@ -222,124 +275,149 @@ class ApiClient {
     final activeBaseUrl = baseUrl ?? defaultBaseUrl;
     final activeAiUrl = aiUrl ?? defaultAiUrl;
 
-    dio = customDio ??
-        Dio(BaseOptions(
-          baseUrl: activeBaseUrl,
-          connectTimeout: const Duration(seconds: 15),
-          receiveTimeout: const Duration(seconds: 15),
-          headers: {'Content-Type': 'application/json'},
-        ));
+    dio =
+        customDio ??
+        Dio(
+          BaseOptions(
+            baseUrl: activeBaseUrl,
+            connectTimeout: const Duration(seconds: 15),
+            receiveTimeout: const Duration(seconds: 15),
+            headers: {'Content-Type': 'application/json'},
+          ),
+        );
 
-    aiDio = customAiDio ??
-        Dio(BaseOptions(
-          baseUrl: activeAiUrl,
-          connectTimeout: const Duration(seconds: 15),
-          receiveTimeout: const Duration(seconds: 15),
-          headers: {'Content-Type': 'application/json'},
-        ));
+    aiDio =
+        customAiDio ??
+        Dio(
+          BaseOptions(
+            baseUrl: activeAiUrl,
+            connectTimeout: const Duration(seconds: 15),
+            receiveTimeout: const Duration(seconds: 15),
+            headers: {'Content-Type': 'application/json'},
+          ),
+        );
 
     if (customDio == null) {
       // Primary Auth & Refresh Interceptor
-      dio.interceptors.add(InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          try {
-            final token = await _storage.read(key: keyAccessToken);
-            if (token != null && token.isNotEmpty) {
-              options.headers['Authorization'] = 'Bearer $token';
-            }
-            final workspaceId = await _storage.read(key: keyActiveWorkspaceId);
-            if (workspaceId != null && workspaceId.isNotEmpty) {
-              options.headers['X-Workspace-Id'] = workspaceId;
-            }
-            options.extra['workspace_epoch'] = _workspaceEpoch;
-            options.extra['request_workspace_id'] = workspaceId;
-          } catch (_) {}
-          return handler.next(options);
-        },
-
-        onResponse: (response, handler) {
-          final reqEpoch = response.requestOptions.extra['workspace_epoch'];
-          final isAuthOrSwitch = response.requestOptions.path.contains('/auth/login') ||
-              response.requestOptions.path.contains('/auth/refresh') ||
-              response.requestOptions.path.contains('/auth/activate') ||
-              response.requestOptions.path.contains('/workspaces/switch');
-
-          if (!isAuthOrSwitch && reqEpoch != null && reqEpoch != _workspaceEpoch) {
-            debugPrint(
-              '[API_CLIENT] Discarding response from stale workspace epoch $reqEpoch (current is $_workspaceEpoch)',
-            );
-            return handler.reject(
-              DioException(
-                requestOptions: response.requestOptions,
-                error: StaleWorkspaceResponseException(
-                  requestWorkspaceId:
-                      response.requestOptions.extra['request_workspace_id'] as String?,
-                  currentWorkspaceEpoch: _workspaceEpoch,
-                  requestEpoch: reqEpoch as int,
-                ),
-                type: DioExceptionType.unknown,
-              ),
-            );
-          }
-          return handler.next(response);
-        },
-
-        onError: (DioException error, handler) async {
-          final isAuthEndpoint = error.requestOptions.path.contains('/auth/login') ||
-              error.requestOptions.path.contains('/auth/refresh') ||
-              error.requestOptions.path.contains('/auth/activate');
-
-          if (error.response?.statusCode == 401 && !isAuthEndpoint && !_isRefreshing) {
-            _isRefreshing = true;
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) async {
             try {
-              final refreshToken = await _storage.read(key: keyRefreshToken);
-              if (refreshToken != null && refreshToken.isNotEmpty) {
-                // Isolated Dio to avoid infinite interceptor loops
-                final refreshDio = Dio(BaseOptions(baseUrl: activeBaseUrl));
-                final response = await refreshDio.post('/auth/refresh', data: {
-                  'refreshToken': refreshToken,
-                });
+              final token = await _storage.read(key: keyAccessToken);
+              if (token != null && token.isNotEmpty) {
+                options.headers['Authorization'] = 'Bearer $token';
+              }
+              final workspaceId = await _storage.read(
+                key: keyActiveWorkspaceId,
+              );
+              if (workspaceId != null && workspaceId.isNotEmpty) {
+                options.headers['X-Workspace-Id'] = workspaceId;
+              }
+              options.extra['workspace_epoch'] = _workspaceEpoch;
+              options.extra['request_workspace_id'] = workspaceId;
+            } catch (_) {}
+            return handler.next(options);
+          },
 
-                if (response.statusCode == 200 && response.data != null) {
-                  final data = response.data['data'] as Map<String, dynamic>? ?? response.data;
-                  final newAccessToken = data['accessToken'] as String?;
-                  if (newAccessToken != null) {
-                    await _storage.write(key: keyAccessToken, value: newAccessToken);
+          onResponse: (response, handler) {
+            final reqEpoch = response.requestOptions.extra['workspace_epoch'];
+            final isAuthOrSwitch =
+                response.requestOptions.path.contains('/auth/login') ||
+                response.requestOptions.path.contains('/auth/refresh') ||
+                response.requestOptions.path.contains('/auth/activate') ||
+                response.requestOptions.path.contains('/workspaces/switch');
 
-                    // Retry original request with fresh access token
-                    final opts = error.requestOptions;
-                    opts.headers['Authorization'] = 'Bearer $newAccessToken';
-                    final clonedRequest = await dio.fetch(opts);
-                    _isRefreshing = false;
-                    return handler.resolve(clonedRequest);
+            if (!isAuthOrSwitch &&
+                reqEpoch != null &&
+                reqEpoch != _workspaceEpoch) {
+              debugPrint(
+                '[API_CLIENT] Discarding response from stale workspace epoch $reqEpoch (current is $_workspaceEpoch)',
+              );
+              return handler.reject(
+                DioException(
+                  requestOptions: response.requestOptions,
+                  error: StaleWorkspaceResponseException(
+                    requestWorkspaceId:
+                        response.requestOptions.extra['request_workspace_id']
+                            as String?,
+                    currentWorkspaceEpoch: _workspaceEpoch,
+                    requestEpoch: reqEpoch as int,
+                  ),
+                  type: DioExceptionType.unknown,
+                ),
+              );
+            }
+            return handler.next(response);
+          },
+
+          onError: (DioException error, handler) async {
+            final isAuthEndpoint =
+                error.requestOptions.path.contains('/auth/login') ||
+                error.requestOptions.path.contains('/auth/refresh') ||
+                error.requestOptions.path.contains('/auth/activate');
+
+            if (error.response?.statusCode == 401 &&
+                !isAuthEndpoint &&
+                !_isRefreshing) {
+              _isRefreshing = true;
+              try {
+                final refreshToken = await _storage.read(key: keyRefreshToken);
+                if (refreshToken != null && refreshToken.isNotEmpty) {
+                  // Isolated Dio to avoid infinite interceptor loops
+                  final refreshDio = Dio(BaseOptions(baseUrl: activeBaseUrl));
+                  final response = await refreshDio.post(
+                    '/auth/refresh',
+                    data: {'refreshToken': refreshToken},
+                  );
+
+                  if (response.statusCode == 200 && response.data != null) {
+                    final data =
+                        response.data['data'] as Map<String, dynamic>? ??
+                        response.data;
+                    final newAccessToken = data['accessToken'] as String?;
+                    if (newAccessToken != null) {
+                      await _storage.write(
+                        key: keyAccessToken,
+                        value: newAccessToken,
+                      );
+
+                      // Retry original request with fresh access token
+                      final opts = error.requestOptions;
+                      opts.headers['Authorization'] = 'Bearer $newAccessToken';
+                      final clonedRequest = await dio.fetch(opts);
+                      _isRefreshing = false;
+                      return handler.resolve(clonedRequest);
+                    }
                   }
                 }
+              } catch (_) {
+                // Refresh failed — clear stored tokens
+                await clearTokens();
+              } finally {
+                _isRefreshing = false;
               }
-            } catch (_) {
-              // Refresh failed — clear stored tokens
-              await clearTokens();
-            } finally {
-              _isRefreshing = false;
             }
-          }
 
-          return handler.next(error);
-        },
-      ));
+            return handler.next(error);
+          },
+        ),
+      );
     }
 
     if (customAiDio == null) {
-      aiDio.interceptors.add(InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          try {
-            final token = await _storage.read(key: keyAccessToken);
-            if (token != null && token.isNotEmpty) {
-              options.headers['Authorization'] = 'Bearer $token';
-            }
-          } catch (_) {}
-          return handler.next(options);
-        },
-      ));
+      aiDio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) async {
+            try {
+              final token = await _storage.read(key: keyAccessToken);
+              if (token != null && token.isNotEmpty) {
+                options.headers['Authorization'] = 'Bearer $token';
+              }
+            } catch (_) {}
+            return handler.next(options);
+          },
+        ),
+      );
     }
   }
 
@@ -376,11 +454,12 @@ class ApiClient {
     }
   }
 
-  Future<String?> getActiveWorkspace() async => _storage.read(key: keyActiveWorkspaceId);
+  Future<String?> getActiveWorkspace() async =>
+      _storage.read(key: keyActiveWorkspaceId);
 
   Future<String?> getToken() async => _storage.read(key: keyAccessToken);
-  Future<String?> getRefreshToken() async => _storage.read(key: keyRefreshToken);
-
+  Future<String?> getRefreshToken() async =>
+      _storage.read(key: keyRefreshToken);
 }
 
 final apiClient = ApiClient();

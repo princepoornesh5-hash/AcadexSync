@@ -13,39 +13,48 @@ class FirebaseAcademicRepository implements AcademicRepository {
   FirebaseAcademicRepository(this._firestoreService, this._currentUser);
 
   void _validateScope(String? collegeId, [String? departmentId]) {
-    if (_currentUser == null) throw const BackendPermissionException('Unauthenticated');
+    if (_currentUser == null)
+      throw const BackendPermissionException('Unauthenticated');
     if (_currentUser.role == AppRole.superAdmin) return;
-    
+
     if (collegeId != null && collegeId != _currentUser.collegeId) {
-       throw const BackendPermissionException('Unauthorized access to college data');
+      throw const BackendPermissionException(
+        'Unauthorized access to college data',
+      );
     }
-    
+
     if (_currentUser.role == AppRole.hod) {
-       if (departmentId != null && departmentId != _currentUser.departmentId) {
-         throw const BackendPermissionException('Unauthorized access to department data');
-       }
+      if (departmentId != null && departmentId != _currentUser.departmentId) {
+        throw const BackendPermissionException(
+          'Unauthorized access to department data',
+        );
+      }
     }
   }
 
-  Map<String, dynamic> _getScopeFilters({bool isCollege = false, bool hasCollegeId = true}) {
+  Map<String, dynamic> _getScopeFilters({
+    bool isCollege = false,
+    bool hasCollegeId = true,
+  }) {
     if (_currentUser == null) return {};
     if (_currentUser.role == AppRole.superAdmin) return {};
-    
+
     final filters = <String, dynamic>{};
-    
+
     if (isCollege) {
       filters['id'] = _currentUser.collegeId;
       return filters;
     }
-    
+
     if (hasCollegeId && _currentUser.collegeId?.isNotEmpty == true) {
       filters['collegeId'] = _currentUser.collegeId;
     }
-    
-    if (_currentUser.role == AppRole.hod && _currentUser.departmentId?.isNotEmpty == true) {
+
+    if (_currentUser.role == AppRole.hod &&
+        _currentUser.departmentId?.isNotEmpty == true) {
       filters['departmentId'] = _currentUser.departmentId;
     }
-    
+
     return filters;
   }
 
@@ -55,14 +64,27 @@ class FirebaseAcademicRepository implements AcademicRepository {
   Future<List<College>> getColleges() async {
     final filters = _getScopeFilters(isCollege: true);
     final docs = await _firestoreService.queryCollection('colleges', filters);
-    return docs.map((d) => College.fromJson(d)).where((c) => c.isActive).toList();
+    return docs
+        .map((d) => College.fromJson(d))
+        .where((c) => c.isActive)
+        .toList();
   }
 
   @override
-  Future<List<Department>> getDepartments({String? collegeId, String? search, String? status}) async {
+  Future<List<Department>> getDepartments({
+    String? collegeId,
+    String? search,
+    String? status,
+  }) async {
     final filters = _getScopeFilters(hasCollegeId: true);
-    final docs = await _firestoreService.queryCollection('departments', filters);
-    return docs.map((d) => Department.fromJson(d)).where((c) => c.isActive).toList();
+    final docs = await _firestoreService.queryCollection(
+      'departments',
+      filters,
+    );
+    return docs
+        .map((d) => Department.fromJson(d))
+        .where((c) => c.isActive)
+        .toList();
   }
 
   @override
@@ -86,16 +108,25 @@ class FirebaseAcademicRepository implements AcademicRepository {
   Future<void> updateDepartmentStatus(String id, String status) async {
     final doc = await _firestoreService.getDocument('departments', id);
     if (doc != null) {
-      final updated = Department.fromJson(doc).copyWith(isActive: status == 'active');
+      final updated = Department.fromJson(
+        doc,
+      ).copyWith(isActive: status == 'active');
       await _firestoreService.setDocument('departments', id, updated.toJson());
     }
   }
 
   @override
-  Future<List<Course>> getCourses({String? collegeId, String? departmentId, String? search}) async {
+  Future<List<Course>> getCourses({
+    String? collegeId,
+    String? departmentId,
+    String? search,
+  }) async {
     final filters = _getScopeFilters(hasCollegeId: true);
     final docs = await _firestoreService.queryCollection('courses', filters);
-    return docs.map((d) => Course.fromJson(d)).where((c) => c.isActive).toList();
+    return docs
+        .map((d) => Course.fromJson(d))
+        .where((c) => c.isActive)
+        .toList();
   }
 
   @override
@@ -117,8 +148,14 @@ class FirebaseAcademicRepository implements AcademicRepository {
   @override
   Future<List<AcademicYear>> getAcademicYears({String? collegeId}) async {
     final filters = _getScopeFilters(hasCollegeId: true);
-    final docs = await _firestoreService.queryCollection('academicYears', filters);
-    return docs.map((d) => AcademicYear.fromJson(d)).where((c) => c.isActive).toList();
+    final docs = await _firestoreService.queryCollection(
+      'academicYears',
+      filters,
+    );
+    return docs
+        .map((d) => AcademicYear.fromJson(d))
+        .where((c) => c.isActive)
+        .toList();
   }
 
   @override
@@ -133,7 +170,11 @@ class FirebaseAcademicRepository implements AcademicRepository {
     final doc = await _firestoreService.getDocument('academicYears', id);
     if (doc != null) {
       final updated = AcademicYear.fromJson(doc).copyWith(isCurrent: true);
-      await _firestoreService.setDocument('academicYears', id, updated.toJson());
+      await _firestoreService.setDocument(
+        'academicYears',
+        id,
+        updated.toJson(),
+      );
     }
   }
 
@@ -142,17 +183,28 @@ class FirebaseAcademicRepository implements AcademicRepository {
     final doc = await _firestoreService.getDocument('academicYears', id);
     if (doc != null) {
       final updated = AcademicYear.fromJson(doc).copyWith(isActive: isActive);
-      await _firestoreService.setDocument('academicYears', id, updated.toJson());
+      await _firestoreService.setDocument(
+        'academicYears',
+        id,
+        updated.toJson(),
+      );
     }
   }
 
   @override
-  Future<List<Semester>> getSemesters({String? courseId, String? academicYearId, String? collegeId}) async {
+  Future<List<Semester>> getSemesters({
+    String? courseId,
+    String? academicYearId,
+    String? collegeId,
+  }) async {
     final filters = _getScopeFilters(hasCollegeId: true);
     if (courseId != null) filters['courseId'] = courseId;
     if (academicYearId != null) filters['academicYearId'] = academicYearId;
     final docs = await _firestoreService.queryCollection('semesters', filters);
-    return docs.map((d) => Semester.fromJson(d)).where((c) => c.isActive).toList();
+    return docs
+        .map((d) => Semester.fromJson(d))
+        .where((c) => c.isActive)
+        .toList();
   }
 
   @override
@@ -181,12 +233,19 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<List<Section>> getSections({String? semesterId, String? courseId, String? collegeId}) async {
+  Future<List<Section>> getSections({
+    String? semesterId,
+    String? courseId,
+    String? collegeId,
+  }) async {
     final filters = _getScopeFilters(hasCollegeId: true);
     if (semesterId != null) filters['semesterId'] = semesterId;
     if (courseId != null) filters['courseId'] = courseId;
     final docs = await _firestoreService.queryCollection('sections', filters);
-    return docs.map((d) => Section.fromJson(d)).where((c) => c.isActive).toList();
+    return docs
+        .map((d) => Section.fromJson(d))
+        .where((c) => c.isActive)
+        .toList();
   }
 
   @override
@@ -217,7 +276,11 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<List<UserModel>> getHods({String? departmentId, String? search, String? status}) async {
+  Future<List<UserModel>> getHods({
+    String? departmentId,
+    String? search,
+    String? status,
+  }) async {
     return [];
   }
 
@@ -227,19 +290,34 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<void> updateHodProfile(String id, {String? name, String? email, String? phone}) async {}
+  Future<void> updateHodProfile(
+    String id, {
+    String? name,
+    String? email,
+    String? phone,
+  }) async {}
 
   @override
-  Future<void> transferHodDepartment(String id, String targetDepartmentId) async {}
+  Future<void> transferHodDepartment(
+    String id,
+    String targetDepartmentId,
+  ) async {}
 
   @override
-  Future<void> assignExistingUserToHod(String userId, String departmentId) async {}
+  Future<void> assignExistingUserToHod(
+    String userId,
+    String departmentId,
+  ) async {}
 
   @override
   Future<void> unassignHod(String id, {String? newRole}) async {}
 
   @override
-  Future<void> updateHodStatus(String id, String status, {String? reason}) async {}
+  Future<void> updateHodStatus(
+    String id,
+    String status, {
+    String? reason,
+  }) async {}
 
   @override
   Future<Map<String, dynamic>> getHodSummary(String id) async {
@@ -247,12 +325,19 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<List<Subject>> getSubjects({String? semesterId, String? courseId, String? collegeId}) async {
+  Future<List<Subject>> getSubjects({
+    String? semesterId,
+    String? courseId,
+    String? collegeId,
+  }) async {
     final filters = _getScopeFilters(hasCollegeId: true);
     if (semesterId != null) filters['semesterId'] = semesterId;
     if (courseId != null) filters['courseId'] = courseId;
     final docs = await _firestoreService.queryCollection('subjects', filters);
-    return docs.map((d) => Subject.fromJson(d)).where((c) => c.isActive).toList();
+    return docs
+        .map((d) => Subject.fromJson(d))
+        .where((c) => c.isActive)
+        .toList();
   }
 
   @override
@@ -272,11 +357,18 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<List<Faculty>> getFaculty({String? departmentId, String? search, String? status}) async {
+  Future<List<Faculty>> getFaculty({
+    String? departmentId,
+    String? search,
+    String? status,
+  }) async {
     final filters = _getScopeFilters(hasCollegeId: true);
     if (departmentId != null) filters['departmentId'] = departmentId;
     final docs = await _firestoreService.queryCollection('faculty', filters);
-    return docs.map((d) => Faculty.fromJson(d)).where((c) => c.isActive).toList();
+    return docs
+        .map((d) => Faculty.fromJson(d))
+        .where((c) => c.isActive)
+        .toList();
   }
 
   @override
@@ -285,19 +377,23 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<PaginatedResponse<Faculty>> getPaginatedFaculty({String? departmentId, int limit = 20, DocumentSnapshot? startAfter}) async {
+  Future<PaginatedResponse<Faculty>> getPaginatedFaculty({
+    String? departmentId,
+    int limit = 20,
+    DocumentSnapshot? startAfter,
+  }) async {
     final filters = _getScopeFilters(hasCollegeId: true);
     if (departmentId != null) filters['departmentId'] = departmentId;
     filters['isActive'] = true;
-    
+
     final response = await _firestoreService.queryCollectionPaginated(
-      'faculty', 
-      filters, 
-      limit: limit, 
-      orderBy: 'name', 
+      'faculty',
+      filters,
+      limit: limit,
+      orderBy: 'name',
       startAfterDocument: startAfter,
     );
-    
+
     return PaginatedResponse<Faculty>(
       data: response.data.map((d) => Faculty.fromJson(d)).toList(),
       lastDocument: response.lastDocument,
@@ -322,24 +418,32 @@ class FirebaseAcademicRepository implements AcademicRepository {
     if (academicYearId != null) filters['academicYearId'] = academicYearId;
     if (semesterId != null) filters['semesterId'] = semesterId;
     final docs = await _firestoreService.queryCollection('students', filters);
-    return docs.map((d) => Student.fromJson(d)).where((c) => c.isActive).toList();
+    return docs
+        .map((d) => Student.fromJson(d))
+        .where((c) => c.isActive)
+        .toList();
   }
 
   @override
-  Future<PaginatedResponse<Student>> getPaginatedStudents({String? sectionId, String? departmentId, int limit = 20, DocumentSnapshot? startAfter}) async {
+  Future<PaginatedResponse<Student>> getPaginatedStudents({
+    String? sectionId,
+    String? departmentId,
+    int limit = 20,
+    DocumentSnapshot? startAfter,
+  }) async {
     final filters = _getScopeFilters();
     if (sectionId != null) filters['sectionId'] = sectionId;
     if (departmentId != null) filters['departmentId'] = departmentId;
     filters['isActive'] = true;
-    
+
     final response = await _firestoreService.queryCollectionPaginated(
-      'students', 
-      filters, 
-      limit: limit, 
-      orderBy: 'name', 
+      'students',
+      filters,
+      limit: limit,
+      orderBy: 'name',
       startAfterDocument: startAfter,
     );
-    
+
     return PaginatedResponse<Student>(
       data: response.data.map((d) => Student.fromJson(d)).toList(),
       lastDocument: response.lastDocument,
@@ -361,17 +465,33 @@ class FirebaseAcademicRepository implements AcademicRepository {
 
   @override
   Future<bool> checkStudentExists(String rollNumber, String email) async {
-    final docsByRoll = await _firestoreService.queryCollectionPaginated('students', {'rollNumber': rollNumber}, limit: 1);
+    final docsByRoll = await _firestoreService.queryCollectionPaginated(
+      'students',
+      {'rollNumber': rollNumber},
+      limit: 1,
+    );
     if (docsByRoll.data.isNotEmpty) return true;
-    final docsByEmail = await _firestoreService.queryCollectionPaginated('students', {'email': email}, limit: 1);
+    final docsByEmail = await _firestoreService.queryCollectionPaginated(
+      'students',
+      {'email': email},
+      limit: 1,
+    );
     return docsByEmail.data.isNotEmpty;
   }
 
   @override
   Future<bool> checkFacultyExists(String employeeId, String email) async {
-    final docsById = await _firestoreService.queryCollectionPaginated('faculty', {'employeeId': employeeId}, limit: 1);
+    final docsById = await _firestoreService.queryCollectionPaginated(
+      'faculty',
+      {'employeeId': employeeId},
+      limit: 1,
+    );
     if (docsById.data.isNotEmpty) return true;
-    final docsByEmail = await _firestoreService.queryCollectionPaginated('faculty', {'email': email}, limit: 1);
+    final docsByEmail = await _firestoreService.queryCollectionPaginated(
+      'faculty',
+      {'email': email},
+      limit: 1,
+    );
     return docsByEmail.data.isNotEmpty;
   }
 
@@ -380,23 +500,37 @@ class FirebaseAcademicRepository implements AcademicRepository {
   @override
   Future<void> addCollege(College college) async {
     if (_currentUser != null && _currentUser.role != AppRole.superAdmin) {
-      throw const BackendPermissionException("Only Super Admin can create colleges");
+      throw const BackendPermissionException(
+        "Only Super Admin can create colleges",
+      );
     }
-    await _firestoreService.setDocument('colleges', college.id, college.toJson());
+    await _firestoreService.setDocument(
+      'colleges',
+      college.id,
+      college.toJson(),
+    );
   }
 
   @override
   Future<void> updateCollege(College college) async {
     if (_currentUser != null && _currentUser.role != AppRole.superAdmin) {
-      throw const BackendPermissionException("Only Super Admin can update colleges");
+      throw const BackendPermissionException(
+        "Only Super Admin can update colleges",
+      );
     }
-    await _firestoreService.setDocument('colleges', college.id, college.toJson());
+    await _firestoreService.setDocument(
+      'colleges',
+      college.id,
+      college.toJson(),
+    );
   }
 
   @override
   Future<void> deactivateCollege(String id) async {
     if (_currentUser != null && _currentUser.role != AppRole.superAdmin) {
-      throw const BackendPermissionException("Only Super Admin can deactivate colleges");
+      throw const BackendPermissionException(
+        "Only Super Admin can deactivate colleges",
+      );
     }
     final doc = await _firestoreService.getDocument('colleges', id);
     if (doc != null) {
@@ -408,7 +542,9 @@ class FirebaseAcademicRepository implements AcademicRepository {
   @override
   Future<void> deleteCollegePermanently(String id) async {
     if (_currentUser != null && _currentUser.role != AppRole.superAdmin) {
-      throw const BackendPermissionException("Only Super Admin can delete colleges");
+      throw const BackendPermissionException(
+        "Only Super Admin can delete colleges",
+      );
     }
     await _firestoreService.deleteDocument('colleges', id);
   }
@@ -435,27 +571,41 @@ class FirebaseAcademicRepository implements AcademicRepository {
   Future<void> updateCollegeStatus(String id, String status) async {
     final doc = await _firestoreService.getDocument('colleges', id);
     if (doc != null) {
-      final updated = College.fromJson(doc).copyWith(isActive: status == 'active');
+      final updated = College.fromJson(
+        doc,
+      ).copyWith(isActive: status == 'active');
       await _firestoreService.setDocument('colleges', id, updated.toJson());
     }
   }
 
   @override
-  Future<ProvisionAdminResult> provisionCollegeAdmin(String collegeId, Map<String, dynamic> data) async {
-    throw UnimplementedError('provisionCollegeAdmin not supported in Firebase repo. Use API repo.');
+  Future<ProvisionAdminResult> provisionCollegeAdmin(
+    String collegeId,
+    Map<String, dynamic> data,
+  ) async {
+    throw UnimplementedError(
+      'provisionCollegeAdmin not supported in Firebase repo. Use API repo.',
+    );
   }
-
 
   @override
   Future<void> addDepartment(Department department) async {
     _validateScope(department.collegeId, department.id);
-    await _firestoreService.setDocument('departments', department.id, department.toJson());
+    await _firestoreService.setDocument(
+      'departments',
+      department.id,
+      department.toJson(),
+    );
   }
 
   @override
   Future<void> updateDepartment(Department department) async {
     _validateScope(department.collegeId, department.id);
-    await _firestoreService.setDocument('departments', department.id, department.toJson());
+    await _firestoreService.setDocument(
+      'departments',
+      department.id,
+      department.toJson(),
+    );
   }
 
   @override
@@ -465,20 +615,24 @@ class FirebaseAcademicRepository implements AcademicRepository {
       final department = Department.fromJson(doc);
       _validateScope(department.collegeId, department.id);
 
-      final activeAssignments = await _firestoreService.queryCollection('facultyAssignments', {
-        'departmentId': id,
-        'isActive': true,
-      });
+      final activeAssignments = await _firestoreService.queryCollection(
+        'facultyAssignments',
+        {'departmentId': id, 'isActive': true},
+      );
       if (activeAssignments.isNotEmpty) {
-        throw const BackendValidationException("Cannot deactivate department with active faculty assignments. Reassign or remove them first.");
+        throw const BackendValidationException(
+          "Cannot deactivate department with active faculty assignments. Reassign or remove them first.",
+        );
       }
 
-      final activeStudents = await _firestoreService.queryCollection('students', {
-        'departmentId': id,
-        'isActive': true,
-      });
+      final activeStudents = await _firestoreService.queryCollection(
+        'students',
+        {'departmentId': id, 'isActive': true},
+      );
       if (activeStudents.isNotEmpty) {
-        throw const BackendValidationException("Cannot deactivate department with enrolled students. Transfer them first.");
+        throw const BackendValidationException(
+          "Cannot deactivate department with enrolled students. Transfer them first.",
+        );
       }
 
       final updated = department.copyWith(isActive: false);
@@ -490,20 +644,26 @@ class FirebaseAcademicRepository implements AcademicRepository {
 
   @override
   Future<void> addCourse(Course course) async {
-    final deptDoc = await _firestoreService.getDocument('departments', course.departmentId);
+    final deptDoc = await _firestoreService.getDocument(
+      'departments',
+      course.departmentId,
+    );
     if (deptDoc == null) throw Exception("Invalid Department");
     final collegeId = deptDoc['collegeId'] as String?;
-    
+
     _validateScope(collegeId, course.departmentId);
     await _firestoreService.setDocument('courses', course.id, course.toJson());
   }
 
   @override
   Future<void> updateCourse(Course course) async {
-    final deptDoc = await _firestoreService.getDocument('departments', course.departmentId);
+    final deptDoc = await _firestoreService.getDocument(
+      'departments',
+      course.departmentId,
+    );
     if (deptDoc == null) throw Exception("Invalid Department");
     final collegeId = deptDoc['collegeId'] as String?;
-    
+
     _validateScope(collegeId, course.departmentId);
     await _firestoreService.setDocument('courses', course.id, course.toJson());
   }
@@ -513,15 +673,23 @@ class FirebaseAcademicRepository implements AcademicRepository {
     final doc = await _firestoreService.getDocument('courses', id);
     if (doc != null) {
       final course = Course.fromJson(doc);
-      final deptDoc = await _firestoreService.getDocument('departments', course.departmentId);
+      final deptDoc = await _firestoreService.getDocument(
+        'departments',
+        course.departmentId,
+      );
       final collegeId = deptDoc?['collegeId'] as String?;
-      
+
       _validateScope(collegeId, course.departmentId);
 
       // Safety Check: Check if active semesters depend on this
-      final activeSemesters = await _firestoreService.queryCollection('semesters', {'courseId': id, 'isActive': true});
+      final activeSemesters = await _firestoreService.queryCollection(
+        'semesters',
+        {'courseId': id, 'isActive': true},
+      );
       if (activeSemesters.isNotEmpty) {
-        throw Exception("Cannot deactivate course with active semesters. Deactivate them first.");
+        throw Exception(
+          "Cannot deactivate course with active semesters. Deactivate them first.",
+        );
       }
 
       final updated = course.copyWith(isActive: false);
@@ -535,46 +703,67 @@ class FirebaseAcademicRepository implements AcademicRepository {
   Future<void> addAcademicYear(AcademicYear academicYear) async {
     _validateScope(academicYear.collegeId);
     if (!academicYear.endDate.isAfter(academicYear.startDate)) {
-      throw const BackendValidationException("End date must be after start date");
+      throw const BackendValidationException(
+        "End date must be after start date",
+      );
     }
 
     if (academicYear.isCurrent || academicYear.status == 'active') {
-      final existing = await _firestoreService.queryCollection('academicYears', {'collegeId': academicYear.collegeId});
+      final existing = await _firestoreService.queryCollection(
+        'academicYears',
+        {'collegeId': academicYear.collegeId},
+      );
       for (final doc in existing) {
         if (doc['isCurrent'] == true || doc['status'] == 'active') {
-          await _firestoreService.setDocument('academicYears', doc['id'] as String, {
-            'status': 'completed',
-            'isCurrent': false,
-            'updatedAt': DateTime.now().toIso8601String(),
-          });
+          await _firestoreService
+              .setDocument('academicYears', doc['id'] as String, {
+                'status': 'completed',
+                'isCurrent': false,
+                'updatedAt': DateTime.now().toIso8601String(),
+              });
         }
       }
     }
 
-    await _firestoreService.setDocument('academicYears', academicYear.id, academicYear.toJson());
+    await _firestoreService.setDocument(
+      'academicYears',
+      academicYear.id,
+      academicYear.toJson(),
+    );
   }
 
   @override
   Future<void> updateAcademicYear(AcademicYear academicYear) async {
     _validateScope(academicYear.collegeId);
     if (!academicYear.endDate.isAfter(academicYear.startDate)) {
-      throw const BackendValidationException("End date must be after start date");
+      throw const BackendValidationException(
+        "End date must be after start date",
+      );
     }
 
     if (academicYear.isCurrent || academicYear.status == 'active') {
-      final existing = await _firestoreService.queryCollection('academicYears', {'collegeId': academicYear.collegeId});
+      final existing = await _firestoreService.queryCollection(
+        'academicYears',
+        {'collegeId': academicYear.collegeId},
+      );
       for (final doc in existing) {
-        if (doc['id'] != academicYear.id && (doc['isCurrent'] == true || doc['status'] == 'active')) {
-          await _firestoreService.setDocument('academicYears', doc['id'] as String, {
-            'status': 'completed',
-            'isCurrent': false,
-            'updatedAt': DateTime.now().toIso8601String(),
-          });
+        if (doc['id'] != academicYear.id &&
+            (doc['isCurrent'] == true || doc['status'] == 'active')) {
+          await _firestoreService
+              .setDocument('academicYears', doc['id'] as String, {
+                'status': 'completed',
+                'isCurrent': false,
+                'updatedAt': DateTime.now().toIso8601String(),
+              });
         }
       }
     }
 
-    await _firestoreService.setDocument('academicYears', academicYear.id, academicYear.toJson());
+    await _firestoreService.setDocument(
+      'academicYears',
+      academicYear.id,
+      academicYear.toJson(),
+    );
   }
 
   @override
@@ -583,20 +772,37 @@ class FirebaseAcademicRepository implements AcademicRepository {
     if (doc != null) {
       final academicYear = AcademicYear.fromJson(doc);
       _validateScope(academicYear.collegeId);
-      final updated = academicYear.copyWith(isActive: false, status: 'archived', isCurrent: false, updatedAt: DateTime.now());
-      await _firestoreService.setDocument('academicYears', id, updated.toJson());
+      final updated = academicYear.copyWith(
+        isActive: false,
+        status: 'archived',
+        isCurrent: false,
+        updatedAt: DateTime.now(),
+      );
+      await _firestoreService.setDocument(
+        'academicYears',
+        id,
+        updated.toJson(),
+      );
     }
   }
 
   @override
-  Future<void> activateAcademicYear(String collegeId, String academicYearId) async {
+  Future<void> activateAcademicYear(
+    String collegeId,
+    String academicYearId,
+  ) async {
     _validateScope(collegeId);
-    final target = await _firestoreService.getDocument('academicYears', academicYearId);
+    final target = await _firestoreService.getDocument(
+      'academicYears',
+      academicYearId,
+    );
     if (target == null || target['collegeId'] != collegeId) {
       throw const BackendValidationException("Academic year not found");
     }
 
-    final allYears = await _firestoreService.queryCollection('academicYears', {'collegeId': collegeId});
+    final allYears = await _firestoreService.queryCollection('academicYears', {
+      'collegeId': collegeId,
+    });
     for (final doc in allYears) {
       final yId = doc['id'] as String;
       if (yId == academicYearId) {
@@ -620,87 +826,133 @@ class FirebaseAcademicRepository implements AcademicRepository {
 
   @override
   Future<void> addSemester(Semester semester) async {
-    final courseDoc = await _firestoreService.getDocument('courses', semester.courseId);
-    if (courseDoc == null) throw const BackendValidationException("Invalid Course");
+    final courseDoc = await _firestoreService.getDocument(
+      'courses',
+      semester.courseId,
+    );
+    if (courseDoc == null)
+      throw const BackendValidationException("Invalid Course");
     final departmentId = courseDoc['departmentId'] as String?;
-    
-    final deptDoc = await _firestoreService.getDocument('departments', departmentId!);
-    final collegeId = deptDoc?['collegeId'] as String?;
-    
-    _validateScope(collegeId, departmentId);
-    
-    // Validate Academic Year belongs to College
-    final ayDoc = await _firestoreService.getDocument('academicYears', semester.academicYearId);
-    if (ayDoc == null || ayDoc['collegeId'] != collegeId) throw const BackendValidationException("Invalid Academic Year for this College");
 
-    if (semester.startDate != null && semester.endDate != null && !semester.endDate!.isAfter(semester.startDate!)) {
-      throw const BackendValidationException("End date must be after start date");
+    final deptDoc = await _firestoreService.getDocument(
+      'departments',
+      departmentId!,
+    );
+    final collegeId = deptDoc?['collegeId'] as String?;
+
+    _validateScope(collegeId, departmentId);
+
+    // Validate Academic Year belongs to College
+    final ayDoc = await _firestoreService.getDocument(
+      'academicYears',
+      semester.academicYearId,
+    );
+    if (ayDoc == null || ayDoc['collegeId'] != collegeId)
+      throw const BackendValidationException(
+        "Invalid Academic Year for this College",
+      );
+
+    if (semester.startDate != null &&
+        semester.endDate != null &&
+        !semester.endDate!.isAfter(semester.startDate!)) {
+      throw const BackendValidationException(
+        "End date must be after start date",
+      );
     }
 
     // Prevent duplicate semester number inside same course and academic year
-    final existingSemesters = await _firestoreService.queryCollection('semesters', {
-      'courseId': semester.courseId,
-      'academicYearId': semester.academicYearId,
-      'number': semester.number,
-      'isActive': true,
-    });
+    final existingSemesters = await _firestoreService
+        .queryCollection('semesters', {
+          'courseId': semester.courseId,
+          'academicYearId': semester.academicYearId,
+          'number': semester.number,
+          'isActive': true,
+        });
     if (existingSemesters.isNotEmpty) {
-      throw const BackendValidationException("Duplicate semester number inside same course and academic year");
+      throw const BackendValidationException(
+        "Duplicate semester number inside same course and academic year",
+      );
     }
 
     // Single active semester per course & academic year
     if (semester.isCurrent || semester.status == 'active') {
-      final activeInCourse = await _firestoreService.queryCollection('semesters', {
-        'courseId': semester.courseId,
-        'academicYearId': semester.academicYearId,
-      });
+      final activeInCourse = await _firestoreService.queryCollection(
+        'semesters',
+        {
+          'courseId': semester.courseId,
+          'academicYearId': semester.academicYearId,
+        },
+      );
       for (final doc in activeInCourse) {
         if (doc['isCurrent'] == true || doc['status'] == 'active') {
-          await _firestoreService.setDocument('semesters', doc['id'] as String, {
-            'status': 'completed',
-            'isCurrent': false,
-            'updatedAt': DateTime.now().toIso8601String(),
-          });
+          await _firestoreService
+              .setDocument('semesters', doc['id'] as String, {
+                'status': 'completed',
+                'isCurrent': false,
+                'updatedAt': DateTime.now().toIso8601String(),
+              });
         }
       }
     }
 
-    await _firestoreService.setDocument('semesters', semester.id, semester.copyWith(
-      collegeId: collegeId ?? '',
-      departmentId: departmentId,
-      createdAt: semester.createdAt ?? DateTime.now(),
-      updatedAt: DateTime.now(),
-    ).toJson());
+    await _firestoreService.setDocument(
+      'semesters',
+      semester.id,
+      semester
+          .copyWith(
+            collegeId: collegeId ?? '',
+            departmentId: departmentId,
+            createdAt: semester.createdAt ?? DateTime.now(),
+            updatedAt: DateTime.now(),
+          )
+          .toJson(),
+    );
   }
 
   @override
   Future<void> updateSemester(Semester semester) async {
-    final courseDoc = await _firestoreService.getDocument('courses', semester.courseId);
-    if (courseDoc == null) throw const BackendValidationException("Invalid Course");
+    final courseDoc = await _firestoreService.getDocument(
+      'courses',
+      semester.courseId,
+    );
+    if (courseDoc == null)
+      throw const BackendValidationException("Invalid Course");
     final departmentId = courseDoc['departmentId'] as String?;
-    
-    final deptDoc = await _firestoreService.getDocument('departments', departmentId!);
+
+    final deptDoc = await _firestoreService.getDocument(
+      'departments',
+      departmentId!,
+    );
     final collegeId = deptDoc?['collegeId'] as String?;
-    
+
     _validateScope(collegeId, departmentId);
 
     if (semester.isCurrent || semester.status == 'active') {
-      final activeInCourse = await _firestoreService.queryCollection('semesters', {
-        'courseId': semester.courseId,
-        'academicYearId': semester.academicYearId,
-      });
+      final activeInCourse = await _firestoreService.queryCollection(
+        'semesters',
+        {
+          'courseId': semester.courseId,
+          'academicYearId': semester.academicYearId,
+        },
+      );
       for (final doc in activeInCourse) {
-        if (doc['id'] != semester.id && (doc['isCurrent'] == true || doc['status'] == 'active')) {
-          await _firestoreService.setDocument('semesters', doc['id'] as String, {
-            'status': 'completed',
-            'isCurrent': false,
-            'updatedAt': DateTime.now().toIso8601String(),
-          });
+        if (doc['id'] != semester.id &&
+            (doc['isCurrent'] == true || doc['status'] == 'active')) {
+          await _firestoreService
+              .setDocument('semesters', doc['id'] as String, {
+                'status': 'completed',
+                'isCurrent': false,
+                'updatedAt': DateTime.now().toIso8601String(),
+              });
         }
       }
     }
 
-    await _firestoreService.setDocument('semesters', semester.id, semester.copyWith(updatedAt: DateTime.now()).toJson());
+    await _firestoreService.setDocument(
+      'semesters',
+      semester.id,
+      semester.copyWith(updatedAt: DateTime.now()).toJson(),
+    );
   }
 
   @override
@@ -708,28 +960,49 @@ class FirebaseAcademicRepository implements AcademicRepository {
     final doc = await _firestoreService.getDocument('semesters', id);
     if (doc != null) {
       final sem = Semester.fromJson(doc);
-      final courseDoc = await _firestoreService.getDocument('courses', sem.courseId);
+      final courseDoc = await _firestoreService.getDocument(
+        'courses',
+        sem.courseId,
+      );
       final departmentId = courseDoc?['departmentId'] as String?;
-      final deptDoc = await _firestoreService.getDocument('departments', departmentId!);
+      final deptDoc = await _firestoreService.getDocument(
+        'departments',
+        departmentId!,
+      );
       final collegeId = deptDoc?['collegeId'] as String?;
-      
+
       _validateScope(collegeId, departmentId);
 
       // Safety Check
-      final activeSections = await _firestoreService.queryCollection('sections', {'semesterId': id, 'isActive': true});
+      final activeSections = await _firestoreService.queryCollection(
+        'sections',
+        {'semesterId': id, 'isActive': true},
+      );
       if (activeSections.isNotEmpty) {
-        throw const BackendValidationException("Cannot deactivate semester with active sections.");
+        throw const BackendValidationException(
+          "Cannot deactivate semester with active sections.",
+        );
       }
 
-      final updated = sem.copyWith(isActive: false, status: 'archived', isCurrent: false, updatedAt: DateTime.now());
+      final updated = sem.copyWith(
+        isActive: false,
+        status: 'archived',
+        isCurrent: false,
+        updatedAt: DateTime.now(),
+      );
       await _firestoreService.setDocument('semesters', id, updated.toJson());
     }
   }
 
   @override
-  Future<void> activateSemester(String collegeId, String courseId, String semesterId) async {
+  Future<void> activateSemester(
+    String collegeId,
+    String courseId,
+    String semesterId,
+  ) async {
     final doc = await _firestoreService.getDocument('semesters', semesterId);
-    if (doc == null) throw const BackendValidationException("Semester not found");
+    if (doc == null)
+      throw const BackendValidationException("Semester not found");
     final targetSem = Semester.fromJson(doc);
     _validateScope(collegeId, targetSem.departmentId);
 
@@ -760,7 +1033,8 @@ class FirebaseAcademicRepository implements AcademicRepository {
   @override
   Future<void> completeSemester(String semesterId) async {
     final doc = await _firestoreService.getDocument('semesters', semesterId);
-    if (doc == null) throw const BackendValidationException("Semester not found");
+    if (doc == null)
+      throw const BackendValidationException("Semester not found");
     final sem = Semester.fromJson(doc);
     _validateScope(sem.collegeId, sem.departmentId);
 
@@ -775,45 +1049,86 @@ class FirebaseAcademicRepository implements AcademicRepository {
 
   @override
   Future<void> addSection(Section section) async {
-    final semDoc = await _firestoreService.getDocument('semesters', section.semesterId);
-    if (semDoc == null) throw const BackendValidationException("Invalid Semester");
-    final courseDoc = await _firestoreService.getDocument('courses', semDoc['courseId']);
-    final deptDoc = await _firestoreService.getDocument('departments', courseDoc?['departmentId']);
-    
-    _validateScope(deptDoc?['collegeId'] as String?, courseDoc?['departmentId'] as String?);
+    final semDoc = await _firestoreService.getDocument(
+      'semesters',
+      section.semesterId,
+    );
+    if (semDoc == null)
+      throw const BackendValidationException("Invalid Semester");
+    final courseDoc = await _firestoreService.getDocument(
+      'courses',
+      semDoc['courseId'],
+    );
+    final deptDoc = await _firestoreService.getDocument(
+      'departments',
+      courseDoc?['departmentId'],
+    );
+
+    _validateScope(
+      deptDoc?['collegeId'] as String?,
+      courseDoc?['departmentId'] as String?,
+    );
 
     if (section.capacity <= 0) {
-      throw const BackendValidationException("Section capacity must be greater than 0");
+      throw const BackendValidationException(
+        "Section capacity must be greater than 0",
+      );
     }
 
-    await _firestoreService.setDocument('sections', section.id, section.copyWith(
-      collegeId: deptDoc?['collegeId'] as String? ?? '',
-      departmentId: courseDoc?['departmentId'] as String? ?? '',
-      courseId: semDoc['courseId'] as String? ?? '',
-      academicYearId: semDoc['academicYearId'] as String? ?? '',
-      createdAt: section.createdAt ?? DateTime.now(),
-      updatedAt: DateTime.now(),
-    ).toJson());
+    await _firestoreService.setDocument(
+      'sections',
+      section.id,
+      section
+          .copyWith(
+            collegeId: deptDoc?['collegeId'] as String? ?? '',
+            departmentId: courseDoc?['departmentId'] as String? ?? '',
+            courseId: semDoc['courseId'] as String? ?? '',
+            academicYearId: semDoc['academicYearId'] as String? ?? '',
+            createdAt: section.createdAt ?? DateTime.now(),
+            updatedAt: DateTime.now(),
+          )
+          .toJson(),
+    );
   }
 
   @override
   Future<void> updateSection(Section section) async {
-    final semDoc = await _firestoreService.getDocument('semesters', section.semesterId);
-    if (semDoc == null) throw const BackendValidationException("Invalid Semester");
-    final courseDoc = await _firestoreService.getDocument('courses', semDoc['courseId']);
-    final deptDoc = await _firestoreService.getDocument('departments', courseDoc?['departmentId']);
-    
-    _validateScope(deptDoc?['collegeId'] as String?, courseDoc?['departmentId'] as String?);
-    await _firestoreService.setDocument('sections', section.id, section.copyWith(updatedAt: DateTime.now()).toJson());
+    final semDoc = await _firestoreService.getDocument(
+      'semesters',
+      section.semesterId,
+    );
+    if (semDoc == null)
+      throw const BackendValidationException("Invalid Semester");
+    final courseDoc = await _firestoreService.getDocument(
+      'courses',
+      semDoc['courseId'],
+    );
+    final deptDoc = await _firestoreService.getDocument(
+      'departments',
+      courseDoc?['departmentId'],
+    );
+
+    _validateScope(
+      deptDoc?['collegeId'] as String?,
+      courseDoc?['departmentId'] as String?,
+    );
+    await _firestoreService.setDocument(
+      'sections',
+      section.id,
+      section.copyWith(updatedAt: DateTime.now()).toJson(),
+    );
   }
 
   @override
   Future<void> updateSectionCapacity(String sectionId, int newCapacity) async {
     if (newCapacity <= 0) {
-      throw const BackendValidationException("Section capacity must be greater than 0");
+      throw const BackendValidationException(
+        "Section capacity must be greater than 0",
+      );
     }
     final doc = await _firestoreService.getDocument('sections', sectionId);
-    if (doc == null) throw const BackendValidationException("Section not found");
+    if (doc == null)
+      throw const BackendValidationException("Section not found");
     final section = Section.fromJson(doc);
     _validateScope(section.collegeId, section.departmentId);
 
@@ -826,7 +1141,8 @@ class FirebaseAcademicRepository implements AcademicRepository {
   @override
   Future<SectionCapacityInfo> getSectionCapacityInfo(String sectionId) async {
     final doc = await _firestoreService.getDocument('sections', sectionId);
-    if (doc == null) throw const BackendValidationException("Section not found");
+    if (doc == null)
+      throw const BackendValidationException("Section not found");
     final section = Section.fromJson(doc);
 
     final activeStudents = await _firestoreService.queryCollection('students', {
@@ -843,15 +1159,22 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<List<SectionTransferValidationResult>> validateBulkSectionTransfer(List<String> studentIds, String targetSectionId) async {
-    final doc = await _firestoreService.getDocument('sections', targetSectionId);
-    if (doc == null) throw const BackendValidationException("Target section does not exist");
+  Future<List<SectionTransferValidationResult>> validateBulkSectionTransfer(
+    List<String> studentIds,
+    String targetSectionId,
+  ) async {
+    final doc = await _firestoreService.getDocument(
+      'sections',
+      targetSectionId,
+    );
+    if (doc == null)
+      throw const BackendValidationException("Target section does not exist");
     final targetSection = Section.fromJson(doc);
 
-    final currentStudents = await _firestoreService.queryCollection('students', {
-      'sectionId': targetSectionId,
-      'isActive': true,
-    });
+    final currentStudents = await _firestoreService.queryCollection(
+      'students',
+      {'sectionId': targetSectionId, 'isActive': true},
+    );
     final availableSeats = targetSection.capacity - currentStudents.length;
     int eligibleAssigned = 0;
     final List<SectionTransferValidationResult> results = [];
@@ -859,45 +1182,119 @@ class FirebaseAcademicRepository implements AcademicRepository {
     for (final id in studentIds) {
       final sDoc = await _firestoreService.getDocument('students', id);
       if (sDoc == null) {
-        results.add(SectionTransferValidationResult(studentId: id, studentName: 'Unknown', rollNumber: 'N/A', canMove: false, reason: 'Student not found'));
+        results.add(
+          SectionTransferValidationResult(
+            studentId: id,
+            studentName: 'Unknown',
+            rollNumber: 'N/A',
+            canMove: false,
+            reason: 'Student not found',
+          ),
+        );
         continue;
       }
       final student = Student.fromJson(sDoc);
       if (student.collegeId != targetSection.collegeId) {
-        results.add(SectionTransferValidationResult(studentId: student.id, studentName: student.name, rollNumber: student.rollNumber, canMove: false, reason: 'Cross-college transfer is strictly prohibited'));
+        results.add(
+          SectionTransferValidationResult(
+            studentId: student.id,
+            studentName: student.name,
+            rollNumber: student.rollNumber,
+            canMove: false,
+            reason: 'Cross-college transfer is strictly prohibited',
+          ),
+        );
         continue;
       }
-      if (targetSection.departmentId.isNotEmpty && student.departmentId.isNotEmpty && student.departmentId != targetSection.departmentId) {
-        results.add(SectionTransferValidationResult(studentId: student.id, studentName: student.name, rollNumber: student.rollNumber, canMove: false, reason: 'Cross-department transfer is not allowed. Use department transfer'));
+      if (targetSection.departmentId.isNotEmpty &&
+          student.departmentId.isNotEmpty &&
+          student.departmentId != targetSection.departmentId) {
+        results.add(
+          SectionTransferValidationResult(
+            studentId: student.id,
+            studentName: student.name,
+            rollNumber: student.rollNumber,
+            canMove: false,
+            reason:
+                'Cross-department transfer is not allowed. Use department transfer',
+          ),
+        );
         continue;
       }
-      if (targetSection.semesterId.isNotEmpty && student.semesterId.isNotEmpty && student.semesterId != targetSection.semesterId) {
-        results.add(SectionTransferValidationResult(studentId: student.id, studentName: student.name, rollNumber: student.rollNumber, canMove: false, reason: 'Student semester does not match target section semester'));
+      if (targetSection.semesterId.isNotEmpty &&
+          student.semesterId.isNotEmpty &&
+          student.semesterId != targetSection.semesterId) {
+        results.add(
+          SectionTransferValidationResult(
+            studentId: student.id,
+            studentName: student.name,
+            rollNumber: student.rollNumber,
+            canMove: false,
+            reason: 'Student semester does not match target section semester',
+          ),
+        );
         continue;
       }
       if (student.sectionId == targetSectionId) {
-        results.add(SectionTransferValidationResult(studentId: student.id, studentName: student.name, rollNumber: student.rollNumber, canMove: false, reason: 'Student is already enrolled in this section'));
+        results.add(
+          SectionTransferValidationResult(
+            studentId: student.id,
+            studentName: student.name,
+            rollNumber: student.rollNumber,
+            canMove: false,
+            reason: 'Student is already enrolled in this section',
+          ),
+        );
         continue;
       }
       if (eligibleAssigned >= availableSeats) {
-        results.add(SectionTransferValidationResult(studentId: student.id, studentName: student.name, rollNumber: student.rollNumber, canMove: false, reason: 'Target section is full (Available seats: $availableSeats)'));
+        results.add(
+          SectionTransferValidationResult(
+            studentId: student.id,
+            studentName: student.name,
+            rollNumber: student.rollNumber,
+            canMove: false,
+            reason: 'Target section is full (Available seats: $availableSeats)',
+          ),
+        );
         continue;
       }
 
       eligibleAssigned++;
-      results.add(SectionTransferValidationResult(studentId: student.id, studentName: student.name, rollNumber: student.rollNumber, canMove: true));
+      results.add(
+        SectionTransferValidationResult(
+          studentId: student.id,
+          studentName: student.name,
+          rollNumber: student.rollNumber,
+          canMove: true,
+        ),
+      );
     }
     return results;
   }
 
   @override
-  Future<void> executeBulkSectionTransfer({required List<String> studentIds, required String targetSectionId}) async {
-    final validations = await validateBulkSectionTransfer(studentIds, targetSectionId);
-    final eligible = validations.where((v) => v.canMove).map((v) => v.studentId).toList();
+  Future<void> executeBulkSectionTransfer({
+    required List<String> studentIds,
+    required String targetSectionId,
+  }) async {
+    final validations = await validateBulkSectionTransfer(
+      studentIds,
+      targetSectionId,
+    );
+    final eligible = validations
+        .where((v) => v.canMove)
+        .map((v) => v.studentId)
+        .toList();
     if (eligible.isEmpty) {
-      throw const BackendValidationException("No eligible students can be transferred");
+      throw const BackendValidationException(
+        "No eligible students can be transferred",
+      );
     }
-    await transferStudentsSection(studentIds: eligible, targetSectionId: targetSectionId);
+    await transferStudentsSection(
+      studentIds: eligible,
+      targetSectionId: targetSectionId,
+    );
   }
 
   @override
@@ -905,19 +1302,40 @@ class FirebaseAcademicRepository implements AcademicRepository {
     final doc = await _firestoreService.getDocument('sections', id);
     if (doc != null) {
       final section = Section.fromJson(doc);
-      final semDoc = await _firestoreService.getDocument('semesters', section.semesterId);
-      final courseDoc = await _firestoreService.getDocument('courses', semDoc?['courseId']);
-      final deptDoc = await _firestoreService.getDocument('departments', courseDoc?['departmentId']);
-      
-      _validateScope(deptDoc?['collegeId'] as String?, courseDoc?['departmentId'] as String?);
+      final semDoc = await _firestoreService.getDocument(
+        'semesters',
+        section.semesterId,
+      );
+      final courseDoc = await _firestoreService.getDocument(
+        'courses',
+        semDoc?['courseId'],
+      );
+      final deptDoc = await _firestoreService.getDocument(
+        'departments',
+        courseDoc?['departmentId'],
+      );
+
+      _validateScope(
+        deptDoc?['collegeId'] as String?,
+        courseDoc?['departmentId'] as String?,
+      );
 
       // Safety check: Cannot deactivate if students are in it
-      final activeStudents = await _firestoreService.queryCollection('students', {'sectionId': id, 'isActive': true});
+      final activeStudents = await _firestoreService.queryCollection(
+        'students',
+        {'sectionId': id, 'isActive': true},
+      );
       if (activeStudents.isNotEmpty) {
-        throw const BackendValidationException("Cannot deactivate section with active students.");
+        throw const BackendValidationException(
+          "Cannot deactivate section with active students.",
+        );
       }
 
-      final updated = section.copyWith(isActive: false, status: 'archived', updatedAt: DateTime.now());
+      final updated = section.copyWith(
+        isActive: false,
+        status: 'archived',
+        updatedAt: DateTime.now(),
+      );
       await _firestoreService.setDocument('sections', id, updated.toJson());
     }
   }
@@ -926,27 +1344,47 @@ class FirebaseAcademicRepository implements AcademicRepository {
 
   @override
   Future<Subject> addSubject(Subject subject) async {
-    final deptDoc = await _firestoreService.getDocument('departments', subject.departmentId);
+    final deptDoc = await _firestoreService.getDocument(
+      'departments',
+      subject.departmentId,
+    );
     if (deptDoc == null) throw Exception("Invalid Department");
-    
-    final semDoc = await _firestoreService.getDocument('semesters', subject.semesterId);
+
+    final semDoc = await _firestoreService.getDocument(
+      'semesters',
+      subject.semesterId,
+    );
     if (semDoc == null) throw Exception("Invalid Semester");
-    
+
     _validateScope(deptDoc['collegeId'] as String?, subject.departmentId);
-    await _firestoreService.setDocument('subjects', subject.id, subject.toJson());
+    await _firestoreService.setDocument(
+      'subjects',
+      subject.id,
+      subject.toJson(),
+    );
     return subject;
   }
 
   @override
   Future<void> updateSubject(Subject subject) async {
-    final deptDoc = await _firestoreService.getDocument('departments', subject.departmentId);
+    final deptDoc = await _firestoreService.getDocument(
+      'departments',
+      subject.departmentId,
+    );
     if (deptDoc == null) throw Exception("Invalid Department");
-    
-    final semDoc = await _firestoreService.getDocument('semesters', subject.semesterId);
+
+    final semDoc = await _firestoreService.getDocument(
+      'semesters',
+      subject.semesterId,
+    );
     if (semDoc == null) throw Exception("Invalid Semester");
-    
+
     _validateScope(deptDoc['collegeId'] as String?, subject.departmentId);
-    await _firestoreService.setDocument('subjects', subject.id, subject.toJson());
+    await _firestoreService.setDocument(
+      'subjects',
+      subject.id,
+      subject.toJson(),
+    );
   }
 
   @override
@@ -954,7 +1392,10 @@ class FirebaseAcademicRepository implements AcademicRepository {
     final doc = await _firestoreService.getDocument('subjects', id);
     if (doc != null) {
       final subject = Subject.fromJson(doc);
-      final deptDoc = await _firestoreService.getDocument('departments', subject.departmentId);
+      final deptDoc = await _firestoreService.getDocument(
+        'departments',
+        subject.departmentId,
+      );
       _validateScope(deptDoc?['collegeId'] as String?, subject.departmentId);
       final updated = subject.copyWith(isActive: false);
       await _firestoreService.setDocument('subjects', id, updated.toJson());
@@ -966,12 +1407,20 @@ class FirebaseAcademicRepository implements AcademicRepository {
   @override
   Future<void> addFaculty(Faculty faculty) async {
     _validateScope(faculty.collegeId, faculty.departmentId);
-    await _firestoreService.setDocument('faculty', faculty.id, faculty.toJson());
+    await _firestoreService.setDocument(
+      'faculty',
+      faculty.id,
+      faculty.toJson(),
+    );
   }
 
   @override
-  Future<ProvisionFacultyResult> provisionFaculty(ProvisionFacultyRequest request) async {
-    throw UnimplementedError('Faculty provisioning is only handled via ApiAcademicRepository in production');
+  Future<ProvisionFacultyResult> provisionFaculty(
+    ProvisionFacultyRequest request,
+  ) async {
+    throw UnimplementedError(
+      'Faculty provisioning is only handled via ApiAcademicRepository in production',
+    );
   }
 
   @override
@@ -980,53 +1429,84 @@ class FirebaseAcademicRepository implements AcademicRepository {
     final doc = await _firestoreService.getDocument('faculty', faculty.id);
     if (doc != null) {
       final existing = Faculty.fromJson(doc);
-      if (existing.departmentId.isNotEmpty && existing.departmentId != faculty.departmentId) {
+      if (existing.departmentId.isNotEmpty &&
+          existing.departmentId != faculty.departmentId) {
         // Invalidate old assignments
-        final oldAssignments = await _firestoreService.queryCollection('facultyAssignments', {
-          'facultyId': faculty.id,
-          'departmentId': existing.departmentId,
-          'isActive': true,
-        });
+        final oldAssignments = await _firestoreService
+            .queryCollection('facultyAssignments', {
+              'facultyId': faculty.id,
+              'departmentId': existing.departmentId,
+              'isActive': true,
+            });
         for (final a in oldAssignments) {
           final assignment = FacultyAssignment.fromJson(a);
-          final updated = assignment.copyWith(isActive: false, updatedAt: DateTime.now());
-          await _firestoreService.setDocument('facultyAssignments', assignment.id, updated.toJson());
+          final updated = assignment.copyWith(
+            isActive: false,
+            updatedAt: DateTime.now(),
+          );
+          await _firestoreService.setDocument(
+            'facultyAssignments',
+            assignment.id,
+            updated.toJson(),
+          );
         }
         final updatedFaculty = faculty.copyWith(subjectIds: [], sectionIds: []);
-        await _firestoreService.setDocument('faculty', faculty.id, updatedFaculty.toJson());
+        await _firestoreService.setDocument(
+          'faculty',
+          faculty.id,
+          updatedFaculty.toJson(),
+        );
         return;
       }
     }
-    await _firestoreService.setDocument('faculty', faculty.id, faculty.toJson());
+    await _firestoreService.setDocument(
+      'faculty',
+      faculty.id,
+      faculty.toJson(),
+    );
   }
 
   @override
-  Future<void> transferFacultyDepartment(String facultyId, String newDepartmentId) async {
+  Future<void> transferFacultyDepartment(
+    String facultyId,
+    String newDepartmentId,
+  ) async {
     final doc = await _firestoreService.getDocument('faculty', facultyId);
     if (doc == null) throw Exception("Faculty not found");
     final faculty = Faculty.fromJson(doc);
     _validateScope(faculty.collegeId);
 
-    final targetDeptDoc = await _firestoreService.getDocument('departments', newDepartmentId);
+    final targetDeptDoc = await _firestoreService.getDocument(
+      'departments',
+      newDepartmentId,
+    );
     if (targetDeptDoc == null) throw Exception("Target department not found");
     final targetDept = Department.fromJson(targetDeptDoc);
 
     if (faculty.collegeId != targetDept.collegeId) {
-      throw const BackendPermissionException("Cannot transfer faculty to a different college");
+      throw const BackendPermissionException(
+        "Cannot transfer faculty to a different college",
+      );
     }
 
     final oldDeptId = faculty.departmentId;
     if (oldDeptId != newDepartmentId) {
       // Invalidate old assignments
-      final oldAssignments = await _firestoreService.queryCollection('facultyAssignments', {
-        'facultyId': facultyId,
-        'departmentId': oldDeptId,
-        'isActive': true,
-      });
+      final oldAssignments = await _firestoreService.queryCollection(
+        'facultyAssignments',
+        {'facultyId': facultyId, 'departmentId': oldDeptId, 'isActive': true},
+      );
       for (final a in oldAssignments) {
         final assignment = FacultyAssignment.fromJson(a);
-        final updated = assignment.copyWith(isActive: false, updatedAt: DateTime.now());
-        await _firestoreService.setDocument('facultyAssignments', assignment.id, updated.toJson());
+        final updated = assignment.copyWith(
+          isActive: false,
+          updatedAt: DateTime.now(),
+        );
+        await _firestoreService.setDocument(
+          'facultyAssignments',
+          assignment.id,
+          updated.toJson(),
+        );
       }
 
       // Update faculty document
@@ -1035,14 +1515,22 @@ class FirebaseAcademicRepository implements AcademicRepository {
         subjectIds: [],
         sectionIds: [],
       );
-      await _firestoreService.setDocument('faculty', facultyId, updatedFaculty.toJson());
+      await _firestoreService.setDocument(
+        'faculty',
+        facultyId,
+        updatedFaculty.toJson(),
+      );
 
       // Update user document if present
       final userDoc = await _firestoreService.getDocument('users', facultyId);
       if (userDoc != null) {
         final user = UserModel.fromJson(userDoc);
         final updatedUser = user.copyWith(departmentId: newDepartmentId);
-        await _firestoreService.setDocument('users', facultyId, updatedUser.toJson());
+        await _firestoreService.setDocument(
+          'users',
+          facultyId,
+          updatedUser.toJson(),
+        );
       }
     }
   }
@@ -1059,13 +1547,24 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<void> bulkAssignSubjectsToFaculty(String facultyId, List<String> subjectIds, List<String> sectionIds) async {
+  Future<void> bulkAssignSubjectsToFaculty(
+    String facultyId,
+    List<String> subjectIds,
+    List<String> sectionIds,
+  ) async {
     final doc = await _firestoreService.getDocument('faculty', facultyId);
     if (doc != null) {
       final faculty = Faculty.fromJson(doc);
       _validateScope(faculty.collegeId, faculty.departmentId);
-      final updated = faculty.copyWith(subjectIds: subjectIds, sectionIds: sectionIds);
-      await _firestoreService.setDocument('faculty', facultyId, updated.toJson());
+      final updated = faculty.copyWith(
+        subjectIds: subjectIds,
+        sectionIds: sectionIds,
+      );
+      await _firestoreService.setDocument(
+        'faculty',
+        facultyId,
+        updated.toJson(),
+      );
     }
   }
 
@@ -1077,7 +1576,9 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<ProvisionStudentResult> provisionStudent(ProvisionStudentRequest request) async {
+  Future<ProvisionStudentResult> provisionStudent(
+    ProvisionStudentRequest request,
+  ) async {
     final student = Student(
       id: 'stu_${DateTime.now().millisecondsSinceEpoch}',
       collegeId: 'c1',
@@ -1096,8 +1597,12 @@ class FirebaseAcademicRepository implements AcademicRepository {
       parentPhone: request.parentPhone,
       bloodGroup: request.bloodGroup,
       address: request.address,
-      dateOfBirth: request.dateOfBirth != null ? DateTime.tryParse(request.dateOfBirth!) : null,
-      admissionDate: request.admissionDate != null ? DateTime.tryParse(request.admissionDate!) : null,
+      dateOfBirth: request.dateOfBirth != null
+          ? DateTime.tryParse(request.dateOfBirth!)
+          : null,
+      admissionDate: request.admissionDate != null
+          ? DateTime.tryParse(request.admissionDate!)
+          : null,
       isActive: true,
       accountStatus: AccountStatus.pendingActivation,
     );
@@ -1125,11 +1630,20 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<void> transferStudentDepartment(String studentId, String newDepartmentId) async {
+  Future<void> transferStudentDepartment(
+    String studentId,
+    String newDepartmentId,
+  ) async {
     final doc = await _firestoreService.getDocument('students', studentId);
     if (doc != null) {
-      final updated = Student.fromJson(doc).copyWith(departmentId: newDepartmentId);
-      await _firestoreService.setDocument('students', studentId, updated.toJson());
+      final updated = Student.fromJson(
+        doc,
+      ).copyWith(departmentId: newDepartmentId);
+      await _firestoreService.setDocument(
+        'students',
+        studentId,
+        updated.toJson(),
+      );
     }
   }
 
@@ -1159,12 +1673,18 @@ class FirebaseAcademicRepository implements AcademicRepository {
         cohort: cohort,
         academicStage: academicStage,
       );
-      await _firestoreService.setDocument('students', studentId, updated.toJson());
+      await _firestoreService.setDocument(
+        'students',
+        studentId,
+        updated.toJson(),
+      );
     }
   }
 
   @override
-  Future<Map<String, dynamic>?> getStudentCurrentEnrollment(String studentId) async {
+  Future<Map<String, dynamic>?> getStudentCurrentEnrollment(
+    String studentId,
+  ) async {
     final doc = await _firestoreService.getDocument('students', studentId);
     if (doc == null) return null;
     final student = Student.fromJson(doc);
@@ -1185,7 +1705,11 @@ class FirebaseAcademicRepository implements AcademicRepository {
   @override
   Future<void> updateStudent(Student student) async {
     _validateScope(student.collegeId, student.departmentId);
-    await _firestoreService.setDocument('students', student.id, student.toJson());
+    await _firestoreService.setDocument(
+      'students',
+      student.id,
+      student.toJson(),
+    );
   }
 
   @override
@@ -1198,8 +1722,15 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<void> bulkPromoteStudents(List<String> studentIds, String newSemesterId, String newSectionId) async {
-    final semDoc = await _firestoreService.getDocument('semesters', newSemesterId);
+  Future<void> bulkPromoteStudents(
+    List<String> studentIds,
+    String newSemesterId,
+    String newSectionId,
+  ) async {
+    final semDoc = await _firestoreService.getDocument(
+      'semesters',
+      newSemesterId,
+    );
     final targetAcademicYearId = semDoc?['academicYearId'] as String? ?? '';
     await promoteStudents(
       studentIds: studentIds,
@@ -1210,27 +1741,45 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<void> bulkTransferStudents(List<String> studentIds, String newSectionId) async {
-    await transferStudentsSection(studentIds: studentIds, targetSectionId: newSectionId);
+  Future<void> bulkTransferStudents(
+    List<String> studentIds,
+    String newSectionId,
+  ) async {
+    await transferStudentsSection(
+      studentIds: studentIds,
+      targetSectionId: newSectionId,
+    );
   }
 
   @override
-  Future<String> generateRollNumber(String collegeId, String courseId, String academicYearId) async {
+  Future<String> generateRollNumber(
+    String collegeId,
+    String courseId,
+    String academicYearId,
+  ) async {
     _validateScope(collegeId);
     String courseCode = 'STU';
     if (courseId.isNotEmpty) {
-      final courseDoc = await _firestoreService.getDocument('courses', courseId);
+      final courseDoc = await _firestoreService.getDocument(
+        'courses',
+        courseId,
+      );
       if (courseDoc != null) {
         final code = courseDoc['code'] as String?;
         if (code != null && code.isNotEmpty) {
-          courseCode = code.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toUpperCase();
+          courseCode = code
+              .replaceAll(RegExp(r'[^a-zA-Z0-9]'), '')
+              .toUpperCase();
         }
       }
     }
 
     String yearStr = DateTime.now().year.toString();
     if (academicYearId.isNotEmpty) {
-      final yearDoc = await _firestoreService.getDocument('academicYears', academicYearId);
+      final yearDoc = await _firestoreService.getDocument(
+        'academicYears',
+        academicYearId,
+      );
       if (yearDoc != null) {
         final yName = yearDoc['name'] as String? ?? '';
         final match = RegExp(r'\d{4}').firstMatch(yName);
@@ -1241,9 +1790,10 @@ class FirebaseAcademicRepository implements AcademicRepository {
     }
 
     final prefix = '$courseCode-$yearStr-';
-    final existingStudents = await _firestoreService.queryCollection('students', {
-      'collegeId': collegeId,
-    });
+    final existingStudents = await _firestoreService.queryCollection(
+      'students',
+      {'collegeId': collegeId},
+    );
 
     int maxSeq = 0;
     for (final doc in existingStudents) {
@@ -1269,46 +1819,79 @@ class FirebaseAcademicRepository implements AcademicRepository {
       if (_currentUser.role != AppRole.superAdmin &&
           _currentUser.role != AppRole.collegeAdmin &&
           _currentUser.role != AppRole.hod) {
-        throw const BackendPermissionException('Only Super Admin, College Admin, or HOD can admit students');
+        throw const BackendPermissionException(
+          'Only Super Admin, College Admin, or HOD can admit students',
+        );
       }
 
-      if (_currentUser.role == AppRole.hod && _currentUser.departmentId != student.departmentId) {
-        throw const BackendPermissionException('HOD can only admit students to their own department');
+      if (_currentUser.role == AppRole.hod &&
+          _currentUser.departmentId != student.departmentId) {
+        throw const BackendPermissionException(
+          'HOD can only admit students to their own department',
+        );
       }
     }
 
     // Validation: Department, Course, Semester, Section existence
     if (student.departmentId.isNotEmpty) {
-      final deptDoc = await _firestoreService.getDocument('departments', student.departmentId);
-      if (deptDoc == null) throw const BackendValidationException('Department does not exist');
+      final deptDoc = await _firestoreService.getDocument(
+        'departments',
+        student.departmentId,
+      );
+      if (deptDoc == null)
+        throw const BackendValidationException('Department does not exist');
     }
     if (student.courseId.isNotEmpty) {
-      final courseDoc = await _firestoreService.getDocument('courses', student.courseId);
-      if (courseDoc == null) throw const BackendValidationException('Course does not exist');
-      if (student.departmentId.isNotEmpty && courseDoc['departmentId'] != student.departmentId) {
-        throw const BackendValidationException('Selected course does not belong to the selected department');
+      final courseDoc = await _firestoreService.getDocument(
+        'courses',
+        student.courseId,
+      );
+      if (courseDoc == null)
+        throw const BackendValidationException('Course does not exist');
+      if (student.departmentId.isNotEmpty &&
+          courseDoc['departmentId'] != student.departmentId) {
+        throw const BackendValidationException(
+          'Selected course does not belong to the selected department',
+        );
       }
     }
     if (student.semesterId.isNotEmpty) {
-      final semDoc = await _firestoreService.getDocument('semesters', student.semesterId);
-      if (semDoc == null) throw const BackendValidationException('Semester does not exist');
-      if (student.courseId.isNotEmpty && semDoc['courseId'] != student.courseId) {
-        throw const BackendValidationException('Selected semester does not belong to the selected course');
+      final semDoc = await _firestoreService.getDocument(
+        'semesters',
+        student.semesterId,
+      );
+      if (semDoc == null)
+        throw const BackendValidationException('Semester does not exist');
+      if (student.courseId.isNotEmpty &&
+          semDoc['courseId'] != student.courseId) {
+        throw const BackendValidationException(
+          'Selected semester does not belong to the selected course',
+        );
       }
     }
     if (student.sectionId.isNotEmpty) {
-      final secDoc = await _firestoreService.getDocument('sections', student.sectionId);
-      if (secDoc == null) throw const BackendValidationException('Section does not exist');
-      if (student.semesterId.isNotEmpty && secDoc['semesterId'] != student.semesterId) {
-        throw const BackendValidationException('Selected section does not belong to the selected semester');
+      final secDoc = await _firestoreService.getDocument(
+        'sections',
+        student.sectionId,
+      );
+      if (secDoc == null)
+        throw const BackendValidationException('Section does not exist');
+      if (student.semesterId.isNotEmpty &&
+          secDoc['semesterId'] != student.semesterId) {
+        throw const BackendValidationException(
+          'Selected section does not belong to the selected semester',
+        );
       }
       final sec = Section.fromJson(secDoc);
       final activeInSec = await _firestoreService.queryCollection('students', {
         'sectionId': student.sectionId,
         'isActive': true,
       });
-      if (activeInSec.where((d) => d['id'] != student.id).length >= sec.capacity) {
-        throw BackendValidationException('Section ${sec.name} is full (Capacity: ${sec.capacity})');
+      if (activeInSec.where((d) => d['id'] != student.id).length >=
+          sec.capacity) {
+        throw BackendValidationException(
+          'Section ${sec.name} is full (Capacity: ${sec.capacity})',
+        );
       }
     }
 
@@ -1319,7 +1902,9 @@ class FirebaseAcademicRepository implements AcademicRepository {
         'rollNumber': student.rollNumber,
       });
       if (existingRoll.any((d) => d['id'] != student.id)) {
-        throw const BackendValidationException('Roll number already exists in this college');
+        throw const BackendValidationException(
+          'Roll number already exists in this college',
+        );
       }
     }
 
@@ -1347,10 +1932,17 @@ class FirebaseAcademicRepository implements AcademicRepository {
       history: student.history.isNotEmpty ? student.history : [initialTimeline],
     );
 
-    await _firestoreService.setDocument('students', enrichedStudent.id, enrichedStudent.toJson());
+    await _firestoreService.setDocument(
+      'students',
+      enrichedStudent.id,
+      enrichedStudent.toJson(),
+    );
 
     // Sync student user account if it exists or create one
-    final userDoc = await _firestoreService.getDocument('users', enrichedStudent.id);
+    final userDoc = await _firestoreService.getDocument(
+      'users',
+      enrichedStudent.id,
+    );
     if (userDoc == null) {
       final newUser = UserModel(
         id: enrichedStudent.id,
@@ -1362,7 +1954,11 @@ class FirebaseAcademicRepository implements AcademicRepository {
         accountStatus: AccountStatus.active,
         createdAt: DateTime.now(),
       );
-      await _firestoreService.setDocument('users', enrichedStudent.id, newUser.toJson());
+      await _firestoreService.setDocument(
+        'users',
+        enrichedStudent.id,
+        newUser.toJson(),
+      );
     }
   }
 
@@ -1380,12 +1976,22 @@ class FirebaseAcademicRepository implements AcademicRepository {
     required String targetSemesterId,
     required String targetSectionId,
   }) async {
-    final semDoc = await _firestoreService.getDocument('semesters', targetSemesterId);
-    if (semDoc == null) throw const BackendValidationException('Target semester does not exist');
-    final secDoc = await _firestoreService.getDocument('sections', targetSectionId);
-    if (secDoc == null) throw const BackendValidationException('Target section does not exist');
+    final semDoc = await _firestoreService.getDocument(
+      'semesters',
+      targetSemesterId,
+    );
+    if (semDoc == null)
+      throw const BackendValidationException('Target semester does not exist');
+    final secDoc = await _firestoreService.getDocument(
+      'sections',
+      targetSectionId,
+    );
+    if (secDoc == null)
+      throw const BackendValidationException('Target section does not exist');
     if (secDoc['semesterId'] != targetSemesterId) {
-      throw const BackendValidationException('Target section does not belong to target semester');
+      throw const BackendValidationException(
+        'Target section does not belong to target semester',
+      );
     }
 
     final targetCourseId = semDoc['courseId'] as String? ?? '';
@@ -1398,16 +2004,30 @@ class FirebaseAcademicRepository implements AcademicRepository {
         _validateScope(current.collegeId, current.departmentId);
 
         // Security check: cannot promote cross-department
-        if (targetDeptId.isNotEmpty && current.departmentId.isNotEmpty && targetDeptId != current.departmentId) {
-          throw const BackendValidationException('Cross-department promotion is strictly prohibited');
+        if (targetDeptId.isNotEmpty &&
+            current.departmentId.isNotEmpty &&
+            targetDeptId != current.departmentId) {
+          throw const BackendValidationException(
+            'Cross-department promotion is strictly prohibited',
+          );
         }
-        if (targetCourseId.isNotEmpty && current.courseId.isNotEmpty && targetCourseId != current.courseId) {
-          throw const BackendValidationException('Cross-course promotion is not allowed. Use department transfer instead');
+        if (targetCourseId.isNotEmpty &&
+            current.courseId.isNotEmpty &&
+            targetCourseId != current.courseId) {
+          throw const BackendValidationException(
+            'Cross-course promotion is not allowed. Use department transfer instead',
+          );
         }
 
         // Snapshot current state in timeline
-        final currentSemDoc = await _firestoreService.getDocument('semesters', current.semesterId);
-        final currentSecDoc = await _firestoreService.getDocument('sections', current.sectionId);
+        final currentSemDoc = await _firestoreService.getDocument(
+          'semesters',
+          current.semesterId,
+        );
+        final currentSecDoc = await _firestoreService.getDocument(
+          'sections',
+          current.sectionId,
+        );
 
         final timelineRecord = AcademicTimelineRecord(
           id: 'hist_${DateTime.now().millisecondsSinceEpoch}_$id',
@@ -1423,7 +2043,8 @@ class FirebaseAcademicRepository implements AcademicRepository {
           remarks: 'Promoted to ${semDoc['name']} (Section ${secDoc['name']})',
         );
 
-        final newHistory = List<AcademicTimelineRecord>.from(current.history)..add(timelineRecord);
+        final newHistory = List<AcademicTimelineRecord>.from(current.history)
+          ..add(timelineRecord);
 
         // Record history document in /studentAcademicHistory
         final historyEntry = StudentAcademicHistory(
@@ -1460,8 +2081,12 @@ class FirebaseAcademicRepository implements AcademicRepository {
     required List<String> studentIds,
     required String targetSectionId,
   }) async {
-    final secDoc = await _firestoreService.getDocument('sections', targetSectionId);
-    if (secDoc == null) throw const BackendValidationException('Target section does not exist');
+    final secDoc = await _firestoreService.getDocument(
+      'sections',
+      targetSectionId,
+    );
+    if (secDoc == null)
+      throw const BackendValidationException('Target section does not exist');
     final targetSemId = secDoc['semesterId'] as String? ?? '';
 
     for (final id in studentIds) {
@@ -1470,7 +2095,10 @@ class FirebaseAcademicRepository implements AcademicRepository {
         final current = Student.fromJson(doc);
         _validateScope(current.collegeId, current.departmentId);
 
-        final currentSecDoc = await _firestoreService.getDocument('sections', current.sectionId);
+        final currentSecDoc = await _firestoreService.getDocument(
+          'sections',
+          current.sectionId,
+        );
 
         final timelineRecord = AcademicTimelineRecord(
           id: 'hist_${DateTime.now().millisecondsSinceEpoch}_$id',
@@ -1485,7 +2113,8 @@ class FirebaseAcademicRepository implements AcademicRepository {
           remarks: 'Transferred to Section ${secDoc['name']}',
         );
 
-        final newHistory = List<AcademicTimelineRecord>.from(current.history)..add(timelineRecord);
+        final newHistory = List<AcademicTimelineRecord>.from(current.history)
+          ..add(timelineRecord);
 
         final updated = current.copyWith(
           sectionId: targetSectionId,
@@ -1524,7 +2153,8 @@ class FirebaseAcademicRepository implements AcademicRepository {
           remarks: 'Transferred to department $targetDepartmentId',
         );
 
-        final newHistory = List<AcademicTimelineRecord>.from(current.history)..add(timelineRecord);
+        final newHistory = List<AcademicTimelineRecord>.from(current.history)
+          ..add(timelineRecord);
 
         final updated = current.copyWith(
           departmentId: targetDepartmentId,
@@ -1546,15 +2176,20 @@ class FirebaseAcademicRepository implements AcademicRepository {
     String? remarks,
   }) async {
     final doc = await _firestoreService.getDocument('students', studentId);
-    if (doc == null) throw const BackendValidationException('Student not found');
+    if (doc == null)
+      throw const BackendValidationException('Student not found');
     final current = Student.fromJson(doc);
     _validateScope(current.collegeId, current.departmentId);
 
     if (!current.lifecycleState.isValidTransition(newState)) {
-      throw BackendValidationException('Invalid state transition from ${current.lifecycleState.displayName} to ${newState.displayName}');
+      throw BackendValidationException(
+        'Invalid state transition from ${current.lifecycleState.displayName} to ${newState.displayName}',
+      );
     }
 
-    final isGraduatedOrAlumni = newState == StudentLifecycleState.graduated || newState == StudentLifecycleState.alumni;
+    final isGraduatedOrAlumni =
+        newState == StudentLifecycleState.graduated ||
+        newState == StudentLifecycleState.alumni;
 
     final timelineRecord = AcademicTimelineRecord(
       id: 'hist_${DateTime.now().millisecondsSinceEpoch}_$studentId',
@@ -1568,16 +2203,23 @@ class FirebaseAcademicRepository implements AcademicRepository {
       remarks: remarks ?? 'Lifecycle state updated to ${newState.displayName}',
     );
 
-    final newHistory = List<AcademicTimelineRecord>.from(current.history)..add(timelineRecord);
+    final newHistory = List<AcademicTimelineRecord>.from(current.history)
+      ..add(timelineRecord);
 
     final updated = current.copyWith(
       lifecycleState: newState,
       isActive: !isGraduatedOrAlumni,
-      graduationDate: isGraduatedOrAlumni ? (current.graduationDate ?? DateTime.now()) : current.graduationDate,
+      graduationDate: isGraduatedOrAlumni
+          ? (current.graduationDate ?? DateTime.now())
+          : current.graduationDate,
       history: newHistory,
     );
 
-    await _firestoreService.setDocument('students', studentId, updated.toJson());
+    await _firestoreService.setDocument(
+      'students',
+      studentId,
+      updated.toJson(),
+    );
   }
 
   @override
@@ -1595,9 +2237,7 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<void> bulkArchiveAlumni({
-    required List<String> studentIds,
-  }) async {
+  Future<void> bulkArchiveAlumni({required List<String> studentIds}) async {
     for (final id in studentIds) {
       await updateStudentLifecycleState(
         studentId: id,
@@ -1608,50 +2248,74 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<StudentAcademicProfile> getStudentAcademicProfile(String studentId) async {
-    final studentDoc = await _firestoreService.getDocument('students', studentId);
-    if (studentDoc == null) throw const BackendValidationException('Student not found');
+  Future<StudentAcademicProfile> getStudentAcademicProfile(
+    String studentId,
+  ) async {
+    final studentDoc = await _firestoreService.getDocument(
+      'students',
+      studentId,
+    );
+    if (studentDoc == null)
+      throw const BackendValidationException('Student not found');
     final student = Student.fromJson(studentDoc);
     _validateScope(student.collegeId, student.departmentId);
 
     // Resolve structural entities
     Department? department;
     if (student.departmentId.isNotEmpty) {
-      final dDoc = await _firestoreService.getDocument('departments', student.departmentId);
+      final dDoc = await _firestoreService.getDocument(
+        'departments',
+        student.departmentId,
+      );
       if (dDoc != null) department = Department.fromJson(dDoc);
     }
 
     Course? course;
     if (student.courseId.isNotEmpty) {
-      final cDoc = await _firestoreService.getDocument('courses', student.courseId);
+      final cDoc = await _firestoreService.getDocument(
+        'courses',
+        student.courseId,
+      );
       if (cDoc != null) course = Course.fromJson(cDoc);
     }
 
     AcademicYear? academicYear;
     if (student.academicYearId.isNotEmpty) {
-      final yDoc = await _firestoreService.getDocument('academicYears', student.academicYearId);
+      final yDoc = await _firestoreService.getDocument(
+        'academicYears',
+        student.academicYearId,
+      );
       if (yDoc != null) academicYear = AcademicYear.fromJson(yDoc);
     }
 
     Semester? semester;
     if (student.semesterId.isNotEmpty) {
-      final sDoc = await _firestoreService.getDocument('semesters', student.semesterId);
+      final sDoc = await _firestoreService.getDocument(
+        'semesters',
+        student.semesterId,
+      );
       if (sDoc != null) semester = Semester.fromJson(sDoc);
     }
 
     Section? section;
     if (student.sectionId.isNotEmpty) {
-      final secDoc = await _firestoreService.getDocument('sections', student.sectionId);
+      final secDoc = await _firestoreService.getDocument(
+        'sections',
+        student.sectionId,
+      );
       if (secDoc != null) section = Section.fromJson(secDoc);
     }
 
     // Resolve faculty assignments for this section
-    final assignmentDocs = await _firestoreService.queryCollection('facultyAssignments', {
-      'collegeId': student.collegeId,
-      'sectionId': student.sectionId,
-      'isActive': true,
-    });
-    final assignments = assignmentDocs.map((d) => FacultyAssignment.fromJson(d)).toList();
+    final assignmentDocs = await _firestoreService
+        .queryCollection('facultyAssignments', {
+          'collegeId': student.collegeId,
+          'sectionId': student.sectionId,
+          'isActive': true,
+        });
+    final assignments = assignmentDocs
+        .map((d) => FacultyAssignment.fromJson(d))
+        .toList();
 
     // Resolve unique faculty objects
     final facultyIds = assignments.map((a) => a.facultyId).toSet();
@@ -1667,7 +2331,9 @@ class FirebaseAcademicRepository implements AcademicRepository {
       'semesterId': student.semesterId,
       'isActive': true,
     });
-    final enrolledSubjects = subjectDocs.map((d) => Subject.fromJson(d)).toList();
+    final enrolledSubjects = subjectDocs
+        .map((d) => Subject.fromJson(d))
+        .toList();
 
     // Resolve notes count
     final notesDocs = await _firestoreService.queryCollection('notes', {
@@ -1696,8 +2362,14 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<void> assignHodToDepartment(String departmentId, String hodUserId) async {
-    final deptDoc = await _firestoreService.getDocument('departments', departmentId);
+  Future<void> assignHodToDepartment(
+    String departmentId,
+    String hodUserId,
+  ) async {
+    final deptDoc = await _firestoreService.getDocument(
+      'departments',
+      departmentId,
+    );
     if (deptDoc == null) throw Exception('Department not found');
     final department = Department.fromJson(deptDoc);
     _validateScope(department.collegeId, department.id);
@@ -1705,11 +2377,17 @@ class FirebaseAcademicRepository implements AcademicRepository {
     if (_currentUser != null &&
         _currentUser.role != AppRole.superAdmin &&
         _currentUser.role != AppRole.collegeAdmin) {
-      throw const BackendPermissionException('Only College Admin or Super Admin can assign HODs');
+      throw const BackendPermissionException(
+        'Only College Admin or Super Admin can assign HODs',
+      );
     }
 
     final updatedDept = department.copyWith(hodId: hodUserId);
-    await _firestoreService.setDocument('departments', departmentId, updatedDept.toJson());
+    await _firestoreService.setDocument(
+      'departments',
+      departmentId,
+      updatedDept.toJson(),
+    );
 
     // Update user profile department link and role if necessary
     if (hodUserId.isNotEmpty) {
@@ -1717,13 +2395,19 @@ class FirebaseAcademicRepository implements AcademicRepository {
       if (userDoc != null) {
         final user = UserModel.fromJson(userDoc);
         if (user.collegeId != null && user.collegeId != department.collegeId) {
-          throw const BackendPermissionException('Cannot assign HOD from a different college');
+          throw const BackendPermissionException(
+            'Cannot assign HOD from a different college',
+          );
         }
         final updatedUser = user.copyWith(
           departmentId: departmentId,
           role: AppRole.hod,
         );
-        await _firestoreService.setDocument('users', hodUserId, updatedUser.toJson());
+        await _firestoreService.setDocument(
+          'users',
+          hodUserId,
+          updatedUser.toJson(),
+        );
       }
     }
   }
@@ -1741,17 +2425,29 @@ class FirebaseAcademicRepository implements AcademicRepository {
     String? academicYearId,
   }) async {
     final filters = _getScopeFilters(hasCollegeId: true);
-    if (facultyId != null && facultyId.isNotEmpty) filters['facultyId'] = facultyId;
-    if (departmentId != null && departmentId.isNotEmpty) filters['departmentId'] = departmentId;
+    if (facultyId != null && facultyId.isNotEmpty)
+      filters['facultyId'] = facultyId;
+    if (departmentId != null && departmentId.isNotEmpty)
+      filters['departmentId'] = departmentId;
     if (courseId != null && courseId.isNotEmpty) filters['courseId'] = courseId;
-    if (semesterId != null && semesterId.isNotEmpty) filters['semesterId'] = semesterId;
-    if (sectionId != null && sectionId.isNotEmpty) filters['sectionId'] = sectionId;
-    if (subjectId != null && subjectId.isNotEmpty) filters['subjectId'] = subjectId;
-    if (academicYearId != null && academicYearId.isNotEmpty) filters['academicYearId'] = academicYearId;
+    if (semesterId != null && semesterId.isNotEmpty)
+      filters['semesterId'] = semesterId;
+    if (sectionId != null && sectionId.isNotEmpty)
+      filters['sectionId'] = sectionId;
+    if (subjectId != null && subjectId.isNotEmpty)
+      filters['subjectId'] = subjectId;
+    if (academicYearId != null && academicYearId.isNotEmpty)
+      filters['academicYearId'] = academicYearId;
     filters['isActive'] = true;
 
-    final docs = await _firestoreService.queryCollection('facultyAssignments', filters);
-    return docs.map((d) => FacultyAssignment.fromJson(d)).where((a) => a.isActive).toList();
+    final docs = await _firestoreService.queryCollection(
+      'facultyAssignments',
+      filters,
+    );
+    return docs
+        .map((d) => FacultyAssignment.fromJson(d))
+        .where((a) => a.isActive)
+        .toList();
   }
 
   @override
@@ -1760,8 +2456,14 @@ class FirebaseAcademicRepository implements AcademicRepository {
     final user = _currentUser;
     if (user == null) return [];
     filters['isActive'] = true;
-    final docs = await _firestoreService.queryCollection('facultyAssignments', filters);
-    final list = docs.map((d) => FacultyAssignment.fromJson(d)).where((a) => a.isActive).toList();
+    final docs = await _firestoreService.queryCollection(
+      'facultyAssignments',
+      filters,
+    );
+    final list = docs
+        .map((d) => FacultyAssignment.fromJson(d))
+        .where((a) => a.isActive)
+        .toList();
     return list.where((a) => a.facultyId == user.id).toList();
   }
 
@@ -1773,40 +2475,64 @@ class FirebaseAcademicRepository implements AcademicRepository {
       if (_currentUser.role != AppRole.superAdmin &&
           _currentUser.role != AppRole.collegeAdmin &&
           _currentUser.role != AppRole.hod) {
-        throw const BackendPermissionException('Only Super Admin, College Admin, or HOD can create faculty assignments');
+        throw const BackendPermissionException(
+          'Only Super Admin, College Admin, or HOD can create faculty assignments',
+        );
       }
 
-      if (_currentUser.role == AppRole.hod && _currentUser.departmentId != assignment.departmentId) {
-        throw const BackendPermissionException('HOD can only create assignments within their own department');
+      if (_currentUser.role == AppRole.hod &&
+          _currentUser.departmentId != assignment.departmentId) {
+        throw const BackendPermissionException(
+          'HOD can only create assignments within their own department',
+        );
       }
     }
 
     // Validate that faculty exists and belongs to same college & department
-    final facDoc = await _firestoreService.getDocument('faculty', assignment.facultyId);
+    final facDoc = await _firestoreService.getDocument(
+      'faculty',
+      assignment.facultyId,
+    );
     if (facDoc == null) {
       // Fallback check user table
-      final userDoc = await _firestoreService.getDocument('users', assignment.facultyId);
+      final userDoc = await _firestoreService.getDocument(
+        'users',
+        assignment.facultyId,
+      );
       if (userDoc == null) {
         throw const BackendValidationException('Faculty not found');
       }
       final user = UserModel.fromJson(userDoc);
       if (user.collegeId != assignment.collegeId) {
-        throw const BackendPermissionException('Faculty does not belong to this college');
+        throw const BackendPermissionException(
+          'Faculty does not belong to this college',
+        );
       }
-      if (user.departmentId != null && user.departmentId!.isNotEmpty && user.departmentId != assignment.departmentId) {
-        throw const BackendPermissionException('Faculty does not belong to the selected department');
+      if (user.departmentId != null &&
+          user.departmentId!.isNotEmpty &&
+          user.departmentId != assignment.departmentId) {
+        throw const BackendPermissionException(
+          'Faculty does not belong to the selected department',
+        );
       }
     } else {
       final faculty = Faculty.fromJson(facDoc);
       if (faculty.collegeId != assignment.collegeId) {
-        throw const BackendPermissionException('Faculty does not belong to this college');
+        throw const BackendPermissionException(
+          'Faculty does not belong to this college',
+        );
       }
-      if (faculty.departmentId.isNotEmpty && assignment.departmentId.isNotEmpty && faculty.departmentId != assignment.departmentId) {
-        throw const BackendPermissionException('Faculty does not belong to the selected department');
+      if (faculty.departmentId.isNotEmpty &&
+          assignment.departmentId.isNotEmpty &&
+          faculty.departmentId != assignment.departmentId) {
+        throw const BackendPermissionException(
+          'Faculty does not belong to the selected department',
+        );
       }
 
       // Add subjectId & sectionId to faculty entity for rapid lookups
-      final updatedSubs = Set<String>.from(faculty.subjectIds)..add(assignment.subjectId);
+      final updatedSubs = Set<String>.from(faculty.subjectIds)
+        ..add(assignment.subjectId);
       final updatedSecs = Set<String>.from(faculty.sectionIds);
       if (assignment.sectionId != null && assignment.sectionId!.isNotEmpty) {
         updatedSecs.add(assignment.sectionId!);
@@ -1815,27 +2541,36 @@ class FirebaseAcademicRepository implements AcademicRepository {
         subjectIds: updatedSubs.toList(),
         sectionIds: updatedSecs.toList(),
       );
-      await _firestoreService.setDocument('faculty', faculty.id, updatedFaculty.toJson());
+      await _firestoreService.setDocument(
+        'faculty',
+        faculty.id,
+        updatedFaculty.toJson(),
+      );
     }
 
     // Check for duplicate active assignment across all scope parameters
-    final existingDocs = await _firestoreService.queryCollection('facultyAssignments', {
-      'collegeId': assignment.collegeId,
-      'departmentId': assignment.departmentId,
-      'facultyId': assignment.facultyId,
-      'subjectId': assignment.subjectId,
-      'sectionId': assignment.sectionId,
-      'semesterId': assignment.semesterId,
-      'isActive': true,
-    });
+    final existingDocs = await _firestoreService
+        .queryCollection('facultyAssignments', {
+          'collegeId': assignment.collegeId,
+          'departmentId': assignment.departmentId,
+          'facultyId': assignment.facultyId,
+          'subjectId': assignment.subjectId,
+          'sectionId': assignment.sectionId,
+          'semesterId': assignment.semesterId,
+          'isActive': true,
+        });
 
-    final duplicate = existingDocs.any((d) =>
-      d['courseId'] == assignment.courseId &&
-      (assignment.academicYearId.isEmpty || d['academicYearId'] == assignment.academicYearId)
+    final duplicate = existingDocs.any(
+      (d) =>
+          d['courseId'] == assignment.courseId &&
+          (assignment.academicYearId.isEmpty ||
+              d['academicYearId'] == assignment.academicYearId),
     );
 
     if (duplicate || existingDocs.isNotEmpty) {
-      throw const BackendValidationException('An active assignment already exists for this faculty, subject, and section');
+      throw const BackendValidationException(
+        'An active assignment already exists for this faculty, subject, and section',
+      );
     }
 
     final enrichedAssignment = assignment.copyWith(
@@ -1853,7 +2588,10 @@ class FirebaseAcademicRepository implements AcademicRepository {
 
   @override
   Future<void> removeFacultyAssignment(String assignmentId) async {
-    final doc = await _firestoreService.getDocument('facultyAssignments', assignmentId);
+    final doc = await _firestoreService.getDocument(
+      'facultyAssignments',
+      assignmentId,
+    );
     if (doc != null) {
       final assignment = FacultyAssignment.fromJson(doc);
       _validateScope(assignment.collegeId, assignment.departmentId);
@@ -1862,11 +2600,16 @@ class FirebaseAcademicRepository implements AcademicRepository {
         if (_currentUser.role != AppRole.superAdmin &&
             _currentUser.role != AppRole.collegeAdmin &&
             _currentUser.role != AppRole.hod) {
-          throw const BackendPermissionException('Only Super Admin, College Admin, or HOD can remove faculty assignments');
+          throw const BackendPermissionException(
+            'Only Super Admin, College Admin, or HOD can remove faculty assignments',
+          );
         }
 
-        if (_currentUser.role == AppRole.hod && _currentUser.departmentId != assignment.departmentId) {
-          throw const BackendPermissionException('HOD can only remove assignments within their own department');
+        if (_currentUser.role == AppRole.hod &&
+            _currentUser.departmentId != assignment.departmentId) {
+          throw const BackendPermissionException(
+            'HOD can only remove assignments within their own department',
+          );
         }
       }
 
@@ -1874,15 +2617,26 @@ class FirebaseAcademicRepository implements AcademicRepository {
         isActive: false,
         updatedAt: DateTime.now(),
       );
-      await _firestoreService.setDocument('facultyAssignments', assignmentId, updated.toJson());
+      await _firestoreService.setDocument(
+        'facultyAssignments',
+        assignmentId,
+        updated.toJson(),
+      );
     }
   }
 
   @override
-  Future<List<StudentAcademicHistory>> getStudentAcademicHistory(String studentId) async {
+  Future<List<StudentAcademicHistory>> getStudentAcademicHistory(
+    String studentId,
+  ) async {
     final filters = <String, dynamic>{'studentUid': studentId};
-    final docs = await _firestoreService.queryCollection('studentAcademicHistory', filters);
-    final historyList = docs.map((d) => StudentAcademicHistory.fromJson(d)).toList();
+    final docs = await _firestoreService.queryCollection(
+      'studentAcademicHistory',
+      filters,
+    );
+    final historyList = docs
+        .map((d) => StudentAcademicHistory.fromJson(d))
+        .toList();
     historyList.sort((a, b) => b.startDate.compareTo(a.startDate));
     return historyList;
   }
@@ -1890,7 +2644,11 @@ class FirebaseAcademicRepository implements AcademicRepository {
   @override
   Future<void> recordAcademicHistory(StudentAcademicHistory history) async {
     _validateScope(history.collegeId, history.departmentId);
-    await _firestoreService.setDocument('studentAcademicHistory', history.id, history.toJson());
+    await _firestoreService.setDocument(
+      'studentAcademicHistory',
+      history.id,
+      history.toJson(),
+    );
   }
 
   @override
@@ -1898,7 +2656,10 @@ class FirebaseAcademicRepository implements AcademicRepository {
     final filters = _getScopeFilters(hasCollegeId: true);
     filters['sectionId'] = sectionId;
     final docs = await _firestoreService.queryCollection('students', filters);
-    return docs.map((d) => Student.fromJson(d)).where((s) => s.isActive).toList();
+    return docs
+        .map((d) => Student.fromJson(d))
+        .where((s) => s.isActive)
+        .toList();
   }
 
   @override
@@ -1906,7 +2667,10 @@ class FirebaseAcademicRepository implements AcademicRepository {
     final filters = _getScopeFilters(hasCollegeId: true);
     filters['semesterId'] = semesterId;
     final docs = await _firestoreService.queryCollection('students', filters);
-    return docs.map((d) => Student.fromJson(d)).where((s) => s.isActive).toList();
+    return docs
+        .map((d) => Student.fromJson(d))
+        .where((s) => s.isActive)
+        .toList();
   }
 
   @override
@@ -1914,7 +2678,10 @@ class FirebaseAcademicRepository implements AcademicRepository {
     final filters = _getScopeFilters(hasCollegeId: true);
     filters['courseId'] = courseId;
     final docs = await _firestoreService.queryCollection('students', filters);
-    return docs.map((d) => Student.fromJson(d)).where((s) => s.isActive).toList();
+    return docs
+        .map((d) => Student.fromJson(d))
+        .where((s) => s.isActive)
+        .toList();
   }
 
   @override
@@ -1922,11 +2689,16 @@ class FirebaseAcademicRepository implements AcademicRepository {
     final filters = _getScopeFilters(hasCollegeId: true);
     filters['departmentId'] = departmentId;
     final docs = await _firestoreService.queryCollection('students', filters);
-    return docs.map((d) => Student.fromJson(d)).where((s) => s.isActive).toList();
+    return docs
+        .map((d) => Student.fromJson(d))
+        .where((s) => s.isActive)
+        .toList();
   }
 
   @override
-  Future<List<FacultyWorkloadSummary>> getFacultyWorkloadSummaries({String? departmentId}) async {
+  Future<List<FacultyWorkloadSummary>> getFacultyWorkloadSummaries({
+    String? departmentId,
+  }) async {
     final facultyList = await getFaculty(departmentId: departmentId);
     final subjects = await getSubjects();
     final sections = await getSections();
@@ -1936,10 +2708,19 @@ class FirebaseAcademicRepository implements AcademicRepository {
     final sectionsMap = {for (final s in sections) s.id: s.name};
 
     return facultyList.map((fac) {
-      final activeAssignments = assignments.where((fa) => fa.facultyId == fac.id && fa.isActive).toList();
-      final subjectNames = activeAssignments.map((fa) => subjectsMap[fa.subjectId] ?? fa.subjectId).toSet().toList();
+      final activeAssignments = assignments
+          .where((fa) => fa.facultyId == fac.id && fa.isActive)
+          .toList();
+      final subjectNames = activeAssignments
+          .map((fa) => subjectsMap[fa.subjectId] ?? fa.subjectId)
+          .toSet()
+          .toList();
       final sectionNames = activeAssignments
-          .map((fa) => fa.sectionId != null ? (sectionsMap[fa.sectionId!] ?? fa.sectionId!) : null)
+          .map(
+            (fa) => fa.sectionId != null
+                ? (sectionsMap[fa.sectionId!] ?? fa.sectionId!)
+                : null,
+          )
           .whereType<String>()
           .toSet()
           .toList();
@@ -1993,7 +2774,10 @@ class FirebaseAcademicRepository implements AcademicRepository {
     String? assignmentType,
     bool? isActive,
   }) async {
-    final doc = await _firestoreService.getDocument('facultyAssignments', assignmentId);
+    final doc = await _firestoreService.getDocument(
+      'facultyAssignments',
+      assignmentId,
+    );
     if (doc != null) {
       final updated = Map<String, dynamic>.from(doc);
       if (roomId != null) updated['roomId'] = roomId;
@@ -2001,7 +2785,11 @@ class FirebaseAcademicRepository implements AcademicRepository {
       if (assignmentType != null) updated['assignmentType'] = assignmentType;
       if (isActive != null) updated['isActive'] = isActive;
       updated['updatedAt'] = DateTime.now().toIso8601String();
-      await _firestoreService.setDocument('facultyAssignments', assignmentId, updated);
+      await _firestoreService.setDocument(
+        'facultyAssignments',
+        assignmentId,
+        updated,
+      );
     }
   }
 
@@ -2022,7 +2810,11 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<void> updateEnrollment(String id, {String? sectionId, String? status}) async {
+  Future<void> updateEnrollment(
+    String id, {
+    String? sectionId,
+    String? status,
+  }) async {
     final doc = await _firestoreService.getDocument('studentEnrollments', id);
     if (doc != null) {
       final updated = Map<String, dynamic>.from(doc);
@@ -2042,14 +2834,17 @@ class FirebaseAcademicRepository implements AcademicRepository {
   Future<List<Room>> getRooms({String? collegeId, String? departmentId}) async {
     final docs = await _firestoreService.queryCollection('rooms', {
       if (collegeId != null && collegeId.isNotEmpty) 'collegeId': collegeId,
-      if (departmentId != null && departmentId.isNotEmpty) 'departmentId': departmentId,
+      if (departmentId != null && departmentId.isNotEmpty)
+        'departmentId': departmentId,
     });
     return docs.map((d) => Room.fromJson(d)).toList();
   }
 
   @override
   Future<Room> addRoom(Room room) async {
-    final effectiveId = room.id.isNotEmpty ? room.id : 'room_${DateTime.now().millisecondsSinceEpoch}';
+    final effectiveId = room.id.isNotEmpty
+        ? room.id
+        : 'room_${DateTime.now().millisecondsSinceEpoch}';
     final toSave = room.copyWith(id: effectiveId);
     await _firestoreService.setDocument('rooms', effectiveId, toSave.toJson());
     return toSave;
@@ -2069,18 +2864,23 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<CurrentAcademicContext> getCurrentAcademicContext({String? departmentId, String? courseId}) async {
+  Future<CurrentAcademicContext> getCurrentAcademicContext({
+    String? departmentId,
+    String? courseId,
+  }) async {
     final ays = await getAcademicYears();
     final currentAy = ays.firstWhere(
       (ay) => ay.isCurrent && ay.isActive,
-      orElse: () => ays.isNotEmpty ? ays.first : AcademicYear(
-        id: 'default',
-        collegeId: _currentUser?.collegeId ?? '',
-        name: '2026–27',
-        startDate: DateTime(2026, 6, 1),
-        endDate: DateTime(2027, 5, 31),
-        isCurrent: true,
-      ),
+      orElse: () => ays.isNotEmpty
+          ? ays.first
+          : AcademicYear(
+              id: 'default',
+              collegeId: _currentUser?.collegeId ?? '',
+              name: '2026–27',
+              startDate: DateTime(2026, 6, 1),
+              endDate: DateTime(2027, 5, 31),
+              isCurrent: true,
+            ),
     );
     return CurrentAcademicContext(
       collegeId: currentAy.collegeId,
@@ -2093,18 +2893,23 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getAcademicHistory({String? departmentId, String? courseId}) async {
+  Future<List<Map<String, dynamic>>> getAcademicHistory({
+    String? departmentId,
+    String? courseId,
+  }) async {
     final ays = await getAcademicYears();
     return ays
         .where((ay) => !ay.isCurrent)
-        .map((ay) => {
-              'academicYear': ay.toJson(),
-              'isCurrent': false,
-              'name': ay.name,
-              'startDate': ay.startDate.toIso8601String(),
-              'endDate': ay.endDate.toIso8601String(),
-              'status': ay.status,
-            })
+        .map(
+          (ay) => {
+            'academicYear': ay.toJson(),
+            'isCurrent': false,
+            'name': ay.name,
+            'startDate': ay.startDate.toIso8601String(),
+            'endDate': ay.endDate.toIso8601String(),
+            'status': ay.status,
+          },
+        )
         .toList();
   }
 
@@ -2119,16 +2924,24 @@ class FirebaseAcademicRepository implements AcademicRepository {
     String? handoverNotes,
     bool reassignPendingWork = true,
   }) async {
-    throw UnimplementedError('handoverFacultyAssignment is implemented via ApiAcademicRepository');
+    throw UnimplementedError(
+      'handoverFacultyAssignment is implemented via ApiAcademicRepository',
+    );
   }
 
   @override
-  Future<List<TeachingHandover>> getTeachingHandovers({String? subjectId, String? sectionId}) async {
+  Future<List<TeachingHandover>> getTeachingHandovers({
+    String? subjectId,
+    String? sectionId,
+  }) async {
     return [];
   }
 
   @override
-  Future<List<DepartmentTenure>> getDepartmentTenureHistory(String departmentId, {String? collegeId}) async {
+  Future<List<DepartmentTenure>> getDepartmentTenureHistory(
+    String departmentId, {
+    String? collegeId,
+  }) async {
     return [];
   }
 
@@ -2140,7 +2953,9 @@ class FirebaseAcademicRepository implements AcademicRepository {
     String? resolutionReference,
     String? remarks,
   }) async {
-    throw UnimplementedError('appointDepartmentHod is implemented via ApiAcademicRepository');
+    throw UnimplementedError(
+      'appointDepartmentHod is implemented via ApiAcademicRepository',
+    );
   }
 
   @override
@@ -2150,7 +2965,9 @@ class FirebaseAcademicRepository implements AcademicRepository {
     String? reason,
     List<String> evidenceDocuments = const [],
   }) async {
-    throw UnimplementedError('transferStudent is implemented via ApiAcademicRepository');
+    throw UnimplementedError(
+      'transferStudent is implemented via ApiAcademicRepository',
+    );
   }
 
   @override
@@ -2165,13 +2982,19 @@ class FirebaseAcademicRepository implements AcademicRepository {
 
   @override
   Future<TransferCredit> createTransferCredit(Map<String, dynamic> data) async {
-    throw UnimplementedError('createTransferCredit is implemented via ApiAcademicRepository');
+    throw UnimplementedError(
+      'createTransferCredit is implemented via ApiAcademicRepository',
+    );
   }
 
   @override
-  Future<void> updateTransferCreditStatus(String id, String status, {String? verificationRemarks}) async {
-    throw UnimplementedError('updateTransferCreditStatus is implemented via ApiAcademicRepository');
+  Future<void> updateTransferCreditStatus(
+    String id,
+    String status, {
+    String? verificationRemarks,
+  }) async {
+    throw UnimplementedError(
+      'updateTransferCreditStatus is implemented via ApiAcademicRepository',
+    );
   }
 }
-
-

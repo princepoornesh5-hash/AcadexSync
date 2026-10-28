@@ -19,7 +19,10 @@ import '../providers/certificate_providers.dart';
 import '../widgets/certificate_type_badge.dart';
 import '../widgets/file_preview_placeholder.dart';
 
-final certificateByIdProvider = FutureProvider.family<Certificate?, String>((ref, certificateId) async {
+final certificateByIdProvider = FutureProvider.family<Certificate?, String>((
+  ref,
+  certificateId,
+) async {
   final repo = ref.watch(certificateRepositoryProvider);
   return repo.getCertificate(certificateId);
 });
@@ -29,10 +32,12 @@ class CertificateDetailScreen extends ConsumerStatefulWidget {
   const CertificateDetailScreen({super.key, required this.certificateId});
 
   @override
-  ConsumerState<CertificateDetailScreen> createState() => _CertificateDetailScreenState();
+  ConsumerState<CertificateDetailScreen> createState() =>
+      _CertificateDetailScreenState();
 }
 
-class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScreen> {
+class _CertificateDetailScreenState
+    extends ConsumerState<CertificateDetailScreen> {
   bool _isProcessing = false;
 
   @override
@@ -56,7 +61,9 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
         ),
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -74,7 +81,8 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
           child: AcadexErrorState(
             title: 'Failed to load certificate',
             message: e.toString(),
-            onRetry: () => ref.invalidate(certificateByIdProvider(widget.certificateId)),
+            onRetry: () =>
+                ref.invalidate(certificateByIdProvider(widget.certificateId)),
           ),
         ),
         data: (cert) {
@@ -83,15 +91,18 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
               child: AcadexEmptyState(
                 icon: LucideIcons.fileX,
                 title: 'Certificate Not Found',
-                subtitle: 'The requested certificate record could not be located or has been deleted.',
+                subtitle:
+                    'The requested certificate record could not be located or has been deleted.',
                 actionLabel: 'Return',
-                onActionTap: () => context.safePop(fallbackRoute: '/certificates'),
+                onActionTap: () =>
+                    context.safePop(fallbackRoute: '/certificates'),
               ),
             );
           }
 
           final isOwner = cert.studentUid == (user.firebaseUid ?? user.id);
-          final canVerify = (user.role == AppRole.faculty ||
+          final canVerify =
+              (user.role == AppRole.faculty ||
                   user.role == AppRole.hod ||
                   user.role == AppRole.collegeAdmin ||
                   user.role == AppRole.superAdmin) &&
@@ -101,7 +112,10 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 860),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 28,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -141,13 +155,21 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
     );
   }
 
-  Widget _buildHeaderCard(Certificate cert, bool isDark, bool isOwner, bool canVerify, UserModel user) {
+  Widget _buildHeaderCard(
+    Certificate cert,
+    bool isDark,
+    bool isOwner,
+    bool canVerify,
+    UserModel user,
+  ) {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: BorderRadius.circular(AcadexRadius.lg),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -160,10 +182,15 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
                 IconButton(
                   icon: const Icon(LucideIcons.pencil, size: 18),
                   tooltip: 'Edit Certificate',
-                  onPressed: () => context.go('/certificates/edit/${cert.id}', extra: cert),
+                  onPressed: () =>
+                      context.go('/certificates/edit/${cert.id}', extra: cert),
                 ),
                 IconButton(
-                  icon: const Icon(LucideIcons.trash2, size: 18, color: AcadexColors.error),
+                  icon: const Icon(
+                    LucideIcons.trash2,
+                    size: 18,
+                    color: AcadexColors.error,
+                  ),
                   tooltip: 'Remove',
                   onPressed: () => _confirmDelete(context, ref, cert, user),
                 ),
@@ -182,14 +209,22 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(LucideIcons.building, size: 15, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              Icon(
+                LucideIcons.building,
+                size: 15,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   cert.issuer,
                   style: GoogleFonts.inter(
                     fontSize: 14,
-                    color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                    color: isDark
+                        ? AcadexColors.darkInkSecondary
+                        : AcadexColors.inkSecondary,
                   ),
                 ),
               ),
@@ -199,14 +234,22 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(LucideIcons.user, size: 15, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                Icon(
+                  LucideIcons.user,
+                  size: 15,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   'Submitted by ${cert.studentName} (${cert.studentId})',
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                    color: isDark
+                        ? AcadexColors.darkInkSecondary
+                        : AcadexColors.inkSecondary,
                   ),
                 ),
               ],
@@ -221,10 +264,14 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AcadexColors.success.withValues(alpha: 0.15) : AcadexColors.successLight,
+        color: isDark
+            ? AcadexColors.success.withValues(alpha: 0.15)
+            : AcadexColors.successLight,
         borderRadius: BorderRadius.circular(AcadexRadius.md),
         border: Border.all(
-          color: isDark ? AcadexColors.success.withValues(alpha: 0.35) : AcadexColors.success.withValues(alpha: 0.3),
+          color: isDark
+              ? AcadexColors.success.withValues(alpha: 0.35)
+              : AcadexColors.success.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -235,7 +282,11 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
               color: AcadexColors.success.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(LucideIcons.shieldCheck, color: AcadexColors.success, size: 20),
+            child: const Icon(
+              LucideIcons.shieldCheck,
+              color: AcadexColors.success,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -247,7 +298,9 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
                   style: GoogleFonts.inter(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
-                    color: isDark ? AcadexColors.success : AcadexColors.successDark,
+                    color: isDark
+                        ? AcadexColors.success
+                        : AcadexColors.successDark,
                   ),
                 ),
                 if (cert.verifiedAt != null)
@@ -255,7 +308,9 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
                     'Verified on ${DateFormat('dd MMMM yyyy').format(cert.verifiedAt!)}',
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: isDark ? AcadexColors.success.withValues(alpha: 0.8) : AcadexColors.successDark,
+                      color: isDark
+                          ? AcadexColors.success.withValues(alpha: 0.8)
+                          : AcadexColors.successDark,
                     ),
                   ),
               ],
@@ -266,13 +321,19 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
     );
   }
 
-  Widget _buildVerificationActionCard(Certificate cert, UserModel user, bool isDark) {
+  Widget _buildVerificationActionCard(
+    Certificate cert,
+    UserModel user,
+    bool isDark,
+  ) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: BorderRadius.circular(AcadexRadius.md),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Row(
         children: [
@@ -292,7 +353,9 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
                   'Verify this credential after checking document authenticity.',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                    color: isDark
+                        ? AcadexColors.darkInkSecondary
+                        : AcadexColors.inkSecondary,
                   ),
                 ),
               ],
@@ -304,12 +367,23 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
               backgroundColor: AcadexColors.success,
               foregroundColor: Colors.white,
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AcadexRadius.md),
+              ),
             ),
-            onPressed: _isProcessing ? null : () => _verifyCertificate(cert, user),
+            onPressed: _isProcessing
+                ? null
+                : () => _verifyCertificate(cert, user),
             icon: const Icon(LucideIcons.badgeCheck, size: 16),
             label: _isProcessing
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
                 : const Text('Verify Credential'),
           ),
         ],
@@ -323,7 +397,9 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: BorderRadius.circular(AcadexRadius.lg),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -337,13 +413,43 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
             ),
           ),
           const SizedBox(height: 16),
-          _detailRow('Issue Date', DateFormat('dd MMMM yyyy').format(cert.issueDate), LucideIcons.calendar, isDark),
-          _detailRow('Status', cert.isVerified ? 'Verified' : cert.status.displayName, LucideIcons.activity, isDark),
+          _detailRow(
+            'Issue Date',
+            DateFormat('dd MMMM yyyy').format(cert.issueDate),
+            LucideIcons.calendar,
+            isDark,
+          ),
+          _detailRow(
+            'Status',
+            cert.isVerified ? 'Verified' : cert.status.displayName,
+            LucideIcons.activity,
+            isDark,
+          ),
           if (cert.description != null && cert.description!.isNotEmpty)
-            _detailRow('Description', cert.description!, LucideIcons.fileText, isDark),
-          _detailRow('Upload Timestamp', DateFormat('dd MMM yyyy, hh:mm a').format(cert.uploadedAt), LucideIcons.clock, isDark),
-          _detailRow('File Format', cert.fileType.toUpperCase(), LucideIcons.file, isDark),
-          _detailRow('File Size', cert.fileSizeDisplay, LucideIcons.hardDrive, isDark),
+            _detailRow(
+              'Description',
+              cert.description!,
+              LucideIcons.fileText,
+              isDark,
+            ),
+          _detailRow(
+            'Upload Timestamp',
+            DateFormat('dd MMM yyyy, hh:mm a').format(cert.uploadedAt),
+            LucideIcons.clock,
+            isDark,
+          ),
+          _detailRow(
+            'File Format',
+            cert.fileType.toUpperCase(),
+            LucideIcons.file,
+            isDark,
+          ),
+          _detailRow(
+            'File Size',
+            cert.fileSizeDisplay,
+            LucideIcons.hardDrive,
+            isDark,
+          ),
         ],
       ),
     );
@@ -355,7 +461,11 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+          Icon(
+            icon,
+            size: 16,
+            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          ),
           const SizedBox(width: 10),
           SizedBox(
             width: 130,
@@ -363,7 +473,9 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
               label,
               style: GoogleFonts.inter(
                 fontSize: 13,
-                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                color: isDark
+                    ? AcadexColors.darkInkSecondary
+                    : AcadexColors.inkSecondary,
               ),
             ),
           ),
@@ -391,12 +503,17 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
               backgroundColor: AcadexColors.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AcadexRadius.md),
+              ),
               elevation: 0,
             ),
             onPressed: () => _openFile(cert),
             icon: const Icon(LucideIcons.externalLink, size: 16),
-            label: Text('Open / Download Document (${cert.fileSizeDisplay})', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            label: Text(
+              'Open / Download Document (${cert.fileSizeDisplay})',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            ),
           ),
         ),
       ],
@@ -417,17 +534,25 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open download link.')));
+        if (mounted)
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open download link.')),
+          );
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error opening file: $e')));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error opening file: $e')));
     }
   }
 
   Future<void> _verifyCertificate(Certificate cert, UserModel user) async {
     setState(() => _isProcessing = true);
     try {
-      await ref.read(certificateRepositoryProvider).verifyCertificate(
+      await ref
+          .read(certificateRepositoryProvider)
+          .verifyCertificate(
             certificateId: cert.id,
             verifierUid: user.firebaseUid ?? user.id,
             verifierName: user.name,
@@ -444,23 +569,36 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Verification failed: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Verification failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
   }
 
-  Future<void> _confirmDelete(BuildContext context, WidgetRef ref, Certificate cert, UserModel user) async {
+  Future<void> _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    Certificate cert,
+    UserModel user,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Remove Certificate'),
         content: Text('Remove "${cert.title}"? This cannot be undone.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.error, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.error,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Remove'),
           ),
@@ -469,7 +607,9 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
     );
 
     if (confirmed == true) {
-      await ref.read(certificateRepositoryProvider).deleteCertificate(cert.id, user.firebaseUid ?? user.id);
+      await ref
+          .read(certificateRepositoryProvider)
+          .deleteCertificate(cert.id, user.firebaseUid ?? user.id);
       if (mounted) context.safePop(fallbackRoute: '/certificates');
     }
   }

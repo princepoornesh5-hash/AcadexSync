@@ -63,12 +63,16 @@ class ComingSoonScreen extends StatelessWidget {
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.25) : AcadexColors.primaryLight,
+                    color: isDark
+                        ? AcadexColors.primaryHover.withValues(alpha: 0.25)
+                        : AcadexColors.primaryLight,
                     borderRadius: AcadexRadius.borderRadiusXl,
                   ),
                   child: Icon(
                     _iconForModule(moduleName),
-                    color: isDark ? AcadexColors.primaryMuted : AcadexColors.primary,
+                    color: isDark
+                        ? AcadexColors.primaryMuted
+                        : AcadexColors.primary,
                     size: 40,
                   ),
                 ),
@@ -87,10 +91,12 @@ class ComingSoonScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'This module is currently being finalized for the upcoming Acadex semester release.',
+                  'This module is currently being finalized for the upcoming ACADEXSYNC semester release.',
                   textAlign: TextAlign.center,
                   style: AcadexTypography.body(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                 ),
                 const SizedBox(height: 32),

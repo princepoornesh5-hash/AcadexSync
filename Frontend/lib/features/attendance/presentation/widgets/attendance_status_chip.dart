@@ -17,18 +17,22 @@ class AttendanceStatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     final color = status == AttendanceStatus.present
         ? AcadexColors.success
         : status == AttendanceStatus.late
-            ? AcadexColors.warning
-            : AcadexColors.error;
+        ? AcadexColors.warning
+        : AcadexColors.error;
 
     final activeBg = status == AttendanceStatus.present
-        ? (isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight)
+        ? (isDark
+              ? AcadexColors.successDarkContainer
+              : AcadexColors.successLight)
         : status == AttendanceStatus.late
-            ? (isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight)
-            : (isDark ? AcadexColors.errorDarkContainer : AcadexColors.errorLight);
+        ? (isDark
+              ? AcadexColors.warningDarkContainer
+              : AcadexColors.warningLight)
+        : (isDark ? AcadexColors.errorDarkContainer : AcadexColors.errorLight);
 
     return GestureDetector(
       onTap: onTap,
@@ -47,11 +51,16 @@ class AttendanceStatusChip extends StatelessWidget {
         ),
         child: Text(
           status.displayName,
-          style: AcadexTypography.caption(
-            color: isSelected ? color : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-          ).copyWith(
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-          ),
+          style:
+              AcadexTypography.caption(
+                color: isSelected
+                    ? color
+                    : (isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted),
+              ).copyWith(
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              ),
         ),
       ),
     );

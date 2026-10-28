@@ -5,7 +5,7 @@ class AttendanceFilterBar extends StatelessWidget {
   final List<String> subjects;
   final String? selectedSubject;
   final ValueChanged<String?> onSubjectSelected;
-  
+
   final int? selectedMonth;
   final ValueChanged<int?> onMonthSelected;
 
@@ -20,7 +20,20 @@ class AttendanceFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,19 +50,22 @@ class AttendanceFilterBar extends StatelessWidget {
                 onSelected: (_) => onSubjectSelected(null),
               ),
               const SizedBox(width: 8),
-              ...subjects.map((sub) => Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: AcadexChip(
-                  label: sub,
-                  isSelected: selectedSubject == sub,
-                  onSelected: (selected) => onSubjectSelected(selected ? sub : null),
+              ...subjects.map(
+                (sub) => Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: AcadexChip(
+                    label: sub,
+                    isSelected: selectedSubject == sub,
+                    onSelected: (selected) =>
+                        onSubjectSelected(selected ? sub : null),
+                  ),
                 ),
-              )),
+              ),
             ],
           ),
         ),
         const SizedBox(height: 10),
-        
+
         // Month Filters
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -69,7 +85,8 @@ class AttendanceFilterBar extends StatelessWidget {
                   child: AcadexChip(
                     label: months[index],
                     isSelected: selectedMonth == m,
-                    onSelected: (selected) => onMonthSelected(selected ? m : null),
+                    onSelected: (selected) =>
+                        onMonthSelected(selected ? m : null),
                   ),
                 );
               }),

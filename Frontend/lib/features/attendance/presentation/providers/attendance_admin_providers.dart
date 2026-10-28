@@ -14,7 +14,9 @@ final attendanceAdminServiceProvider = Provider<AttendanceAdminService>((ref) {
 });
 
 /// Current active report filter state in Report Center
-final attendanceReportFilterProvider = StateProvider<AttendanceReportFilter>((ref) {
+final attendanceReportFilterProvider = StateProvider<AttendanceReportFilter>((
+  ref,
+) {
   final authState = ref.watch(authProvider);
   final user = authState is AuthAuthenticated ? authState.user : null;
 
@@ -26,18 +28,26 @@ final attendanceReportFilterProvider = StateProvider<AttendanceReportFilter>((re
 });
 
 /// Generates report preview and export data from live domain analytics and session repositories
-final attendanceReportDataProvider = FutureProvider.family<AttendanceReportResult, AttendanceReportFilter>((ref, filter) async {
+final attendanceReportDataProvider = FutureProvider.family<AttendanceReportResult, AttendanceReportFilter>((
+  ref,
+  filter,
+) async {
   final authState = ref.watch(authProvider);
   final user = authState is AuthAuthenticated ? authState.user : null;
   final repo = ref.watch(attendanceRepoProvider);
 
-  final generatedBy = user != null ? '${user.name} (${user.role.name.toUpperCase()})' : 'System Administrator';
+  final generatedBy = user != null
+      ? '${user.name} (${user.role.name.toUpperCase()})'
+      : 'System Administrator';
   final now = DateTime.now();
 
   switch (filter.reportType) {
     case AttendanceReportType.student:
       final studentId = filter.studentId ?? user?.id ?? 'STU-001';
-      final analytics = await repo.getStudentAttendanceAnalytics(studentId, dateRange: filter.dateRange);
+      final analytics = await repo.getStudentAttendanceAnalytics(
+        studentId,
+        dateRange: filter.dateRange,
+      );
 
       final headers = [
         'Metric / Parameter',
@@ -50,26 +60,67 @@ final attendanceReportDataProvider = FutureProvider.family<AttendanceReportResul
         ['Student Name', analytics.studentName, '-', 'VERIFIED'],
         ['Roll Number', analytics.rollNumber, '-', 'ACTIVE'],
         ['Section', analytics.sectionId, '-', 'ASSIGNED'],
-        ['Overall Attendance', '${analytics.attendancePercentage.toStringAsFixed(1)}%', '75.0%', analytics.isLowAttendance ? 'NON-COMPLIANT' : 'GOOD STANDING'],
-        ['Total Sessions Tracked', analytics.totalSessions.toString(), '-', 'RECORDED'],
-        ['Sessions Present', analytics.presentCount.toString(), '-', 'ATTENDED'],
-        ['Sessions Absent', analytics.absentCount.toString(), '-', 'UNATTENDED'],
+        [
+          'Overall Attendance',
+          '${analytics.attendancePercentage.toStringAsFixed(1)}%',
+          '75.0%',
+          analytics.isLowAttendance ? 'NON-COMPLIANT' : 'GOOD STANDING',
+        ],
+        [
+          'Total Sessions Tracked',
+          analytics.totalSessions.toString(),
+          '-',
+          'RECORDED',
+        ],
+        [
+          'Sessions Present',
+          analytics.presentCount.toString(),
+          '-',
+          'ATTENDED',
+        ],
+        [
+          'Sessions Absent',
+          analytics.absentCount.toString(),
+          '-',
+          'UNATTENDED',
+        ],
         ['Sessions Late', analytics.lateCount.toString(), '-', 'LATE'],
-        ['Sessions Excused', analytics.excusedCount.toString(), '-', 'APPROVED'],
-        ['Recovery Needed for 75%', analytics.isLowAttendance ? '${analytics.recoverySessionsNeeded} consecutive classes' : 'None', '0', analytics.isLowAttendance ? 'ACTION REQUIRED' : 'ON TRACK'],
-        ['Risk Standing', analytics.riskLevel.name.toUpperCase(), 'LOW', analytics.riskLevel == AttendanceRiskLevel.critical ? 'CRITICAL' : 'STABLE'],
+        [
+          'Sessions Excused',
+          analytics.excusedCount.toString(),
+          '-',
+          'APPROVED',
+        ],
+        [
+          'Recovery Needed for 75%',
+          analytics.isLowAttendance
+              ? '${analytics.recoverySessionsNeeded} consecutive classes'
+              : 'None',
+          '0',
+          analytics.isLowAttendance ? 'ACTION REQUIRED' : 'ON TRACK',
+        ],
+        [
+          'Risk Standing',
+          analytics.riskLevel.name.toUpperCase(),
+          'LOW',
+          analytics.riskLevel == AttendanceRiskLevel.critical
+              ? 'CRITICAL'
+              : 'STABLE',
+        ],
       ];
 
       return AttendanceReportResult(
         reportType: filter.reportType,
         title: 'Student Attendance Report — ${analytics.studentName}',
-        scopeDescription: 'Student ID: $studentId | Roll: ${analytics.rollNumber} | Section: ${analytics.sectionId}',
+        scopeDescription:
+            'Student ID: $studentId | Roll: ${analytics.rollNumber} | Section: ${analytics.sectionId}',
         generatedAt: now,
         generatedBy: generatedBy,
         dateRange: filter.dateRange,
         totalRecords: analytics.totalSessions,
         summaryStatistics: {
-          'Overall Attendance': '${analytics.attendancePercentage.toStringAsFixed(1)}%',
+          'Overall Attendance':
+              '${analytics.attendancePercentage.toStringAsFixed(1)}%',
           'Total Sessions': analytics.totalSessions,
           'Present Count': analytics.presentCount,
           'Absent Count': analytics.absentCount,
@@ -82,38 +133,75 @@ final attendanceReportDataProvider = FutureProvider.family<AttendanceReportResul
 
     case AttendanceReportType.subject:
       final subjectId = filter.subjectId ?? 'SUB-DEFAULT';
-      final analytics = await repo.getSubjectAttendanceAnalytics(subjectId, sectionId: filter.sectionId, dateRange: filter.dateRange);
+      final analytics = await repo.getSubjectAttendanceAnalytics(
+        subjectId,
+        sectionId: filter.sectionId,
+        dateRange: filter.dateRange,
+      );
 
-      final headers = [
-        'Metric',
-        'Value',
-        'Distribution %',
-      ];
+      final headers = ['Metric', 'Value', 'Distribution %'];
 
       final total = analytics.totalStudentRecords;
       final rows = [
-        ['Subject Name', analytics.subjectName.isNotEmpty ? analytics.subjectName : analytics.subjectId, '-'],
+        [
+          'Subject Name',
+          analytics.subjectName.isNotEmpty
+              ? analytics.subjectName
+              : analytics.subjectId,
+          '-',
+        ],
         ['Subject Code', analytics.subjectId, '-'],
-        ['Overall Attendance', '${analytics.attendancePercentage.toStringAsFixed(1)}%', '-'],
+        [
+          'Overall Attendance',
+          '${analytics.attendancePercentage.toStringAsFixed(1)}%',
+          '-',
+        ],
         ['Total Sessions Conducted', analytics.totalSessions.toString(), '-'],
         ['Total Student Attendances', total.toString(), '100%'],
-        ['Present Records', analytics.presentCount.toString(), total > 0 ? '${(analytics.presentCount / total * 100).toStringAsFixed(1)}%' : '0%'],
-        ['Absent Records', analytics.absentCount.toString(), total > 0 ? '${(analytics.absentCount / total * 100).toStringAsFixed(1)}%' : '0%'],
-        ['Late Records', analytics.lateCount.toString(), total > 0 ? '${(analytics.lateCount / total * 100).toStringAsFixed(1)}%' : '0%'],
-        ['Excused Records', analytics.excusedCount.toString(), total > 0 ? '${(analytics.excusedCount / total * 100).toStringAsFixed(1)}%' : '0%'],
+        [
+          'Present Records',
+          analytics.presentCount.toString(),
+          total > 0
+              ? '${(analytics.presentCount / total * 100).toStringAsFixed(1)}%'
+              : '0%',
+        ],
+        [
+          'Absent Records',
+          analytics.absentCount.toString(),
+          total > 0
+              ? '${(analytics.absentCount / total * 100).toStringAsFixed(1)}%'
+              : '0%',
+        ],
+        [
+          'Late Records',
+          analytics.lateCount.toString(),
+          total > 0
+              ? '${(analytics.lateCount / total * 100).toStringAsFixed(1)}%'
+              : '0%',
+        ],
+        [
+          'Excused Records',
+          analytics.excusedCount.toString(),
+          total > 0
+              ? '${(analytics.excusedCount / total * 100).toStringAsFixed(1)}%'
+              : '0%',
+        ],
       ];
 
       return AttendanceReportResult(
         reportType: filter.reportType,
-        title: 'Subject Attendance Report — ${analytics.subjectName.isNotEmpty ? analytics.subjectName : analytics.subjectId}',
-        scopeDescription: 'Subject Code: $subjectId | Section: ${filter.sectionId ?? "All Sections"}',
+        title:
+            'Subject Attendance Report — ${analytics.subjectName.isNotEmpty ? analytics.subjectName : analytics.subjectId}',
+        scopeDescription:
+            'Subject Code: $subjectId | Section: ${filter.sectionId ?? "All Sections"}',
         generatedAt: now,
         generatedBy: generatedBy,
         dateRange: filter.dateRange,
         totalRecords: analytics.totalSessions,
         summaryStatistics: {
           'Subject Name': analytics.subjectName,
-          'Overall Attendance': '${analytics.attendancePercentage.toStringAsFixed(1)}%',
+          'Overall Attendance':
+              '${analytics.attendancePercentage.toStringAsFixed(1)}%',
           'Sessions Conducted': analytics.totalSessions,
           'Total Records': analytics.totalStudentRecords,
         },
@@ -123,7 +211,10 @@ final attendanceReportDataProvider = FutureProvider.family<AttendanceReportResul
 
     case AttendanceReportType.section:
       final sectionId = filter.sectionId ?? 'SEC-A';
-      final analytics = await repo.getSectionAttendanceAnalytics(sectionId, dateRange: filter.dateRange);
+      final analytics = await repo.getSectionAttendanceAnalytics(
+        sectionId,
+        dateRange: filter.dateRange,
+      );
 
       final headers = [
         'Rank',
@@ -138,8 +229,12 @@ final attendanceReportDataProvider = FutureProvider.family<AttendanceReportResul
       ];
 
       final rows = <List<dynamic>>[];
-      final sortedStudents = List<StudentAttendanceAnalytics>.from(analytics.studentAnalytics)
-        ..sort((a, b) => b.attendancePercentage.compareTo(a.attendancePercentage));
+      final sortedStudents =
+          List<StudentAttendanceAnalytics>.from(analytics.studentAnalytics)
+            ..sort(
+              (a, b) =>
+                  b.attendancePercentage.compareTo(a.attendancePercentage),
+            );
 
       for (int i = 0; i < sortedStudents.length; i++) {
         final s = sortedStudents[i];
@@ -158,15 +253,18 @@ final attendanceReportDataProvider = FutureProvider.family<AttendanceReportResul
 
       return AttendanceReportResult(
         reportType: filter.reportType,
-        title: 'Section Attendance Report — ${analytics.sectionName.isNotEmpty ? analytics.sectionName : analytics.sectionId}',
-        scopeDescription: 'Section: $sectionId | Total Students: ${analytics.totalStudents}',
+        title:
+            'Section Attendance Report — ${analytics.sectionName.isNotEmpty ? analytics.sectionName : analytics.sectionId}',
+        scopeDescription:
+            'Section: $sectionId | Total Students: ${analytics.totalStudents}',
         generatedAt: now,
         generatedBy: generatedBy,
         dateRange: filter.dateRange,
         totalRecords: analytics.totalStudents,
         summaryStatistics: {
           'Section Name': analytics.sectionName,
-          'Average Attendance': '${analytics.attendancePercentage.toStringAsFixed(1)}%',
+          'Average Attendance':
+              '${analytics.attendancePercentage.toStringAsFixed(1)}%',
           'Total Students': analytics.totalStudents,
           'Total Sessions': analytics.totalSessions,
           'Students Below 75%': analytics.lowAttendanceStudentCount,
@@ -177,19 +275,27 @@ final attendanceReportDataProvider = FutureProvider.family<AttendanceReportResul
 
     case AttendanceReportType.faculty:
       final facultyId = filter.facultyId ?? user?.id ?? 'FAC-001';
-      final analytics = await repo.getFacultyAttendanceAnalytics(facultyId, dateRange: filter.dateRange);
+      final analytics = await repo.getFacultyAttendanceAnalytics(
+        facultyId,
+        dateRange: filter.dateRange,
+      );
 
-      final headers = [
-        'Metric',
-        'Value',
-      ];
+      final headers = ['Metric', 'Value'];
 
       final rows = [
         ['Faculty ID', analytics.facultyId],
-        ['Faculty Name', analytics.facultyName.isNotEmpty ? analytics.facultyName : analytics.facultyId],
+        [
+          'Faculty Name',
+          analytics.facultyName.isNotEmpty
+              ? analytics.facultyName
+              : analytics.facultyId,
+        ],
         ['Sessions Conducted', analytics.totalSessionsConducted.toString()],
         ['Students Tracked', analytics.totalStudentRecords.toString()],
-        ['Average Attendance %', '${analytics.attendancePercentage.toStringAsFixed(1)}%'],
+        [
+          'Average Attendance %',
+          '${analytics.attendancePercentage.toStringAsFixed(1)}%',
+        ],
         ['Present Attendances', analytics.presentCount.toString()],
         ['Absent Attendances', analytics.absentCount.toString()],
         ['Late Attendances', analytics.lateCount.toString()],
@@ -198,7 +304,8 @@ final attendanceReportDataProvider = FutureProvider.family<AttendanceReportResul
 
       return AttendanceReportResult(
         reportType: filter.reportType,
-        title: 'Faculty Attendance Report — ${analytics.facultyName.isNotEmpty ? analytics.facultyName : analytics.facultyId}',
+        title:
+            'Faculty Attendance Report — ${analytics.facultyName.isNotEmpty ? analytics.facultyName : analytics.facultyId}',
         scopeDescription: 'Faculty ID: $facultyId',
         generatedAt: now,
         generatedBy: generatedBy,
@@ -207,7 +314,8 @@ final attendanceReportDataProvider = FutureProvider.family<AttendanceReportResul
         summaryStatistics: {
           'Faculty Name': analytics.facultyName,
           'Sessions Conducted': analytics.totalSessionsConducted,
-          'Average Attendance': '${analytics.attendancePercentage.toStringAsFixed(1)}%',
+          'Average Attendance':
+              '${analytics.attendancePercentage.toStringAsFixed(1)}%',
           'Total Records Tracked': analytics.totalStudentRecords,
         },
         headers: headers,
@@ -229,27 +337,35 @@ final attendanceReportDataProvider = FutureProvider.family<AttendanceReportResul
         'Standing',
       ];
 
-      final rows = sections.map((s) => [
-        s.sectionName,
-        s.semester,
-        s.totalStudents.toString(),
-        s.present.toString(),
-        s.absent.toString(),
-        '${s.attendancePercentage.toStringAsFixed(1)}%',
-        s.attendancePercentage < 70 ? 'CRITICAL' : (s.attendancePercentage < 75 ? 'WARNING' : 'HEALTHY'),
-      ]).toList();
+      final rows = sections
+          .map(
+            (s) => [
+              s.sectionName,
+              s.semester,
+              s.totalStudents.toString(),
+              s.present.toString(),
+              s.absent.toString(),
+              '${s.attendancePercentage.toStringAsFixed(1)}%',
+              s.attendancePercentage < 70
+                  ? 'CRITICAL'
+                  : (s.attendancePercentage < 75 ? 'WARNING' : 'HEALTHY'),
+            ],
+          )
+          .toList();
 
       return AttendanceReportResult(
         reportType: filter.reportType,
         title: 'Department Attendance Report — $deptId',
-        scopeDescription: 'Department: $deptId | Total Sections: ${sections.length}',
+        scopeDescription:
+            'Department: $deptId | Total Sections: ${sections.length}',
         generatedAt: now,
         generatedBy: generatedBy,
         dateRange: filter.dateRange,
         totalRecords: sections.length,
         summaryStatistics: {
           'Department ID': deptId,
-          'Department Attendance': '${deptSummary.overallPercentage.toStringAsFixed(1)}%',
+          'Department Attendance':
+              '${deptSummary.overallPercentage.toStringAsFixed(1)}%',
           'Total Students': deptSummary.totalStudents,
           'Total Shortage Count': deptSummary.studentsBelow75,
         },
@@ -269,24 +385,30 @@ final attendanceReportDataProvider = FutureProvider.family<AttendanceReportResul
         'Faculty Count',
       ];
 
-      final rows = deptComparisons.map((d) => [
-        d.departmentName,
-        '${d.attendancePercentage.toStringAsFixed(1)}%',
-        d.studentCount.toString(),
-        d.facultyCount.toString(),
-      ]).toList();
+      final rows = deptComparisons
+          .map(
+            (d) => [
+              d.departmentName,
+              '${d.attendancePercentage.toStringAsFixed(1)}%',
+              d.studentCount.toString(),
+              d.facultyCount.toString(),
+            ],
+          )
+          .toList();
 
       return AttendanceReportResult(
         reportType: filter.reportType,
         title: 'College Attendance Report — $collegeId',
-        scopeDescription: 'College: $collegeId | Departments: ${deptComparisons.length}',
+        scopeDescription:
+            'College: $collegeId | Departments: ${deptComparisons.length}',
         generatedAt: now,
         generatedBy: generatedBy,
         dateRange: filter.dateRange,
         totalRecords: deptComparisons.length,
         summaryStatistics: {
           'College ID': collegeId,
-          'College Attendance': '${collegeSummary.todayAttendancePercentage.toStringAsFixed(1)}%',
+          'College Attendance':
+              '${collegeSummary.todayAttendancePercentage.toStringAsFixed(1)}%',
           'Total Students': collegeSummary.totalStudents,
           'Total Departments': collegeSummary.totalDepartments,
           'Students Below Threshold': collegeSummary.studentsBelowThreshold,
@@ -312,18 +434,22 @@ final attendanceReportDataProvider = FutureProvider.family<AttendanceReportResul
         'Version',
       ];
 
-      final rows = sessions.map((s) => [
-        s.date.toIso8601String().split('T').first,
-        s.timeSlot,
-        s.subjectName.isNotEmpty ? s.subjectName : s.subjectId,
-        s.sectionName.isNotEmpty ? s.sectionName : s.sectionId,
-        s.totalStudents.toString(),
-        s.presentCount.toString(),
-        s.absentCount.toString(),
-        '${s.attendancePercentage.toStringAsFixed(1)}%',
-        s.isSubmitted ? 'Submitted' : 'Draft',
-        'v${s.version}',
-      ]).toList();
+      final rows = sessions
+          .map(
+            (s) => [
+              s.date.toIso8601String().split('T').first,
+              s.timeSlot,
+              s.subjectName.isNotEmpty ? s.subjectName : s.subjectId,
+              s.sectionName.isNotEmpty ? s.sectionName : s.sectionId,
+              s.totalStudents.toString(),
+              s.presentCount.toString(),
+              s.absentCount.toString(),
+              '${s.attendancePercentage.toStringAsFixed(1)}%',
+              s.isSubmitted ? 'Submitted' : 'Draft',
+              'v${s.version}',
+            ],
+          )
+          .toList();
 
       return AttendanceReportResult(
         reportType: filter.reportType,
@@ -373,7 +499,8 @@ final attendanceReportDataProvider = FutureProvider.family<AttendanceReportResul
       return AttendanceReportResult(
         reportType: filter.reportType,
         title: 'Low Attendance Action & Intervention Report',
-        scopeDescription: 'Scope: ${deptId.isNotEmpty ? "Department $deptId" : "Institution"} | Threshold: 75.0%',
+        scopeDescription:
+            'Scope: ${deptId.isNotEmpty ? "Department $deptId" : "Institution"} | Threshold: 75.0%',
         generatedAt: now,
         generatedBy: generatedBy,
         dateRange: filter.dateRange,
@@ -381,8 +508,12 @@ final attendanceReportDataProvider = FutureProvider.family<AttendanceReportResul
         summaryStatistics: {
           'Threshold': '75.0%',
           'Students in Shortage': shortages.length,
-          'Critical (<65%)': shortages.where((s) => s.status == ShortageStatus.critical).length,
-          'Warning (65-75%)': shortages.where((s) => s.status == ShortageStatus.warning).length,
+          'Critical (<65%)': shortages
+              .where((s) => s.status == ShortageStatus.critical)
+              .length,
+          'Warning (65-75%)': shortages
+              .where((s) => s.status == ShortageStatus.warning)
+              .length,
         },
         headers: headers,
         rows: rows,
@@ -391,77 +522,112 @@ final attendanceReportDataProvider = FutureProvider.family<AttendanceReportResul
 });
 
 /// Reconciles timetable classes with recorded attendance sessions
-final attendanceReconciliationProvider = FutureProvider.family<AttendanceReconciliationResult, ({String? departmentId, String? sectionId, AttendanceDateRange? dateRange})>((ref, args) async {
-  final adminService = ref.watch(attendanceAdminServiceProvider);
-  final timetableRepo = ref.watch(timetableRepositoryProvider);
-  final attendanceRepo = ref.watch(attendanceRepoProvider);
-  final authState = ref.watch(authProvider);
-  final user = authState is AuthAuthenticated ? authState.user : null;
+final attendanceReconciliationProvider =
+    FutureProvider.family<
+      AttendanceReconciliationResult,
+      ({
+        String? departmentId,
+        String? sectionId,
+        AttendanceDateRange? dateRange,
+      })
+    >((ref, args) async {
+      final adminService = ref.watch(attendanceAdminServiceProvider);
+      final timetableRepo = ref.watch(timetableRepositoryProvider);
+      final attendanceRepo = ref.watch(attendanceRepoProvider);
+      final authState = ref.watch(authProvider);
+      final user = authState is AuthAuthenticated ? authState.user : null;
 
-  final collegeId = user?.collegeId ?? 'COL-001';
-  final scheduledEntries = await timetableRepo.getTimetable(
-    collegeId: collegeId,
-    departmentId: args.departmentId,
-    sectionId: args.sectionId,
-  );
+      final collegeId = user?.collegeId ?? 'COL-001';
+      final scheduledEntries = await timetableRepo.getTimetable(
+        collegeId: collegeId,
+        departmentId: args.departmentId,
+        sectionId: args.sectionId,
+      );
 
-  final recordedSessions = await attendanceRepo.getRecentSessions(user?.id ?? '');
+      final recordedSessions = await attendanceRepo.getRecentSessions(
+        user?.id ?? '',
+      );
 
-  return adminService.calculateReconciliation(
-    scheduledEntries: scheduledEntries,
-    recordedSessions: recordedSessions,
-    dateRange: args.dateRange,
-  );
-});
+      return adminService.calculateReconciliation(
+        scheduledEntries: scheduledEntries,
+        recordedSessions: recordedSessions,
+        dateRange: args.dateRange,
+      );
+    });
 
 /// Evaluates data consistency anomalies across attendance sessions
-final attendanceConsistencyProvider = FutureProvider.family<List<AttendanceConsistencyIssue>, ({String? departmentId, AttendanceDateRange? dateRange})>((ref, args) async {
-  final adminService = ref.watch(attendanceAdminServiceProvider);
-  final attendanceRepo = ref.watch(attendanceRepoProvider);
-  final authState = ref.watch(authProvider);
-  final user = authState is AuthAuthenticated ? authState.user : null;
+final attendanceConsistencyProvider =
+    FutureProvider.family<
+      List<AttendanceConsistencyIssue>,
+      ({String? departmentId, AttendanceDateRange? dateRange})
+    >((ref, args) async {
+      final adminService = ref.watch(attendanceAdminServiceProvider);
+      final attendanceRepo = ref.watch(attendanceRepoProvider);
+      final authState = ref.watch(authProvider);
+      final user = authState is AuthAuthenticated ? authState.user : null;
 
-  final sessions = await attendanceRepo.getRecentSessions(user?.id ?? '');
-  return adminService.checkDataConsistency(sessions: sessions);
-});
+      final sessions = await attendanceRepo.getRecentSessions(user?.id ?? '');
+      return adminService.checkDataConsistency(sessions: sessions);
+    });
 
 /// Session audit logs for administrators
-final attendanceAuditHistoryProvider = FutureProvider.family<List<AttendanceAuditEntry>, ({String? departmentId, AttendanceDateRange? dateRange})>((ref, args) async {
-  final adminService = ref.watch(attendanceAdminServiceProvider);
-  final attendanceRepo = ref.watch(attendanceRepoProvider);
-  final authState = ref.watch(authProvider);
-  final user = authState is AuthAuthenticated ? authState.user : null;
+final attendanceAuditHistoryProvider =
+    FutureProvider.family<
+      List<AttendanceAuditEntry>,
+      ({String? departmentId, AttendanceDateRange? dateRange})
+    >((ref, args) async {
+      final adminService = ref.watch(attendanceAdminServiceProvider);
+      final attendanceRepo = ref.watch(attendanceRepoProvider);
+      final authState = ref.watch(authProvider);
+      final user = authState is AuthAuthenticated ? authState.user : null;
 
-  final sessions = await attendanceRepo.getRecentSessions(user?.id ?? '');
-  return adminService.extractAuditHistory(sessions: sessions);
-});
+      final sessions = await attendanceRepo.getRecentSessions(user?.id ?? '');
+      return adminService.extractAuditHistory(sessions: sessions);
+    });
 
 /// Administrative search, sorting, and pagination for sessions
-final attendanceAdminSessionsProvider = FutureProvider.family<List<AttendanceSession>, ({String? query, String? sectionId, String? facultyId, int page, int pageSize})>((ref, args) async {
-  final attendanceRepo = ref.watch(attendanceRepoProvider);
-  final authState = ref.watch(authProvider);
-  final user = authState is AuthAuthenticated ? authState.user : null;
+final attendanceAdminSessionsProvider =
+    FutureProvider.family<
+      List<AttendanceSession>,
+      ({
+        String? query,
+        String? sectionId,
+        String? facultyId,
+        int page,
+        int pageSize,
+      })
+    >((ref, args) async {
+      final attendanceRepo = ref.watch(attendanceRepoProvider);
+      final authState = ref.watch(authProvider);
+      final user = authState is AuthAuthenticated ? authState.user : null;
 
-  var sessions = await attendanceRepo.getRecentSessions(args.facultyId ?? user?.id ?? '');
+      var sessions = await attendanceRepo.getRecentSessions(
+        args.facultyId ?? user?.id ?? '',
+      );
 
-  if (args.sectionId != null && args.sectionId!.isNotEmpty) {
-    sessions = sessions.where((s) => s.sectionId == args.sectionId).toList();
-  }
+      if (args.sectionId != null && args.sectionId!.isNotEmpty) {
+        sessions = sessions
+            .where((s) => s.sectionId == args.sectionId)
+            .toList();
+      }
 
-  if (args.query != null && args.query!.trim().isNotEmpty) {
-    final q = args.query!.toLowerCase().trim();
-    sessions = sessions.where((s) =>
-      s.subjectName.toLowerCase().contains(q) ||
-      s.subjectId.toLowerCase().contains(q) ||
-      s.sectionName.toLowerCase().contains(q) ||
-      s.sectionId.toLowerCase().contains(q) ||
-      s.facultyId.toLowerCase().contains(q)
-    ).toList();
-  }
+      if (args.query != null && args.query!.trim().isNotEmpty) {
+        final q = args.query!.toLowerCase().trim();
+        sessions = sessions
+            .where(
+              (s) =>
+                  s.subjectName.toLowerCase().contains(q) ||
+                  s.subjectId.toLowerCase().contains(q) ||
+                  s.sectionName.toLowerCase().contains(q) ||
+                  s.sectionId.toLowerCase().contains(q) ||
+                  s.facultyId.toLowerCase().contains(q),
+            )
+            .toList();
+      }
 
-  final startIndex = (args.page - 1) * args.pageSize;
-  if (startIndex >= sessions.length) return [];
-  final endIndex = (startIndex + args.pageSize).clamp(0, sessions.length);
+      final startIndex = (args.page - 1) * args.pageSize;
+      if (startIndex >= sessions.length) return [];
+      final endIndex = (startIndex + args.pageSize).clamp(0, sessions.length);
 
-  return sessions.sublist(startIndex, endIndex);
-});
+      return sessions.sublist(startIndex, endIndex);
+    });

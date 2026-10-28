@@ -89,7 +89,8 @@ class AcadexBadge extends StatelessWidget {
     }
 
     final child = Container(
-      padding: padding ?? const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding:
+          padding ?? const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: AcadexRadius.borderRadiusFull,
@@ -176,15 +177,22 @@ class AcadexChip extends StatelessWidget {
               avatar!,
               const SizedBox(width: 6),
             ] else if (icon != null) ...[
-              Icon(icon, size: 14, color: isSelected ? selectedFg : unselectedFg),
+              Icon(
+                icon,
+                size: 14,
+                color: isSelected ? selectedFg : unselectedFg,
+              ),
               const SizedBox(width: 6),
             ],
             AnimatedDefaultTextStyle(
               duration: AcadexMotion.normal,
               curve: AcadexMotion.curveStandard,
-              style: AcadexTypography.caption(
-                color: isSelected ? selectedFg : unselectedFg,
-              ).copyWith(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500),
+              style:
+                  AcadexTypography.caption(
+                    color: isSelected ? selectedFg : unselectedFg,
+                  ).copyWith(
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  ),
               child: Text(label),
             ),
           ],
@@ -225,8 +233,10 @@ class AcadexFilterBar<T> extends StatelessWidget {
       child: Row(
         children: options.map((option) {
           final isSelected = option.value == selectedValue;
-          final String displayText = option.count != null ? '${option.label} (${option.count})' : option.label;
-          
+          final String displayText = option.count != null
+              ? '${option.label} (${option.count})'
+              : option.label;
+
           return Padding(
             padding: const EdgeInsets.only(right: AcadexSpacing.space8),
             child: AcadexPressable(
@@ -236,12 +246,19 @@ class AcadexFilterBar<T> extends StatelessWidget {
               child: AnimatedContainer(
                 duration: AcadexMotion.normal,
                 curve: AcadexMotion.curveStandard,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: isSelected ? AcadexColors.primary : AcadexColors.surface,
+                  color: isSelected
+                      ? AcadexColors.primary
+                      : AcadexColors.surface,
                   borderRadius: AcadexRadius.borderRadiusSm,
                   border: Border.all(
-                    color: isSelected ? AcadexColors.primary : AcadexColors.hairline,
+                    color: isSelected
+                        ? AcadexColors.primary
+                        : AcadexColors.hairline,
                     width: 1,
                   ),
                 ),
@@ -251,7 +268,9 @@ class AcadexFilterBar<T> extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected ? Colors.white : AcadexColors.inkSecondary,
+                    color: isSelected
+                        ? Colors.white
+                        : AcadexColors.inkSecondary,
                   ),
                   child: Text(displayText),
                 ),

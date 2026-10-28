@@ -21,7 +21,8 @@ class CalendarEventCard extends StatelessWidget {
       event.sourceType == CalendarSourceType.assignment ||
       event.eventType == CalendarEventType.deadline ||
       event.eventType == CalendarEventType.assignmentDeadline ||
-      (event.navigationTarget != null && event.navigationTarget!.startsWith('/assignments'));
+      (event.navigationTarget != null &&
+          event.navigationTarget!.startsWith('/assignments'));
 
   IconData _getIcon() {
     if (_isAssignmentDeadline) {
@@ -124,14 +125,16 @@ class CalendarEventCard extends StatelessWidget {
           color: isCancelled
               ? (isDark ? Colors.red.shade900 : Colors.red.shade200)
               : isAssignment
-                  ? (isDark ? const Color(0xFF1E3A8A) : const Color(0xFFBFDBFE))
-                  : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+              ? (isDark ? const Color(0xFF1E3A8A) : const Color(0xFFBFDBFE))
+              : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
           width: isAssignment ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
             color: isAssignment
-                ? const Color(0xFF2563EB).withValues(alpha: isDark ? 0.15 : 0.06)
+                ? const Color(
+                    0xFF2563EB,
+                  ).withValues(alpha: isDark ? 0.15 : 0.06)
                 : Colors.black.withValues(alpha: isDark ? 0.20 : 0.03),
             blurRadius: isAssignment ? 6 : 4,
             offset: const Offset(0, 1),
@@ -145,7 +148,8 @@ class CalendarEventCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           onTap: () {
             if (isAssignment) {
-              if (event.navigationTarget != null && event.navigationTarget!.isNotEmpty) {
+              if (event.navigationTarget != null &&
+                  event.navigationTarget!.isNotEmpty) {
                 context.push(event.navigationTarget!);
               } else if (event.sourceId != null && event.sourceId!.isNotEmpty) {
                 context.push('/assignments/${event.sourceId}');
@@ -181,11 +185,7 @@ class CalendarEventCard extends StatelessWidget {
                     color: color.withValues(alpha: isDark ? 0.2 : 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(
-                    _getIcon(),
-                    color: color,
-                    size: 20,
-                  ),
+                  child: Icon(_getIcon(), color: color, size: 20),
                 ),
                 const SizedBox(width: 12),
 
@@ -218,9 +218,15 @@ class CalendarEventCard extends StatelessWidget {
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                                 color: isCancelled
-                                    ? (isDark ? AcadexColors.darkInkFaint : Colors.grey.shade500)
-                                    : (isDark ? AcadexColors.darkInk : const Color(0xFF0F172A)),
-                                decoration: isCancelled ? TextDecoration.lineThrough : null,
+                                    ? (isDark
+                                          ? AcadexColors.darkInkFaint
+                                          : Colors.grey.shade500)
+                                    : (isDark
+                                          ? AcadexColors.darkInk
+                                          : const Color(0xFF0F172A)),
+                                decoration: isCancelled
+                                    ? TextDecoration.lineThrough
+                                    : null,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -228,7 +234,10 @@ class CalendarEventCard extends StatelessWidget {
                           ),
                           if (isCancelled)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               margin: const EdgeInsets.only(left: 6),
                               decoration: BoxDecoration(
                                 color: Colors.red.shade50,
@@ -245,7 +254,10 @@ class CalendarEventCard extends StatelessWidget {
                             )
                           else if (isDraft)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               margin: const EdgeInsets.only(left: 6),
                               decoration: BoxDecoration(
                                 color: Colors.amber.shade50,
@@ -270,14 +282,18 @@ class CalendarEventCard extends StatelessWidget {
                           Icon(
                             LucideIcons.clock,
                             size: 13,
-                            color: isDark ? AcadexColors.darkInkMuted : Colors.grey.shade500,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : Colors.grey.shade500,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             timeLabel,
                             style: TextStyle(
                               fontSize: 12,
-                              color: isDark ? AcadexColors.darkInkMuted : const Color(0xFF475569),
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : const Color(0xFF475569),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -288,40 +304,62 @@ class CalendarEventCard extends StatelessWidget {
                       // 4. Context / Type
                       Row(
                         children: [
-                          if (event.academicContext != null && event.academicContext!.isNotEmpty) ...[
+                          if (event.academicContext != null &&
+                              event.academicContext!.isNotEmpty) ...[
                             Flexible(
                               child: Text(
                                 event.academicContext!,
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
-                                  color: isDark ? AcadexColors.darkInkSecondary : const Color(0xFF64748B),
+                                  color: isDark
+                                      ? AcadexColors.darkInkSecondary
+                                      : const Color(0xFF64748B),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(width: 6),
-                            Text('•', style: TextStyle(color: isDark ? AcadexColors.darkInkFaint : Colors.grey.shade400, fontSize: 10)),
+                            Text(
+                              '•',
+                              style: TextStyle(
+                                color: isDark
+                                    ? AcadexColors.darkInkFaint
+                                    : Colors.grey.shade400,
+                                fontSize: 10,
+                              ),
+                            ),
                             const SizedBox(width: 6),
                           ],
                           Flexible(
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                color: color.withValues(alpha: isDark ? 0.2 : 0.08),
+                                color: color.withValues(
+                                  alpha: isDark ? 0.2 : 0.08,
+                                ),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   if (isAssignment) ...[
-                                    Icon(LucideIcons.fileClock, size: 11, color: color),
+                                    Icon(
+                                      LucideIcons.fileClock,
+                                      size: 11,
+                                      color: color,
+                                    ),
                                     const SizedBox(width: 4),
                                   ],
                                   Flexible(
                                     child: Text(
-                                      isAssignment ? 'Assignment Deadline' : event.eventType.displayName,
+                                      isAssignment
+                                          ? 'Assignment Deadline'
+                                          : event.eventType.displayName,
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
@@ -345,7 +383,9 @@ class CalendarEventCard extends StatelessWidget {
                 Icon(
                   LucideIcons.chevronRight,
                   size: 16,
-                  color: isDark ? AcadexColors.darkInkFaint : Colors.grey.shade400,
+                  color: isDark
+                      ? AcadexColors.darkInkFaint
+                      : Colors.grey.shade400,
                 ),
               ],
             ),

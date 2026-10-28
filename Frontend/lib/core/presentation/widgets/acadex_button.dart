@@ -4,6 +4,7 @@ import '../../../app/theme/app_theme.dart';
 import 'acadex_motion.dart';
 
 enum AcadexButtonVariant { primary, secondary, soft, danger, ghost }
+
 enum AcadexButtonSize { sm, md, lg }
 
 class AcadexButton extends ConsumerWidget {
@@ -45,10 +46,7 @@ class AcadexButton extends ConsumerWidget {
         bg = Colors.white;
         fg = AcadexColors.ink;
         iconColor = AcadexColors.ink;
-        border = const BorderSide(
-          color: AcadexColors.hairline,
-          width: 1.0,
-        );
+        border = const BorderSide(color: AcadexColors.hairline, width: 1.0);
         break;
       case AcadexButtonVariant.soft:
         bg = AcadexColors.primaryLight;
@@ -75,19 +73,28 @@ class AcadexButton extends ConsumerWidget {
     switch (size) {
       case AcadexButtonSize.sm:
         height = 36;
-        defaultPadding = const EdgeInsets.symmetric(horizontal: 12, vertical: 8);
+        defaultPadding = const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 8,
+        );
         fontSize = 12.5;
         iconSize = 14;
         break;
       case AcadexButtonSize.md:
         height = 44;
-        defaultPadding = const EdgeInsets.symmetric(horizontal: 18, vertical: 11);
+        defaultPadding = const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 11,
+        );
         fontSize = 14;
         iconSize = 16;
         break;
       case AcadexButtonSize.lg:
         height = 50;
-        defaultPadding = const EdgeInsets.symmetric(horizontal: 24, vertical: 14);
+        defaultPadding = const EdgeInsets.symmetric(
+          horizontal: 24,
+          vertical: 14,
+        );
         fontSize = 15;
         iconSize = 18;
         break;
@@ -115,45 +122,51 @@ class AcadexButton extends ConsumerWidget {
           child: Text(
             label,
             overflow: TextOverflow.ellipsis,
-            style: AcadexTypography.button(color: fg).copyWith(
-              fontSize: fontSize,
-              fontWeight: FontWeight.w600,
-            ),
+            style: AcadexTypography.button(
+              color: fg,
+            ).copyWith(fontSize: fontSize, fontWeight: FontWeight.w600),
           ),
         ),
       ],
     );
 
-    final buttonStyle = ElevatedButton.styleFrom(
-      backgroundColor: bg,
-      foregroundColor: fg,
-      disabledBackgroundColor: bg.withValues(alpha: 0.5),
-      disabledForegroundColor: fg.withValues(alpha: 0.5),
-      elevation: 0,
-      shadowColor: Colors.transparent,
-      padding: padding ?? defaultPadding,
-      minimumSize: Size(isFullWidth ? double.infinity : 0, height),
-      tapTargetSize: MaterialTapTargetSize.padded,
-      shape: RoundedRectangleBorder(
-        borderRadius: AcadexRadius.borderRadiusMd,
-        side: border,
-      ),
-      // Overlay color for deep press feedback
-      overlayColor: variant == AcadexButtonVariant.primary 
-          ? Colors.black.withOpacity(0.15) 
-          : AcadexColors.primary.withOpacity(0.1),
-    ).copyWith(
-      // Smooth color transition for state changes
-      backgroundColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
-        if (states.contains(WidgetState.disabled)) return bg.withValues(alpha: 0.5);
-        if (states.contains(WidgetState.pressed)) {
-          if (variant == AcadexButtonVariant.primary) return AcadexColors.primaryDark;
-          if (variant == AcadexButtonVariant.soft) return AcadexColors.primary.withOpacity(0.2);
-          if (variant == AcadexButtonVariant.danger) return AcadexColors.errorDark;
-        }
-        return bg;
-      }),
-    );
+    final buttonStyle =
+        ElevatedButton.styleFrom(
+          backgroundColor: bg,
+          foregroundColor: fg,
+          disabledBackgroundColor: bg.withValues(alpha: 0.5),
+          disabledForegroundColor: fg.withValues(alpha: 0.5),
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          padding: padding ?? defaultPadding,
+          minimumSize: Size(isFullWidth ? double.infinity : 0, height),
+          tapTargetSize: MaterialTapTargetSize.padded,
+          shape: RoundedRectangleBorder(
+            borderRadius: AcadexRadius.borderRadiusMd,
+            side: border,
+          ),
+          // Overlay color for deep press feedback
+          overlayColor: variant == AcadexButtonVariant.primary
+              ? Colors.black.withOpacity(0.15)
+              : AcadexColors.primary.withOpacity(0.1),
+        ).copyWith(
+          // Smooth color transition for state changes
+          backgroundColor: WidgetStateProperty.resolveWith<Color>((
+            Set<WidgetState> states,
+          ) {
+            if (states.contains(WidgetState.disabled))
+              return bg.withValues(alpha: 0.5);
+            if (states.contains(WidgetState.pressed)) {
+              if (variant == AcadexButtonVariant.primary)
+                return AcadexColors.primaryDark;
+              if (variant == AcadexButtonVariant.soft)
+                return AcadexColors.primary.withOpacity(0.2);
+              if (variant == AcadexButtonVariant.danger)
+                return AcadexColors.errorDark;
+            }
+            return bg;
+          }),
+        );
 
     return AcadexPressable(
       isInteractive: onPressed != null && !isLoading,
@@ -230,11 +243,7 @@ class AcadexIconButton extends StatelessWidget {
           constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
           alignment: Alignment.center,
           padding: const EdgeInsets.all(8.0),
-          child: Icon(
-            icon,
-            size: size,
-            color: color ?? defaultColor,
-          ),
+          child: Icon(icon, size: size, color: color ?? defaultColor),
         ),
       ),
     );

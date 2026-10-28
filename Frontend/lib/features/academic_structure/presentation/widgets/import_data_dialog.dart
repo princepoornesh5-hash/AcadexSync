@@ -60,12 +60,13 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
         data: {
           'fileName': name,
           'fileBase64': base64Content,
-          'dataType': widget.entityName.toLowerCase().contains('mark') ||
+          'dataType':
+              widget.entityName.toLowerCase().contains('mark') ||
                   widget.entityName.toLowerCase().contains('assessment')
               ? 'ASSESSMENT'
               : widget.entityName.toLowerCase().contains('attendance')
-                  ? 'ATTENDANCE'
-                  : 'STUDENT_ROSTER',
+              ? 'ATTENDANCE'
+              : 'STUDENT_ROSTER',
           'sectionId': widget.sectionId,
           'academicYearId': widget.academicYearId,
           'semesterId': widget.semesterId,
@@ -109,10 +110,7 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
 
       await _apiClient.dio.put(
         '/imports/${_batch!.id}/mappings',
-        data: {
-          'selectedSheet': _selectedSheet,
-          'customMappings': mappingList,
-        },
+        data: {'selectedSheet': _selectedSheet, 'customMappings': mappingList},
       );
 
       // 2. Validate and generate preview
@@ -154,9 +152,7 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
     try {
       final res = await _apiClient.dio.post(
         '/imports/${_batch!.id}/confirm',
-        data: {
-          'allowPartial': _allowPartial,
-        },
+        data: {'allowPartial': _allowPartial},
       );
 
       final msg = res.data['message']?.toString() ?? 'Import completed';
@@ -205,7 +201,10 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
               Expanded(
                 child: _isLoading
                     ? const Center(
-                        child: CircularProgressIndicator(color: AppColors.primary))
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
+                      )
                     : _buildStepContent(),
               ),
               const SizedBox(height: 16),
@@ -272,8 +271,11 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
       ),
       child: Row(
         children: [
-          const Icon(LucideIcons.alertTriangle,
-              color: AppColors.error, size: 20),
+          const Icon(
+            LucideIcons.alertTriangle,
+            color: AppColors.error,
+            size: 20,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -316,15 +318,19 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
             ),
             child: Column(
               children: [
-                const Icon(LucideIcons.fileSpreadsheet,
-                    size: 48, color: AppColors.primary),
+                const Icon(
+                  LucideIcons.fileSpreadsheet,
+                  size: 48,
+                  color: AppColors.primary,
+                ),
                 const SizedBox(height: 16),
                 const Text(
                   'Select CSV or Excel (.xlsx) file',
                   style: TextStyle(
-                      color: AppColors.onDark,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16),
+                    color: AppColors.onDark,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 const Text(
@@ -337,7 +343,9 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.onDark,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                   ),
                   onPressed: () {
                     // Provide realistic default template file for quick upload
@@ -368,9 +376,10 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
             const Text(
               'Select Sheet',
               style: TextStyle(
-                  color: AppColors.onDark,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold),
+                color: AppColors.onDark,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -392,9 +401,10 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
           const Text(
             'Column Mappings',
             style: TextStyle(
-                color: AppColors.onDark,
-                fontSize: 14,
-                fontWeight: FontWeight.bold),
+              color: AppColors.onDark,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 4),
           const Text(
@@ -416,14 +426,17 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
                   const Divider(color: AppColors.hairlineDark, height: 1),
               itemBuilder: (context, idx) {
                 final m = _batch!.columnMappings[idx];
-                final currentTarget = _customMappings[m.sourceColumn] ?? m.targetField;
+                final currentTarget =
+                    _customMappings[m.sourceColumn] ?? m.targetField;
 
                 return ListTile(
                   dense: true,
                   title: Text(
                     m.sourceColumn,
                     style: const TextStyle(
-                        color: AppColors.onDark, fontWeight: FontWeight.w600),
+                      color: AppColors.onDark,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   subtitle: Text(
                     'Status: ${m.status} (${m.confidence})',
@@ -440,25 +453,40 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
                     underline: const SizedBox(),
                     items: const [
                       DropdownMenuItem(
-                          value: 'studentPin',
-                          child: Text('Student PIN / Roll',
-                              style: TextStyle(color: AppColors.onDark))),
+                        value: 'studentPin',
+                        child: Text(
+                          'Student PIN / Roll',
+                          style: TextStyle(color: AppColors.onDark),
+                        ),
+                      ),
                       DropdownMenuItem(
-                          value: 'studentName',
-                          child: Text('Student Name',
-                              style: TextStyle(color: AppColors.onDark))),
+                        value: 'studentName',
+                        child: Text(
+                          'Student Name',
+                          style: TextStyle(color: AppColors.onDark),
+                        ),
+                      ),
                       DropdownMenuItem(
-                          value: 'marks',
-                          child: Text('Marks / Score',
-                              style: TextStyle(color: AppColors.onDark))),
+                        value: 'marks',
+                        child: Text(
+                          'Marks / Score',
+                          style: TextStyle(color: AppColors.onDark),
+                        ),
+                      ),
                       DropdownMenuItem(
-                          value: 'status',
-                          child: Text('Attendance Status',
-                              style: TextStyle(color: AppColors.onDark))),
+                        value: 'status',
+                        child: Text(
+                          'Attendance Status',
+                          style: TextStyle(color: AppColors.onDark),
+                        ),
+                      ),
                       DropdownMenuItem(
-                          value: 'UNMAPPED',
-                          child: Text('Ignore (Unmapped)',
-                              style: TextStyle(color: AppColors.textMuted))),
+                        value: 'UNMAPPED',
+                        child: Text(
+                          'Ignore (Unmapped)',
+                          style: TextStyle(color: AppColors.textMuted),
+                        ),
+                      ),
                     ],
                     onChanged: (val) {
                       if (val != null) {
@@ -509,21 +537,27 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.3),
+              ),
             ),
             child: Row(
               children: [
-                const Icon(LucideIcons.gauge, size: 16, color: AppColors.primary),
+                const Icon(
+                  LucideIcons.gauge,
+                  size: 16,
+                  color: AppColors.primary,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     precision == 'DETAILED_SESSION'
                         ? 'Attendance precision detected: Detailed session records'
                         : precision == 'PERIOD_SUMMARY'
-                            ? 'Attendance precision detected: Period summary (${_summary!.summaryCount} records)'
-                            : precision == 'PERCENTAGE_ONLY'
-                                ? 'Attendance precision detected: Percentage only (${_summary!.percentageOnlyCount} records)'
-                                : 'Attendance precision detected: Mixed precision (Review required)',
+                        ? 'Attendance precision detected: Period summary (${_summary!.summaryCount} records)'
+                        : precision == 'PERCENTAGE_ONLY'
+                        ? 'Attendance precision detected: Percentage only (${_summary!.percentageOnlyCount} records)'
+                        : 'Attendance precision detected: Mixed precision (Review required)',
                     style: const TextStyle(
                       color: AppColors.onDark,
                       fontSize: 12,
@@ -538,16 +572,32 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
         Row(
           children: [
             _buildStatBadge(
-                'Total', '${_summary!.rowCount}', LucideIcons.layers, AppColors.primary),
+              'Total',
+              '${_summary!.rowCount}',
+              LucideIcons.layers,
+              AppColors.primary,
+            ),
             const SizedBox(width: 8),
             _buildStatBadge(
-                'Valid', '${_summary!.validCount}', LucideIcons.checkCircle, AppColors.success),
-            const SizedBox(width: 8),
-            _buildStatBadge('Warnings', '${_summary!.warningCount}',
-                LucideIcons.alertTriangle, AppColors.warning),
+              'Valid',
+              '${_summary!.validCount}',
+              LucideIcons.checkCircle,
+              AppColors.success,
+            ),
             const SizedBox(width: 8),
             _buildStatBadge(
-                'Errors', '${_summary!.errorCount}', LucideIcons.xCircle, AppColors.error),
+              'Warnings',
+              '${_summary!.warningCount}',
+              LucideIcons.alertTriangle,
+              AppColors.warning,
+            ),
+            const SizedBox(width: 8),
+            _buildStatBadge(
+              'Errors',
+              '${_summary!.errorCount}',
+              LucideIcons.xCircle,
+              AppColors.error,
+            ),
           ],
         ),
         if (hasPrecision &&
@@ -557,14 +607,26 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
           const SizedBox(height: 8),
           Row(
             children: [
-              _buildStatBadge('Detailed', '${_summary!.detailedCount}',
-                  LucideIcons.calendar, AppColors.primary),
+              _buildStatBadge(
+                'Detailed',
+                '${_summary!.detailedCount}',
+                LucideIcons.calendar,
+                AppColors.primary,
+              ),
               const SizedBox(width: 8),
-              _buildStatBadge('Summary', '${_summary!.summaryCount}',
-                  LucideIcons.table, AppColors.warning),
+              _buildStatBadge(
+                'Summary',
+                '${_summary!.summaryCount}',
+                LucideIcons.table,
+                AppColors.warning,
+              ),
               const SizedBox(width: 8),
-              _buildStatBadge('Pct Only', '${_summary!.percentageOnlyCount}',
-                  LucideIcons.percent, AppColors.primaryPressed),
+              _buildStatBadge(
+                'Pct Only',
+                '${_summary!.percentageOnlyCount}',
+                LucideIcons.percent,
+                AppColors.primaryPressed,
+              ),
             ],
           ),
         ],
@@ -572,7 +634,12 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
     );
   }
 
-  Widget _buildStatBadge(String label, String value, IconData icon, Color color) {
+  Widget _buildStatBadge(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -588,12 +655,21 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(value,
-                    style: TextStyle(
-                        color: color, fontWeight: FontWeight.bold, fontSize: 13)),
-                Text(label,
-                    style: const TextStyle(
-                        color: AppColors.textMuted, fontSize: 10)),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 10,
+                  ),
+                ),
               ],
             ),
           ],
@@ -629,8 +705,10 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
     final rows = _filteredRows;
     if (rows.isEmpty) {
       return const Center(
-        child: Text('No rows match active filter',
-            style: TextStyle(color: AppColors.textMuted)),
+        child: Text(
+          'No rows match active filter',
+          style: TextStyle(color: AppColors.textMuted),
+        ),
       );
     }
 
@@ -651,16 +729,20 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
           final color = isInvalid
               ? AppColors.error
               : r.status == 'WARNING'
-                  ? AppColors.warning
-                  : AppColors.success;
+              ? AppColors.warning
+              : AppColors.success;
 
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               children: [
-                Text('#${r.rowNumber}',
-                    style: const TextStyle(
-                        color: AppColors.textMuted, fontSize: 12)),
+                Text(
+                  '#${r.rowNumber}',
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 12,
+                  ),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   flex: 2,
@@ -670,14 +752,17 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
                       Text(
                         r.studentName ?? 'Unknown Student',
                         style: const TextStyle(
-                            color: AppColors.onDark,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600),
+                          color: AppColors.onDark,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       Text(
                         'PIN: ${r.studentPin ?? r.rollNumber ?? '—'}',
                         style: const TextStyle(
-                            color: AppColors.textMuted, fontSize: 11),
+                          color: AppColors.textMuted,
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ),
@@ -688,12 +773,16 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
                     child: Text(
                       'Marks: ${r.marks}',
                       style: const TextStyle(
-                          color: AppColors.onDark, fontSize: 12),
+                        color: AppColors.onDark,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(4),
@@ -701,9 +790,10 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
                   child: Text(
                     r.status,
                     style: TextStyle(
-                        color: color,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold),
+                      color: color,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -746,8 +836,10 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
         if (_currentStep > 1)
           TextButton(
             onPressed: () => setState(() => _currentStep--),
-            child: const Text('Back',
-                style: TextStyle(color: AppColors.textMuted)),
+            child: const Text(
+              'Back',
+              style: TextStyle(color: AppColors.textMuted),
+            ),
           )
         else
           const SizedBox(),
@@ -755,23 +847,27 @@ class _ImportDataDialogState extends ConsumerState<ImportDataDialog> {
           children: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel',
-                  style: TextStyle(color: AppColors.textMuted)),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: AppColors.textMuted),
+              ),
             ),
             const SizedBox(width: 8),
             if (_currentStep == 2)
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.onDark),
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.onDark,
+                ),
                 onPressed: _validateAndPreview,
                 child: const Text('Validate & Preview'),
               )
             else if (_currentStep == 3)
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.onDark),
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.onDark,
+                ),
                 onPressed: _confirmImport,
                 child: const Text('Confirm Import'),
               ),

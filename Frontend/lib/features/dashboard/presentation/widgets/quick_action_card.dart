@@ -43,13 +43,15 @@ class _QuickActionTileState extends State<QuickActionTile>
     _ctrl.forward();
     context.push(widget.action.route);
   }
+
   void _cancel() => _ctrl.forward();
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final isPrimaryAction = widget.action.iconColor == AcadexColors.primary ||
+    final isPrimaryAction =
+        widget.action.iconColor == AcadexColors.primary ||
         widget.action.iconColor == DashboardColors.primary;
 
     return GestureDetector(
@@ -65,12 +67,16 @@ class _QuickActionTileState extends State<QuickActionTile>
           decoration: BoxDecoration(
             color: isPrimaryAction
                 ? AcadexColors.superAdminSoftAction
-                : (isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface),
+                : (isDark
+                      ? AcadexColors.darkSurfaceCard
+                      : AcadexColors.surface),
             borderRadius: AcadexRadius.borderRadiusMd,
             border: Border.all(
               color: isPrimaryAction
                   ? AcadexColors.superAdminPrimaryAction
-                  : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                  : (isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline),
               width: isPrimaryAction ? 1.2 : 1.0,
             ),
             boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
@@ -83,12 +89,16 @@ class _QuickActionTileState extends State<QuickActionTile>
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: isPrimaryAction ? Colors.white : widget.action.iconBackground,
+                  color: isPrimaryAction
+                      ? Colors.white
+                      : widget.action.iconBackground,
                   borderRadius: AcadexRadius.borderRadiusMd,
                 ),
                 child: Icon(
                   widget.action.icon,
-                  color: isPrimaryAction ? AcadexColors.superAdminPrimaryAction : widget.action.iconColor,
+                  color: isPrimaryAction
+                      ? AcadexColors.superAdminPrimaryAction
+                      : widget.action.iconColor,
                   size: 18,
                 ),
               ),
@@ -96,15 +106,18 @@ class _QuickActionTileState extends State<QuickActionTile>
               Text(
                 widget.action.label,
                 textAlign: TextAlign.center,
-                style: AcadexTypography.caption(
-                  color: isPrimaryAction
-                      ? AcadexColors.superAdminDeepAction
-                      : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
-                ).copyWith(
-                  fontWeight: isPrimaryAction ? FontWeight.w700 : FontWeight.w600,
-                  fontSize: 11,
-                  height: 1.25,
-                ),
+                style:
+                    AcadexTypography.caption(
+                      color: isPrimaryAction
+                          ? AcadexColors.superAdminDeepAction
+                          : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                    ).copyWith(
+                      fontWeight: isPrimaryAction
+                          ? FontWeight.w700
+                          : FontWeight.w600,
+                      fontSize: 11,
+                      height: 1.25,
+                    ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -190,6 +203,7 @@ class _QuickActionCardState extends State<QuickActionCard>
     _ctrl.forward();
     context.push(widget.action.route);
   }
+
   void _cancel() => _ctrl.forward();
 
   @override

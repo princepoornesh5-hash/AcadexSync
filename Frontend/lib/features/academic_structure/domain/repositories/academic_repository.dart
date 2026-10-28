@@ -9,22 +9,50 @@ abstract class AcademicRepository {
   Future<College> getCollegeById(String id);
   Future<Map<String, dynamic>> getCollegeSummary(String id);
   Future<List<Map<String, dynamic>>> getCollegeAdmins(String id);
-  Future<List<Department>> getDepartments({String? collegeId, String? search, String? status});
+  Future<List<Department>> getDepartments({
+    String? collegeId,
+    String? search,
+    String? status,
+  });
   Future<Department> getDepartmentById(String id);
   Future<Map<String, dynamic>> getDepartmentSummary(String id);
   Future<Map<String, dynamic>?> getDepartmentHod(String departmentId);
-  Future<List<Course>> getCourses({String? collegeId, String? departmentId, String? search});
+  Future<List<Course>> getCourses({
+    String? collegeId,
+    String? departmentId,
+    String? search,
+  });
   Future<Course> getCourseById(String id);
   Future<List<AcademicYear>> getAcademicYears({String? collegeId});
   Future<AcademicYear> getAcademicYearById(String id);
-  Future<List<Semester>> getSemesters({String? courseId, String? academicYearId, String? collegeId});
+  Future<List<Semester>> getSemesters({
+    String? courseId,
+    String? academicYearId,
+    String? collegeId,
+  });
   Future<Semester> getSemesterById(String id);
-  Future<List<Section>> getSections({String? semesterId, String? courseId, String? collegeId});
+  Future<List<Section>> getSections({
+    String? semesterId,
+    String? courseId,
+    String? collegeId,
+  });
   Future<Section> getSectionById(String id);
-  Future<List<Subject>> getSubjects({String? semesterId, String? courseId, String? collegeId});
+  Future<List<Subject>> getSubjects({
+    String? semesterId,
+    String? courseId,
+    String? collegeId,
+  });
   Future<Subject> getSubjectById(String id);
-  Future<List<Faculty>> getFaculty({String? departmentId, String? search, String? status});
-  Future<PaginatedResponse<Faculty>> getPaginatedFaculty({String? departmentId, int limit = 20, DocumentSnapshot? startAfter});
+  Future<List<Faculty>> getFaculty({
+    String? departmentId,
+    String? search,
+    String? status,
+  });
+  Future<PaginatedResponse<Faculty>> getPaginatedFaculty({
+    String? departmentId,
+    int limit = 20,
+    DocumentSnapshot? startAfter,
+  });
   Future<Faculty?> getFacultyById(String id);
   Future<Map<String, dynamic>> getFacultySummary(String id);
   Future<List<Student>> getStudents({
@@ -36,7 +64,12 @@ abstract class AcademicRepository {
     String? search,
     String? status,
   });
-  Future<PaginatedResponse<Student>> getPaginatedStudents({String? sectionId, String? departmentId, int limit = 20, DocumentSnapshot? startAfter});
+  Future<PaginatedResponse<Student>> getPaginatedStudents({
+    String? sectionId,
+    String? departmentId,
+    int limit = 20,
+    DocumentSnapshot? startAfter,
+  });
   Future<Student?> getStudentById(String id);
   Future<bool> checkStudentExists(String rollNumber, String email);
   Future<bool> checkFacultyExists(String employeeId, String email);
@@ -47,7 +80,10 @@ abstract class AcademicRepository {
   Future<void> deactivateCollege(String id);
   Future<void> updateCollegeStatus(String id, String status);
   Future<void> deleteCollegePermanently(String id);
-  Future<ProvisionAdminResult> provisionCollegeAdmin(String collegeId, Map<String, dynamic> data);
+  Future<ProvisionAdminResult> provisionCollegeAdmin(
+    String collegeId,
+    Map<String, dynamic> data,
+  );
 
   Future<void> addDepartment(Department department);
   Future<void> updateDepartment(Department department);
@@ -62,9 +98,18 @@ abstract class AcademicRepository {
     required String email,
     String? phone,
   });
-  Future<List<UserModel>> getHods({String? departmentId, String? search, String? status});
+  Future<List<UserModel>> getHods({
+    String? departmentId,
+    String? search,
+    String? status,
+  });
   Future<UserModel> getHodById(String id);
-  Future<void> updateHodProfile(String id, {String? name, String? email, String? phone});
+  Future<void> updateHodProfile(
+    String id, {
+    String? name,
+    String? email,
+    String? phone,
+  });
   Future<void> transferHodDepartment(String id, String targetDepartmentId);
   Future<void> assignExistingUserToHod(String userId, String departmentId);
   Future<void> unassignHod(String id, {String? newRole});
@@ -88,7 +133,11 @@ abstract class AcademicRepository {
   Future<void> updateSemesterStatus(String id, bool isActive);
   Future<void> toggleSemesterCurrent(String id, bool isCurrent);
   Future<void> deactivateSemester(String id);
-  Future<void> activateSemester(String collegeId, String courseId, String semesterId);
+  Future<void> activateSemester(
+    String collegeId,
+    String courseId,
+    String semesterId,
+  );
   Future<void> completeSemester(String semesterId);
 
   Future<void> addSection(Section section);
@@ -97,8 +146,14 @@ abstract class AcademicRepository {
   Future<void> deactivateSection(String id);
   Future<void> updateSectionCapacity(String sectionId, int newCapacity);
   Future<SectionCapacityInfo> getSectionCapacityInfo(String sectionId);
-  Future<List<SectionTransferValidationResult>> validateBulkSectionTransfer(List<String> studentIds, String targetSectionId);
-  Future<void> executeBulkSectionTransfer({required List<String> studentIds, required String targetSectionId});
+  Future<List<SectionTransferValidationResult>> validateBulkSectionTransfer(
+    List<String> studentIds,
+    String targetSectionId,
+  );
+  Future<void> executeBulkSectionTransfer({
+    required List<String> studentIds,
+    required String targetSectionId,
+  });
 
   Future<Subject> addSubject(Subject subject);
   Future<void> updateSubject(Subject subject);
@@ -106,10 +161,16 @@ abstract class AcademicRepository {
   Future<void> deactivateSubject(String id);
 
   Future<void> addFaculty(Faculty faculty);
-  Future<ProvisionFacultyResult> provisionFaculty(ProvisionFacultyRequest request);
+  Future<ProvisionFacultyResult> provisionFaculty(
+    ProvisionFacultyRequest request,
+  );
   Future<void> updateFaculty(Faculty faculty);
   Future<void> deactivateFaculty(String id);
-  Future<void> bulkAssignSubjectsToFaculty(String facultyId, List<String> subjectIds, List<String> sectionIds);
+  Future<void> bulkAssignSubjectsToFaculty(
+    String facultyId,
+    List<String> subjectIds,
+    List<String> sectionIds,
+  );
 
   // Faculty Assignments
   Future<List<FacultyAssignment>> getFacultyAssignments({
@@ -133,10 +194,15 @@ abstract class AcademicRepository {
   Future<void> removeFacultyAssignment(String assignmentId);
 
   Future<void> addStudent(Student student);
-  Future<ProvisionStudentResult> provisionStudent(ProvisionStudentRequest request);
+  Future<ProvisionStudentResult> provisionStudent(
+    ProvisionStudentRequest request,
+  );
   Future<void> updateStudent(Student student);
   Future<void> deactivateStudent(String id);
-  Future<void> transferStudentDepartment(String studentId, String newDepartmentId);
+  Future<void> transferStudentDepartment(
+    String studentId,
+    String newDepartmentId,
+  );
   Future<Map<String, dynamic>> getStudentSummary(String studentId);
   Future<List<StudentEnrollment>> getEnrollments({
     String? courseId,
@@ -159,11 +225,22 @@ abstract class AcademicRepository {
   Future<Map<String, dynamic>?> getStudentCurrentEnrollment(String studentId);
   Future<void> updateEnrollment(String id, {String? sectionId, String? status});
   Future<void> deleteEnrollment(String id);
-  Future<void> bulkPromoteStudents(List<String> studentIds, String newSemesterId, String newSectionId);
-  Future<void> bulkTransferStudents(List<String> studentIds, String newSectionId);
+  Future<void> bulkPromoteStudents(
+    List<String> studentIds,
+    String newSemesterId,
+    String newSectionId,
+  );
+  Future<void> bulkTransferStudents(
+    List<String> studentIds,
+    String newSectionId,
+  );
 
   // Student Lifecycle Operations (Phase 3)
-  Future<String> generateRollNumber(String collegeId, String courseId, String academicYearId);
+  Future<String> generateRollNumber(
+    String collegeId,
+    String courseId,
+    String academicYearId,
+  );
   Future<void> admitStudent(Student student);
   Future<void> bulkAdmitStudents(List<Student> students);
   Future<void> promoteStudents({
@@ -192,18 +269,23 @@ abstract class AcademicRepository {
     required List<String> studentIds,
     String? remarks,
   });
-  Future<void> bulkArchiveAlumni({
-    required List<String> studentIds,
-  });
+  Future<void> bulkArchiveAlumni({required List<String> studentIds});
   Future<StudentAcademicProfile> getStudentAcademicProfile(String studentId);
-  Future<List<StudentAcademicHistory>> getStudentAcademicHistory(String studentId);
+  Future<List<StudentAcademicHistory>> getStudentAcademicHistory(
+    String studentId,
+  );
   Future<void> recordAcademicHistory(StudentAcademicHistory history);
   Future<List<Student>> getStudentsBySection(String sectionId);
   Future<List<Student>> getStudentsBySemester(String semesterId);
   Future<List<Student>> getStudentsByCourse(String courseId);
   Future<List<Student>> getStudentsByDepartment(String departmentId);
-  Future<void> transferFacultyDepartment(String facultyId, String newDepartmentId);
-  Future<List<FacultyWorkloadSummary>> getFacultyWorkloadSummaries({String? departmentId});
+  Future<void> transferFacultyDepartment(
+    String facultyId,
+    String newDepartmentId,
+  );
+  Future<List<FacultyWorkloadSummary>> getFacultyWorkloadSummaries({
+    String? departmentId,
+  });
   Future<Map<String, int>> getDepartmentStudentCounts();
   Future<Map<String, int>> getDepartmentFacultyCounts();
   Future<List<Room>> getRooms({String? collegeId, String? departmentId});
@@ -212,8 +294,14 @@ abstract class AcademicRepository {
   Future<Room> updateRoom(Room room);
 
   // Authoritative Current Academic Context & History (Prompt 24)
-  Future<CurrentAcademicContext> getCurrentAcademicContext({String? departmentId, String? courseId});
-  Future<List<Map<String, dynamic>>> getAcademicHistory({String? departmentId, String? courseId});
+  Future<CurrentAcademicContext> getCurrentAcademicContext({
+    String? departmentId,
+    String? courseId,
+  });
+  Future<List<Map<String, dynamic>>> getAcademicHistory({
+    String? departmentId,
+    String? courseId,
+  });
 
   // Historical Academic Records, Faculty Handover & Tenure (Prompt 4)
   Future<TeachingHandover> handoverFacultyAssignment({
@@ -223,11 +311,15 @@ abstract class AcademicRepository {
     bool reassignPendingWork = true,
   }) => throw UnimplementedError('handoverFacultyAssignment not implemented');
 
-  Future<List<TeachingHandover>> getTeachingHandovers({String? subjectId, String? sectionId}) =>
-      throw UnimplementedError('getTeachingHandovers not implemented');
+  Future<List<TeachingHandover>> getTeachingHandovers({
+    String? subjectId,
+    String? sectionId,
+  }) => throw UnimplementedError('getTeachingHandovers not implemented');
 
-  Future<List<DepartmentTenure>> getDepartmentTenureHistory(String departmentId, {String? collegeId}) =>
-      throw UnimplementedError('getDepartmentTenureHistory not implemented');
+  Future<List<DepartmentTenure>> getDepartmentTenureHistory(
+    String departmentId, {
+    String? collegeId,
+  }) => throw UnimplementedError('getDepartmentTenureHistory not implemented');
 
   Future<void> appointDepartmentHod({
     required String departmentId,
@@ -253,6 +345,9 @@ abstract class AcademicRepository {
   Future<TransferCredit> createTransferCredit(Map<String, dynamic> data) =>
       throw UnimplementedError('createTransferCredit not implemented');
 
-  Future<void> updateTransferCreditStatus(String id, String status, {String? verificationRemarks}) =>
-      throw UnimplementedError('updateTransferCreditStatus not implemented');
+  Future<void> updateTransferCreditStatus(
+    String id,
+    String status, {
+    String? verificationRemarks,
+  }) => throw UnimplementedError('updateTransferCreditStatus not implemented');
 }

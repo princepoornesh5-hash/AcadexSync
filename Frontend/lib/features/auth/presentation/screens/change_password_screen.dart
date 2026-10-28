@@ -12,7 +12,8 @@ class ChangePasswordScreen extends ConsumerStatefulWidget {
   const ChangePasswordScreen({super.key});
 
   @override
-  ConsumerState<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
+  ConsumerState<ChangePasswordScreen> createState() =>
+      _ChangePasswordScreenState();
 }
 
 class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
@@ -123,7 +124,10 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         child: AcadexPageContainer(
           maxWidth: AcadexLayout.formMaxWidth,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 24.0,
+            ),
             child: _isSuccess
                 ? _buildSuccessCard(isDark)
                 : _buildChangePasswordCard(isDark, newPassword, strength),
@@ -133,7 +137,11 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
     );
   }
 
-  Widget _buildChangePasswordCard(bool isDark, String newPassword, double strength) {
+  Widget _buildChangePasswordCard(
+    bool isDark,
+    String newPassword,
+    double strength,
+  ) {
     return AcadexCard(
       padding: const EdgeInsets.all(28),
       child: Form(
@@ -152,7 +160,11 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                         : AcadexColors.primaryLight,
                     borderRadius: AcadexRadius.borderRadiusMd,
                   ),
-                  child: const Icon(LucideIcons.keyRound, size: 22, color: AcadexColors.primary),
+                  child: const Icon(
+                    LucideIcons.keyRound,
+                    size: 22,
+                    color: AcadexColors.primary,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -162,13 +174,17 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                       Text(
                         "Update Credentials",
                         style: AcadexTypography.heading3(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       Text(
                         "Ensure your new password contains letters, numbers, and symbols.",
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                       ),
                     ],
@@ -182,13 +198,19 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.errorDarkContainer : AcadexColors.errorLight,
+                  color: isDark
+                      ? AcadexColors.errorDarkContainer
+                      : AcadexColors.errorLight,
                   borderRadius: AcadexRadius.borderRadiusMd,
                   border: Border.all(color: AcadexColors.error),
                 ),
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.circleAlert, size: 16, color: AcadexColors.error),
+                    const Icon(
+                      LucideIcons.circleAlert,
+                      size: 16,
+                      color: AcadexColors.error,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -208,7 +230,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             Text(
               'Current Password',
               style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                color: isDark
+                    ? AcadexColors.darkInkSecondary
+                    : AcadexColors.inkSecondary,
               ).copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),
@@ -216,25 +240,37 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               controller: _currentPasswordController,
               enabled: !_isLoading,
               obscureText: !_isCurrentPasswordVisible,
-              style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+              style: AcadexTypography.body(
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              ),
               decoration: InputDecoration(
                 hintText: '••••••••',
                 prefixIcon: Icon(
                   LucideIcons.lock,
                   size: 18,
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _isCurrentPasswordVisible ? LucideIcons.eyeOff : LucideIcons.eye,
+                    _isCurrentPasswordVisible
+                        ? LucideIcons.eyeOff
+                        : LucideIcons.eye,
                     size: 18,
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
-                  onPressed: () => setState(() => _isCurrentPasswordVisible = !_isCurrentPasswordVisible),
+                  onPressed: () => setState(
+                    () =>
+                        _isCurrentPasswordVisible = !_isCurrentPasswordVisible,
+                  ),
                 ),
               ),
               validator: (v) {
-                if (v == null || v.isEmpty) return "Please enter your current password";
+                if (v == null || v.isEmpty)
+                  return "Please enter your current password";
                 return null;
               },
             ),
@@ -244,7 +280,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             Text(
               'New Password',
               style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                color: isDark
+                    ? AcadexColors.darkInkSecondary
+                    : AcadexColors.inkSecondary,
               ).copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),
@@ -253,27 +291,40 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               enabled: !_isLoading,
               obscureText: !_isNewPasswordVisible,
               onChanged: (v) => setState(() {}),
-              style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+              style: AcadexTypography.body(
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              ),
               decoration: InputDecoration(
                 hintText: '••••••••',
                 prefixIcon: Icon(
                   LucideIcons.key,
                   size: 18,
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _isNewPasswordVisible ? LucideIcons.eyeOff : LucideIcons.eye,
+                    _isNewPasswordVisible
+                        ? LucideIcons.eyeOff
+                        : LucideIcons.eye,
                     size: 18,
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
-                  onPressed: () => setState(() => _isNewPasswordVisible = !_isNewPasswordVisible),
+                  onPressed: () => setState(
+                    () => _isNewPasswordVisible = !_isNewPasswordVisible,
+                  ),
                 ),
               ),
               validator: (v) {
-                if (v == null || v.isEmpty) return "Please enter a new password";
-                if (v.length < 8) return "New password must be at least 8 characters";
-                if (v == _currentPasswordController.text) return "New password must differ from current password";
+                if (v == null || v.isEmpty)
+                  return "Please enter a new password";
+                if (v.length < 8)
+                  return "New password must be at least 8 characters";
+                if (v == _currentPasswordController.text)
+                  return "New password must differ from current password";
                 return null;
               },
             ),
@@ -286,7 +337,11 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 children: [
                   Text(
                     'Password Strength:',
-                    style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                    style: AcadexTypography.caption(
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
+                    ),
                   ),
                   Text(
                     _getPasswordStrengthLabel(strength),
@@ -301,8 +356,12 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 borderRadius: BorderRadius.circular(3),
                 child: LinearProgressIndicator(
                   value: strength,
-                  backgroundColor: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-                  valueColor: AlwaysStoppedAnimation<Color>(_getPasswordStrengthColor(strength)),
+                  backgroundColor: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    _getPasswordStrengthColor(strength),
+                  ),
                   minHeight: 4,
                 ),
               ),
@@ -313,20 +372,37 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkCanvas : AcadexColors.canvasSoft,
+                color: isDark
+                    ? AcadexColors.darkCanvas
+                    : AcadexColors.canvasSoft,
                 borderRadius: AcadexRadius.borderRadiusMd,
                 border: Border.all(
-                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
                 ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildRequirementItem('At least 8 characters', newPassword.length >= 8, isDark),
+                  _buildRequirementItem(
+                    'At least 8 characters',
+                    newPassword.length >= 8,
+                    isDark,
+                  ),
                   const SizedBox(height: 4),
-                  _buildRequirementItem('Letters & numbers', RegExp(r'[a-zA-Z]').hasMatch(newPassword) && RegExp(r'[0-9]').hasMatch(newPassword), isDark),
+                  _buildRequirementItem(
+                    'Letters & numbers',
+                    RegExp(r'[a-zA-Z]').hasMatch(newPassword) &&
+                        RegExp(r'[0-9]').hasMatch(newPassword),
+                    isDark,
+                  ),
                   const SizedBox(height: 4),
-                  _buildRequirementItem('Special character (!@#\$%^&*)', RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(newPassword), isDark),
+                  _buildRequirementItem(
+                    'Special character (!@#\$%^&*)',
+                    RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(newPassword),
+                    isDark,
+                  ),
                 ],
               ),
             ),
@@ -336,7 +412,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             Text(
               'Confirm New Password',
               style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                color: isDark
+                    ? AcadexColors.darkInkSecondary
+                    : AcadexColors.inkSecondary,
               ).copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),
@@ -344,26 +422,39 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               controller: _confirmPasswordController,
               enabled: !_isLoading,
               obscureText: !_isConfirmPasswordVisible,
-              style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+              style: AcadexTypography.body(
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              ),
               decoration: InputDecoration(
                 hintText: '••••••••',
                 prefixIcon: Icon(
                   LucideIcons.lock,
                   size: 18,
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _isConfirmPasswordVisible ? LucideIcons.eyeOff : LucideIcons.eye,
+                    _isConfirmPasswordVisible
+                        ? LucideIcons.eyeOff
+                        : LucideIcons.eye,
                     size: 18,
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
-                  onPressed: () => setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible),
+                  onPressed: () => setState(
+                    () =>
+                        _isConfirmPasswordVisible = !_isConfirmPasswordVisible,
+                  ),
                 ),
               ),
               validator: (v) {
-                if (v == null || v.isEmpty) return "Please confirm your new password";
-                if (v != _newPasswordController.text) return "Passwords do not match";
+                if (v == null || v.isEmpty)
+                  return "Please confirm your new password";
+                if (v != _newPasswordController.text)
+                  return "Passwords do not match";
                 return null;
               },
             ),
@@ -398,7 +489,11 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 color: AcadexColors.success.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(LucideIcons.checkCircle2, size: 36, color: AcadexColors.success),
+              child: const Icon(
+                LucideIcons.checkCircle2,
+                size: 36,
+                color: AcadexColors.success,
+              ),
             ),
           ),
           const SizedBox(height: 20),

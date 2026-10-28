@@ -26,10 +26,12 @@ final analyticsRepositoryProvider = Provider<AnalyticsRepository>((ref) {
 
 // --- Dashboard Data Providers ---
 
-final analyticsSummaryProvider = FutureProvider<Map<String, String>>((ref) async {
+final analyticsSummaryProvider = FutureProvider<Map<String, String>>((
+  ref,
+) async {
   final authState = ref.watch(authProvider);
   if (authState is! AuthAuthenticated) return {};
-  
+
   final repo = ref.watch(analyticsRepositoryProvider);
   return await repo.getSummaryMetrics(authState.user.role, authState.user.id);
 });
@@ -37,40 +39,50 @@ final analyticsSummaryProvider = FutureProvider<Map<String, String>>((ref) async
 final trendChartProvider = FutureProvider<List<ChartDataPoint>>((ref) async {
   final authState = ref.watch(authProvider);
   if (authState is! AuthAuthenticated) return [];
-  
+
   final repo = ref.watch(analyticsRepositoryProvider);
   return await repo.getTrendChartData(authState.user.role, authState.user.id);
 });
 
-final comparisonChartProvider = FutureProvider<List<ChartDataPoint>>((ref) async {
+final comparisonChartProvider = FutureProvider<List<ChartDataPoint>>((
+  ref,
+) async {
   final authState = ref.watch(authProvider);
   if (authState is! AuthAuthenticated) return [];
-  
+
   final repo = ref.watch(analyticsRepositoryProvider);
-  return await repo.getComparisonChartData(authState.user.role, authState.user.id);
+  return await repo.getComparisonChartData(
+    authState.user.role,
+    authState.user.id,
+  );
 });
 
 final insightsProvider = FutureProvider<List<AttendanceInsight>>((ref) async {
   final authState = ref.watch(authProvider);
   if (authState is! AuthAuthenticated) return [];
-  
+
   final repo = ref.watch(analyticsRepositoryProvider);
   return await repo.getInsights(authState.user.role, authState.user.id);
 });
 
-final recentReportsProvider = FutureProvider<List<AttendanceReport>>((ref) async {
+final recentReportsProvider = FutureProvider<List<AttendanceReport>>((
+  ref,
+) async {
   final authState = ref.watch(authProvider);
   if (authState is! AuthAuthenticated) return [];
-  
+
   final repo = ref.watch(analyticsRepositoryProvider);
   return await repo.getRecentReports(authState.user.role);
 });
 
 // --- Student Projection: derived from real summary metrics ---
 
-final studentAttendanceCountsProvider = FutureProvider<Map<String, int>>((ref) async {
+final studentAttendanceCountsProvider = FutureProvider<Map<String, int>>((
+  ref,
+) async {
   final authState = ref.watch(authProvider);
-  if (authState is! AuthAuthenticated || authState.user.role != AppRole.student) {
+  if (authState is! AuthAuthenticated ||
+      authState.user.role != AppRole.student) {
     return {'total': 0, 'attended': 0};
   }
   final summary = await ref.watch(analyticsSummaryProvider.future);
@@ -84,7 +96,8 @@ final studentAttendanceCountsProvider = FutureProvider<Map<String, int>>((ref) a
 
 final studentProjectionProvider = Provider<AttendanceProjection?>((ref) {
   final authState = ref.watch(authProvider);
-  if (authState is! AuthAuthenticated || authState.user.role != AppRole.student) {
+  if (authState is! AuthAuthenticated ||
+      authState.user.role != AppRole.student) {
     return null;
   }
   final threshold = ref.watch(analyticsThresholdProvider);
@@ -104,7 +117,10 @@ final studentProjectionProvider = Provider<AttendanceProjection?>((ref) {
 final studentRiskProvider = Provider<AttendanceRiskProfile?>((ref) {
   final projection = ref.watch(studentProjectionProvider);
   if (projection == null) return null;
-  
+
   final threshold = ref.watch(analyticsThresholdProvider);
-  return AttendanceRiskProfile.calculate(projection.currentPercentage, threshold);
+  return AttendanceRiskProfile.calculate(
+    projection.currentPercentage,
+    threshold,
+  );
 });

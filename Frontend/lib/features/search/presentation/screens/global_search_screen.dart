@@ -54,7 +54,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
 
   Widget _buildFilterChips(bool isDark) {
     final currentFilter = ref.watch(searchFilterProvider);
-    
+
     final filters = [
       null,
       SearchResultType.navigation,
@@ -99,13 +99,14 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
 
   Widget _buildRecentSearches(bool isDark) {
     final recentSearches = ref.watch(recentSearchesProvider);
-    
+
     if (recentSearches.isEmpty) {
       return const Center(
         child: AcadexEmptyState(
           icon: LucideIcons.search,
           title: "Search Acadex",
-          subtitle: "Quickly find students, faculty, departments, subjects, and notes across campus.",
+          subtitle:
+              "Quickly find students, faculty, departments, subjects, and notes across campus.",
         ),
       );
     }
@@ -119,7 +120,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
             Text(
               "Recent Searches",
               style: AcadexTypography.eyebrow(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
             ),
             TextButton(
@@ -134,36 +137,43 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
           ],
         ),
         const SizedBox(height: 8),
-        ...recentSearches.map((query) => ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          leading: Icon(
-            LucideIcons.history,
-            size: 18,
-            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-          ),
-          title: Text(
-            query,
-            style: AcadexTypography.body(
-              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+        ...recentSearches.map(
+          (query) => ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 2,
             ),
-          ),
-          trailing: IconButton(
-            icon: Icon(
-              LucideIcons.x,
-              size: 16,
-              color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+            leading: Icon(
+              LucideIcons.history,
+              size: 18,
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
             ),
-            onPressed: () {
-              ref.read(recentSearchesProvider.notifier).removeSearch(query);
+            title: Text(
+              query,
+              style: AcadexTypography.body(
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              ),
+            ),
+            trailing: IconButton(
+              icon: Icon(
+                LucideIcons.x,
+                size: 16,
+                color: isDark
+                    ? AcadexColors.darkInkFaint
+                    : AcadexColors.inkFaint,
+              ),
+              onPressed: () {
+                ref.read(recentSearchesProvider.notifier).removeSearch(query);
+              },
+            ),
+            onTap: () {
+              _searchController.text = query;
+              _searchController.selection = TextSelection.fromPosition(
+                TextPosition(offset: _searchController.text.length),
+              );
             },
           ),
-          onTap: () {
-            _searchController.text = query;
-            _searchController.selection = TextSelection.fromPosition(
-              TextPosition(offset: _searchController.text.length),
-            );
-          },
-        )),
+        ),
       ],
     );
   }
@@ -187,7 +197,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                 color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
                 border: Border(
                   bottom: BorderSide(
-                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
                   ),
                 ),
               ),
@@ -198,7 +210,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                       LucideIcons.arrowLeft,
                       color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
                     ),
-                    onPressed: () => context.safePop(fallbackRoute: '/dashboard'),
+                    onPressed: () =>
+                        context.safePop(fallbackRoute: '/dashboard'),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -213,14 +226,18 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                         prefixIcon: Icon(
                           LucideIcons.search,
                           size: 18,
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                         suffixIcon: query.isNotEmpty
                             ? IconButton(
                                 icon: Icon(
                                   LucideIcons.x,
                                   size: 16,
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
                                 ),
                                 onPressed: () {
                                   _searchController.clear();
@@ -230,7 +247,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                       ),
                       onSubmitted: (value) {
                         if (value.trim().isNotEmpty) {
-                          ref.read(recentSearchesProvider.notifier).addSearch(value);
+                          ref
+                              .read(recentSearchesProvider.notifier)
+                              .addSearch(value);
                         }
                       },
                     ),
@@ -253,11 +272,12 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                             child: AcadexEmptyState(
                               icon: LucideIcons.searchX,
                               title: "No results found for \"$query\"",
-                              subtitle: "Try checking your spelling or selecting a different filter type.",
+                              subtitle:
+                                  "Try checking your spelling or selecting a different filter type.",
                             ),
                           );
                         }
-                        
+
                         return ListView.builder(
                           padding: const EdgeInsets.all(20),
                           itemCount: results.length,
@@ -270,7 +290,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                           },
                         );
                       },
-                      loading: () => const AcadexLoadingState(message: "Searching campus records..."),
+                      loading: () => const AcadexLoadingState(
+                        message: "Searching campus records...",
+                      ),
                       error: (err, stack) => Center(
                         child: AcadexErrorState.fromError(
                           error: err,

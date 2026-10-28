@@ -107,7 +107,9 @@ enum TimetableBreakType {
 void _validateTimeFormat(String time, String fieldName) {
   final regex = RegExp(r'^([01]\d|2[0-3]):[0-5]\d$');
   if (!regex.hasMatch(time)) {
-    throw ArgumentError('Invalid $fieldName time format "$time". Expected "HH:mm" (24-hour format).');
+    throw ArgumentError(
+      'Invalid $fieldName time format "$time". Expected "HH:mm" (24-hour format).',
+    );
   }
 }
 
@@ -124,8 +126,10 @@ class TimetableModel {
   final String subjectId;
   final String facultyId;
   final TimetableDay dayOfWeek;
+
   /// Format: "HH:mm" (24-hour)
   final String startTime;
+
   /// Format: "HH:mm" (24-hour)
   final String endTime;
   final String? timetableId;
@@ -240,7 +244,8 @@ class TimetableModel {
       semesterName: semesterName ?? this.semesterName,
       cohort: cohort ?? this.cohort,
       academicStage: academicStage ?? this.academicStage,
-      contextualDescription: contextualDescription ?? this.contextualDescription,
+      contextualDescription:
+          contextualDescription ?? this.contextualDescription,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -282,8 +287,12 @@ class TimetableModel {
       cohort: json['cohort'] as String?,
       academicStage: json['academicStage'] as String?,
       contextualDescription: json['contextualDescription'] as String?,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt'] as String) : DateTime.now(),
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt'] as String) : DateTime.now(),
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'] as String)
+          : DateTime.now(),
     );
   }
 
@@ -299,7 +308,8 @@ class TimetableModel {
       'sectionId': sectionId,
       'subjectId': subjectId,
       'facultyId': facultyId,
-      if (facultyAssignmentId != null) 'facultyAssignmentId': facultyAssignmentId,
+      if (facultyAssignmentId != null)
+        'facultyAssignmentId': facultyAssignmentId,
       if (roomId != null) 'roomId': roomId,
       'dayOfWeek': dayOfWeek.name,
       'startTime': startTime,
@@ -316,7 +326,8 @@ class TimetableModel {
       if (semesterName != null) 'semesterName': semesterName,
       if (cohort != null) 'cohort': cohort,
       if (academicStage != null) 'academicStage': academicStage,
-      if (contextualDescription != null) 'contextualDescription': contextualDescription,
+      if (contextualDescription != null)
+        'contextualDescription': contextualDescription,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -324,7 +335,8 @@ class TimetableModel {
 
   bool overlapsWith(TimetableModel other) {
     if (dayOfWeek != other.dayOfWeek) return false;
-    return startTime.compareTo(other.endTime) < 0 && endTime.compareTo(other.startTime) > 0;
+    return startTime.compareTo(other.endTime) < 0 &&
+        endTime.compareTo(other.startTime) > 0;
   }
 }
 
@@ -449,9 +461,15 @@ class TimetableContainerModel {
       version: (json['version'] as num?)?.toInt() ?? 1,
       activeDays: activeDaysList,
       timingMode: TimetableTimingMode.fromString(json['timingMode'] as String?),
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt'] as String) : DateTime.now(),
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt'] as String) : DateTime.now(),
-      publishedAt: json['publishedAt'] != null ? DateTime.parse(json['publishedAt'] as String) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'] as String)
+          : DateTime.now(),
+      publishedAt: json['publishedAt'] != null
+          ? DateTime.parse(json['publishedAt'] as String)
+          : null,
       publishedBy: json['publishedBy'] as String?,
     );
   }
@@ -482,7 +500,9 @@ class TimetableContainerModel {
       throw ArgumentError('Timetable container name cannot be empty');
     }
     if (activeDays.isEmpty) {
-      throw ArgumentError('Timetable must have at least one active working day');
+      throw ArgumentError(
+        'Timetable must have at least one active working day',
+      );
     }
     if (version < 1) {
       throw ArgumentError('Version must be >= 1');
@@ -493,14 +513,19 @@ class TimetableContainerModel {
 /// Represents a defined period / bell schedule slot in the timetable.
 class TimetablePeriodModel {
   final String id;
+
   /// 1-indexed period position (e.g. 1 for Period 1, 2 for Period 2)
   final int index;
+
   /// Display name (e.g. "Period 1", "P1")
   final String name;
+
   /// Format: "HH:mm" (24-hour)
   final String startTime;
+
   /// Format: "HH:mm" (24-hour)
   final String endTime;
+
   /// Null if applies to all days in sameEveryDay mode; specified for day-specific timings
   final TimetableDay? dayOfWeek;
 
@@ -581,7 +606,9 @@ class TimetablePeriodModel {
     _validateTimeFormat(startTime, 'startTime');
     _validateTimeFormat(endTime, 'endTime');
     if (startTime.compareTo(endTime) >= 0) {
-      throw ArgumentError('Period startTime ($startTime) must be strictly before endTime ($endTime)');
+      throw ArgumentError(
+        'Period startTime ($startTime) must be strictly before endTime ($endTime)',
+      );
     }
   }
 }
@@ -590,12 +617,16 @@ class TimetablePeriodModel {
 class TimetableBreakModel {
   final String id;
   final String name;
+
   /// Format: "HH:mm" (24-hour)
   final String startTime;
+
   /// Format: "HH:mm" (24-hour)
   final String endTime;
+
   /// Days this break applies to. A single record applies to multiple days without per-cell duplication.
   final List<TimetableDay> appliesToDays;
+
   /// Whether UI renders this as a single visual vertical line/block across days
   final bool isVerticalSpan;
   final TimetableBreakType breakType;
@@ -625,7 +656,8 @@ class TimetableBreakModel {
   }
 
   bool overlapsWithTime(String otherStart, String otherEnd) {
-    return startTime.compareTo(otherEnd) < 0 && endTime.compareTo(otherStart) > 0;
+    return startTime.compareTo(otherEnd) < 0 &&
+        endTime.compareTo(otherStart) > 0;
   }
 
   TimetableBreakModel copyWith({
@@ -693,7 +725,9 @@ class TimetableBreakModel {
     _validateTimeFormat(startTime, 'startTime');
     _validateTimeFormat(endTime, 'endTime');
     if (startTime.compareTo(endTime) >= 0) {
-      throw ArgumentError('Break startTime ($startTime) must be strictly before endTime ($endTime)');
+      throw ArgumentError(
+        'Break startTime ($startTime) must be strictly before endTime ($endTime)',
+      );
     }
   }
 }
@@ -703,12 +737,16 @@ class TimetableBreakModel {
 class TimetableGridEntryModel {
   final String id;
   final TimetableDay dayOfWeek;
+
   /// 1-indexed starting period (e.g. 1 for Period 1, 2 for Period 2)
   final int startPeriodIndex;
+
   /// Number of consecutive periods this entry occupies (1 = single period, 2 = 2-period lab, etc.)
   final int periodSpan;
+
   /// Format: "HH:mm" (24-hour)
   final String startTime;
+
   /// Format: "HH:mm" (24-hour)
   final String endTime;
   final String subjectId;
@@ -764,7 +802,8 @@ class TimetableGridEntryModel {
 
   /// Returns the list of all 1-indexed period numbers occupied by this entry.
   /// Example: startPeriodIndex = 2, periodSpan = 3 -> [2, 3, 4]
-  List<int> get occupiedPeriodIndexes => List.generate(periodSpan, (i) => startPeriodIndex + i);
+  List<int> get occupiedPeriodIndexes =>
+      List.generate(periodSpan, (i) => startPeriodIndex + i);
 
   /// Checks if this entry occupies a specific 1-indexed period on its day
   bool occupiesPeriod(int periodIndex) {
@@ -774,13 +813,15 @@ class TimetableGridEntryModel {
   /// Checks if two entries on the same day overlap horizontally in period index range
   bool overlapsHorizontallyWith(TimetableGridEntryModel other) {
     if (dayOfWeek != other.dayOfWeek) return false;
-    return startPeriodIndex <= other.endPeriodIndex && endPeriodIndex >= other.startPeriodIndex;
+    return startPeriodIndex <= other.endPeriodIndex &&
+        endPeriodIndex >= other.startPeriodIndex;
   }
 
   /// Checks if this entry collides with another entry by time range on the same day
   bool overlapsTimeWith(TimetableGridEntryModel other) {
     if (dayOfWeek != other.dayOfWeek) return false;
-    return startTime.compareTo(other.endTime) < 0 && endTime.compareTo(other.startTime) > 0;
+    return startTime.compareTo(other.endTime) < 0 &&
+        endTime.compareTo(other.startTime) > 0;
   }
 
   /// Checks if this entry conflicts with a break (same day and overlapping time)
@@ -837,7 +878,8 @@ class TimetableGridEntryModel {
       semesterName: semesterName ?? this.semesterName,
       cohort: cohort ?? this.cohort,
       academicStage: academicStage ?? this.academicStage,
-      contextualDescription: contextualDescription ?? this.contextualDescription,
+      contextualDescription:
+          contextualDescription ?? this.contextualDescription,
     );
   }
 
@@ -885,7 +927,8 @@ class TimetableGridEntryModel {
       'endTime': endTime,
       'subjectId': subjectId,
       'facultyId': facultyId,
-      if (facultyAssignmentId != null) 'facultyAssignmentId': facultyAssignmentId,
+      if (facultyAssignmentId != null)
+        'facultyAssignmentId': facultyAssignmentId,
       if (roomId != null) 'roomId': roomId,
       'roomNumber': roomNumber,
       if (building != null) 'building': building,
@@ -899,7 +942,8 @@ class TimetableGridEntryModel {
       if (semesterName != null) 'semesterName': semesterName,
       if (cohort != null) 'cohort': cohort,
       if (academicStage != null) 'academicStage': academicStage,
-      if (contextualDescription != null) 'contextualDescription': contextualDescription,
+      if (contextualDescription != null)
+        'contextualDescription': contextualDescription,
     };
   }
 
@@ -913,8 +957,9 @@ class TimetableGridEntryModel {
     _validateTimeFormat(startTime, 'startTime');
     _validateTimeFormat(endTime, 'endTime');
     if (startTime.compareTo(endTime) >= 0) {
-      throw ArgumentError('Entry startTime ($startTime) must be strictly before endTime ($endTime)');
+      throw ArgumentError(
+        'Entry startTime ($startTime) must be strictly before endTime ($endTime)',
+      );
     }
   }
 }
-

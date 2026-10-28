@@ -22,7 +22,8 @@ class TimetableFormScreen extends ConsumerStatefulWidget {
   const TimetableFormScreen({super.key, this.existingEntry});
 
   @override
-  ConsumerState<TimetableFormScreen> createState() => _TimetableFormScreenState();
+  ConsumerState<TimetableFormScreen> createState() =>
+      _TimetableFormScreenState();
 }
 
 class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
@@ -94,26 +95,39 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
     if (_facultyId == null || _subjectId == null || _sectionId == null) return;
 
     try {
-      final assignments = ref.read(facultyAssignmentsProvider).valueOrNull ?? [];
-      final activeForFaculty = assignments.where((a) => a.facultyId == _facultyId && a.isActive).toList();
+      final assignments =
+          ref.read(facultyAssignmentsProvider).valueOrNull ?? [];
+      final activeForFaculty = assignments
+          .where((a) => a.facultyId == _facultyId && a.isActive)
+          .toList();
       if (activeForFaculty.isNotEmpty) {
-        final matches = activeForFaculty.where((a) => a.subjectId == _subjectId && a.sectionId == _sectionId);
+        final matches = activeForFaculty.where(
+          (a) => a.subjectId == _subjectId && a.sectionId == _sectionId,
+        );
         if (matches.isEmpty) {
           setState(() {
-            _assignmentError = "Faculty is not assigned to the selected subject and section.";
+            _assignmentError =
+                "Faculty is not assigned to the selected subject and section.";
           });
           return;
         }
       } else {
         final facultyList = ref.read(facultyProvider(null)).items;
-        final faculty = facultyList.where((f) => f.id == _facultyId).firstOrNull;
+        final faculty = facultyList
+            .where((f) => f.id == _facultyId)
+            .firstOrNull;
 
         if (faculty != null) {
-          final hasSubject = faculty.subjectIds.isEmpty || faculty.subjectIds.contains(_subjectId);
-          final hasSection = faculty.sectionIds.isEmpty || faculty.sectionIds.contains(_sectionId);
+          final hasSubject =
+              faculty.subjectIds.isEmpty ||
+              faculty.subjectIds.contains(_subjectId);
+          final hasSection =
+              faculty.sectionIds.isEmpty ||
+              faculty.sectionIds.contains(_sectionId);
           if (!hasSubject || !hasSection) {
             setState(() {
-              _assignmentError = "Faculty is not assigned to the selected subject and section.";
+              _assignmentError =
+                  "Faculty is not assigned to the selected subject and section.";
             });
           }
         }
@@ -123,10 +137,7 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
 
   Future<void> _pickTime(bool isStart) async {
     final initial = isStart ? _startTime : _endTime;
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: initial,
-    );
+    final picked = await showTimePicker(context: context, initialTime: initial);
     if (picked != null) {
       setState(() {
         if (isStart) {
@@ -144,7 +155,7 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
     });
 
     _validateFacultyAssignment();
-    
+
     if (!_formKey.currentState!.validate() || _assignmentError != null) return;
 
     final startMinutes = _startTime.hour * 60 + _startTime.minute;
@@ -160,7 +171,8 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
     final authState = ref.read(authProvider);
     if (authState is! AuthAuthenticated) return;
 
-    final isEdit = widget.existingEntry != null && widget.existingEntry!.id.isNotEmpty;
+    final isEdit =
+        widget.existingEntry != null && widget.existingEntry!.id.isNotEmpty;
     final entry = TimetableModel(
       id: isEdit ? widget.existingEntry!.id : '',
       collegeId: authState.user.collegeId ?? '',
@@ -175,7 +187,9 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
       startTime: _formatTime(_startTime),
       endTime: _formatTime(_endTime),
       roomNumber: _roomController.text.trim(),
-      building: _buildingController.text.trim().isEmpty ? null : _buildingController.text.trim(),
+      building: _buildingController.text.trim().isEmpty
+          ? null
+          : _buildingController.text.trim(),
       sessionType: _sessionType,
       createdAt: widget.existingEntry?.createdAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
@@ -187,16 +201,18 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
       } else {
         await ref.read(timetableManagementProvider.notifier).createEntry(entry);
       }
-      
+
       // ignore: unused_result
       ref.refresh(weeklyTimetableProvider);
       // ignore: unused_result
       ref.refresh(managementTimetableProvider);
-      
+
       if (mounted) {
         AcadexSnackBar.showSuccess(
           context,
-          isEdit ? 'Timetable schedule updated successfully.' : 'Timetable schedule created successfully.',
+          isEdit
+              ? 'Timetable schedule updated successfully.'
+              : 'Timetable schedule created successfully.',
         );
         context.safePop(fallbackRoute: '/timetable/manage');
       }
@@ -222,10 +238,16 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusXl),
+        shape: RoundedRectangleBorder(
+          borderRadius: AcadexRadius.borderRadiusXl,
+        ),
         title: const Row(
           children: [
-            Icon(LucideIcons.alertTriangle, color: AcadexColors.error, size: 20),
+            Icon(
+              LucideIcons.alertTriangle,
+              color: AcadexColors.error,
+              size: 20,
+            ),
             SizedBox(width: 8),
             Text('Schedule Conflict Detected'),
           ],
@@ -245,24 +267,34 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                 decoration: BoxDecoration(
                   color: AcadexColors.error.withValues(alpha: 0.08),
                   borderRadius: AcadexRadius.borderRadiusMd,
-                  border: Border.all(color: AcadexColors.error.withValues(alpha: 0.2)),
+                  border: Border.all(
+                    color: AcadexColors.error.withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Conflicting Slot: ${conflict.conflictingEntry!.startTime} – ${conflict.conflictingEntry!.endTime}',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AcadexColors.error),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: AcadexColors.error,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Day: ${conflict.conflictingEntry!.dayOfWeek.displayName}',
-                      style: AcadexTypography.caption(color: Theme.of(context).colorScheme.onSurface),
+                      style: AcadexTypography.caption(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
                     if (conflict.conflictingEntry!.roomNumber.isNotEmpty)
                       Text(
                         'Room: ${conflict.conflictingEntry!.roomNumber}',
-                        style: AcadexTypography.caption(color: Theme.of(context).colorScheme.onSurface),
+                        style: AcadexTypography.caption(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                   ],
                 ),
@@ -288,18 +320,23 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     if (authState is! AuthAuthenticated) return const SizedBox.shrink();
-    
+
     final user = authState.user;
     if (user.role == AppRole.student || user.role == AppRole.faculty) {
       return Scaffold(
         appBar: AppBar(title: const Text('Unauthorized')),
-        body: const Center(child: Text('Unauthorized: Only administrators and HODs can create or edit timetable entries.')),
+        body: const Center(
+          child: Text(
+            'Unauthorized: Only administrators and HODs can create or edit timetable entries.',
+          ),
+        ),
       );
     }
 
     final mgtState = ref.watch(timetableManagementProvider);
     final isLoading = mgtState.isLoading;
-    final isEdit = widget.existingEntry != null && widget.existingEntry!.id.isNotEmpty;
+    final isEdit =
+        widget.existingEntry != null && widget.existingEntry!.id.isNotEmpty;
     final isHod = user.role == AppRole.hod;
 
     // Pre-populate department for HOD
@@ -322,7 +359,9 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                   children: [
                     // Header
                     AcadexPageHeader(
-                      title: isEdit ? 'Edit Timetable Schedule' : 'Create Timetable Schedule',
+                      title: isEdit
+                          ? 'Edit Timetable Schedule'
+                          : 'Create Timetable Schedule',
                       subtitle: isEdit
                           ? 'Modify slot details, timings, or assigned faculty'
                           : 'Configure academic parameters, faculty assignment, and timings',
@@ -331,25 +370,37 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
 
                     // Conflict Banner with smooth animated expansion
                     AnimatedSize(
-                      duration: AcadexMotion.resolveDuration(context, AcadexMotion.normal),
+                      duration: AcadexMotion.resolveDuration(
+                        context,
+                        AcadexMotion.normal,
+                      ),
                       curve: AcadexMotion.curveStandard,
                       child: _conflictErrorMessage != null
                           ? Container(
                               margin: const EdgeInsets.only(bottom: 16),
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: AcadexColors.error.withValues(alpha: 0.1),
+                                color: AcadexColors.error.withValues(
+                                  alpha: 0.1,
+                                ),
                                 borderRadius: AcadexRadius.borderRadiusMd,
                                 border: Border.all(color: AcadexColors.error),
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(LucideIcons.alertTriangle, color: AcadexColors.error, size: 20),
+                                  const Icon(
+                                    LucideIcons.alertTriangle,
+                                    color: AcadexColors.error,
+                                    size: 20,
+                                  ),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Text(
                                       _conflictErrorMessage!,
-                                      style: const TextStyle(color: AcadexColors.error, fontWeight: FontWeight.w600),
+                                      style: const TextStyle(
+                                        color: AcadexColors.error,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -369,24 +420,41 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                             builder: (context, ref, _) {
                               final deptsAsync = ref.watch(departmentsProvider);
                               return deptsAsync.maybeWhen(
-                                data: (depts) => DropdownButtonFormField<String>(
-                                  initialValue: _departmentId,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Department *',
-                                    prefixIcon: Icon(LucideIcons.building2, size: 18),
-                                  ),
-                                  items: depts.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name.isNotEmpty ? d.name : d.code))).toList(),
-                                  onChanged: (val) {
-                                    setState(() {
-                                      _departmentId = val;
-                                      _courseId = null;
-                                      _semesterId = null;
-                                      _sectionId = null;
-                                      _subjectId = null;
-                                    });
-                                  },
-                                  validator: (v) => v == null ? 'Please select a department' : null,
-                                ),
+                                data: (depts) =>
+                                    DropdownButtonFormField<String>(
+                                      initialValue: _departmentId,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Department *',
+                                        prefixIcon: Icon(
+                                          LucideIcons.building2,
+                                          size: 18,
+                                        ),
+                                      ),
+                                      items: depts
+                                          .map(
+                                            (d) => DropdownMenuItem(
+                                              value: d.id,
+                                              child: Text(
+                                                d.name.isNotEmpty
+                                                    ? d.name
+                                                    : d.code,
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                      onChanged: (val) {
+                                        setState(() {
+                                          _departmentId = val;
+                                          _courseId = null;
+                                          _semesterId = null;
+                                          _sectionId = null;
+                                          _subjectId = null;
+                                        });
+                                      },
+                                      validator: (v) => v == null
+                                          ? 'Please select a department'
+                                          : null,
+                                    ),
                                 orElse: () => const LinearProgressIndicator(),
                               );
                             },
@@ -400,15 +468,32 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                             return coursesAsync.maybeWhen(
                               data: (courses) {
                                 final filtered = _departmentId != null
-                                    ? courses.where((c) => c.departmentId == _departmentId).toList()
+                                    ? courses
+                                          .where(
+                                            (c) =>
+                                                c.departmentId == _departmentId,
+                                          )
+                                          .toList()
                                     : courses;
                                 return DropdownButtonFormField<String>(
                                   initialValue: _courseId,
                                   decoration: const InputDecoration(
                                     labelText: 'Course *',
-                                    prefixIcon: Icon(LucideIcons.bookMarked, size: 18),
+                                    prefixIcon: Icon(
+                                      LucideIcons.bookMarked,
+                                      size: 18,
+                                    ),
                                   ),
-                                  items: filtered.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name.isNotEmpty ? c.name : c.code))).toList(),
+                                  items: filtered
+                                      .map(
+                                        (c) => DropdownMenuItem(
+                                          value: c.id,
+                                          child: Text(
+                                            c.name.isNotEmpty ? c.name : c.code,
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
                                   onChanged: (val) {
                                     setState(() {
                                       _courseId = val;
@@ -418,7 +503,9 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                                       _facultyId = null;
                                     });
                                   },
-                                  validator: (v) => v == null ? 'Please select a course' : null,
+                                  validator: (v) => v == null
+                                      ? 'Please select a course'
+                                      : null,
                                 );
                               },
                               orElse: () => const LinearProgressIndicator(),
@@ -434,19 +521,40 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                             Expanded(
                               child: Consumer(
                                 builder: (context, ref, _) {
-                                  final semestersAsync = ref.watch(semestersProvider);
+                                  final semestersAsync = ref.watch(
+                                    semestersProvider,
+                                  );
                                   return semestersAsync.maybeWhen(
                                     data: (semesters) {
                                       final filtered = _courseId != null
-                                          ? semesters.where((s) => s.courseId == _courseId).toList()
+                                          ? semesters
+                                                .where(
+                                                  (s) =>
+                                                      s.courseId == _courseId,
+                                                )
+                                                .toList()
                                           : semesters;
                                       return DropdownButtonFormField<String>(
                                         initialValue: _semesterId,
                                         decoration: const InputDecoration(
                                           labelText: 'Semester *',
-                                          prefixIcon: Icon(LucideIcons.calendarRange, size: 18),
+                                          prefixIcon: Icon(
+                                            LucideIcons.calendarRange,
+                                            size: 18,
+                                          ),
                                         ),
-                                        items: filtered.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name.isNotEmpty ? s.name : 'Semester ${s.number}'))).toList(),
+                                        items: filtered
+                                            .map(
+                                              (s) => DropdownMenuItem(
+                                                value: s.id,
+                                                child: Text(
+                                                  s.name.isNotEmpty
+                                                      ? s.name
+                                                      : 'Semester ${s.number}',
+                                                ),
+                                              ),
+                                            )
+                                            .toList(),
                                         onChanged: (val) {
                                           setState(() {
                                             _semesterId = val;
@@ -455,7 +563,9 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                                             _facultyId = null;
                                           });
                                         },
-                                        validator: (v) => v == null ? 'Select semester' : null,
+                                        validator: (v) => v == null
+                                            ? 'Select semester'
+                                            : null,
                                       );
                                     },
                                     orElse: () => const SizedBox.shrink(),
@@ -469,19 +579,37 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                             Expanded(
                               child: Consumer(
                                 builder: (context, ref, _) {
-                                  final sectionsAsync = ref.watch(sectionsProvider);
+                                  final sectionsAsync = ref.watch(
+                                    sectionsProvider,
+                                  );
                                   return sectionsAsync.maybeWhen(
                                     data: (sections) {
                                       final filtered = _semesterId != null
-                                          ? sections.where((s) => s.semesterId == _semesterId).toList()
+                                          ? sections
+                                                .where(
+                                                  (s) =>
+                                                      s.semesterId ==
+                                                      _semesterId,
+                                                )
+                                                .toList()
                                           : sections;
                                       return DropdownButtonFormField<String>(
                                         initialValue: _sectionId,
                                         decoration: const InputDecoration(
                                           labelText: 'Section *',
-                                          prefixIcon: Icon(LucideIcons.layoutGrid, size: 18),
+                                          prefixIcon: Icon(
+                                            LucideIcons.layoutGrid,
+                                            size: 18,
+                                          ),
                                         ),
-                                        items: filtered.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
+                                        items: filtered
+                                            .map(
+                                              (s) => DropdownMenuItem(
+                                                value: s.id,
+                                                child: Text(s.name),
+                                              ),
+                                            )
+                                            .toList(),
                                         onChanged: (val) {
                                           setState(() {
                                             _sectionId = val;
@@ -489,7 +617,8 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                                           });
                                           _validateFacultyAssignment();
                                         },
-                                        validator: (v) => v == null ? 'Select section' : null,
+                                        validator: (v) =>
+                                            v == null ? 'Select section' : null,
                                       );
                                     },
                                     orElse: () => const SizedBox.shrink(),
@@ -515,15 +644,37 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                             return subjectsAsync.maybeWhen(
                               data: (subjects) {
                                 final filtered = _semesterId != null
-                                    ? subjects.where((s) => s.semesterId == _semesterId).toList()
-                                    : (_departmentId != null ? subjects.where((s) => s.departmentId == _departmentId).toList() : subjects);
+                                    ? subjects
+                                          .where(
+                                            (s) => s.semesterId == _semesterId,
+                                          )
+                                          .toList()
+                                    : (_departmentId != null
+                                          ? subjects
+                                                .where(
+                                                  (s) =>
+                                                      s.departmentId ==
+                                                      _departmentId,
+                                                )
+                                                .toList()
+                                          : subjects);
                                 return DropdownButtonFormField<String>(
                                   initialValue: _subjectId,
                                   decoration: const InputDecoration(
                                     labelText: 'Subject *',
-                                    prefixIcon: Icon(LucideIcons.bookOpen, size: 18),
+                                    prefixIcon: Icon(
+                                      LucideIcons.bookOpen,
+                                      size: 18,
+                                    ),
                                   ),
-                                  items: filtered.map((s) => DropdownMenuItem(value: s.id, child: Text('${s.name} (${s.code})'))).toList(),
+                                  items: filtered
+                                      .map(
+                                        (s) => DropdownMenuItem(
+                                          value: s.id,
+                                          child: Text('${s.name} (${s.code})'),
+                                        ),
+                                      )
+                                      .toList(),
                                   onChanged: (val) {
                                     setState(() {
                                       _subjectId = val;
@@ -531,7 +682,9 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                                     });
                                     _validateFacultyAssignment();
                                   },
-                                  validator: (v) => v == null ? 'Please select a subject' : null,
+                                  validator: (v) => v == null
+                                      ? 'Please select a subject'
+                                      : null,
                                 );
                               },
                               orElse: () => const LinearProgressIndicator(),
@@ -545,10 +698,17 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                           builder: (context, ref, _) {
                             List<Faculty> candidateFaculty = [];
                             if (_subjectId != null && _sectionId != null) {
-                              candidateFaculty = ref.watch(assignedFacultyForSubjectSectionProvider((subjectId: _subjectId!, sectionId: _sectionId!)));
+                              candidateFaculty = ref.watch(
+                                assignedFacultyForSubjectSectionProvider((
+                                  subjectId: _subjectId!,
+                                  sectionId: _sectionId!,
+                                )),
+                              );
                             }
                             if (candidateFaculty.isEmpty) {
-                              final facultyState = ref.watch(facultyProvider(_departmentId));
+                              final facultyState = ref.watch(
+                                facultyProvider(_departmentId),
+                              );
                               candidateFaculty = facultyState.items;
                             }
 
@@ -556,20 +716,37 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                               initialValue: _facultyId,
                               decoration: InputDecoration(
                                 labelText: 'Assigned Faculty *',
-                                prefixIcon: const Icon(LucideIcons.user, size: 18),
-                                helperText: _subjectId != null && _sectionId != null
-                                    ? (candidateFaculty.isNotEmpty ? "Filtering assigned faculty for this subject & section" : "No faculty assignment found; showing department faculty")
+                                prefixIcon: const Icon(
+                                  LucideIcons.user,
+                                  size: 18,
+                                ),
+                                helperText:
+                                    _subjectId != null && _sectionId != null
+                                    ? (candidateFaculty.isNotEmpty
+                                          ? "Filtering assigned faculty for this subject & section"
+                                          : "No faculty assignment found; showing department faculty")
                                     : null,
                                 errorText: _assignmentError,
                               ),
-                              items: candidateFaculty.map((f) => DropdownMenuItem(value: f.id, child: Text(f.name.isNotEmpty ? f.name : f.email))).toList(),
+                              items: candidateFaculty
+                                  .map(
+                                    (f) => DropdownMenuItem(
+                                      value: f.id,
+                                      child: Text(
+                                        f.name.isNotEmpty ? f.name : f.email,
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
                               onChanged: (val) {
                                 setState(() {
                                   _facultyId = val;
                                 });
                                 _validateFacultyAssignment();
                               },
-                              validator: (v) => v == null ? 'Please assign a faculty member' : null,
+                              validator: (v) => v == null
+                                  ? 'Please assign a faculty member'
+                                  : null,
                             );
                           },
                         ),
@@ -590,11 +767,22 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                                 initialValue: _dayOfWeek,
                                 decoration: const InputDecoration(
                                   labelText: 'Day of Week *',
-                                  prefixIcon: Icon(LucideIcons.calendar, size: 18),
+                                  prefixIcon: Icon(
+                                    LucideIcons.calendar,
+                                    size: 18,
+                                  ),
                                 ),
-                                items: TimetableDay.values.map((d) => DropdownMenuItem(value: d, child: Text(d.displayName))).toList(),
+                                items: TimetableDay.values
+                                    .map(
+                                      (d) => DropdownMenuItem(
+                                        value: d,
+                                        child: Text(d.displayName),
+                                      ),
+                                    )
+                                    .toList(),
                                 onChanged: (val) {
-                                  if (val != null) setState(() => _dayOfWeek = val);
+                                  if (val != null)
+                                    setState(() => _dayOfWeek = val);
                                 },
                               ),
                             ),
@@ -602,17 +790,29 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
 
                             // Session Type
                             Expanded(
-                              child: DropdownButtonFormField<TimetableSessionType>(
-                                initialValue: _sessionType,
-                                decoration: const InputDecoration(
-                                  labelText: 'Session Type *',
-                                  prefixIcon: Icon(LucideIcons.tag, size: 18),
-                                ),
-                                items: TimetableSessionType.values.map((t) => DropdownMenuItem(value: t, child: Text(t.displayName))).toList(),
-                                onChanged: (val) {
-                                  if (val != null) setState(() => _sessionType = val);
-                                },
-                              ),
+                              child:
+                                  DropdownButtonFormField<TimetableSessionType>(
+                                    initialValue: _sessionType,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Session Type *',
+                                      prefixIcon: Icon(
+                                        LucideIcons.tag,
+                                        size: 18,
+                                      ),
+                                    ),
+                                    items: TimetableSessionType.values
+                                        .map(
+                                          (t) => DropdownMenuItem(
+                                            value: t,
+                                            child: Text(t.displayName),
+                                          ),
+                                        )
+                                        .toList(),
+                                    onChanged: (val) {
+                                      if (val != null)
+                                        setState(() => _sessionType = val);
+                                    },
+                                  ),
                             ),
                           ],
                         ),
@@ -627,9 +827,17 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                                 child: InputDecorator(
                                   decoration: const InputDecoration(
                                     labelText: 'Start Time *',
-                                    prefixIcon: Icon(LucideIcons.clock4, size: 18),
+                                    prefixIcon: Icon(
+                                      LucideIcons.clock4,
+                                      size: 18,
+                                    ),
                                   ),
-                                  child: Text(_formatTime(_startTime), style: const TextStyle(fontWeight: FontWeight.w600)),
+                                  child: Text(
+                                    _formatTime(_startTime),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
@@ -640,9 +848,17 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                                 child: InputDecorator(
                                   decoration: const InputDecoration(
                                     labelText: 'End Time *',
-                                    prefixIcon: Icon(LucideIcons.clock9, size: 18),
+                                    prefixIcon: Icon(
+                                      LucideIcons.clock9,
+                                      size: 18,
+                                    ),
                                   ),
-                                  child: Text(_formatTime(_endTime), style: const TextStyle(fontWeight: FontWeight.w600)),
+                                  child: Text(
+                                    _formatTime(_endTime),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
@@ -665,9 +881,15 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                                 decoration: const InputDecoration(
                                   labelText: 'Room Number *',
                                   hintText: 'e.g. C-204, Lab-1',
-                                  prefixIcon: Icon(LucideIcons.doorOpen, size: 18),
+                                  prefixIcon: Icon(
+                                    LucideIcons.doorOpen,
+                                    size: 18,
+                                  ),
                                 ),
-                                validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter room number' : null,
+                                validator: (v) =>
+                                    (v == null || v.trim().isEmpty)
+                                    ? 'Enter room number'
+                                    : null,
                               ),
                             ),
                             const SizedBox(width: 14),
@@ -677,7 +899,10 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                                 decoration: const InputDecoration(
                                   labelText: 'Building / Block (Optional)',
                                   hintText: 'e.g. Main Block, Science Wing',
-                                  prefixIcon: Icon(LucideIcons.building, size: 18),
+                                  prefixIcon: Icon(
+                                    LucideIcons.building,
+                                    size: 18,
+                                  ),
                                 ),
                               ),
                             ),
@@ -695,19 +920,32 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
-                                color: AcadexColors.success.withValues(alpha: 0.15),
+                                color: AcadexColors.success.withValues(
+                                  alpha: 0.15,
+                                ),
                                 borderRadius: AcadexRadius.borderRadiusXs,
                               ),
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(LucideIcons.checkCircle2, size: 14, color: AcadexColors.success),
+                                  Icon(
+                                    LucideIcons.checkCircle2,
+                                    size: 14,
+                                    color: AcadexColors.success,
+                                  ),
                                   SizedBox(width: 4),
                                   Text(
                                     'ACTIVE',
-                                    style: TextStyle(color: AcadexColors.success, fontWeight: FontWeight.bold, fontSize: 11),
+                                    style: TextStyle(
+                                      color: AcadexColors.success,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -716,7 +954,13 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                             Expanded(
                               child: Text(
                                 'Realtime schedule distribution to enrolled students and assigned faculty.',
-                                style: AcadexTypography.caption(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                                style: AcadexTypography.caption(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall?.color ??
+                                      AcadexColors.inkMuted,
+                                ),
                               ),
                             ),
                           ],
@@ -730,7 +974,11 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         OutlinedButton(
-                          onPressed: isLoading ? null : () => context.safePop(fallbackRoute: '/timetable/manage'),
+                          onPressed: isLoading
+                              ? null
+                              : () => context.safePop(
+                                  fallbackRoute: '/timetable/manage',
+                                ),
                           child: const Text('Cancel'),
                         ),
                         const SizedBox(width: 14),

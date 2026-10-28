@@ -33,7 +33,11 @@ class AcadexBottomNav extends ConsumerWidget {
     }
 
     final primaryItems = AcadexNavigationService.getPrimaryNavItems(role);
-    final activeItem = AcadexNavigationService.resolveActiveItem(activeRoute, role, candidates: primaryItems);
+    final activeItem = AcadexNavigationService.resolveActiveItem(
+      activeRoute,
+      role,
+      candidates: primaryItems,
+    );
     final isMoreActive = activeItem == null;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -48,7 +52,9 @@ class AcadexBottomNav extends ConsumerWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withValues(alpha: 0.25) : const Color(0x0807111F),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.25)
+                : const Color(0x0807111F),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -108,11 +114,15 @@ class _NavTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final activeColor = isDark ? const Color(0xFF60A5FA) : AcadexColors.primary;
-    final inactiveColor = isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted;
+    final inactiveColor = isDark
+        ? AcadexColors.darkInkMuted
+        : AcadexColors.inkMuted;
     final activePillColor = isDark
         ? AcadexColors.primary.withValues(alpha: 0.22)
         : AcadexColors.primaryLight;
-    final textScaler = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.15);
+    final textScaler = MediaQuery.textScalerOf(
+      context,
+    ).clamp(maxScaleFactor: 1.15);
 
     return Expanded(
       child: AcadexPressable(
@@ -151,12 +161,18 @@ class _NavTab extends StatelessWidget {
                           top: -2,
                           right: -8,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 1,
+                            ),
                             decoration: BoxDecoration(
                               color: AcadexColors.error,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
+                            constraints: const BoxConstraints(
+                              minWidth: 12,
+                              minHeight: 12,
+                            ),
                             child: Text(
                               badgeCount > 9 ? '9+' : '$badgeCount',
                               style: const TextStyle(
@@ -175,13 +191,16 @@ class _NavTab extends StatelessWidget {
                 AnimatedDefaultTextStyle(
                   duration: const Duration(milliseconds: 180),
                   curve: Curves.easeInOut,
-                  style: AcadexTypography.caption(
-                    color: isActive ? activeColor : inactiveColor,
-                  ).copyWith(
-                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                    fontSize: 10.5,
-                    letterSpacing: 0.1,
-                  ),
+                  style:
+                      AcadexTypography.caption(
+                        color: isActive ? activeColor : inactiveColor,
+                      ).copyWith(
+                        fontWeight: isActive
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        fontSize: 10.5,
+                        letterSpacing: 0.1,
+                      ),
                   child: Text(
                     label,
                     maxLines: 1,

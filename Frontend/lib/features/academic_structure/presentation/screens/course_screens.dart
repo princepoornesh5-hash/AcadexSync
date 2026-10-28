@@ -42,7 +42,8 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
     final isMobile = AcadexBreakpoints.isMobile(context);
     final authState = ref.watch(authProvider);
     final user = authState is AuthAuthenticated ? authState.user : null;
-    final canManageCourses = user?.role == AppRole.superAdmin ||
+    final canManageCourses =
+        user?.role == AppRole.superAdmin ||
         user?.role == AppRole.collegeAdmin ||
         user?.role == AppRole.hod;
 
@@ -57,12 +58,16 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
         children: [
           AcadexPageHeader(
             title: progsLabel,
-            subtitle: "Manage academic $progsLabel, duration, and curricula offered across departments.",
+            subtitle:
+                "Manage academic $progsLabel, duration, and curricula offered across departments.",
           ),
           AcadexSearchFilterBar(
-            searchHint: "Search ${progsLabel.toLowerCase()} by name, code, or department...",
+            searchHint:
+                "Search ${progsLabel.toLowerCase()} by name, code, or department...",
             onSearchChanged: (v) => setState(() => _searchQuery = v),
-            onActionTap: canManageCourses ? () => context.push('/academics/courses/new') : null,
+            onActionTap: canManageCourses
+                ? () => context.push('/academics/courses/new')
+                : null,
             actionLabel: "+ Create $progLabel",
           ),
           const SizedBox(height: 10),
@@ -72,22 +77,38 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
             padding: EdgeInsets.zero,
             child: Row(
               children: [
-                for (final f in [('all', 'All'), ('active', 'Active'), ('inactive', 'Inactive')])
+                for (final f in [
+                  ('all', 'All'),
+                  ('active', 'Active'),
+                  ('inactive', 'Inactive'),
+                ])
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: FilterChip(
                       label: Text(f.$2),
                       selected: _statusFilter == f.$1,
                       onSelected: (_) => setState(() => _statusFilter = f.$1),
-                      selectedColor: AcadexColors.primary.withValues(alpha: 0.15),
+                      selectedColor: AcadexColors.primary.withValues(
+                        alpha: 0.15,
+                      ),
                       checkmarkColor: AcadexColors.primary,
                       labelStyle: TextStyle(
-                        color: _statusFilter == f.$1 ? AcadexColors.primary : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                        fontWeight: _statusFilter == f.$1 ? FontWeight.w600 : FontWeight.w400,
+                        color: _statusFilter == f.$1
+                            ? AcadexColors.primary
+                            : (isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted),
+                        fontWeight: _statusFilter == f.$1
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                         fontSize: 12,
                       ),
                       side: BorderSide(
-                        color: _statusFilter == f.$1 ? AcadexColors.primary : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                        color: _statusFilter == f.$1
+                            ? AcadexColors.primary
+                            : (isDark
+                                  ? AcadexColors.darkHairline
+                                  : AcadexColors.hairline),
                       ),
                     ),
                   ),
@@ -131,13 +152,16 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
                     }
                     return AcadexEmptyState(
                       title: "No $progsLabel Found",
-                      subtitle: "Create a ${progLabel.toLowerCase()} to begin building the academic structure.",
+                      subtitle:
+                          "Create a ${progLabel.toLowerCase()} to begin building the academic structure.",
                       icon: LucideIcons.bookOpen,
                     );
                   }
                   return AcadexEmptyState.filterEmpty(
                     title: "No Courses Found",
-                    filterSummary: _searchQuery.isNotEmpty ? "query '$_searchQuery'" : "selected filter",
+                    filterSummary: _searchQuery.isNotEmpty
+                        ? "query '$_searchQuery'"
+                        : "selected filter",
                     onClearFilters: () => setState(() {
                       _searchQuery = '';
                       _statusFilter = 'all';
@@ -152,18 +176,25 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, i) {
                       final c = filtered[i];
-                      final deptName = deptMap[c.departmentId]?.name ??
-                          (c.departmentId.isNotEmpty ? c.departmentId : 'Unassigned Dept');
+                      final deptName =
+                          deptMap[c.departmentId]?.name ??
+                          (c.departmentId.isNotEmpty
+                              ? c.departmentId
+                              : 'Unassigned Dept');
 
                       return GestureDetector(
                         onTap: () => context.push('/academics/courses/${c.id}'),
                         child: Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                            color: isDark
+                                ? AcadexColors.darkSurfaceCard
+                                : AcadexColors.surface,
                             borderRadius: AcadexRadius.borderRadiusLg,
                             border: Border.all(
-                              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                              color: isDark
+                                  ? AcadexColors.darkHairline
+                                  : AcadexColors.hairline,
                               width: 1,
                             ),
                           ),
@@ -171,13 +202,16 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
                                     child: Text(
                                       c.name,
                                       style: AcadexTypography.body(
-                                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                        color: isDark
+                                            ? AcadexColors.darkInk
+                                            : AcadexColors.ink,
                                       ).copyWith(fontWeight: FontWeight.w700),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -185,17 +219,28 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
                                   ),
                                   const SizedBox(width: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: c.isActive
-                                          ? (isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight)
-                                          : (isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft),
-                                      borderRadius: AcadexRadius.borderRadiusFull,
+                                          ? (isDark
+                                                ? AcadexColors
+                                                      .successDarkContainer
+                                                : AcadexColors.successLight)
+                                          : (isDark
+                                                ? AcadexColors.darkSurfaceHover
+                                                : AcadexColors.canvasSoft),
+                                      borderRadius:
+                                          AcadexRadius.borderRadiusFull,
                                     ),
                                     child: Text(
                                       c.isActive ? "Active" : "Inactive",
                                       style: TextStyle(
-                                        color: c.isActive ? AcadexColors.success : AcadexColors.inkMuted,
+                                        color: c.isActive
+                                            ? AcadexColors.success
+                                            : AcadexColors.inkMuted,
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -209,14 +254,18 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
                                   Text(
                                     "Code: ${c.code}",
                                     style: AcadexTypography.caption(
-                                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                      color: isDark
+                                          ? AcadexColors.darkInkMuted
+                                          : AcadexColors.inkMuted,
                                     ).copyWith(fontWeight: FontWeight.w600),
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
                                     "•  ${c.duration} ${c.duration == 1 ? 'Year' : 'Years'}",
                                     style: AcadexTypography.caption(
-                                      color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                                      color: isDark
+                                          ? AcadexColors.darkInkSecondary
+                                          : AcadexColors.inkSecondary,
                                     ),
                                   ),
                                 ],
@@ -225,7 +274,9 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
                               Text(
                                 "Department: $deptName",
                                 style: AcadexTypography.caption(
-                                  color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                                  color: isDark
+                                      ? AcadexColors.darkInkFaint
+                                      : AcadexColors.inkFaint,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -235,9 +286,15 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   IconButton(
-                                    icon: const Icon(LucideIcons.arrowRight, size: 16, color: AcadexColors.primary),
+                                    icon: const Icon(
+                                      LucideIcons.arrowRight,
+                                      size: 16,
+                                      color: AcadexColors.primary,
+                                    ),
                                     tooltip: "View Details",
-                                    onPressed: () => context.push('/academics/courses/${c.id}'),
+                                    onPressed: () => context.push(
+                                      '/academics/courses/${c.id}',
+                                    ),
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
                                   ),
@@ -246,10 +303,14 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
                                     icon: Icon(
                                       LucideIcons.edit,
                                       size: 18,
-                                      color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                                      color: isDark
+                                          ? AcadexColors.darkInkSecondary
+                                          : AcadexColors.inkSecondary,
                                     ),
                                     tooltip: "Edit Course",
-                                    onPressed: () => context.push('/academics/courses/edit/${c.id}'),
+                                    onPressed: () => context.push(
+                                      '/academics/courses/edit/${c.id}',
+                                    ),
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
                                   ),
@@ -264,29 +325,56 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
                 }
 
                 return AcadexDataTable(
-                  columns: const ["Code", "Course Name", "Department", "Duration", "Status", "Actions"],
+                  columns: const [
+                    "Code",
+                    "Course Name",
+                    "Department",
+                    "Duration",
+                    "Status",
+                    "Actions",
+                  ],
                   rows: filtered.map((c) {
-                    final deptName = deptMap[c.departmentId]?.name ??
-                        (c.departmentId.isNotEmpty ? c.departmentId : 'Unassigned');
+                    final deptName =
+                        deptMap[c.departmentId]?.name ??
+                        (c.departmentId.isNotEmpty
+                            ? c.departmentId
+                            : 'Unassigned');
 
                     return DataRow(
-                      onSelectChanged: (_) => context.push('/academics/courses/${c.id}'),
+                      onSelectChanged: (_) =>
+                          context.push('/academics/courses/${c.id}'),
                       cells: [
-                        DataCell(Text(c.code, style: const TextStyle(fontWeight: FontWeight.bold))),
+                        DataCell(
+                          Text(
+                            c.code,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
                         DataCell(Text(c.name)),
                         DataCell(Text(deptName)),
-                        DataCell(Text("${c.duration} ${c.duration == 1 ? 'Year' : 'Years'}")),
+                        DataCell(
+                          Text(
+                            "${c.duration} ${c.duration == 1 ? 'Year' : 'Years'}",
+                          ),
+                        ),
                         DataCell(
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: c.isActive ? AcadexColors.successLight : AcadexColors.canvasSoft,
+                              color: c.isActive
+                                  ? AcadexColors.successLight
+                                  : AcadexColors.canvasSoft,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               c.isActive ? "Active" : "Inactive",
                               style: TextStyle(
-                                color: c.isActive ? AcadexColors.success : AcadexColors.inkMuted,
+                                color: c.isActive
+                                    ? AcadexColors.success
+                                    : AcadexColors.inkMuted,
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -299,13 +387,16 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
                               IconButton(
                                 icon: const Icon(LucideIcons.eye, size: 18),
                                 tooltip: "View Details",
-                                onPressed: () => context.push('/academics/courses/${c.id}'),
+                                onPressed: () =>
+                                    context.push('/academics/courses/${c.id}'),
                               ),
                               if (canManageCourses)
                                 IconButton(
                                   icon: const Icon(LucideIcons.edit, size: 18),
                                   tooltip: "Edit Course",
-                                  onPressed: () => context.push('/academics/courses/edit/${c.id}'),
+                                  onPressed: () => context.push(
+                                    '/academics/courses/edit/${c.id}',
+                                  ),
                                 ),
                             ],
                           ),
@@ -388,7 +479,8 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
       return;
     }
 
-    final targetCollegeId = isSuperAdmin && (userCollegeId == null || userCollegeId.isEmpty)
+    final targetCollegeId =
+        isSuperAdmin && (userCollegeId == null || userCollegeId.isEmpty)
         ? _selectedCollegeId
         : (userCollegeId ?? _selectedCollegeId ?? '');
 
@@ -412,25 +504,35 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
         }
 
         final freshCourses = await ref.read(coursesProvider.future);
-        final createdCourse = freshCourses.where((c) =>
-            c.departmentId == course.departmentId &&
-            c.code.toUpperCase() == course.code.toUpperCase()).firstOrNull ?? course;
+        final createdCourse =
+            freshCourses
+                .where(
+                  (c) =>
+                      c.departmentId == course.departmentId &&
+                      c.code.toUpperCase() == course.code.toUpperCase(),
+                )
+                .firstOrNull ??
+            course;
 
         if (mounted) {
           final auth = ref.read(authProvider);
           final user = auth is AuthAuthenticated ? auth.user : null;
           final isHod = user?.role == AppRole.hod;
 
-          final activeYears = (ref.read(academicYearsProvider).valueOrNull ?? [])
-              .where((y) => y.isActive)
-              .toList();
-          final effectiveAy = ref.read(currentAcademicYearProvider) ??
+          final activeYears =
+              (ref.read(academicYearsProvider).valueOrNull ?? [])
+                  .where((y) => y.isActive)
+                  .toList();
+          final effectiveAy =
+              ref.read(currentAcademicYearProvider) ??
               (activeYears.isNotEmpty ? activeYears.first : null);
           final hasAy = effectiveAy != null;
 
           final terminology = ref.read(terminologyProvider);
           final progLabel = terminology.programName();
-          final semsLabel = terminology.semesterName(plural: true).toLowerCase();
+          final semsLabel = terminology
+              .semesterName(plural: true)
+              .toLowerCase();
           final ayLabel = terminology.academicYearName();
 
           SetupContinuationDialog.show(
@@ -494,7 +596,8 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
     }
 
     final effectiveDeptId = _selectedDepartmentId ?? userDepartmentId;
-    final effectiveDeptName = deptMap[effectiveDeptId]?.name ??
+    final effectiveDeptName =
+        deptMap[effectiveDeptId]?.name ??
         (effectiveDeptId.isNotEmpty ? effectiveDeptId : 'Assigned Department');
 
     final terminology = ref.watch(terminologyProvider);
@@ -503,10 +606,15 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/academics/courses'),
         ),
         title: Text(
@@ -526,7 +634,8 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
                   title: "$progLabel Details",
                   saveLabel: isEdit ? "Update $progLabel" : "Create $progLabel",
                   isSaving: _isLoading,
-                  onCancel: () => context.safePop(fallbackRoute: '/academics/courses'),
+                  onCancel: () =>
+                      context.safePop(fallbackRoute: '/academics/courses'),
                   onSave: () => _save(userCollegeId, isSuperAdmin),
                   child: Column(
                     children: [
@@ -535,23 +644,43 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
                         AcadexFormField(
                           label: "Department",
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 14,
+                            ),
                             decoration: BoxDecoration(
-                              color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                              color: isDark
+                                  ? AcadexColors.darkCanvasSoft
+                                  : AcadexColors.canvasSoft,
                               borderRadius: AcadexRadius.borderRadiusMd,
-                              border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                              border: Border.all(
+                                color: isDark
+                                    ? AcadexColors.darkHairline
+                                    : AcadexColors.hairline,
+                              ),
                             ),
                             child: Row(
                               children: [
-                                const Icon(LucideIcons.building, size: 16, color: AcadexColors.primary),
+                                const Icon(
+                                  LucideIcons.building,
+                                  size: 16,
+                                  color: AcadexColors.primary,
+                                ),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
                                     effectiveDeptName,
-                                    style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+                                    style: AcadexTypography.body(
+                                      color: isDark
+                                          ? AcadexColors.darkInk
+                                          : AcadexColors.ink,
+                                    ).copyWith(fontWeight: FontWeight.w600),
                                   ),
                                 ),
-                                const AcadexBadge(label: "YOUR DEPARTMENT", variant: AcadexBadgeVariant.primary),
+                                const AcadexBadge(
+                                  label: "YOUR DEPARTMENT",
+                                  variant: AcadexBadgeVariant.primary,
+                                ),
                               ],
                             ),
                           ),
@@ -561,18 +690,27 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
                           label: "Department *",
                           child: departmentsAsync.when(
                             loading: () => const CircularProgressIndicator(),
-                            error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error)),
+                            error: (e, _) => Text(
+                              AcadexException.sanitizedMessage(e),
+                              style: const TextStyle(color: AcadexColors.error),
+                            ),
                             data: (depts) {
                               if (depts.isEmpty) {
                                 return Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
+                                    color: isDark
+                                        ? AcadexColors.warningDarkContainer
+                                        : AcadexColors.warningLight,
                                     borderRadius: AcadexRadius.borderRadiusMd,
                                   ),
                                   child: Row(
                                     children: [
-                                      const Icon(LucideIcons.triangleAlert, color: AcadexColors.warning, size: 18),
+                                      const Icon(
+                                        LucideIcons.triangleAlert,
+                                        color: AcadexColors.warning,
+                                        size: 18,
+                                      ),
                                       const SizedBox(width: 10),
                                       const Expanded(
                                         child: Text(
@@ -581,7 +719,9 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
                                         ),
                                       ),
                                       TextButton(
-                                        onPressed: () => context.push('/academics/departments/new'),
+                                        onPressed: () => context.push(
+                                          '/academics/departments/new',
+                                        ),
                                         child: const Text('Create Department'),
                                       ),
                                     ],
@@ -590,12 +730,29 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
                               }
 
                               return DropdownButtonFormField<String>(
-                                dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                dropdownColor: isDark
+                                    ? AcadexColors.darkSurfaceCard
+                                    : AcadexColors.surface,
                                 initialValue: _selectedDepartmentId,
-                                decoration: const InputDecoration(hintText: "Select Department"),
-                                validator: (v) => v == null || v.isEmpty ? 'Department is required' : null,
-                                items: depts.map((d) => DropdownMenuItem(value: d.id, child: Text("${d.name} (${d.code})"))).toList(),
-                                onChanged: isEdit ? null : (v) => setState(() => _selectedDepartmentId = v),
+                                decoration: const InputDecoration(
+                                  hintText: "Select Department",
+                                ),
+                                validator: (v) => v == null || v.isEmpty
+                                    ? 'Department is required'
+                                    : null,
+                                items: depts
+                                    .map(
+                                      (d) => DropdownMenuItem(
+                                        value: d.id,
+                                        child: Text("${d.name} (${d.code})"),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: isEdit
+                                    ? null
+                                    : (v) => setState(
+                                        () => _selectedDepartmentId = v,
+                                      ),
                               );
                             },
                           ),
@@ -607,13 +764,22 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
                         child: TextFormField(
                           controller: _nameCtrl,
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Course Name is required';
-                            if (v.trim().length < 2) return 'Must be at least 2 characters';
-                            if (v.trim().length > 100) return 'Must be at most 100 characters';
+                            if (v == null || v.trim().isEmpty)
+                              return 'Course Name is required';
+                            if (v.trim().length < 2)
+                              return 'Must be at least 2 characters';
+                            if (v.trim().length > 100)
+                              return 'Must be at most 100 characters';
                             return null;
                           },
-                          style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-                          decoration: const InputDecoration(hintText: "e.g. Bachelor of Technology in CS"),
+                          style: AcadexTypography.body(
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: "e.g. Bachelor of Technology in CS",
+                          ),
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -623,17 +789,26 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
                         child: TextFormField(
                           controller: _codeCtrl,
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Course Code is required';
-                            if (v.trim().length < 2) return 'Must be at least 2 characters';
-                            if (v.trim().length > 30) return 'Must be at most 30 characters';
+                            if (v == null || v.trim().isEmpty)
+                              return 'Course Code is required';
+                            if (v.trim().length < 2)
+                              return 'Must be at least 2 characters';
+                            if (v.trim().length > 30)
+                              return 'Must be at most 30 characters';
                             final regex = RegExp(r'^[A-Za-z0-9\-_]+$');
                             if (!regex.hasMatch(v.trim())) {
                               return 'Only alphanumeric characters, hyphens, and underscores';
                             }
                             return null;
                           },
-                          style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-                          decoration: const InputDecoration(hintText: "e.g. BTECH-CSE"),
+                          style: AcadexTypography.body(
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: "e.g. BTECH-CSE",
+                          ),
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -641,13 +816,23 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
                       AcadexFormField(
                         label: "Duration (Years) *",
                         child: DropdownButtonFormField<int>(
-                          dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                          dropdownColor: isDark
+                              ? AcadexColors.darkSurfaceCard
+                              : AcadexColors.surface,
                           value: _duration,
-                          decoration: const InputDecoration(hintText: "Select Course Duration"),
-                          items: [1, 2, 3, 4, 5, 6].map((yrs) => DropdownMenuItem(
-                            value: yrs,
-                            child: Text('$yrs ${yrs == 1 ? "Year" : "Years"}'),
-                          )).toList(),
+                          decoration: const InputDecoration(
+                            hintText: "Select Course Duration",
+                          ),
+                          items: [1, 2, 3, 4, 5, 6]
+                              .map(
+                                (yrs) => DropdownMenuItem(
+                                  value: yrs,
+                                  child: Text(
+                                    '$yrs ${yrs == 1 ? "Year" : "Years"}',
+                                  ),
+                                ),
+                              )
+                              .toList(),
                           onChanged: (v) {
                             if (v != null) setState(() => _duration = v);
                           },
@@ -661,11 +846,21 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
                             contentPadding: EdgeInsets.zero,
                             title: Text(
                               "Course Status",
-                              style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+                              style: AcadexTypography.body(
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
+                              ).copyWith(fontWeight: FontWeight.w600),
                             ),
                             subtitle: Text(
-                              _isActive ? "Active (visible for enrollment and scheduling)" : "Inactive (archived)",
-                              style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                              _isActive
+                                  ? "Active (visible for enrollment and scheduling)"
+                                  : "Inactive (archived)",
+                              style: AcadexTypography.caption(
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
+                              ),
                             ),
                             value: _isActive,
                             activeColor: AcadexColors.primary,

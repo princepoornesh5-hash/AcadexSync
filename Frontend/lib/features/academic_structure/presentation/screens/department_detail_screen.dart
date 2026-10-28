@@ -18,7 +18,12 @@ class DepartmentDetailScreen extends ConsumerWidget {
 
   const DepartmentDetailScreen({super.key, required this.departmentId});
 
-  void _confirmStatusToggle(BuildContext context, WidgetRef ref, String departmentName, bool isCurrentlyActive) {
+  void _confirmStatusToggle(
+    BuildContext context,
+    WidgetRef ref,
+    String departmentName,
+    bool isCurrentlyActive,
+  ) {
     final action = isCurrentlyActive ? 'Deactivate' : 'Activate';
     showDialog(
       context: context,
@@ -36,17 +41,24 @@ class DepartmentDetailScreen extends ConsumerWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: isCurrentlyActive ? AcadexColors.error : AcadexColors.success,
+              backgroundColor: isCurrentlyActive
+                  ? AcadexColors.error
+                  : AcadexColors.success,
               foregroundColor: Colors.white,
             ),
             onPressed: () async {
               Navigator.of(ctx).pop();
               try {
-                await ref.read(departmentsProvider.notifier).toggleDepartmentStatus(departmentId, !isCurrentlyActive);
+                await ref
+                    .read(departmentsProvider.notifier)
+                    .toggleDepartmentStatus(departmentId, !isCurrentlyActive);
                 ref.invalidate(departmentByIdProvider(departmentId));
                 ref.invalidate(departmentSummaryProvider(departmentId));
                 if (context.mounted) {
-                  AcadexSnackBar.showSuccess(context, 'Department $action successful!');
+                  AcadexSnackBar.showSuccess(
+                    context,
+                    'Department $action successful!',
+                  );
                 }
               } catch (e) {
                 if (context.mounted) {
@@ -78,7 +90,8 @@ class DepartmentDetailScreen extends ConsumerWidget {
           title: 'Unable to load department',
           onRetry: () => ref.invalidate(departmentByIdProvider(departmentId)),
           actionLabel: 'Go Back',
-          onAction: () => context.safePop(fallbackRoute: '/academics/departments'),
+          onAction: () =>
+              context.safePop(fallbackRoute: '/academics/departments'),
         ),
       ),
       data: (dept) {
@@ -92,35 +105,46 @@ class DepartmentDetailScreen extends ConsumerWidget {
               _buildHeroCard(context, ref, isDark, isMobile, dept),
               const SizedBox(height: 20),
 
-                // ── Summary Metrics Grid ──────────────────────────────────
-                _buildSummarySection(isDark, isMobile, summaryAsync),
-                const SizedBox(height: 24),
+              // ── Summary Metrics Grid ──────────────────────────────────
+              _buildSummarySection(isDark, isMobile, summaryAsync),
+              const SizedBox(height: 24),
 
-                // ── Information & HOD Row ─────────────────────────────────
-                if (isMobile) ...[
-                  _buildDetailsCard(context, isDark, dept, summaryAsync),
-                  const SizedBox(height: 20),
-                  _buildHodCard(context, isDark, hodAsync),
-                  const SizedBox(height: 20),
-                  _buildTenureHistoryCard(context, ref, isDark),
-                ] else ...[
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(flex: 3, child: _buildDetailsCard(context, isDark, dept, summaryAsync)),
-                      const SizedBox(width: 20),
-                      Expanded(flex: 2, child: _buildHodCard(context, isDark, hodAsync)),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  _buildTenureHistoryCard(context, ref, isDark),
-                ],
-                const SizedBox(height: 32),
+              // ── Information & HOD Row ─────────────────────────────────
+              if (isMobile) ...[
+                _buildDetailsCard(context, isDark, dept, summaryAsync),
+                const SizedBox(height: 20),
+                _buildHodCard(context, isDark, hodAsync),
+                const SizedBox(height: 20),
+                _buildTenureHistoryCard(context, ref, isDark),
+              ] else ...[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: _buildDetailsCard(
+                        context,
+                        isDark,
+                        dept,
+                        summaryAsync,
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      flex: 2,
+                      child: _buildHodCard(context, isDark, hodAsync),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _buildTenureHistoryCard(context, ref, isDark),
               ],
-            ),
-          );
-        },
-      );
+              const SizedBox(height: 32),
+            ],
+          ),
+        );
+      },
+    );
 
     if (hasEnclosingScaffold) {
       return bodyContent;
@@ -132,8 +156,12 @@ class DepartmentDetailScreen extends ConsumerWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-          onPressed: () => context.safePop(fallbackRoute: '/academics/departments'),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
+          onPressed: () =>
+              context.safePop(fallbackRoute: '/academics/departments'),
         ),
         title: Text(
           'Department Overview',
@@ -177,7 +205,11 @@ class DepartmentDetailScreen extends ConsumerWidget {
                   color: AcadexColors.primary.withValues(alpha: 0.12),
                   borderRadius: AcadexRadius.borderRadiusMd,
                 ),
-                child: const Icon(LucideIcons.layers, color: AcadexColors.primary, size: 24),
+                child: const Icon(
+                  LucideIcons.layers,
+                  color: AcadexColors.primary,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -194,9 +226,14 @@ class DepartmentDetailScreen extends ConsumerWidget {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                            color: isDark
+                                ? AcadexColors.darkCanvasSoft
+                                : AcadexColors.canvasSoft,
                             borderRadius: AcadexRadius.borderRadiusSm,
                           ),
                           child: Text(
@@ -205,21 +242,30 @@ class DepartmentDetailScreen extends ConsumerWidget {
                               fontFamily: 'monospace',
                               fontWeight: FontWeight.w700,
                               fontSize: 11,
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: dept.isActive ? AcadexColors.successLight : AcadexColors.errorLight,
+                            color: dept.isActive
+                                ? AcadexColors.successLight
+                                : AcadexColors.errorLight,
                             borderRadius: AcadexRadius.borderRadiusFull,
                           ),
                           child: Text(
                             dept.isActive ? 'Active' : 'Inactive',
                             style: TextStyle(
-                              color: dept.isActive ? AcadexColors.success : AcadexColors.error,
+                              color: dept.isActive
+                                  ? AcadexColors.success
+                                  : AcadexColors.error,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -244,13 +290,19 @@ class DepartmentDetailScreen extends ConsumerWidget {
                 label: 'Edit Department',
                 icon: LucideIcons.edit,
                 variant: AcadexButtonVariant.primary,
-                onPressed: () => context.push('/academics/departments/edit/$departmentId'),
+                onPressed: () =>
+                    context.push('/academics/departments/edit/$departmentId'),
               ),
               AcadexButton(
                 label: dept.isActive ? 'Deactivate' : 'Activate',
                 icon: dept.isActive ? LucideIcons.powerOff : LucideIcons.power,
                 variant: AcadexButtonVariant.secondary,
-                onPressed: () => _confirmStatusToggle(context, ref, dept.name, dept.isActive),
+                onPressed: () => _confirmStatusToggle(
+                  context,
+                  ref,
+                  dept.name,
+                  dept.isActive,
+                ),
               ),
             ],
           ),
@@ -274,10 +326,30 @@ class DepartmentDetailScreen extends ConsumerWidget {
         if (summary.isEmpty) return const SizedBox.shrink();
 
         final items = [
-          ('Faculty', summary['facultyCount']?.toString() ?? '0', LucideIcons.users, AcadexColors.primary),
-          ('Students', summary['studentCount']?.toString() ?? '0', LucideIcons.graduationCap, AcadexColors.success),
-          ('Courses', summary['courseCount']?.toString() ?? '0', LucideIcons.bookOpen, AcadexColors.accentPurple),
-          ('Active Users', summary['activeUserCount']?.toString() ?? '0', LucideIcons.checkCircle, AcadexColors.info),
+          (
+            'Faculty',
+            summary['facultyCount']?.toString() ?? '0',
+            LucideIcons.users,
+            AcadexColors.primary,
+          ),
+          (
+            'Students',
+            summary['studentCount']?.toString() ?? '0',
+            LucideIcons.graduationCap,
+            AcadexColors.success,
+          ),
+          (
+            'Courses',
+            summary['courseCount']?.toString() ?? '0',
+            LucideIcons.bookOpen,
+            AcadexColors.accentPurple,
+          ),
+          (
+            'Active Users',
+            summary['activeUserCount']?.toString() ?? '0',
+            LucideIcons.checkCircle,
+            AcadexColors.info,
+          ),
         ];
 
         return GridView.builder(
@@ -295,10 +367,14 @@ class DepartmentDetailScreen extends ConsumerWidget {
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                color: isDark
+                    ? AcadexColors.darkSurfaceCard
+                    : AcadexColors.surface,
                 borderRadius: AcadexRadius.borderRadiusMd,
                 border: Border.all(
-                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
                 ),
               ),
               child: Row(
@@ -323,7 +399,9 @@ class DepartmentDetailScreen extends ConsumerWidget {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ),
                         ),
                         Text(
@@ -331,7 +409,9 @@ class DepartmentDetailScreen extends ConsumerWidget {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -354,7 +434,8 @@ class DepartmentDetailScreen extends ConsumerWidget {
     dynamic dept,
     AsyncValue<Map<String, dynamic>> summaryAsync,
   ) {
-    final collegeName = summaryAsync.valueOrNull?['college']?['name']?.toString() ?? '';
+    final collegeName =
+        summaryAsync.valueOrNull?['college']?['name']?.toString() ?? '';
 
     return AcadexCard(
       padding: const EdgeInsets.all(18),
@@ -363,7 +444,13 @@ class DepartmentDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.info, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              Icon(
+                LucideIcons.info,
+                size: 16,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Department Details',
@@ -386,7 +473,9 @@ class DepartmentDetailScreen extends ConsumerWidget {
             isDark,
             LucideIcons.fileText,
             'Description',
-            dept.description.isNotEmpty ? dept.description : 'No description provided.',
+            dept.description.isNotEmpty
+                ? dept.description
+                : 'No description provided.',
           ),
         ],
       ),
@@ -397,7 +486,11 @@ class DepartmentDetailScreen extends ConsumerWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 15, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+        Icon(
+          icon,
+          size: 15,
+          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+        ),
         const SizedBox(width: 10),
         SizedBox(
           width: 80,
@@ -432,7 +525,11 @@ class DepartmentDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.shieldCheck, size: 16, color: AcadexColors.accentPurple),
+              Icon(
+                LucideIcons.shieldCheck,
+                size: 16,
+                color: AcadexColors.accentPurple,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Head of Department (HOD)',
@@ -444,24 +541,43 @@ class DepartmentDetailScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 14),
           hodAsync.when(
-            loading: () => const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator())),
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: CircularProgressIndicator(),
+              ),
+            ),
             error: (err, _) => Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Text(AcadexException.sanitizedMessage(err), style: const TextStyle(color: AcadexColors.error, fontSize: 12)),
+              child: Text(
+                AcadexException.sanitizedMessage(err),
+                style: const TextStyle(color: AcadexColors.error, fontSize: 12),
+              ),
             ),
             data: (hod) {
               if (hod == null) {
                 return Container(
-                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 20,
+                    horizontal: 12,
+                  ),
                   alignment: Alignment.center,
                   child: Column(
                     children: [
-                      Icon(LucideIcons.userX, size: 28, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                      Icon(
+                        LucideIcons.userX,
+                        size: 28,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         'No HOD Assigned',
                         style: AcadexTypography.body(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ).copyWith(fontWeight: FontWeight.w600, fontSize: 13),
                       ),
                       const SizedBox(height: 4),
@@ -469,14 +585,20 @@ class DepartmentDetailScreen extends ConsumerWidget {
                         'An HOD can be provisioned to lead this academic department.',
                         textAlign: TextAlign.center,
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ).copyWith(fontSize: 11),
                       ),
                       const SizedBox(height: 12),
                       ElevatedButton.icon(
                         icon: const Icon(LucideIcons.userPlus, size: 15),
-                        label: const Text('Provision HOD', style: TextStyle(fontSize: 12)),
-                        onPressed: () => context.push('/academics/hods/provision'),
+                        label: const Text(
+                          'Provision HOD',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        onPressed: () =>
+                            context.push('/academics/hods/provision'),
                       ),
                     ],
                   ),
@@ -489,7 +611,8 @@ class DepartmentDetailScreen extends ConsumerWidget {
               final phone = hod['phone']?.toString() ?? '';
               final status = hod['accountStatus']?.toString() ?? 'active';
               final isActive = status.toUpperCase() == 'ACTIVE';
-              final hodId = hod['id']?.toString() ?? hod['_id']?.toString() ?? '';
+              final hodId =
+                  hod['id']?.toString() ?? hod['_id']?.toString() ?? '';
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -500,12 +623,16 @@ class DepartmentDetailScreen extends ConsumerWidget {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: AcadexColors.accentPurple.withValues(alpha: 0.12),
+                          color: AcadexColors.accentPurple.withValues(
+                            alpha: 0.12,
+                          ),
                           shape: BoxShape.circle,
                         ),
                         child: Center(
                           child: Text(
-                            name.isNotEmpty ? name.substring(0, 1).toUpperCase() : 'H',
+                            name.isNotEmpty
+                                ? name.substring(0, 1).toUpperCase()
+                                : 'H',
                             style: const TextStyle(
                               color: AcadexColors.accentPurple,
                               fontWeight: FontWeight.w700,
@@ -521,9 +648,15 @@ class DepartmentDetailScreen extends ConsumerWidget {
                           children: [
                             Text(
                               name,
-                              style: AcadexTypography.body(
-                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                              ).copyWith(fontWeight: FontWeight.w700, fontSize: 14),
+                              style:
+                                  AcadexTypography.body(
+                                    color: isDark
+                                        ? AcadexColors.darkInk
+                                        : AcadexColors.ink,
+                                  ).copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                  ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -531,22 +664,31 @@ class DepartmentDetailScreen extends ConsumerWidget {
                               Text(
                                 'PIN: $instituteId',
                                 style: AcadexTypography.caption(
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
                                 ),
                               ),
                           ],
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
-                          color: isActive ? AcadexColors.successLight : AcadexColors.accentOrangeLight,
+                          color: isActive
+                              ? AcadexColors.successLight
+                              : AcadexColors.accentOrangeLight,
                           borderRadius: AcadexRadius.borderRadiusFull,
                         ),
                         child: Text(
                           isActive ? 'Active' : 'Pending',
                           style: TextStyle(
-                            color: isActive ? AcadexColors.success : AcadexColors.accentOrange,
+                            color: isActive
+                                ? AcadexColors.success
+                                : AcadexColors.accentOrange,
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                           ),
@@ -569,7 +711,10 @@ class DepartmentDetailScreen extends ConsumerWidget {
                       alignment: Alignment.centerRight,
                       child: TextButton.icon(
                         icon: const Icon(LucideIcons.arrowRight, size: 14),
-                        label: const Text('View HOD Profile', style: TextStyle(fontSize: 12)),
+                        label: const Text(
+                          'View HOD Profile',
+                          style: TextStyle(fontSize: 12),
+                        ),
                         onPressed: () => context.push('/academics/hods/$hodId'),
                       ),
                     ),
@@ -583,8 +728,14 @@ class DepartmentDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTenureHistoryCard(BuildContext context, WidgetRef ref, bool isDark) {
-    final tenureAsync = ref.watch(departmentTenureHistoryProvider(departmentId));
+  Widget _buildTenureHistoryCard(
+    BuildContext context,
+    WidgetRef ref,
+    bool isDark,
+  ) {
+    final tenureAsync = ref.watch(
+      departmentTenureHistoryProvider(departmentId),
+    );
 
     return AcadexCard(
       padding: const EdgeInsets.all(18),
@@ -593,7 +744,11 @@ class DepartmentDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(LucideIcons.history, size: 16, color: AcadexColors.primary),
+              const Icon(
+                LucideIcons.history,
+                size: 16,
+                color: AcadexColors.primary,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Department Leadership & HOD Tenure History',
@@ -628,8 +783,16 @@ class DepartmentDetailScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 14),
           tenureAsync.when(
-            loading: () => const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator())),
-            error: (err, _) => Text(AcadexException.sanitizedMessage(err), style: const TextStyle(color: AcadexColors.error, fontSize: 12)),
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(12),
+                child: CircularProgressIndicator(),
+              ),
+            ),
+            error: (err, _) => Text(
+              AcadexException.sanitizedMessage(err),
+              style: const TextStyle(color: AcadexColors.error, fontSize: 12),
+            ),
             data: (tenures) {
               if (tenures.isEmpty) {
                 return Padding(
@@ -639,7 +802,9 @@ class DepartmentDetailScreen extends ConsumerWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontStyle: FontStyle.italic,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
                 );
@@ -654,8 +819,12 @@ class DepartmentDetailScreen extends ConsumerWidget {
                   final tenure = tenures[index];
                   final name = tenure.userName ?? 'Department HOD';
                   final email = tenure.userEmail ?? '';
-                  final start = DateFormat('dd MMM yyyy').format(tenure.startDate);
-                  final end = tenure.endDate != null ? DateFormat('dd MMM yyyy').format(tenure.endDate!) : 'Present';
+                  final start = DateFormat(
+                    'dd MMM yyyy',
+                  ).format(tenure.startDate);
+                  final end = tenure.endDate != null
+                      ? DateFormat('dd MMM yyyy').format(tenure.endDate!)
+                      : 'Present';
                   final isCurrentActive = tenure.status == 'ACTIVE';
 
                   return Row(
@@ -664,11 +833,19 @@ class DepartmentDetailScreen extends ConsumerWidget {
                         radius: 16,
                         backgroundColor: isCurrentActive
                             ? AcadexColors.successLight
-                            : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
+                            : (isDark
+                                  ? AcadexColors.darkCanvasSoft
+                                  : AcadexColors.canvasSoft),
                         child: Icon(
-                          isCurrentActive ? LucideIcons.shieldCheck : LucideIcons.shield,
+                          isCurrentActive
+                              ? LucideIcons.shieldCheck
+                              : LucideIcons.shield,
                           size: 16,
-                          color: isCurrentActive ? AcadexColors.success : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                          color: isCurrentActive
+                              ? AcadexColors.success
+                              : (isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -681,7 +858,9 @@ class DepartmentDetailScreen extends ConsumerWidget {
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 13,
-                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
                               ),
                             ),
                             if (email.isNotEmpty)
@@ -689,7 +868,9 @@ class DepartmentDetailScreen extends ConsumerWidget {
                                 email,
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
                                 ),
                               ),
                             Text(
@@ -697,18 +878,29 @@ class DepartmentDetailScreen extends ConsumerWidget {
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
-                                color: isCurrentActive ? AcadexColors.primary : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                color: isCurrentActive
+                                    ? AcadexColors.primary
+                                    : (isDark
+                                          ? AcadexColors.darkInkMuted
+                                          : AcadexColors.inkMuted),
                               ),
                             ),
                           ],
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: isCurrentActive
                               ? AcadexColors.successLight
-                              : (tenure.status == 'REVOKED' ? AcadexColors.accentOrangeLight : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft)),
+                              : (tenure.status == 'REVOKED'
+                                    ? AcadexColors.accentOrangeLight
+                                    : (isDark
+                                          ? AcadexColors.darkCanvasSoft
+                                          : AcadexColors.canvasSoft)),
                           borderRadius: AcadexRadius.borderRadiusFull,
                         ),
                         child: Text(
@@ -718,7 +910,11 @@ class DepartmentDetailScreen extends ConsumerWidget {
                             fontWeight: FontWeight.bold,
                             color: isCurrentActive
                                 ? AcadexColors.success
-                                : (tenure.status == 'REVOKED' ? AcadexColors.accentOrange : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted)),
+                                : (tenure.status == 'REVOKED'
+                                      ? AcadexColors.accentOrange
+                                      : (isDark
+                                            ? AcadexColors.darkInkMuted
+                                            : AcadexColors.inkMuted)),
                           ),
                         ),
                       ),

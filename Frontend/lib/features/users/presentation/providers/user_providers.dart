@@ -24,16 +24,18 @@ final userStatusFilterProvider = StateProvider<UserStatus?>((ref) => null);
 final userSearchQueryProvider = StateProvider<String>((ref) => '');
 
 // List Provider
-final usersListProvider = FutureProvider.autoDispose<List<UserProfileModel>>((ref) async {
+final usersListProvider = FutureProvider.autoDispose<List<UserProfileModel>>((
+  ref,
+) async {
   final repo = ref.watch(userRepositoryProvider);
   final authState = ref.watch(authProvider);
-  
+
   if (authState is! AuthAuthenticated) {
     return [];
   }
-  
+
   final currentUser = authState.user;
-  
+
   String? scopeCollegeId;
   String? scopeDepartmentId;
 
@@ -44,7 +46,8 @@ final usersListProvider = FutureProvider.autoDispose<List<UserProfileModel>>((re
   } else if (currentUser.role == AppRole.hod) {
     scopeCollegeId = currentUser.collegeId;
     scopeDepartmentId = currentUser.departmentId;
-  } else if (currentUser.role == AppRole.student || currentUser.role == AppRole.faculty) {
+  } else if (currentUser.role == AppRole.student ||
+      currentUser.role == AppRole.faculty) {
     // Faculty/Student can only view their own department's roster or authorized directory
     scopeCollegeId = currentUser.collegeId;
     scopeDepartmentId = currentUser.departmentId;
@@ -61,10 +64,11 @@ final usersListProvider = FutureProvider.autoDispose<List<UserProfileModel>>((re
 });
 
 // Detail Provider
-final userDetailProvider = FutureProvider.autoDispose.family<UserProfileModel?, String>((ref, id) async {
-  final repo = ref.watch(userRepositoryProvider);
-  return repo.getUserById(id);
-});
+final userDetailProvider = FutureProvider.autoDispose
+    .family<UserProfileModel?, String>((ref, id) async {
+      final repo = ref.watch(userRepositoryProvider);
+      return repo.getUserById(id);
+    });
 
 // Mutator Notifier
 class UserManagementNotifier extends StateNotifier<AsyncValue<void>> {
@@ -171,6 +175,7 @@ class UserManagementNotifier extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final userManagementProvider = StateNotifierProvider<UserManagementNotifier, AsyncValue<void>>((ref) {
-  return UserManagementNotifier(ref);
-});
+final userManagementProvider =
+    StateNotifierProvider<UserManagementNotifier, AsyncValue<void>>((ref) {
+      return UserManagementNotifier(ref);
+    });

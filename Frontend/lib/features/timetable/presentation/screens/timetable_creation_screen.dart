@@ -18,16 +18,15 @@ import 'timetable_designer_screen.dart';
 class TimetableCreationScreen extends ConsumerStatefulWidget {
   final TimetableContainerModel? initialContainer;
 
-  const TimetableCreationScreen({
-    super.key,
-    this.initialContainer,
-  });
+  const TimetableCreationScreen({super.key, this.initialContainer});
 
   @override
-  ConsumerState<TimetableCreationScreen> createState() => _TimetableCreationScreenState();
+  ConsumerState<TimetableCreationScreen> createState() =>
+      _TimetableCreationScreenState();
 }
 
-class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScreen> {
+class _TimetableCreationScreenState
+    extends ConsumerState<TimetableCreationScreen> {
   int _currentStep = 0;
   bool _isCreating = false;
   String? _errorMessage;
@@ -171,24 +170,39 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
     );
 
     setState(() {
-      _existingDraftContainer = containers.where((c) => c.status == TimetableStatus.draft).firstOrNull;
-      _existingPublishedContainer = containers.where((c) => c.status == TimetableStatus.published).firstOrNull;
+      _existingDraftContainer = containers
+          .where((c) => c.status == TimetableStatus.draft)
+          .firstOrNull;
+      _existingPublishedContainer = containers
+          .where((c) => c.status == TimetableStatus.published)
+          .firstOrNull;
     });
   }
 
   void _autoGenerateName() {
-    if (_nameController.text.trim().isNotEmpty && _nameController.text != _lastAutoName) {
+    if (_nameController.text.trim().isNotEmpty &&
+        _nameController.text != _lastAutoName) {
       return;
     }
     final courseMap = ref.read(timetableCourseMapProvider);
     final sectionMap = ref.read(timetableSectionMapProvider);
 
-    final course = courseMap[_selectedCourseId]?.name ?? courseMap[_selectedCourseId]?.code ?? '';
+    final course =
+        courseMap[_selectedCourseId]?.name ??
+        courseMap[_selectedCourseId]?.code ??
+        '';
     final section = sectionMap[_selectedSectionId]?.name ?? '';
-    final sem = _selectedSemesterId != null ? 'Semester $_selectedSemesterId' : '';
+    final sem = _selectedSemesterId != null
+        ? 'Semester $_selectedSemesterId'
+        : '';
 
     if (course.isNotEmpty || section.isNotEmpty) {
-      final generated = [course, sem, section.isNotEmpty ? 'Section $section' : '', 'Timetable'].where((s) => s.isNotEmpty).join(' ');
+      final generated = [
+        course,
+        sem,
+        section.isNotEmpty ? 'Section $section' : '',
+        'Timetable',
+      ].where((s) => s.isNotEmpty).join(' ');
       _nameController.text = generated;
       _lastAutoName = generated;
     }
@@ -204,10 +218,16 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
     final user = authState.user;
 
     // Permissions check
-    if (user.role != AppRole.collegeAdmin && user.role != AppRole.hod && user.role != AppRole.faculty) {
+    if (user.role != AppRole.collegeAdmin &&
+        user.role != AppRole.hod &&
+        user.role != AppRole.faculty) {
       return Scaffold(
         appBar: AppBar(title: const Text('Unauthorized')),
-        body: const Center(child: Text('Unauthorized: Only administrators and HODs can create timetables.')),
+        body: const Center(
+          child: Text(
+            'Unauthorized: Only administrators and HODs can create timetables.',
+          ),
+        ),
       );
     }
 
@@ -235,7 +255,8 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
                   ),
                   child: AcadexPageHeader(
                     title: 'Create Timetable',
-                    subtitle: 'Configure academic scope, periods, breaks and open the spreadsheet designer',
+                    subtitle:
+                        'Configure academic scope, periods, breaks and open the spreadsheet designer',
                     onBack: () => Navigator.of(context).maybePop(),
                   ),
                 ),
@@ -245,7 +266,10 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
 
                 if (_errorMessage != null) ...[
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 6),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isMobile ? 16 : 24,
+                      vertical: 6,
+                    ),
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -255,17 +279,25 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
                       ),
                       child: Row(
                         children: [
-                          const Icon(LucideIcons.alertTriangle, size: 16, color: AcadexColors.error),
+                          const Icon(
+                            LucideIcons.alertTriangle,
+                            size: 16,
+                            color: AcadexColors.error,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _errorMessage!,
-                              style: const TextStyle(color: AcadexColors.errorDark, fontSize: 13),
+                              style: const TextStyle(
+                                color: AcadexColors.errorDark,
+                                fontSize: 13,
+                              ),
                             ),
                           ),
                           IconButton(
                             icon: const Icon(LucideIcons.x, size: 14),
-                            onPressed: () => setState(() => _errorMessage = null),
+                            onPressed: () =>
+                                setState(() => _errorMessage = null),
                           ),
                         ],
                       ),
@@ -278,7 +310,10 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
                 // Active Step Content
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 8),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isMobile ? 16 : 24,
+                      vertical: 8,
+                    ),
                     child: _buildCurrentStepView(isDark, isMobile, user),
                   ),
                 ),
@@ -311,7 +346,9 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: AcadexRadius.borderRadiusMd,
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -320,9 +357,15 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
             final isCompleted = index < _currentStep;
             final isCurrent = index == _currentStep;
 
-            Color circleColor = isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft;
-            Color textColor = isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted;
-            Color iconColor = isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted;
+            Color circleColor = isDark
+                ? AcadexColors.darkCanvasSoft
+                : AcadexColors.canvasSoft;
+            Color textColor = isDark
+                ? AcadexColors.darkInkMuted
+                : AcadexColors.inkMuted;
+            Color iconColor = isDark
+                ? AcadexColors.darkInkMuted
+                : AcadexColors.inkMuted;
 
             if (isCompleted) {
               circleColor = AcadexColors.success;
@@ -338,10 +381,15 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
               mainAxisSize: MainAxisSize.min,
               children: [
                 InkWell(
-                  onTap: isCompleted ? () => setState(() => _currentStep = index) : null,
+                  onTap: isCompleted
+                      ? () => setState(() => _currentStep = index)
+                      : null,
                   borderRadius: AcadexRadius.borderRadiusSm,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 4,
+                    ),
                     child: Row(
                       children: [
                         Container(
@@ -353,7 +401,11 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
                             shape: BoxShape.circle,
                           ),
                           child: isCompleted
-                              ? const Icon(LucideIcons.check, size: 14, color: Colors.white)
+                              ? const Icon(
+                                  LucideIcons.check,
+                                  size: 14,
+                                  color: Colors.white,
+                                )
                               : Text(
                                   '${index + 1}',
                                   style: TextStyle(
@@ -366,9 +418,12 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
                         const SizedBox(width: 8),
                         Text(
                           steps[index],
-                          style: AcadexTypography.caption(color: textColor).copyWith(
-                            fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
-                          ),
+                          style: AcadexTypography.caption(color: textColor)
+                              .copyWith(
+                                fontWeight: isCurrent
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
                         ),
                       ],
                     ),
@@ -378,7 +433,9 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
                   Container(
                     width: isMobile ? 16 : 32,
                     height: 1,
-                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                   ),
               ],
@@ -427,19 +484,24 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
     }).toList();
 
     final availableCourses = (coursesAsync.valueOrNull ?? []).where((c) {
-      if (_selectedDepartmentId != null) return c.departmentId == _selectedDepartmentId;
+      if (_selectedDepartmentId != null)
+        return c.departmentId == _selectedDepartmentId;
       return true;
     }).toList();
 
     final availableYears = academicYearsAsync.valueOrNull ?? [];
     final availableSemesters = (semestersAsync.valueOrNull ?? []).where((s) {
-      if (_selectedCourseId != null && s.courseId != _selectedCourseId) return false;
+      if (_selectedCourseId != null && s.courseId != _selectedCourseId)
+        return false;
       return true;
     }).toList();
 
     final availableSections = (sectionsAsync.valueOrNull ?? []).where((s) {
-      if (_selectedDepartmentId != null && s.departmentId != _selectedDepartmentId) return false;
-      if (_selectedSemesterId != null && s.semesterId != _selectedSemesterId) return false;
+      if (_selectedDepartmentId != null &&
+          s.departmentId != _selectedDepartmentId)
+        return false;
+      if (_selectedSemesterId != null && s.semesterId != _selectedSemesterId)
+        return false;
       return true;
     }).toList();
 
@@ -448,7 +510,9 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: AcadexRadius.borderRadiusLg,
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -458,10 +522,16 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                  color: isDark
+                      ? AcadexColors.primary.withValues(alpha: 0.2)
+                      : AcadexColors.primaryLight,
                   borderRadius: AcadexRadius.borderRadiusSm,
                 ),
-                child: const Icon(LucideIcons.graduationCap, size: 20, color: AcadexColors.primary),
+                child: const Icon(
+                  LucideIcons.graduationCap,
+                  size: 20,
+                  color: AcadexColors.primary,
+                ),
               ),
               const SizedBox(width: 12),
               Column(
@@ -469,11 +539,17 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
                 children: [
                   Text(
                     'Step 1: Academic Hierarchy',
-                    style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                    style: AcadexTypography.heading3(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ),
                   ),
                   Text(
                     'Select department, course, semester, section, and timetable name',
-                    style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                    style: AcadexTypography.caption(
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
+                    ),
                   ),
                 ],
               ),
@@ -486,7 +562,9 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
             label: 'Department *',
             hint: 'Select department',
             value: _selectedDepartmentId,
-            items: availableDepts.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name))).toList(),
+            items: availableDepts
+                .map((d) => DropdownMenuItem(value: d.id, child: Text(d.name)))
+                .toList(),
             onChanged: isHod
                 ? null
                 : (val) {
@@ -506,9 +584,18 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
           // Course Dropdown
           _buildDropdownField<String>(
             label: 'Course *',
-            hint: _selectedDepartmentId == null ? 'Select department first' : 'Select course',
+            hint: _selectedDepartmentId == null
+                ? 'Select department first'
+                : 'Select course',
             value: _selectedCourseId,
-            items: availableCourses.map((c) => DropdownMenuItem(value: c.id, child: Text('${c.name} (${c.code})'))).toList(),
+            items: availableCourses
+                .map(
+                  (c) => DropdownMenuItem(
+                    value: c.id,
+                    child: Text('${c.name} (${c.code})'),
+                  ),
+                )
+                .toList(),
             onChanged: _selectedDepartmentId == null
                 ? null
                 : (val) {
@@ -529,7 +616,11 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
             label: 'Academic Year *',
             hint: 'Select academic year',
             value: _selectedAcademicYearId,
-            items: availableYears.map((ay) => DropdownMenuItem(value: ay.id, child: Text(ay.name))).toList(),
+            items: availableYears
+                .map(
+                  (ay) => DropdownMenuItem(value: ay.id, child: Text(ay.name)),
+                )
+                .toList(),
             onChanged: (val) {
               setState(() {
                 _selectedAcademicYearId = val;
@@ -543,9 +634,18 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
           // Semester Dropdown
           _buildDropdownField<String>(
             label: 'Semester *',
-            hint: _selectedCourseId == null ? 'Select course first' : 'Select semester',
+            hint: _selectedCourseId == null
+                ? 'Select course first'
+                : 'Select semester',
             value: _selectedSemesterId,
-            items: availableSemesters.map((s) => DropdownMenuItem(value: s.id, child: Text('${s.name} (Semester ${s.number})'))).toList(),
+            items: availableSemesters
+                .map(
+                  (s) => DropdownMenuItem(
+                    value: s.id,
+                    child: Text('${s.name} (Semester ${s.number})'),
+                  ),
+                )
+                .toList(),
             onChanged: _selectedCourseId == null
                 ? null
                 : (val) {
@@ -563,9 +663,18 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
           // Section Dropdown
           _buildDropdownField<String>(
             label: 'Section *',
-            hint: _selectedSemesterId == null ? 'Select semester first' : 'Select section',
+            hint: _selectedSemesterId == null
+                ? 'Select semester first'
+                : 'Select section',
             value: _selectedSectionId,
-            items: availableSections.map((s) => DropdownMenuItem(value: s.id, child: Text('Section ${s.name}'))).toList(),
+            items: availableSections
+                .map(
+                  (s) => DropdownMenuItem(
+                    value: s.id,
+                    child: Text('Section ${s.name}'),
+                  ),
+                )
+                .toList(),
             onChanged: _selectedSemesterId == null
                 ? null
                 : (val) {
@@ -582,7 +691,9 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
           // Timetable Name Field
           Text(
             'Timetable Name *',
-            style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+            style: AcadexTypography.caption(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ).copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
           TextField(
@@ -591,8 +702,12 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
               hintText: 'e.g. CSE Semester 4 Section A Timetable',
               prefixIcon: const Icon(LucideIcons.type, size: 16),
               filled: true,
-              fillColor: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
-              border: OutlineInputBorder(borderRadius: AcadexRadius.borderRadiusSm),
+              fillColor: isDark
+                  ? AcadexColors.darkCanvasSoft
+                  : AcadexColors.canvasSoft,
+              border: OutlineInputBorder(
+                borderRadius: AcadexRadius.borderRadiusSm,
+              ),
             ),
           ),
 
@@ -602,21 +717,35 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
+                color: isDark
+                    ? AcadexColors.warningDarkContainer
+                    : AcadexColors.warningLight,
                 borderRadius: AcadexRadius.borderRadiusMd,
-                border: Border.all(color: isDark ? AcadexColors.warning : AcadexColors.warningDark),
+                border: Border.all(
+                  color: isDark
+                      ? AcadexColors.warning
+                      : AcadexColors.warningDark,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(LucideIcons.alertCircle, size: 18, color: isDark ? AcadexColors.warning : AcadexColors.warningDark),
+                      Icon(
+                        LucideIcons.alertCircle,
+                        size: 18,
+                        color: isDark
+                            ? AcadexColors.warning
+                            : AcadexColors.warningDark,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Draft timetable already exists for this section',
                         style: AcadexTypography.bodyMedium(
-                          color: isDark ? AcadexColors.warning : AcadexColors.warningDark,
+                          color: isDark
+                              ? AcadexColors.warning
+                              : AcadexColors.warningDark,
                         ).copyWith(fontWeight: FontWeight.w700),
                       ),
                     ],
@@ -625,7 +754,9 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
                   Text(
                     'An active draft "${_existingDraftContainer!.name}" (v${_existingDraftContainer!.version}) already exists. You can continue editing the draft directly in the spreadsheet designer.',
                     style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -635,13 +766,24 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
                         onPressed: () {
                           Navigator.of(context).pushReplacement(
                             MaterialPageRoute(
-                              builder: (_) => TimetableDesignerScreen(timetableId: _existingDraftContainer!.id),
+                              builder: (_) => TimetableDesignerScreen(
+                                timetableId: _existingDraftContainer!.id,
+                              ),
                             ),
                           );
                         },
-                        icon: const Icon(LucideIcons.arrowRight, size: 16, color: Colors.white),
-                        label: const Text('Continue Editing Existing Draft', style: TextStyle(color: Colors.white)),
-                        style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+                        icon: const Icon(
+                          LucideIcons.arrowRight,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                        label: const Text(
+                          'Continue Editing Existing Draft',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AcadexColors.primary,
+                        ),
                       ),
                     ],
                   ),
@@ -651,23 +793,32 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
           ],
 
           // Existing Published Timetable Info Card
-          if (_existingPublishedContainer != null && _existingDraftContainer == null) ...[
+          if (_existingPublishedContainer != null &&
+              _existingDraftContainer == null) ...[
             const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.primaryLight.withValues(alpha: 0.1) : AcadexColors.primaryLight,
+                color: isDark
+                    ? AcadexColors.primaryLight.withValues(alpha: 0.1)
+                    : AcadexColors.primaryLight,
                 borderRadius: AcadexRadius.borderRadiusMd,
                 border: Border.all(color: AcadexColors.primary),
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.info, size: 18, color: AcadexColors.primary),
+                  const Icon(
+                    LucideIcons.info,
+                    size: 18,
+                    color: AcadexColors.primary,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'Published version v${_existingPublishedContainer!.version} is live. Creating a new draft will prepare version v${_existingPublishedContainer!.version + 1} safely without interrupting live attendance.',
-                      style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                      style: AcadexTypography.caption(
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ),
                     ),
                   ),
                 ],
@@ -688,7 +839,9 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: AcadexRadius.borderRadiusLg,
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -698,10 +851,16 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                  color: isDark
+                      ? AcadexColors.primary.withValues(alpha: 0.2)
+                      : AcadexColors.primaryLight,
                   borderRadius: AcadexRadius.borderRadiusSm,
                 ),
-                child: const Icon(LucideIcons.calendarDays, size: 20, color: AcadexColors.primary),
+                child: const Icon(
+                  LucideIcons.calendarDays,
+                  size: 20,
+                  color: AcadexColors.primary,
+                ),
               ),
               const SizedBox(width: 12),
               Column(
@@ -709,11 +868,17 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
                 children: [
                   Text(
                     'Step 2: Working Days & Timing Mode',
-                    style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                    style: AcadexTypography.heading3(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ),
                   ),
                   Text(
                     'Define the active academic days and period schedule structure',
-                    style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                    style: AcadexTypography.caption(
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
+                    ),
                   ),
                 ],
               ),
@@ -724,7 +889,9 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
           // Working Days Selection
           Text(
             'Active Working Days (Select at least 1) *',
-            style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+            style: AcadexTypography.caption(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ).copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -737,7 +904,9 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
                 selected: isSelected,
                 selectedColor: AcadexColors.primary,
                 labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 ),
                 onSelected: (selected) {
@@ -758,13 +927,16 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
           // Timing Mode Radio Selection
           Text(
             'Bell Schedule Timing Mode *',
-            style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+            style: AcadexTypography.caption(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ).copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 10),
           _buildTimingModeOption(
             mode: TimetableTimingMode.sameEveryDay,
             title: 'Same Timing Every Day',
-            subtitle: 'Use one common bell schedule across all working days (recommended for most academic terms).',
+            subtitle:
+                'Use one common bell schedule across all working days (recommended for most academic terms).',
             icon: LucideIcons.repeat,
             isDark: isDark,
           ),
@@ -772,7 +944,8 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
           _buildTimingModeOption(
             mode: TimetableTimingMode.differentPerDay,
             title: 'Different Timing Per Day',
-            subtitle: 'Allow individual days to have their own unique period schedules (e.g. Half-day Friday/Saturday).',
+            subtitle:
+                'Allow individual days to have their own unique period schedules (e.g. Half-day Friday/Saturday).',
             icon: LucideIcons.calendarClock,
             isDark: isDark,
           ),
@@ -797,17 +970,31 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: isSelected
-              ? (isDark ? AcadexColors.primary.withValues(alpha: 0.15) : AcadexColors.primaryLight)
-              : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
+              ? (isDark
+                    ? AcadexColors.primary.withValues(alpha: 0.15)
+                    : AcadexColors.primaryLight)
+              : (isDark
+                    ? AcadexColors.darkCanvasSoft
+                    : AcadexColors.canvasSoft),
           borderRadius: AcadexRadius.borderRadiusMd,
           border: Border.all(
-            color: isSelected ? AcadexColors.primary : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+            color: isSelected
+                ? AcadexColors.primary
+                : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
             width: isSelected ? 1.5 : 1.0,
           ),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: isSelected ? AcadexColors.primary : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted)),
+            Icon(
+              icon,
+              size: 20,
+              color: isSelected
+                  ? AcadexColors.primary
+                  : (isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted),
+            ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -816,14 +1003,18 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
                   Text(
                     title,
                     style: AcadexTypography.bodyMedium(
-                      color: isSelected ? AcadexColors.primary : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                      color: isSelected
+                          ? AcadexColors.primary
+                          : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
                     ).copyWith(fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
                     style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
                 ],
@@ -855,7 +1046,9 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: AcadexRadius.borderRadiusLg,
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -872,10 +1065,16 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                      color: isDark
+                          ? AcadexColors.primary.withValues(alpha: 0.2)
+                          : AcadexColors.primaryLight,
                       borderRadius: AcadexRadius.borderRadiusSm,
                     ),
-                    child: const Icon(LucideIcons.clock, size: 20, color: AcadexColors.primary),
+                    child: const Icon(
+                      LucideIcons.clock,
+                      size: 20,
+                      color: AcadexColors.primary,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Column(
@@ -883,11 +1082,19 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
                     children: [
                       Text(
                         'Step 3: Periods & Bell Schedule',
-                        style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                        style: AcadexTypography.heading3(
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
+                        ),
                       ),
                       Text(
                         'Define start and end times for teaching periods',
-                        style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                        style: AcadexTypography.caption(
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
+                        ),
                       ),
                     ],
                   ),
@@ -904,9 +1111,18 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
                   const SizedBox(width: 8),
                   ElevatedButton.icon(
                     onPressed: _addNewPeriod,
-                    icon: const Icon(LucideIcons.plus, size: 14, color: Colors.white),
-                    label: const Text('Add Period', style: TextStyle(color: Colors.white)),
-                    style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+                    icon: const Icon(
+                      LucideIcons.plus,
+                      size: 14,
+                      color: Colors.white,
+                    ),
+                    label: const Text(
+                      'Add Period',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AcadexColors.primary,
+                    ),
                   ),
                 ],
               ),
@@ -942,7 +1158,11 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
               alignment: Alignment.center,
               child: Text(
                 'No periods defined. Click "+ Add Period" or "Default Periods".',
-                style: AcadexTypography.bodySmall(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                style: AcadexTypography.bodySmall(
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
+                ),
               ),
             )
           else
@@ -958,7 +1178,9 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
 
                   // Update indices
                   for (int i = 0; i < displayedPeriods.length; i++) {
-                    final idx = _periods.indexWhere((p) => p.id == displayedPeriods[i].id);
+                    final idx = _periods.indexWhere(
+                      (p) => p.id == displayedPeriods[i].id,
+                    );
                     if (idx != -1) {
                       _periods[idx] = _periods[idx].copyWith(index: i + 1);
                     }
@@ -967,7 +1189,12 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
               },
               itemBuilder: (context, index) {
                 final p = displayedPeriods[index];
-                return _buildPeriodListItem(p, index, isDark, key: ValueKey(p.id));
+                return _buildPeriodListItem(
+                  p,
+                  index,
+                  isDark,
+                  key: ValueKey(p.id),
+                );
               },
             ),
         ],
@@ -975,7 +1202,12 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
     );
   }
 
-  Widget _buildPeriodListItem(TimetablePeriodModel period, int index, bool isDark, {required Key key}) {
+  Widget _buildPeriodListItem(
+    TimetablePeriodModel period,
+    int index,
+    bool isDark, {
+    required Key key,
+  }) {
     return Container(
       key: key,
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -983,7 +1215,9 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
         borderRadius: AcadexRadius.borderRadiusSm,
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Row(
         children: [
@@ -997,23 +1231,35 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
             ),
             child: Text(
               'P${period.index}',
-              style: const TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.primary, fontSize: 12),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AcadexColors.primary,
+                fontSize: 12,
+              ),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               period.name,
-              style: AcadexTypography.bodyMedium(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+              style: AcadexTypography.bodyMedium(
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              ).copyWith(fontWeight: FontWeight.w600),
             ),
           ),
           Text(
             '${period.startTime} – ${period.endTime}',
-            style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+            style: AcadexTypography.caption(
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            ),
           ),
           const SizedBox(width: 8),
           IconButton(
-            icon: const Icon(LucideIcons.trash2, size: 16, color: AcadexColors.error),
+            icon: const Icon(
+              LucideIcons.trash2,
+              size: 16,
+              color: AcadexColors.error,
+            ),
             onPressed: () {
               setState(() {
                 _periods.removeWhere((p) => p.id == period.id);
@@ -1036,14 +1282,18 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
     final endH = (9 + nextIndex).toString().padLeft(2, '0');
 
     setState(() {
-      _periods.add(TimetablePeriodModel(
-        id: const Uuid().v4(),
-        index: nextIndex,
-        name: 'Period $nextIndex',
-        startTime: '$startH:00',
-        endTime: '$endH:00',
-        dayOfWeek: _timingMode == TimetableTimingMode.differentPerDay ? _periodDayTab : null,
-      ));
+      _periods.add(
+        TimetablePeriodModel(
+          id: const Uuid().v4(),
+          index: nextIndex,
+          name: 'Period $nextIndex',
+          startTime: '$startH:00',
+          endTime: '$endH:00',
+          dayOfWeek: _timingMode == TimetableTimingMode.differentPerDay
+              ? _periodDayTab
+              : null,
+        ),
+      );
     });
   }
 
@@ -1056,7 +1306,9 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: AcadexRadius.borderRadiusLg,
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1073,10 +1325,16 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
+                      color: isDark
+                          ? AcadexColors.warningDarkContainer
+                          : AcadexColors.warningLight,
                       borderRadius: AcadexRadius.borderRadiusSm,
                     ),
-                    child: const Icon(LucideIcons.coffee, size: 20, color: AcadexColors.warningDark),
+                    child: const Icon(
+                      LucideIcons.coffee,
+                      size: 20,
+                      color: AcadexColors.warningDark,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Column(
@@ -1084,11 +1342,19 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
                     children: [
                       Text(
                         'Step 4: Breaks & Recesses',
-                        style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                        style: AcadexTypography.heading3(
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
+                        ),
                       ),
                       Text(
                         'Configure lunch, tea, and assembly intervals',
-                        style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                        style: AcadexTypography.caption(
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
+                        ),
                       ),
                     ],
                   ),
@@ -1096,9 +1362,18 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
               ),
               ElevatedButton.icon(
                 onPressed: _addNewBreak,
-                icon: const Icon(LucideIcons.plus, size: 14, color: Colors.white),
-                label: const Text('Add Break', style: TextStyle(color: Colors.white)),
-                style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+                icon: const Icon(
+                  LucideIcons.plus,
+                  size: 14,
+                  color: Colors.white,
+                ),
+                label: const Text(
+                  'Add Break',
+                  style: TextStyle(color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AcadexColors.primary,
+                ),
               ),
             ],
           ),
@@ -1110,7 +1385,11 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
               alignment: Alignment.center,
               child: Text(
                 'No breaks configured. Click "+ Add Break" if required.',
-                style: AcadexTypography.bodySmall(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                style: AcadexTypography.bodySmall(
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
+                ),
               ),
             )
           else
@@ -1118,15 +1397,26 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
               children: _breaks.map((b) {
                 return Container(
                   margin: const EdgeInsets.symmetric(vertical: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF231F17) : const Color(0xFFFFFBEB),
+                    color: isDark
+                        ? const Color(0xFF231F17)
+                        : const Color(0xFFFFFBEB),
                     borderRadius: AcadexRadius.borderRadiusSm,
-                    border: Border.all(color: AcadexColors.warning.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: AcadexColors.warning.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(LucideIcons.coffee, size: 16, color: AcadexColors.warningDark),
+                      const Icon(
+                        LucideIcons.coffee,
+                        size: 16,
+                        color: AcadexColors.warningDark,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -1134,18 +1424,32 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
                           children: [
                             Text(
                               b.name,
-                              style: AcadexTypography.bodyMedium(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+                              style: AcadexTypography.bodyMedium(
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
+                              ).copyWith(fontWeight: FontWeight.w600),
                             ),
                             Text(
                               '${b.startTime} – ${b.endTime} • ${b.appliesToDays.map((d) => d.shortName).join(', ')}',
-                              style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                              style: AcadexTypography.caption(
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
+                              ),
                             ),
                           ],
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(LucideIcons.trash2, size: 16, color: AcadexColors.error),
-                        onPressed: () => setState(() => _breaks.removeWhere((item) => item.id == b.id)),
+                        icon: const Icon(
+                          LucideIcons.trash2,
+                          size: 16,
+                          color: AcadexColors.error,
+                        ),
+                        onPressed: () => setState(
+                          () => _breaks.removeWhere((item) => item.id == b.id),
+                        ),
                       ),
                     ],
                   ),
@@ -1159,14 +1463,16 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
 
   void _addNewBreak() {
     setState(() {
-      _breaks.add(TimetableBreakModel(
-        id: const Uuid().v4(),
-        name: 'Tea Break',
-        breakType: TimetableBreakType.tea,
-        startTime: '11:00',
-        endTime: '11:15',
-        appliesToDays: List.from(_activeDays),
-      ));
+      _breaks.add(
+        TimetableBreakModel(
+          id: const Uuid().v4(),
+          name: 'Tea Break',
+          breakType: TimetableBreakType.tea,
+          startTime: '11:00',
+          endTime: '11:15',
+          appliesToDays: List.from(_activeDays),
+        ),
+      );
     });
   }
 
@@ -1184,7 +1490,9 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: AcadexRadius.borderRadiusLg,
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1194,10 +1502,16 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight,
+                  color: isDark
+                      ? AcadexColors.successDarkContainer
+                      : AcadexColors.successLight,
                   borderRadius: AcadexRadius.borderRadiusSm,
                 ),
-                child: const Icon(LucideIcons.checkCircle2, size: 20, color: AcadexColors.success),
+                child: const Icon(
+                  LucideIcons.checkCircle2,
+                  size: 20,
+                  color: AcadexColors.success,
+                ),
               ),
               const SizedBox(width: 12),
               Column(
@@ -1205,11 +1519,17 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
                 children: [
                   Text(
                     'Step 5: Review & Generate Draft',
-                    style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                    style: AcadexTypography.heading3(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ),
                   ),
                   Text(
                     'Verify the configuration and initialize the master timetable draft',
-                    style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                    style: AcadexTypography.caption(
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
+                    ),
                   ),
                 ],
               ),
@@ -1217,16 +1537,50 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
           ),
           const SizedBox(height: 20),
 
-          _buildReviewRow('Timetable Name', _nameController.text.trim(), isDark),
-          _buildReviewRow('Department', deptMap[_selectedDepartmentId]?.name ?? _selectedDepartmentId ?? '', isDark),
-          _buildReviewRow('Course', courseMap[_selectedCourseId]?.name ?? _selectedCourseId ?? '', isDark),
-          _buildReviewRow('Academic Year', yearMap[_selectedAcademicYearId]?.name ?? _selectedAcademicYearId ?? '', isDark),
+          _buildReviewRow(
+            'Timetable Name',
+            _nameController.text.trim(),
+            isDark,
+          ),
+          _buildReviewRow(
+            'Department',
+            deptMap[_selectedDepartmentId]?.name ?? _selectedDepartmentId ?? '',
+            isDark,
+          ),
+          _buildReviewRow(
+            'Course',
+            courseMap[_selectedCourseId]?.name ?? _selectedCourseId ?? '',
+            isDark,
+          ),
+          _buildReviewRow(
+            'Academic Year',
+            yearMap[_selectedAcademicYearId]?.name ??
+                _selectedAcademicYearId ??
+                '',
+            isDark,
+          ),
           _buildReviewRow('Semester', 'Semester $_selectedSemesterId', isDark),
-          _buildReviewRow('Section', 'Section ${sectionMap[_selectedSectionId]?.name ?? _selectedSectionId ?? ''}', isDark),
-          _buildReviewRow('Active Days', _activeDays.map((d) => d.displayName).join(', '), isDark),
+          _buildReviewRow(
+            'Section',
+            'Section ${sectionMap[_selectedSectionId]?.name ?? _selectedSectionId ?? ''}',
+            isDark,
+          ),
+          _buildReviewRow(
+            'Active Days',
+            _activeDays.map((d) => d.displayName).join(', '),
+            isDark,
+          ),
           _buildReviewRow('Timing Mode', _timingMode.displayName, isDark),
-          _buildReviewRow('Configured Periods', '${_periods.length} Periods', isDark),
-          _buildReviewRow('Configured Breaks', '${_breaks.length} Breaks', isDark),
+          _buildReviewRow(
+            'Configured Periods',
+            '${_periods.length} Periods',
+            isDark,
+          ),
+          _buildReviewRow(
+            'Configured Breaks',
+            '${_breaks.length} Breaks',
+            isDark,
+          ),
         ],
       ),
     );
@@ -1242,13 +1596,19 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
             width: 160,
             child: Text(
               label,
-              style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted).copyWith(fontWeight: FontWeight.w600),
+              style: AcadexTypography.caption(
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ).copyWith(fontWeight: FontWeight.w600),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: AcadexTypography.bodyMedium(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+              style: AcadexTypography.bodyMedium(
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              ),
             ),
           ),
         ],
@@ -1263,10 +1623,17 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
     final canGoNext = _canAdvanceStep();
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 14),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 16 : 24,
+        vertical: 14,
+      ),
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
-        border: Border(top: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline)),
+        border: Border(
+          top: BorderSide(
+            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          ),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1282,19 +1649,48 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
 
           if (_currentStep < 4)
             ElevatedButton.icon(
-              onPressed: canGoNext ? () => setState(() => _currentStep++) : null,
-              icon: const Icon(LucideIcons.arrowRight, size: 16, color: Colors.white),
-              label: const Text('Next Step', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+              onPressed: canGoNext
+                  ? () => setState(() => _currentStep++)
+                  : null,
+              icon: const Icon(
+                LucideIcons.arrowRight,
+                size: 16,
+                color: Colors.white,
+              ),
+              label: const Text(
+                'Next Step',
+                style: TextStyle(color: Colors.white),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AcadexColors.primary,
+              ),
             )
           else
             ElevatedButton.icon(
-              onPressed: _isCreating ? null : () => _createTimetableAndOpenDesigner(user),
+              onPressed: _isCreating
+                  ? null
+                  : () => _createTimetableAndOpenDesigner(user),
               icon: _isCreating
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(LucideIcons.sparkles, size: 16, color: Colors.white),
-              label: Text(_isCreating ? 'Creating...' : 'Create & Open Designer', style: const TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(
+                      LucideIcons.sparkles,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+              label: Text(
+                _isCreating ? 'Creating...' : 'Create & Open Designer',
+                style: const TextStyle(color: Colors.white),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AcadexColors.primary,
+              ),
             ),
         ],
       ),
@@ -1385,7 +1781,9 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
       children: [
         Text(
           label,
-          style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+          style: AcadexTypography.caption(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ).copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 6),
         DropdownButtonFormField<T>(
@@ -1394,8 +1792,12 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
           decoration: InputDecoration(
             hintText: hint,
             filled: true,
-            fillColor: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
-            border: OutlineInputBorder(borderRadius: AcadexRadius.borderRadiusSm),
+            fillColor: isDark
+                ? AcadexColors.darkCanvasSoft
+                : AcadexColors.canvasSoft,
+            border: OutlineInputBorder(
+              borderRadius: AcadexRadius.borderRadiusSm,
+            ),
           ),
           items: items,
           onChanged: onChanged,

@@ -61,7 +61,9 @@ class AcadexNavItem {
     }
 
     // Properly defined route ancestry for standard subroutes (excluding root & dashboard)
-    if (route != '/' && !route.startsWith('/dashboard') && route != '/academics') {
+    if (route != '/' &&
+        !route.startsWith('/dashboard') &&
+        route != '/academics') {
       if (cleanRoute.startsWith('$route/')) {
         return true;
       }
@@ -116,7 +118,11 @@ class AcadexNavigationService {
       icon: LucideIcons.doorClosed,
       route: '/academics/rooms',
       group: AcadexNavGroup.academics,
-      allowedRoles: const [AppRole.collegeAdmin, AppRole.hod, AppRole.superAdmin],
+      allowedRoles: const [
+        AppRole.collegeAdmin,
+        AppRole.hod,
+        AppRole.superAdmin,
+      ],
       isPrimary: false,
       matchingPrefixes: const ['/academics/rooms'],
     ),
@@ -152,13 +158,13 @@ class AcadexNavigationService {
     ),
     AcadexNavItem(
       id: 'timetable_admin',
-      label: 'Timetable',
+      label: 'Manage Timetable',
       icon: LucideIcons.calendarDays,
       route: '/timetable/manage',
       group: AcadexNavGroup.academics,
       allowedRoles: const [AppRole.collegeAdmin, AppRole.hod],
-      isPrimary: false, // In More menu for mobile; in Academics group for desktop
-      matchingPrefixes: const ['/timetable'],
+      isPrimary: false,
+      matchingPrefixes: const ['/timetable/manage'],
     ),
     AcadexNavItem(
       id: 'timetable_user',
@@ -166,7 +172,12 @@ class AcadexNavigationService {
       icon: LucideIcons.calendarDays,
       route: '/timetable',
       group: AcadexNavGroup.academics,
-      allowedRoles: const [AppRole.faculty, AppRole.student],
+      allowedRoles: const [
+        AppRole.collegeAdmin,
+        AppRole.hod,
+        AppRole.faculty,
+        AppRole.student,
+      ],
       isPrimary: true,
       matchingPrefixes: const ['/timetable'],
     ),
@@ -176,7 +187,12 @@ class AcadexNavigationService {
       icon: LucideIcons.calendar,
       route: '/calendar',
       group: AcadexNavGroup.academics,
-      allowedRoles: const [AppRole.collegeAdmin, AppRole.hod, AppRole.faculty, AppRole.student],
+      allowedRoles: const [
+        AppRole.collegeAdmin,
+        AppRole.hod,
+        AppRole.faculty,
+        AppRole.student,
+      ],
       isPrimary: false,
       matchingPrefixes: const ['/calendar'],
     ),
@@ -188,7 +204,12 @@ class AcadexNavigationService {
       icon: LucideIcons.clipboardCheck,
       route: '/attendance',
       group: AcadexNavGroup.operations,
-      allowedRoles: const [AppRole.collegeAdmin, AppRole.hod, AppRole.faculty, AppRole.student],
+      allowedRoles: const [
+        AppRole.collegeAdmin,
+        AppRole.hod,
+        AppRole.faculty,
+        AppRole.student,
+      ],
       isPrimary: true,
       matchingPrefixes: const ['/attendance'],
     ),
@@ -228,7 +249,12 @@ class AcadexNavigationService {
       icon: LucideIcons.inbox,
       route: '/requests',
       group: AcadexNavGroup.operations,
-      allowedRoles: const [AppRole.collegeAdmin, AppRole.hod, AppRole.faculty, AppRole.student],
+      allowedRoles: const [
+        AppRole.collegeAdmin,
+        AppRole.hod,
+        AppRole.faculty,
+        AppRole.student,
+      ],
       isPrimary: false,
       matchingPrefixes: const ['/requests'],
     ),
@@ -324,7 +350,7 @@ class AcadexNavigationService {
           _getItemWithResolvedRoute('home', dashboardRoute),
           _getItem('academics'),
           _getItem('attendance'),
-          _getItem('notes'),
+          _getItem('requests'),
         ];
 
       case AppRole.collegeAdmin:
@@ -364,29 +390,37 @@ class AcadexNavigationService {
   /// Returns grouped navigation items for desktop drawer and navigation rail
   /// Grouped conceptually: WORKSPACE, ACADEMICS, OPERATIONS, INSIGHTS, SYSTEM
   /// Excludes groups that have no accessible items for the given role.
-  static Map<AcadexNavGroup, List<AcadexNavItem>> getGroupedNavItems(AppRole role) {
+  static Map<AcadexNavGroup, List<AcadexNavItem>> getGroupedNavItems(
+    AppRole role,
+  ) {
     final dashboardRoute = getDashboardRoute(role);
     // Exclude redundant items from drawer grouping:
     // Notifications has a dedicated high-priority icon in the app bar;
     // Profile is directly accessible via the top drawer profile context header;
-    // Rooms is managed directly within the Academics structure module.
+    // Rooms is managed directly within the Academics structure module;
+    // Timetable management is directly accessible via actions on the Timetable viewing screen.
     final allowedItems = _allNavItems
-        .where((item) =>
-            item.allowedRoles.contains(role) &&
-            item.id != 'notifications' &&
-            item.id != 'rooms')
+        .where(
+          (item) =>
+              item.allowedRoles.contains(role) &&
+              item.id != 'notifications' &&
+              item.id != 'rooms' &&
+              item.id != 'timetable_admin',
+        )
         .toList();
 
     final Map<AcadexNavGroup, List<AcadexNavItem>> grouped = {};
 
-
     for (final group in AcadexNavGroup.values) {
-      final itemsInGroup = allowedItems.where((item) => item.group == group).map((item) {
-        if (item.id == 'home') {
-          return _getItemWithResolvedRoute('home', dashboardRoute);
-        }
-        return item;
-      }).toList();
+      final itemsInGroup = allowedItems
+          .where((item) => item.group == group)
+          .map((item) {
+            if (item.id == 'home') {
+              return _getItemWithResolvedRoute('home', dashboardRoute);
+            }
+            return item;
+          })
+          .toList();
 
       if (itemsInGroup.isNotEmpty) {
         grouped[group] = itemsInGroup;
@@ -410,7 +444,9 @@ class AcadexNavigationService {
     List<AcadexNavItem>? candidates,
   }) {
     final cleanRoute = activeRoute.split('?').first.split('#').first;
-    final items = candidates ?? _allNavItems.where((item) => item.allowedRoles.contains(role)).toList();
+    final items =
+        candidates ??
+        _allNavItems.where((item) => item.allowedRoles.contains(role)).toList();
 
     AcadexNavItem? bestMatch;
     int bestScore = -1;
@@ -434,7 +470,9 @@ class AcadexNavigationService {
           }
         }
         // Subroute prefix match
-        if (score == 0 && itemCleanRoute != '/' && !itemCleanRoute.startsWith('/dashboard')) {
+        if (score == 0 &&
+            itemCleanRoute != '/' &&
+            !itemCleanRoute.startsWith('/dashboard')) {
           if (cleanRoute.startsWith('$itemCleanRoute/')) {
             score = 100 + itemCleanRoute.length;
           }
@@ -456,33 +494,49 @@ class AcadexNavigationService {
 
   /// Matches authorized navigation destinations for global search, enabling
   /// quick module navigation (e.g. typing "students" resolves to Students Directory)
-  static List<SearchResult> searchNavigationDestinations(String query, AppRole role) {
+  static List<SearchResult> searchNavigationDestinations(
+    String query,
+    AppRole role,
+  ) {
     final prefix = query.trim().toLowerCase();
     if (prefix.isEmpty) return [];
 
     final results = <SearchResult>[];
-    final allowedItems = _allNavItems.where((it) => it.allowedRoles.contains(role) && it.id != 'home');
+    final allowedItems = _allNavItems.where(
+      (it) => it.allowedRoles.contains(role) && it.id != 'home',
+    );
 
     for (final item in allowedItems) {
       final labelLower = item.label.toLowerCase();
       final idLower = item.id.toLowerCase();
       final routeLower = item.route.toLowerCase();
 
-      bool matches = labelLower.contains(prefix) || idLower.contains(prefix) || routeLower.contains(prefix);
+      bool matches =
+          labelLower.contains(prefix) ||
+          idLower.contains(prefix) ||
+          routeLower.contains(prefix);
 
       // Check common synonyms for campus workflows
       if (!matches) {
         if (prefix == 'students' || prefix == 'student') {
           matches = item.id == 'students';
-        } else if (prefix == 'faculty' || prefix == 'teachers' || prefix == 'staff') {
+        } else if (prefix == 'faculty' ||
+            prefix == 'teachers' ||
+            prefix == 'staff') {
           matches = item.id == 'faculty' || item.id == 'my_classes';
-        } else if (prefix == 'courses' || prefix == 'programs' || prefix == 'degrees') {
+        } else if (prefix == 'courses' ||
+            prefix == 'programs' ||
+            prefix == 'degrees') {
           matches = item.id == 'academics';
-        } else if (prefix == 'timetable' || prefix == 'schedule' || prefix == 'classes') {
+        } else if (prefix == 'timetable' ||
+            prefix == 'schedule' ||
+            prefix == 'classes') {
           matches = item.id == 'timetable_admin' || item.id == 'timetable_user';
         } else if (prefix == 'attendance' || prefix == 'absent') {
           matches = item.id == 'attendance';
-        } else if (prefix == 'grades' || prefix == 'marks' || prefix == 'results') {
+        } else if (prefix == 'grades' ||
+            prefix == 'marks' ||
+            prefix == 'results') {
           matches = item.id == 'reports' || item.id == 'analytics_hod';
         }
       }
@@ -507,14 +561,16 @@ class AcadexNavigationService {
             break;
         }
 
-        results.add(SearchResult(
-          id: 'nav_${item.id}',
-          title: item.label,
-          subtitle: '$groupDesc • ${item.route}',
-          type: SearchResultType.navigation,
-          destinationRoute: item.route,
-          relevanceScore: labelLower.startsWith(prefix) ? 100 : 80,
-        ));
+        results.add(
+          SearchResult(
+            id: 'nav_${item.id}',
+            title: item.label,
+            subtitle: '$groupDesc • ${item.route}',
+            type: SearchResultType.navigation,
+            destinationRoute: item.route,
+            relevanceScore: labelLower.startsWith(prefix) ? 100 : 80,
+          ),
+        );
       }
     }
 
@@ -525,7 +581,10 @@ class AcadexNavigationService {
     return _allNavItems.firstWhere((item) => item.id == id);
   }
 
-  static AcadexNavItem _getItemWithResolvedRoute(String id, String resolvedRoute) {
+  static AcadexNavItem _getItemWithResolvedRoute(
+    String id,
+    String resolvedRoute,
+  ) {
     final base = _getItem(id);
     return AcadexNavItem(
       id: base.id,

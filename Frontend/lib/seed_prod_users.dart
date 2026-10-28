@@ -6,9 +6,7 @@ import 'package:campus_management/firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   final auth = FirebaseAuth.instance;
   final firestore = FirebaseFirestore.instance;
@@ -19,7 +17,7 @@ Future<void> main() async {
       'password': 'acadexPassword123!',
       'name': 'Super Admin User',
       'role': 'Super Admin',
-      'accountStatus': 'active'
+      'accountStatus': 'active',
     },
     {
       'email': 'college@acadex.com',
@@ -27,7 +25,7 @@ Future<void> main() async {
       'name': 'College Admin User',
       'role': 'College Admin',
       'collegeId': 'col-123',
-      'accountStatus': 'active'
+      'accountStatus': 'active',
     },
     {
       'email': 'hod@acadex.com',
@@ -36,7 +34,7 @@ Future<void> main() async {
       'role': 'HOD',
       'collegeId': 'col-123',
       'departmentId': 'dep-456',
-      'accountStatus': 'active'
+      'accountStatus': 'active',
     },
     {
       'email': 'faculty@acadex.com',
@@ -45,7 +43,7 @@ Future<void> main() async {
       'role': 'Faculty',
       'collegeId': 'col-123',
       'departmentId': 'dep-456',
-      'accountStatus': 'active'
+      'accountStatus': 'active',
     },
     {
       'email': 'student@acadex.com',
@@ -54,8 +52,8 @@ Future<void> main() async {
       'role': 'Student',
       'collegeId': 'col-123',
       'departmentId': 'dep-456',
-      'accountStatus': 'active'
-    }
+      'accountStatus': 'active',
+    },
   ];
 
   for (final userMap in testUsers) {
@@ -75,7 +73,7 @@ Future<void> main() async {
         'role': userMap['role'],
         'accountStatus': userMap['accountStatus'],
       };
-      
+
       if (userMap.containsKey('collegeId')) {
         profileData['collegeId'] = userMap['collegeId']!;
       }
@@ -85,10 +83,9 @@ Future<void> main() async {
 
       await firestore.collection('users').doc(uid).set(profileData);
       print('Successfully created ${userMap['email']} with UID: $uid');
-      
+
       // Sign out so the next iteration can create a new user.
       await auth.signOut();
-      
     } on FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
         print('User ${userMap['email']} already exists.');

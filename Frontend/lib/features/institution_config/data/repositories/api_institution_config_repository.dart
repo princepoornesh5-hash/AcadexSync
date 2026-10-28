@@ -8,7 +8,7 @@ class ApiInstitutionConfigRepository implements InstitutionConfigRepository {
   final ApiClient _apiClient;
 
   ApiInstitutionConfigRepository({ApiClient? apiClient})
-      : _apiClient = apiClient ?? apiClientInstance;
+    : _apiClient = apiClient ?? apiClientInstance;
 
   static ApiClient get apiClientInstance => apiClient;
 
@@ -23,7 +23,10 @@ class ApiInstitutionConfigRepository implements InstitutionConfigRepository {
       }
       return const InstitutionConfigModel(collegeId: '');
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load institution configuration');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load institution configuration',
+      );
     }
   }
 
@@ -37,9 +40,11 @@ class ApiInstitutionConfigRepository implements InstitutionConfigRepository {
     try {
       final payload = <String, dynamic>{
         if (institutionType != null) 'institutionType': institutionType.value,
-        if (academicStructure != null) 'academicStructure': academicStructure.toJson(),
+        if (academicStructure != null)
+          'academicStructure': academicStructure.toJson(),
         if (terminology != null) 'terminology': terminology.toJson(),
-        if (attendanceAlerts != null) 'attendanceAlerts': attendanceAlerts.toJson(),
+        if (attendanceAlerts != null)
+          'attendanceAlerts': attendanceAlerts.toJson(),
       };
 
       final response = await _apiClient.dio.put(
@@ -55,10 +60,14 @@ class ApiInstitutionConfigRepository implements InstitutionConfigRepository {
       throw const AcadexException(
         category: ErrorCategory.unknown,
         technicalMessage: 'Failed to update institution configuration',
-        userMessage: 'Failed to update institution configuration. Please try again.',
+        userMessage:
+            'Failed to update institution configuration. Please try again.',
       );
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to update institution configuration');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to update institution configuration',
+      );
     }
   }
 
@@ -69,12 +78,19 @@ class ApiInstitutionConfigRepository implements InstitutionConfigRepository {
       if (response.data != null && response.data['data'] != null) {
         final list = response.data['data'] as List;
         return list
-            .map((item) => InstitutionPresetModel.fromJson(Map<String, dynamic>.from(item as Map)))
+            .map(
+              (item) => InstitutionPresetModel.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
             .toList();
       }
       return [];
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to load institution presets');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to load institution presets',
+      );
     }
   }
 }

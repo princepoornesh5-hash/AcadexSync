@@ -18,7 +18,12 @@ class SubjectDetailScreen extends ConsumerWidget {
 
   const SubjectDetailScreen({super.key, required this.subjectId});
 
-  void _confirmStatusToggle(BuildContext context, WidgetRef ref, String subjectName, bool isCurrentlyActive) {
+  void _confirmStatusToggle(
+    BuildContext context,
+    WidgetRef ref,
+    String subjectName,
+    bool isCurrentlyActive,
+  ) {
     final action = isCurrentlyActive ? 'Deactivate' : 'Activate';
     showDialog(
       context: context,
@@ -36,16 +41,23 @@ class SubjectDetailScreen extends ConsumerWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: isCurrentlyActive ? AcadexColors.error : AcadexColors.success,
+              backgroundColor: isCurrentlyActive
+                  ? AcadexColors.error
+                  : AcadexColors.success,
               foregroundColor: Colors.white,
             ),
             onPressed: () async {
               Navigator.of(ctx).pop();
               try {
-                await ref.read(subjectsProvider.notifier).toggleStatus(subjectId, !isCurrentlyActive);
+                await ref
+                    .read(subjectsProvider.notifier)
+                    .toggleStatus(subjectId, !isCurrentlyActive);
                 ref.invalidate(subjectByIdProvider(subjectId));
                 if (context.mounted) {
-                  AcadexSnackBar.showSuccess(context, 'Subject $action successful!');
+                  AcadexSnackBar.showSuccess(
+                    context,
+                    'Subject $action successful!',
+                  );
                 }
               } catch (e) {
                 if (context.mounted) {
@@ -71,10 +83,18 @@ class SubjectDetailScreen extends ConsumerWidget {
     final deptsAsync = ref.watch(departmentsProvider);
     final dateFormat = DateFormat('MMMM d, yyyy');
 
-    final coursesMap = {for (final c in coursesAsync.valueOrNull ?? <Course>[]) c.id: c};
-    final semsMap = {for (final s in semestersAsync.valueOrNull ?? <Semester>[]) s.id: s};
-    final yearsMap = {for (final y in yearsAsync.valueOrNull ?? <AcademicYear>[]) y.id: y};
-    final deptsMap = {for (final d in deptsAsync.valueOrNull ?? <Department>[]) d.id: d};
+    final coursesMap = {
+      for (final c in coursesAsync.valueOrNull ?? <Course>[]) c.id: c,
+    };
+    final semsMap = {
+      for (final s in semestersAsync.valueOrNull ?? <Semester>[]) s.id: s,
+    };
+    final yearsMap = {
+      for (final y in yearsAsync.valueOrNull ?? <AcademicYear>[]) y.id: y,
+    };
+    final deptsMap = {
+      for (final d in deptsAsync.valueOrNull ?? <Department>[]) d.id: d,
+    };
 
     final bodyContent = subjectAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -89,9 +109,15 @@ class SubjectDetailScreen extends ConsumerWidget {
       ),
       data: (subject) {
         final semester = semsMap[subject.semesterId];
-        final course = coursesMap[subject.courseId] ?? (semester != null ? coursesMap[semester.courseId] : null);
-        final academicYear = semester != null ? yearsMap[semester.academicYearId] : null;
-        final department = deptsMap[subject.departmentId] ?? (course != null ? deptsMap[course.departmentId] : null);
+        final course =
+            coursesMap[subject.courseId] ??
+            (semester != null ? coursesMap[semester.courseId] : null);
+        final academicYear = semester != null
+            ? yearsMap[semester.academicYearId]
+            : null;
+        final department =
+            deptsMap[subject.departmentId] ??
+            (course != null ? deptsMap[course.departmentId] : null);
 
         return AcadexPageContainer(
           maxWidth: 960,
@@ -100,21 +126,28 @@ class SubjectDetailScreen extends ConsumerWidget {
             children: [
               // ── Page-Level Consistent Back Navigation ───────────────────
               InkWell(
-                onTap: () => context.safePop(fallbackRoute: '/academics/subjects'),
+                onTap: () =>
+                    context.safePop(fallbackRoute: '/academics/subjects'),
                 borderRadius: BorderRadius.circular(6),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 4,
+                  ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(LucideIcons.arrowLeft, size: 16, color: AcadexColors.primary),
+                      const Icon(
+                        LucideIcons.arrowLeft,
+                        size: 16,
+                        color: AcadexColors.primary,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Back to Subjects',
-                        style: AcadexTypography.body(color: AcadexColors.primary).copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
+                        style: AcadexTypography.body(
+                          color: AcadexColors.primary,
+                        ).copyWith(fontWeight: FontWeight.w600, fontSize: 14),
                       ),
                     ],
                   ),
@@ -127,7 +160,13 @@ class SubjectDetailScreen extends ConsumerWidget {
               const SizedBox(height: 20),
 
               // ── Academic Hierarchy Card ───────────────────────────────
-              _buildHierarchyCard(isDark, course, semester, academicYear, department),
+              _buildHierarchyCard(
+                isDark,
+                course,
+                semester,
+                academicYear,
+                department,
+              ),
               const SizedBox(height: 20),
 
               // ── Curriculum Specifications Card ────────────────────────
@@ -173,7 +212,11 @@ class SubjectDetailScreen extends ConsumerWidget {
                   borderRadius: AcadexRadius.borderRadiusMd,
                 ),
                 child: const Center(
-                  child: Icon(LucideIcons.bookOpen, color: AcadexColors.primary, size: 24),
+                  child: Icon(
+                    LucideIcons.bookOpen,
+                    color: AcadexColors.primary,
+                    size: 24,
+                  ),
                 ),
               ),
               const SizedBox(width: 14),
@@ -193,7 +236,10 @@ class SubjectDetailScreen extends ConsumerWidget {
                       runSpacing: 4,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: AcadexColors.primary.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(4),
@@ -208,45 +254,66 @@ class SubjectDetailScreen extends ConsumerWidget {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                            color: isDark
+                                ? AcadexColors.darkCanvasSoft
+                                : AcadexColors.canvasSoft,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             "${subject.credits} Credits",
                             style: TextStyle(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                            color: isDark
+                                ? AcadexColors.darkCanvasSoft
+                                : AcadexColors.canvasSoft,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             subject.type,
                             style: TextStyle(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: subject.isActive ? AcadexColors.successLight : AcadexColors.errorLight,
+                            color: subject.isActive
+                                ? AcadexColors.successLight
+                                : AcadexColors.errorLight,
                             borderRadius: AcadexRadius.borderRadiusFull,
                           ),
                           child: Text(
                             subject.isActive ? 'Active' : 'Archived',
                             style: TextStyle(
-                              color: subject.isActive ? AcadexColors.success : AcadexColors.error,
+                              color: subject.isActive
+                                  ? AcadexColors.success
+                                  : AcadexColors.error,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -271,13 +338,21 @@ class SubjectDetailScreen extends ConsumerWidget {
                 label: 'Edit Subject',
                 icon: LucideIcons.edit,
                 variant: AcadexButtonVariant.primary,
-                onPressed: () => context.push('/academics/subjects/edit/$subjectId'),
+                onPressed: () =>
+                    context.push('/academics/subjects/edit/$subjectId'),
               ),
               AcadexButton(
                 label: subject.isActive ? 'Deactivate' : 'Activate',
-                icon: subject.isActive ? LucideIcons.powerOff : LucideIcons.power,
+                icon: subject.isActive
+                    ? LucideIcons.powerOff
+                    : LucideIcons.power,
                 variant: AcadexButtonVariant.secondary,
-                onPressed: () => _confirmStatusToggle(context, ref, subject.name, subject.isActive),
+                onPressed: () => _confirmStatusToggle(
+                  context,
+                  ref,
+                  subject.name,
+                  subject.isActive,
+                ),
               ),
             ],
           ),
@@ -300,7 +375,13 @@ class SubjectDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.graduationCap, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              Icon(
+                LucideIcons.graduationCap,
+                size: 16,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Academic Curriculum Affiliation',
@@ -315,14 +396,18 @@ class SubjectDetailScreen extends ConsumerWidget {
             isDark,
             LucideIcons.bookOpen,
             'Degree Program',
-            course != null ? "${course.name} (${course.code})" : "Linked Degree Program",
+            course != null
+                ? "${course.name} (${course.code})"
+                : "Linked Degree Program",
           ),
           const Divider(height: 16),
           _infoRow(
             isDark,
             LucideIcons.calendarClock,
             'Semester / Term',
-            semester != null ? "${semester.name} (Term ${semester.number})" : "Linked Semester",
+            semester != null
+                ? "${semester.name} (Term ${semester.number})"
+                : "Linked Semester",
           ),
           if (academicYear != null) ...[
             const Divider(height: 16),
@@ -347,11 +432,7 @@ class SubjectDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSpecsCard(
-    bool isDark,
-    Subject subject,
-    DateFormat dateFormat,
-  ) {
+  Widget _buildSpecsCard(bool isDark, Subject subject, DateFormat dateFormat) {
     return AcadexCard(
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -359,7 +440,13 @@ class SubjectDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.fileText, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              Icon(
+                LucideIcons.fileText,
+                size: 16,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Curriculum Specifications & Metadata',
@@ -372,9 +459,19 @@ class SubjectDetailScreen extends ConsumerWidget {
           const SizedBox(height: 14),
           _infoRow(isDark, LucideIcons.hash, 'Subject Code', subject.code),
           const Divider(height: 16),
-          _infoRow(isDark, LucideIcons.award, 'Credits', "${subject.credits} Credits"),
+          _infoRow(
+            isDark,
+            LucideIcons.award,
+            'Credits',
+            "${subject.credits} Credits",
+          ),
           const Divider(height: 16),
-          _infoRow(isDark, LucideIcons.layers, 'Instruction Type', subject.type),
+          _infoRow(
+            isDark,
+            LucideIcons.layers,
+            'Instruction Type',
+            subject.type,
+          ),
           const Divider(height: 16),
           _infoRow(
             isDark,
@@ -384,7 +481,12 @@ class SubjectDetailScreen extends ConsumerWidget {
           ),
           if (subject.createdAt != null) ...[
             const Divider(height: 16),
-            _infoRow(isDark, LucideIcons.clock, 'Created On', dateFormat.format(subject.createdAt!)),
+            _infoRow(
+              isDark,
+              LucideIcons.clock,
+              'Created On',
+              dateFormat.format(subject.createdAt!),
+            ),
           ],
         ],
       ),
@@ -395,7 +497,11 @@ class SubjectDetailScreen extends ConsumerWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 15, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+        Icon(
+          icon,
+          size: 15,
+          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+        ),
         const SizedBox(width: 10),
         SizedBox(
           width: 120,

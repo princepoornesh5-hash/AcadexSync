@@ -101,4 +101,78 @@ export class ActivationController {
 
     return ApiResponse.success(res, result.data, result.message);
   });
+
+  /**
+   * POST /api/v1/auth/institutional-activate/request-otp
+   * Request email OTP for institutional account activation.
+   */
+  static requestInstitutionalActivationOtp = asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      throw ApiError.badRequest('A valid email address is required');
+    }
+
+    const result = await ActivationService.requestInstitutionalActivationOtp(email.trim());
+
+    return ApiResponse.success(res, null, result.message);
+  });
+
+  /**
+   * POST /api/v1/auth/institutional-activate/verify-otp
+   * Verify email OTP for institutional account activation and issue emailVerificationToken.
+   */
+  static verifyInstitutionalActivationOtp = asyncHandler(async (req: Request, res: Response) => {
+    const { email, otp } = req.body;
+
+    if (!email || typeof email !== 'string') {
+      throw ApiError.badRequest('Email is required');
+    }
+
+    if (otp === undefined || otp === null) {
+      throw ApiError.badRequest('otp is required');
+    }
+
+    const rawOtp = typeof otp === 'number' ? String(otp) : otp;
+    if (typeof rawOtp !== 'string' || rawOtp.trim() === '') {
+      throw ApiError.badRequest('otp must be a valid verification code string');
+    }
+
+    const result = await ActivationService.verifyInstitutionalActivationOtp(
+      email.trim(),
+      rawOtp.trim()
+    );
+
+    return ApiResponse.success(
+      res,
+      { emailVerificationToken: result.emailVerificationToken },
+      result.message
+    );
+  });
+
+  /**
+   * POST /api/v1/auth/institutional-activate/complete
+   * Validates activation code, enforces email match, and activates institutional membership.
+   */
+  static completeInstitutionalActivation = asyncHandler(async (req: Request, res: Response) => {
+    const { emailVerificationToken, activationCode, password, confirmPassword } = req.body;
+
+    if (!emailVerificationToken || typeof emailVerificationToken !== 'string') {
+      throw ApiError.badRequest('emailVerificationToken is required');
+    }
+
+    if (!activationCode || typeof activationCode !== 'string' || activationCode.trim() === '') {
+      throw ApiError.badRequest('activationCode is required');
+    }
+
+    const result = await ActivationService.completeInstitutionalActivation(
+      emailVerificationToken.trim(),
+      activationCode.trim(),
+      password,
+      confirmPassword
+    );
+
+    return ApiResponse.success(res, result.data, result.message);
+  });
 }
+

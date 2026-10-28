@@ -17,7 +17,8 @@ class RequestCenterScreen extends ConsumerStatefulWidget {
   const RequestCenterScreen({super.key});
 
   @override
-  ConsumerState<RequestCenterScreen> createState() => _RequestCenterScreenState();
+  ConsumerState<RequestCenterScreen> createState() =>
+      _RequestCenterScreenState();
 }
 
 class _RequestCenterScreenState extends ConsumerState<RequestCenterScreen>
@@ -46,7 +47,8 @@ class _RequestCenterScreenState extends ConsumerState<RequestCenterScreen>
       role = authState.user.role;
     }
 
-    final hasIncomingRole = role == AppRole.faculty ||
+    final hasIncomingRole =
+        role == AppRole.faculty ||
         role == AppRole.hod ||
         role == AppRole.collegeAdmin ||
         role == AppRole.superAdmin;
@@ -63,7 +65,9 @@ class _RequestCenterScreenState extends ConsumerState<RequestCenterScreen>
         surfaceTintColor: Colors.transparent,
         title: Text(
           'Request Center',
-          style: AcadexTypography.heading2(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          style: AcadexTypography.heading2(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
         ),
         actions: [
           Padding(
@@ -82,8 +86,12 @@ class _RequestCenterScreenState extends ConsumerState<RequestCenterScreen>
                 indicatorColor: AcadexColors.primary,
                 indicatorWeight: 3,
                 labelColor: AcadexColors.primary,
-                unselectedLabelColor: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                labelStyle: AcadexTypography.bodySmall().copyWith(fontWeight: FontWeight.w700),
+                unselectedLabelColor: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+                labelStyle: AcadexTypography.bodySmall().copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
                 tabs: const [
                   Tab(text: 'My Requests'),
                   Tab(text: 'Needs Attention'),
@@ -99,7 +107,12 @@ class _RequestCenterScreenState extends ConsumerState<RequestCenterScreen>
             decoration: BoxDecoration(
               color: isDark ? AcadexColors.darkSurface : Colors.white,
               border: Border(
-                bottom: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline, width: 1),
+                bottom: BorderSide(
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
+                  width: 1,
+                ),
               ),
             ),
             child: Column(
@@ -107,36 +120,61 @@ class _RequestCenterScreenState extends ConsumerState<RequestCenterScreen>
                 // Search bar
                 TextField(
                   controller: _searchController,
-                  style: TextStyle(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                  style: TextStyle(
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ),
                   onChanged: (val) {
-                    ref.read(requestsFilterProvider.notifier).state =
-                        filter.copyWith(searchQuery: val);
+                    ref.read(requestsFilterProvider.notifier).state = filter
+                        .copyWith(searchQuery: val);
                   },
                   decoration: InputDecoration(
                     hintText: 'Search requests by title or reason...',
-                    hintStyle: AcadexTypography.bodySmall(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                    prefixIcon: Icon(LucideIcons.search, size: 18, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                    hintStyle: AcadexTypography.bodySmall(
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
+                    ),
+                    prefixIcon: Icon(
+                      LucideIcons.search,
+                      size: 18,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
+                    ),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
                             icon: const Icon(LucideIcons.x, size: 16),
                             onPressed: () {
                               _searchController.clear();
                               ref.read(requestsFilterProvider.notifier).state =
-                                   filter.copyWith(searchQuery: '');
+                                  filter.copyWith(searchQuery: '');
                             },
                           )
                         : null,
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     filled: true,
-                    fillColor: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                    fillColor: isDark
+                        ? AcadexColors.darkCanvasSoft
+                        : AcadexColors.canvasSoft,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                      borderSide: BorderSide(
+                        color: isDark
+                            ? AcadexColors.darkHairline
+                            : AcadexColors.hairline,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                      borderSide: BorderSide(
+                        color: isDark
+                            ? AcadexColors.darkHairline
+                            : AcadexColors.hairline,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -256,7 +294,8 @@ class _RequestCenterScreenState extends ConsumerState<RequestCenterScreen>
                       _RequestsListView(
                         provider: incomingRequestsProvider,
                         isIncoming: true,
-                        emptyMessage: 'No incoming requests awaiting your response.',
+                        emptyMessage:
+                            'No incoming requests awaiting your response.',
                         onRefresh: () async {
                           ref.invalidate(incomingRequestsProvider);
                           ref.invalidate(requestSummaryCountsProvider);
@@ -373,7 +412,9 @@ class _RequestsListView extends ConsumerWidget {
                       const SizedBox(height: 12),
                       Text(
                         emptyMessage,
-                        style: AcadexTypography.body(color: AcadexColors.inkSecondary),
+                        style: AcadexTypography.body(
+                          color: AcadexColors.inkSecondary,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ],

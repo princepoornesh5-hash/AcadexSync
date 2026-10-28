@@ -3,27 +3,19 @@ import 'attendance_analytics_models.dart';
 
 /// Alert types supported by the ACADEX Early-Warning System
 enum AttendanceAlertType {
-  lowAttendance,       // Attendance percentage below regulatory threshold (< 75%)
-  attendanceDrop,      // Sudden significant drop in attendance percentage (e.g. >= 5% or >= 10%)
-  repeatedAbsence,     // Repeated consecutive absences (e.g. >= 3 consecutive missed classes)
-  unmarkedAttendance,  // Scheduled timetable class slot has passed with no recorded session
-  attendanceRecovery,  // Attendance improved back above threshold (>= 75%)
-  sessionCorrection,   // Session attendance record was updated or corrected
+  lowAttendance, // Attendance percentage below regulatory threshold (< 75%)
+  attendanceDrop, // Sudden significant drop in attendance percentage (e.g. >= 5% or >= 10%)
+  repeatedAbsence, // Repeated consecutive absences (e.g. >= 3 consecutive missed classes)
+  unmarkedAttendance, // Scheduled timetable class slot has passed with no recorded session
+  attendanceRecovery, // Attendance improved back above threshold (>= 75%)
+  sessionCorrection, // Session attendance record was updated or corrected
 }
 
 /// Centralized Alert Severity Levels
-enum AttendanceAlertSeverity {
-  info,
-  warning,
-  critical,
-}
+enum AttendanceAlertSeverity { info, warning, critical }
 
 /// Lifecycle states of an attendance alert
-enum AttendanceAlertStatus {
-  active,
-  acknowledged,
-  resolved,
-}
+enum AttendanceAlertStatus { active, acknowledged, resolved }
 
 /// Filter criteria for querying alerts
 @immutable
@@ -78,7 +70,14 @@ class AttendanceAlertFilter {
           subjectId == other.subjectId;
 
   @override
-  int get hashCode => Object.hash(severity, status, unreadOnly, alertType, sectionId, subjectId);
+  int get hashCode => Object.hash(
+    severity,
+    status,
+    unreadOnly,
+    alertType,
+    sectionId,
+    subjectId,
+  );
 }
 
 /// Aggregate summary counts of alerts for dashboard widgets
@@ -167,15 +166,15 @@ class AttendanceAlertSummary {
 
   @override
   int get hashCode => Object.hash(
-        totalAlerts,
-        criticalCount,
-        warningCount,
-        infoCount,
-        unreadCount,
-        activeCount,
-        acknowledgedCount,
-        resolvedCount,
-      );
+    totalAlerts,
+    criticalCount,
+    warningCount,
+    infoCount,
+    unreadCount,
+    activeCount,
+    acknowledgedCount,
+    resolvedCount,
+  );
 }
 
 /// Core Attendance Alert Domain Model
@@ -276,17 +275,21 @@ class AttendanceAlert {
         ? AttendanceAlertSeverity.critical
         : AttendanceAlertSeverity.warning;
 
-    final recoveryNeeded = AttendanceAnalyticsConstants.calculateSessionsNeededToReachThreshold(
-      presentCount: presentCount,
-      totalSessions: totalSessions,
-      targetThreshold: threshold,
-    );
+    final recoveryNeeded =
+        AttendanceAnalyticsConstants.calculateSessionsNeededToReachThreshold(
+          presentCount: presentCount,
+          totalSessions: totalSessions,
+          targetThreshold: threshold,
+        );
 
     final subjectContext = subjectName != null && subjectName.isNotEmpty
         ? 'in $subjectName'
-        : (sectionId != null && sectionId.isNotEmpty ? 'in Section $sectionId' : '');
+        : (sectionId != null && sectionId.isNotEmpty
+              ? 'in Section $sectionId'
+              : '');
 
-    final dedupKey = 'low_att_${studentId}_${subjectId ?? "overall"}_${sectionId ?? "none"}';
+    final dedupKey =
+        'low_att_${studentId}_${subjectId ?? "overall"}_${sectionId ?? "none"}';
 
     return AttendanceAlert(
       id: id,
@@ -305,8 +308,10 @@ class AttendanceAlert {
       alertType: AttendanceAlertType.lowAttendance,
       severity: severity,
       status: AttendanceAlertStatus.active,
-      title: 'Low Attendance Alert: $studentName (${attendancePercentage.toStringAsFixed(1)}%)',
-      message: 'Attendance $subjectContext has dropped to ${attendancePercentage.toStringAsFixed(1)}%, which is below the mandatory ${threshold.toStringAsFixed(0)}% institutional requirement. $recoveryNeeded consecutive attended sessions are required to restore compliance.',
+      title:
+          'Low Attendance Alert: $studentName (${attendancePercentage.toStringAsFixed(1)}%)',
+      message:
+          'Attendance $subjectContext has dropped to ${attendancePercentage.toStringAsFixed(1)}%, which is below the mandatory ${threshold.toStringAsFixed(0)}% institutional requirement. $recoveryNeeded consecutive attended sessions are required to restore compliance.',
       attendancePercentage: attendancePercentage,
       threshold: threshold,
       recoverySessionsNeeded: recoveryNeeded,
@@ -363,8 +368,10 @@ class AttendanceAlert {
       alertType: AttendanceAlertType.attendanceDrop,
       severity: severity,
       status: AttendanceAlertStatus.active,
-      title: 'Sharp Attendance Drop: $studentName (-${drop.toStringAsFixed(1)}%)',
-      message: 'Attendance $subjectContext dropped sharply from ${previousPercentage.toStringAsFixed(1)}% to ${currentPercentage.toStringAsFixed(1)}% (-${drop.toStringAsFixed(1)} percentage points).',
+      title:
+          'Sharp Attendance Drop: $studentName (-${drop.toStringAsFixed(1)}%)',
+      message:
+          'Attendance $subjectContext dropped sharply from ${previousPercentage.toStringAsFixed(1)}% to ${currentPercentage.toStringAsFixed(1)}% (-${drop.toStringAsFixed(1)} percentage points).',
       attendancePercentage: currentPercentage,
       previousPercentage: previousPercentage,
       dropPercentage: drop,
@@ -420,8 +427,10 @@ class AttendanceAlert {
       alertType: AttendanceAlertType.repeatedAbsence,
       severity: severity,
       status: AttendanceAlertStatus.active,
-      title: 'Repeated Absence: $studentName ($consecutiveAbsences missed classes)',
-      message: 'Student has been consecutively absent for $consecutiveAbsences scheduled sessions $subjectContext.',
+      title:
+          'Repeated Absence: $studentName ($consecutiveAbsences missed classes)',
+      message:
+          'Student has been consecutively absent for $consecutiveAbsences scheduled sessions $subjectContext.',
       attendancePercentage: currentPercentage,
       consecutiveAbsences: consecutiveAbsences,
       createdAt: createdAt ?? DateTime.now(),
@@ -446,7 +455,8 @@ class AttendanceAlert {
     required String timeSlot,
     DateTime? createdAt,
   }) {
-    final dedupKey = 'unmarked_${relatedTimetableEntryId}_${slotDate.year}_${slotDate.month}_${slotDate.day}';
+    final dedupKey =
+        'unmarked_${relatedTimetableEntryId}_${slotDate.year}_${slotDate.month}_${slotDate.day}';
 
     return AttendanceAlert(
       id: id,
@@ -464,7 +474,8 @@ class AttendanceAlert {
       severity: AttendanceAlertSeverity.warning,
       status: AttendanceAlertStatus.active,
       title: 'Missing Attendance: $subjectName (Section $sectionId)',
-      message: 'Attendance was not submitted for scheduled timetable slot ($timeSlot) on ${slotDate.day}/${slotDate.month}/${slotDate.year}.',
+      message:
+          'Attendance was not submitted for scheduled timetable slot ($timeSlot) on ${slotDate.day}/${slotDate.month}/${slotDate.year}.',
       createdAt: createdAt ?? DateTime.now(),
       deduplicationKey: dedupKey,
     );
@@ -529,9 +540,11 @@ class AttendanceAlert {
       dropPercentage: dropPercentage ?? this.dropPercentage,
       threshold: threshold ?? this.threshold,
       consecutiveAbsences: consecutiveAbsences ?? this.consecutiveAbsences,
-      recoverySessionsNeeded: recoverySessionsNeeded ?? this.recoverySessionsNeeded,
+      recoverySessionsNeeded:
+          recoverySessionsNeeded ?? this.recoverySessionsNeeded,
       relatedSessionId: relatedSessionId ?? this.relatedSessionId,
-      relatedTimetableEntryId: relatedTimetableEntryId ?? this.relatedTimetableEntryId,
+      relatedTimetableEntryId:
+          relatedTimetableEntryId ?? this.relatedTimetableEntryId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isRead: isRead ?? this.isRead,
@@ -543,40 +556,40 @@ class AttendanceAlert {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'collegeId': collegeId,
-        'departmentId': departmentId,
-        'courseId': courseId,
-        'academicYearId': academicYearId,
-        'semesterId': semesterId,
-        'sectionId': sectionId,
-        'studentId': studentId,
-        'studentName': studentName,
-        'rollNumber': rollNumber,
-        'subjectId': subjectId,
-        'subjectName': subjectName,
-        'facultyId': facultyId,
-        'alertType': alertType.name,
-        'severity': severity.name,
-        'status': status.name,
-        'title': title,
-        'message': message,
-        'attendancePercentage': attendancePercentage,
-        'previousPercentage': previousPercentage,
-        'dropPercentage': dropPercentage,
-        'threshold': threshold,
-        'consecutiveAbsences': consecutiveAbsences,
-        'recoverySessionsNeeded': recoverySessionsNeeded,
-        'relatedSessionId': relatedSessionId,
-        'relatedTimetableEntryId': relatedTimetableEntryId,
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt?.toIso8601String(),
-        'isRead': isRead,
-        'readAt': readAt?.toIso8601String(),
-        'acknowledgedAt': acknowledgedAt?.toIso8601String(),
-        'resolvedAt': resolvedAt?.toIso8601String(),
-        'deduplicationKey': deduplicationKey,
-      };
+    'id': id,
+    'collegeId': collegeId,
+    'departmentId': departmentId,
+    'courseId': courseId,
+    'academicYearId': academicYearId,
+    'semesterId': semesterId,
+    'sectionId': sectionId,
+    'studentId': studentId,
+    'studentName': studentName,
+    'rollNumber': rollNumber,
+    'subjectId': subjectId,
+    'subjectName': subjectName,
+    'facultyId': facultyId,
+    'alertType': alertType.name,
+    'severity': severity.name,
+    'status': status.name,
+    'title': title,
+    'message': message,
+    'attendancePercentage': attendancePercentage,
+    'previousPercentage': previousPercentage,
+    'dropPercentage': dropPercentage,
+    'threshold': threshold,
+    'consecutiveAbsences': consecutiveAbsences,
+    'recoverySessionsNeeded': recoverySessionsNeeded,
+    'relatedSessionId': relatedSessionId,
+    'relatedTimetableEntryId': relatedTimetableEntryId,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt?.toIso8601String(),
+    'isRead': isRead,
+    'readAt': readAt?.toIso8601String(),
+    'acknowledgedAt': acknowledgedAt?.toIso8601String(),
+    'resolvedAt': resolvedAt?.toIso8601String(),
+    'deduplicationKey': deduplicationKey,
+  };
 
   factory AttendanceAlert.fromJson(Map<String, dynamic> json) {
     return AttendanceAlert(
@@ -610,7 +623,9 @@ class AttendanceAlert {
       attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble(),
       previousPercentage: (json['previousPercentage'] as num?)?.toDouble(),
       dropPercentage: (json['dropPercentage'] as num?)?.toDouble(),
-      threshold: (json['threshold'] as num?)?.toDouble() ?? AttendanceAnalyticsConstants.lowAttendanceThreshold,
+      threshold:
+          (json['threshold'] as num?)?.toDouble() ??
+          AttendanceAnalyticsConstants.lowAttendanceThreshold,
       consecutiveAbsences: json['consecutiveAbsences'] as int?,
       recoverySessionsNeeded: json['recoverySessionsNeeded'] as int?,
       relatedSessionId: json['relatedSessionId'] as String?,

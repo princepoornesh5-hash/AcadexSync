@@ -66,11 +66,9 @@ abstract class OfficialCertificateRepository {
   });
 
   // --- Student Requirement Resolution ---
-  Future<List<RequirementWithSubmission>> getRequirementsWithSubmissionsForStudent({
-    required UserModel student,
-  });
+  Future<List<RequirementWithSubmission>>
+  getRequirementsWithSubmissionsForStudent({required UserModel student});
 
-  Stream<List<RequirementWithSubmission>> watchRequirementsWithSubmissionsForStudent({
-    required UserModel student,
-  });
+  Stream<List<RequirementWithSubmission>>
+  watchRequirementsWithSubmissionsForStudent({required UserModel student});
 }

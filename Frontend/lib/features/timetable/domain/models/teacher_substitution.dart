@@ -63,7 +63,9 @@ class TeacherSubstitution {
       reason: json['reason']?.toString() ?? '',
       status: json['status']?.toString() ?? 'ACTIVE',
       createdBy: extractId(json['createdBy']),
-      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : null,
     );
   }
 
@@ -106,7 +108,8 @@ class TeacherSubstitution {
       originalFacultyId: originalFacultyId ?? this.originalFacultyId,
       substituteFacultyId: substituteFacultyId ?? this.substituteFacultyId,
       originalFacultyName: originalFacultyName ?? this.originalFacultyName,
-      substituteFacultyName: substituteFacultyName ?? this.substituteFacultyName,
+      substituteFacultyName:
+          substituteFacultyName ?? this.substituteFacultyName,
       reason: reason ?? this.reason,
       status: status ?? this.status,
       createdBy: createdBy ?? this.createdBy,

@@ -17,11 +17,7 @@ class NextClassCard extends ConsumerWidget {
   final TimetableModel? nextClass;
   final bool isLoading;
 
-  const NextClassCard({
-    super.key,
-    this.nextClass,
-    this.isLoading = false,
-  });
+  const NextClassCard({super.key, this.nextClass, this.isLoading = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -46,7 +42,9 @@ class NextClassCard extends ConsumerWidget {
               Text(
                 'Checking next class...',
                 style: AcadexTypography.body(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
             ],
@@ -76,7 +74,9 @@ class NextClassCard extends ConsumerWidget {
                 child: Icon(
                   LucideIcons.calendarCheck,
                   size: 24,
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
               const SizedBox(width: 16),
@@ -94,7 +94,9 @@ class NextClassCard extends ConsumerWidget {
                     Text(
                       'You are all done with scheduled classes for today.',
                       style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                     ),
                   ],
@@ -115,13 +117,17 @@ class NextClassCard extends ConsumerWidget {
     final faculty = facultyMap[entry.facultyId];
     final section = sectionMap[entry.sectionId];
 
-    final subjectName = subject?.name ?? (entry.subjectId.isNotEmpty ? entry.subjectId : 'Scheduled Class');
+    final subjectName =
+        subject?.name ??
+        (entry.subjectId.isNotEmpty ? entry.subjectId : 'Scheduled Class');
     final subjectCode = subject?.code ?? '';
     final facultyName = faculty?.name ?? entry.facultyId;
     final sectionName = section?.name ?? entry.sectionId;
 
     return AcadexCard(
-      backgroundColor: isDark ? const Color(0xFF1E1B4B) : const Color(0xFFEEF2FF),
+      backgroundColor: isDark
+          ? const Color(0xFF1E1B4B)
+          : const Color(0xFFEEF2FF),
       borderColor: isDark ? const Color(0xFF3730A3) : const Color(0xFFC7D2FE),
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -132,7 +138,10 @@ class NextClassCard extends ConsumerWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF4F46E5),
                     borderRadius: AcadexRadius.borderRadiusSm,
@@ -140,22 +149,27 @@ class NextClassCard extends ConsumerWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(LucideIcons.sparkles, size: 12, color: Colors.white),
+                      const Icon(
+                        LucideIcons.sparkles,
+                        size: 12,
+                        color: Colors.white,
+                      ),
                       const SizedBox(width: 5),
                       Text(
                         'NEXT CLASS',
-                        style: AcadexTypography.eyebrow(color: Colors.white).copyWith(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.8,
-                        ),
+                        style: AcadexTypography.eyebrow(color: Colors.white)
+                            .copyWith(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.8,
+                            ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 10),
                 AcadexBadge(
-                  label: '${entry.startTime} - ${entry.endTime}',
+                  label: '${entry.startTime} – ${entry.endTime}',
                   variant: AcadexBadgeVariant.neutral,
                 ),
                 const Spacer(),
@@ -186,7 +200,9 @@ class NextClassCard extends ConsumerWidget {
                       Text(
                         subjectName,
                         style: AcadexTypography.heading2(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ).copyWith(fontSize: 18, fontWeight: FontWeight.w700),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -220,13 +236,17 @@ class NextClassCard extends ConsumerWidget {
                       Icon(
                         LucideIcons.layoutGrid,
                         size: 14,
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                       const SizedBox(width: 5),
                       Text(
                         'Section: $sectionName',
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ).copyWith(fontWeight: FontWeight.w500),
                       ),
                     ],
@@ -238,13 +258,17 @@ class NextClassCard extends ConsumerWidget {
                       Icon(
                         LucideIcons.user,
                         size: 14,
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                       const SizedBox(width: 5),
                       Text(
                         facultyName,
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ).copyWith(fontWeight: FontWeight.w500),
                       ),
                     ],
@@ -256,13 +280,17 @@ class NextClassCard extends ConsumerWidget {
                       Icon(
                         LucideIcons.mapPin,
                         size: 14,
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                       const SizedBox(width: 5),
                       Text(
                         'Room ${entry.roomNumber}${entry.building != null && entry.building!.isNotEmpty ? ' · ${entry.building}' : ''}',
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ).copyWith(fontWeight: FontWeight.w500),
                       ),
                     ],

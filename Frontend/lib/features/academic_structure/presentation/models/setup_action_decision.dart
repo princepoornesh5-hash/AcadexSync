@@ -2,12 +2,7 @@ import '../../../auth/domain/models/role_enum.dart';
 import '../utils/academic_prerequisite_guard.dart';
 
 /// Authoritative decision status for an academic setup milestone
-enum SetupDecisionStatus {
-  ready,
-  blocked,
-  waitingOnOtherRole,
-  complete,
-}
+enum SetupDecisionStatus { ready, blocked, waitingOnOtherRole, complete }
 
 /// Identifiers for the 8 canonical academic onboarding milestones
 enum SetupMilestoneId {
@@ -51,7 +46,8 @@ class SetupActionDecision {
 
   bool get isReady => status == SetupDecisionStatus.ready;
   bool get isBlocked => status == SetupDecisionStatus.blocked;
-  bool get isWaitingOnOtherRole => status == SetupDecisionStatus.waitingOnOtherRole;
+  bool get isWaitingOnOtherRole =>
+      status == SetupDecisionStatus.waitingOnOtherRole;
   bool get isComplete => status == SetupDecisionStatus.complete;
 
   /// Helper factory for fully completed milestones
@@ -113,7 +109,9 @@ class SetupActionDecision {
       missingDependency: missingDependency,
       canCurrentUserAct: false,
       actionRoute: null, // Hard requirement: NEVER route to a 403 page
-      actionLabel: notifyActionLabel ?? 'Notify ${ownerRole == AppRole.collegeAdmin ? "College Admin" : "Administrator"}',
+      actionLabel:
+          notifyActionLabel ??
+          'Notify ${ownerRole == AppRole.collegeAdmin ? "College Admin" : "Administrator"}',
       explanation: explanation,
       waitingReason: waitingReason,
       contextParams: contextParams,

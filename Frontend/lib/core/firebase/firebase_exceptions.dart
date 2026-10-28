@@ -41,9 +41,13 @@ class FirebaseErrorMapper {
     if (error is FirebaseAuthException) {
       switch (error.code) {
         case 'invalid-email':
-          return const BackendAuthException('The email address format is invalid.');
+          return const BackendAuthException(
+            'The email address format is invalid.',
+          );
         case 'user-not-found':
-          return const BackendAuthException('No user account exists with this email.');
+          return const BackendAuthException(
+            'No user account exists with this email.',
+          );
         case 'wrong-password':
           return const BackendAuthException('Incorrect password.');
         case 'invalid-credential':
@@ -51,33 +55,55 @@ class FirebaseErrorMapper {
         case 'user-disabled':
           return const BackendAuthException('This account has been disabled.');
         case 'too-many-requests':
-          return const BackendAuthException('Too many failed attempts. Please try again later.');
+          return const BackendAuthException(
+            'Too many failed attempts. Please try again later.',
+          );
         case 'operation-not-allowed':
-          return const BackendAuthException('Email/password authentication is not enabled in Firebase Console.');
+          return const BackendAuthException(
+            'Email/password authentication is not enabled in Firebase Console.',
+          );
         case 'email-already-in-use':
-          return const BackendAuthException('The email address is already registered.');
+          return const BackendAuthException(
+            'The email address is already registered.',
+          );
         case 'weak-password':
-          return const BackendAuthException('The password provided is too weak.');
+          return const BackendAuthException(
+            'The password provided is too weak.',
+          );
         case 'network-request-failed':
-          return const BackendNetworkException('Network error. Please check your internet connection.');
+          return const BackendNetworkException(
+            'Network error. Please check your internet connection.',
+          );
         default:
-          return BackendAuthException(error.message ?? 'Authentication failed.');
+          return BackendAuthException(
+            error.message ?? 'Authentication failed.',
+          );
       }
     }
 
     if (error is FirebaseException) {
       switch (error.code) {
         case 'permission-denied':
-          return const BackendPermissionException('You are not authorized to perform this action.');
+          return const BackendPermissionException(
+            'You are not authorized to perform this action.',
+          );
         case 'unavailable':
-          return const BackendNetworkException('Service temporarily unavailable. Try again later.');
+          return const BackendNetworkException(
+            'Service temporarily unavailable. Try again later.',
+          );
         default:
           if (error.plugin == 'firestore') {
-            return BackendDatabaseException(error.message ?? 'Database transaction failed.');
+            return BackendDatabaseException(
+              error.message ?? 'Database transaction failed.',
+            );
           } else if (error.plugin == 'storage') {
-            return BackendStorageException(error.message ?? 'File storage transaction failed.');
+            return BackendStorageException(
+              error.message ?? 'File storage transaction failed.',
+            );
           }
-          return UnknownBackendException(error.message ?? 'An unexpected database error occurred.');
+          return UnknownBackendException(
+            error.message ?? 'An unexpected database error occurred.',
+          );
       }
     }
 

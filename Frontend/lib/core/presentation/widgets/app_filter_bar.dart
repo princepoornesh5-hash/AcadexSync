@@ -6,11 +6,7 @@ class FilterOption<T> {
   final T value;
   final int? count;
 
-  const FilterOption({
-    required this.label,
-    required this.value,
-    this.count,
-  });
+  const FilterOption({required this.label, required this.value, this.count});
 }
 
 /// Legacy bridge widget delegating to [AcadexFilterBar].
@@ -31,11 +27,13 @@ class AppFilterBar<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     return AcadexFilterBar<T>(
       options: options
-          .map((o) => AcadexFilterOption<T>(
-                label: o.label,
-                value: o.value,
-                count: o.count,
-              ))
+          .map(
+            (o) => AcadexFilterOption<T>(
+              label: o.label,
+              value: o.value,
+              count: o.count,
+            ),
+          )
           .toList(),
       selectedValue: selectedValue,
       onSelected: onSelected,

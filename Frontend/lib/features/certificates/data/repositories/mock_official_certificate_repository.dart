@@ -6,15 +6,18 @@ import '../../../auth/domain/models/user_model.dart';
 import '../../domain/models/official_certificate_models.dart';
 import '../../domain/repositories/official_certificate_repository.dart';
 
-class MockOfficialCertificateRepository implements OfficialCertificateRepository {
+class MockOfficialCertificateRepository
+    implements OfficialCertificateRepository {
   final UserModel? currentUser;
 
   final List<OfficialCertificateRequirement> _requirements = [];
   final List<OfficialCertificate> _submissions = [];
   final Set<String> _simulatedStorageFiles = {};
 
-  final _requirementsController = StreamController<List<OfficialCertificateRequirement>>.broadcast();
-  final _submissionsController = StreamController<List<OfficialCertificate>>.broadcast();
+  final _requirementsController =
+      StreamController<List<OfficialCertificateRequirement>>.broadcast();
+  final _submissionsController =
+      StreamController<List<OfficialCertificate>>.broadcast();
 
   bool _initialized = false;
 
@@ -34,7 +37,8 @@ class MockOfficialCertificateRepository implements OfficialCertificateRepository
     _initData();
   }
 
-  Future<void> _delay() async => await Future.delayed(const Duration(milliseconds: 10));
+  Future<void> _delay() async =>
+      await Future.delayed(const Duration(milliseconds: 10));
 
   void _emitRequirements() {
     if (!_requirementsController.isClosed) {
@@ -77,7 +81,8 @@ class MockOfficialCertificateRepository implements OfficialCertificateRepository
         id: 'req_birth',
         collegeId: 'c1',
         name: 'Birth Certificate',
-        description: 'Official government-issued birth certificate for age verification.',
+        description:
+            'Official government-issued birth certificate for age verification.',
         category: 'General',
         required: true,
         verificationRequired: true,
@@ -109,7 +114,8 @@ class MockOfficialCertificateRepository implements OfficialCertificateRepository
         collegeId: 'c1',
         departmentId: 'd1',
         name: 'Conduct Certificate',
-        description: 'Character and Conduct Certificate issued by head of institution.',
+        description:
+            'Character and Conduct Certificate issued by head of institution.',
         category: 'General',
         required: false,
         verificationRequired: true,
@@ -123,7 +129,8 @@ class MockOfficialCertificateRepository implements OfficialCertificateRepository
     ]);
 
     // Sample student submission for student 's1'
-    final samplePath = '/colleges/c1/students/s1/official-certificates/birth_cert.pdf';
+    final samplePath =
+        '/colleges/c1/students/s1/official-certificates/birth_cert.pdf';
     _simulatedStorageFiles.add(samplePath);
 
     _submissions.add(
@@ -171,10 +178,18 @@ class MockOfficialCertificateRepository implements OfficialCertificateRepository
     return _requirements.where((r) {
       if (r.collegeId != collegeId) return false;
       if (activeOnly && !r.isActive) return false;
-      if (departmentId != null && r.departmentId != null && r.departmentId != departmentId) return false;
-      if (courseId != null && r.courseId != null && r.courseId != courseId) return false;
-      if (semesterId != null && r.semesterId != null && r.semesterId != semesterId) return false;
-      if (sectionId != null && r.sectionId != null && r.sectionId != sectionId) return false;
+      if (departmentId != null &&
+          r.departmentId != null &&
+          r.departmentId != departmentId)
+        return false;
+      if (courseId != null && r.courseId != null && r.courseId != courseId)
+        return false;
+      if (semesterId != null &&
+          r.semesterId != null &&
+          r.semesterId != semesterId)
+        return false;
+      if (sectionId != null && r.sectionId != null && r.sectionId != sectionId)
+        return false;
       return true;
     }).toList();
   }
@@ -186,28 +201,44 @@ class MockOfficialCertificateRepository implements OfficialCertificateRepository
   }
 
   @override
-  Future<void> createRequirement(OfficialCertificateRequirement requirement) async {
+  Future<void> createRequirement(
+    OfficialCertificateRequirement requirement,
+  ) async {
     await _delay();
     if (currentUser != null) {
       if (currentUser!.role == AppRole.student) {
-        throw const BackendPermissionException('Students cannot create certificate requirements');
+        throw const BackendPermissionException(
+          'Students cannot create certificate requirements',
+        );
       }
       if (currentUser!.role == AppRole.faculty) {
-        throw const BackendPermissionException('Faculty cannot create certificate requirements');
+        throw const BackendPermissionException(
+          'Faculty cannot create certificate requirements',
+        );
       }
       if (currentUser!.role == AppRole.superAdmin) {
-        throw const BackendPermissionException('Super Admin does not create routine college requirements');
+        throw const BackendPermissionException(
+          'Super Admin does not create routine college requirements',
+        );
       }
       if (currentUser!.role == AppRole.hod) {
         if (requirement.applicableTo == RequirementApplicability.college) {
-          throw const BackendPermissionException('HOD cannot create college-wide requirements');
+          throw const BackendPermissionException(
+            'HOD cannot create college-wide requirements',
+          );
         }
-        if (requirement.departmentId != null && requirement.departmentId != currentUser!.departmentId) {
-          throw const BackendPermissionException('HOD can only create requirements for their own department');
+        if (requirement.departmentId != null &&
+            requirement.departmentId != currentUser!.departmentId) {
+          throw const BackendPermissionException(
+            'HOD can only create requirements for their own department',
+          );
         }
       }
-      if (currentUser!.collegeId != null && currentUser!.collegeId != requirement.collegeId) {
-        throw const BackendPermissionException('Access denied to other college');
+      if (currentUser!.collegeId != null &&
+          currentUser!.collegeId != requirement.collegeId) {
+        throw const BackendPermissionException(
+          'Access denied to other college',
+        );
       }
     }
 
@@ -216,14 +247,22 @@ class MockOfficialCertificateRepository implements OfficialCertificateRepository
   }
 
   @override
-  Future<void> updateRequirement(OfficialCertificateRequirement requirement) async {
+  Future<void> updateRequirement(
+    OfficialCertificateRequirement requirement,
+  ) async {
     await _delay();
     if (currentUser != null) {
-      if (currentUser!.role == AppRole.student || currentUser!.role == AppRole.faculty) {
-        throw const BackendPermissionException('Unauthorized to modify requirements');
+      if (currentUser!.role == AppRole.student ||
+          currentUser!.role == AppRole.faculty) {
+        throw const BackendPermissionException(
+          'Unauthorized to modify requirements',
+        );
       }
-      if (currentUser!.role == AppRole.hod && requirement.departmentId != currentUser!.departmentId) {
-        throw const BackendPermissionException('HOD cannot modify requirements outside their department');
+      if (currentUser!.role == AppRole.hod &&
+          requirement.departmentId != currentUser!.departmentId) {
+        throw const BackendPermissionException(
+          'HOD cannot modify requirements outside their department',
+        );
       }
     }
 
@@ -240,11 +279,17 @@ class MockOfficialCertificateRepository implements OfficialCertificateRepository
     if (req == null) return;
 
     if (currentUser != null) {
-      if (currentUser!.role == AppRole.student || currentUser!.role == AppRole.faculty) {
-        throw const BackendPermissionException('Unauthorized to delete requirements');
+      if (currentUser!.role == AppRole.student ||
+          currentUser!.role == AppRole.faculty) {
+        throw const BackendPermissionException(
+          'Unauthorized to delete requirements',
+        );
       }
-      if (currentUser!.role == AppRole.hod && req.departmentId != currentUser!.departmentId) {
-        throw const BackendPermissionException('HOD cannot delete requirements outside their department');
+      if (currentUser!.role == AppRole.hod &&
+          req.departmentId != currentUser!.departmentId) {
+        throw const BackendPermissionException(
+          'HOD cannot delete requirements outside their department',
+        );
       }
     }
 
@@ -261,7 +306,10 @@ class MockOfficialCertificateRepository implements OfficialCertificateRepository
     return _requirementsController.stream.map((list) {
       return list.where((r) {
         if (r.collegeId != collegeId) return false;
-        if (departmentId != null && r.departmentId != null && r.departmentId != departmentId) return false;
+        if (departmentId != null &&
+            r.departmentId != null &&
+            r.departmentId != departmentId)
+          return false;
         return true;
       }).toList();
     });
@@ -288,7 +336,8 @@ class MockOfficialCertificateRepository implements OfficialCertificateRepository
       if (semesterId != null && s.semesterId != semesterId) return false;
       if (sectionId != null && s.sectionId != sectionId) return false;
       if (studentUid != null && s.studentUid != studentUid) return false;
-      if (requirementId != null && s.requirementId != requirementId) return false;
+      if (requirementId != null && s.requirementId != requirementId)
+        return false;
       if (status != null && s.status != status) return false;
       return true;
     }).toList();
@@ -310,22 +359,30 @@ class MockOfficialCertificateRepository implements OfficialCertificateRepository
 
     // 1. File size validation (10MB)
     if (certificate.fileSizeBytes > 10 * 1024 * 1024) {
-      throw const BackendValidationException('File size exceeds the 10MB limit');
+      throw const BackendValidationException(
+        'File size exceeds the 10MB limit',
+      );
     }
 
     // 2. File type validation
     final ext = certificate.fileType.toLowerCase().replaceAll('.', '');
     final allowed = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
     if (!allowed.contains(ext)) {
-      throw const BackendValidationException('Unsupported file format. Allowed: PDF, JPG, JPEG, PNG, DOC, DOCX');
+      throw const BackendValidationException(
+        'Unsupported file format. Allowed: PDF, JPG, JPEG, PNG, DOC, DOCX',
+      );
     }
 
     // 3. Ownership / context enforcement
     if (currentUser != null && currentUser!.role == AppRole.student) {
-      if (currentUser!.id != certificate.studentUid && currentUser!.firebaseUid != certificate.studentUid) {
-        throw const BackendPermissionException('Students can only submit documents for themselves');
+      if (currentUser!.id != certificate.studentUid &&
+          currentUser!.firebaseUid != certificate.studentUid) {
+        throw const BackendPermissionException(
+          'Students can only submit documents for themselves',
+        );
       }
-      if (currentUser!.collegeId != null && currentUser!.collegeId != certificate.collegeId) {
+      if (currentUser!.collegeId != null &&
+          currentUser!.collegeId != certificate.collegeId) {
         throw const BackendPermissionException('Invalid college scope');
       }
     }
@@ -338,9 +395,12 @@ class MockOfficialCertificateRepository implements OfficialCertificateRepository
     _simulatedStorageFiles.add(certificate.storagePath);
 
     // 5. Update or insert submission
-    final existingIdx = _submissions.indexWhere((s) =>
-        s.id == certificate.id ||
-        (s.studentUid == certificate.studentUid && s.requirementId == certificate.requirementId));
+    final existingIdx = _submissions.indexWhere(
+      (s) =>
+          s.id == certificate.id ||
+          (s.studentUid == certificate.studentUid &&
+              s.requirementId == certificate.requirementId),
+    );
 
     if (existingIdx != -1) {
       _submissions[existingIdx] = certificate.copyWith(
@@ -368,19 +428,30 @@ class MockOfficialCertificateRepository implements OfficialCertificateRepository
 
     if (currentUser != null) {
       if (currentUser!.role == AppRole.student) {
-        throw const BackendPermissionException('Students cannot verify documents');
+        throw const BackendPermissionException(
+          'Students cannot verify documents',
+        );
       }
-      if (currentUser!.role == AppRole.hod && currentUser!.departmentId != sub.departmentId) {
-        throw const BackendPermissionException('HOD can only verify submissions for their department');
+      if (currentUser!.role == AppRole.hod &&
+          currentUser!.departmentId != sub.departmentId) {
+        throw const BackendPermissionException(
+          'HOD can only verify submissions for their department',
+        );
       }
-      if (currentUser!.role == AppRole.collegeAdmin && currentUser!.collegeId != sub.collegeId) {
-        throw const BackendPermissionException('College Admin can only verify submissions in their college');
+      if (currentUser!.role == AppRole.collegeAdmin &&
+          currentUser!.collegeId != sub.collegeId) {
+        throw const BackendPermissionException(
+          'College Admin can only verify submissions in their college',
+        );
       }
     }
 
-    if ((status == OfficialCertificateStatus.rejected || status == OfficialCertificateStatus.resubmissionRequired) &&
+    if ((status == OfficialCertificateStatus.rejected ||
+            status == OfficialCertificateStatus.resubmissionRequired) &&
         (rejectionReason == null || rejectionReason.trim().isEmpty)) {
-      throw const BackendValidationException('A reason is required when rejecting or requesting re-upload');
+      throw const BackendValidationException(
+        'A reason is required when rejecting or requesting re-upload',
+      );
     }
 
     _submissions[index] = sub.copyWith(
@@ -404,8 +475,11 @@ class MockOfficialCertificateRepository implements OfficialCertificateRepository
     if (sub == null) return;
 
     if (currentUser != null && currentUser!.role == AppRole.student) {
-      if (currentUser!.id != sub.studentUid && currentUser!.firebaseUid != sub.studentUid) {
-        throw const BackendPermissionException('Cannot delete submissions of other students');
+      if (currentUser!.id != sub.studentUid &&
+          currentUser!.firebaseUid != sub.studentUid) {
+        throw const BackendPermissionException(
+          'Cannot delete submissions of other students',
+        );
       }
     }
 
@@ -431,7 +505,8 @@ class MockOfficialCertificateRepository implements OfficialCertificateRepository
     return _submissionsController.stream.map((list) {
       return list.where((s) {
         if (s.collegeId != collegeId) return false;
-        if (departmentId != null && s.departmentId != departmentId) return false;
+        if (departmentId != null && s.departmentId != departmentId)
+          return false;
         return true;
       }).toList();
     });
@@ -440,9 +515,8 @@ class MockOfficialCertificateRepository implements OfficialCertificateRepository
   // --- Student Resolution ---
 
   @override
-  Future<List<RequirementWithSubmission>> getRequirementsWithSubmissionsForStudent({
-    required UserModel student,
-  }) async {
+  Future<List<RequirementWithSubmission>>
+  getRequirementsWithSubmissionsForStudent({required UserModel student}) async {
     await _delay();
     final collegeId = student.collegeId ?? '';
     final deptId = student.departmentId;
@@ -468,8 +542,11 @@ class MockOfficialCertificateRepository implements OfficialCertificateRepository
     }).toList();
 
     // 2. Fetch student's submissions
-    final studentSubmissions = _submissions.where((s) =>
-        s.studentUid == student.id || (student.firebaseUid != null && s.studentUid == student.firebaseUid));
+    final studentSubmissions = _submissions.where(
+      (s) =>
+          s.studentUid == student.id ||
+          (student.firebaseUid != null && s.studentUid == student.firebaseUid),
+    );
     final subMap = {for (final s in studentSubmissions) s.requirementId: s};
 
     // 3. Map to RequirementWithSubmission
@@ -482,9 +559,8 @@ class MockOfficialCertificateRepository implements OfficialCertificateRepository
   }
 
   @override
-  Stream<List<RequirementWithSubmission>> watchRequirementsWithSubmissionsForStudent({
-    required UserModel student,
-  }) {
+  Stream<List<RequirementWithSubmission>>
+  watchRequirementsWithSubmissionsForStudent({required UserModel student}) {
     Future.microtask(() {
       _emitRequirements();
       _emitSubmissions();
@@ -495,7 +571,8 @@ class MockOfficialCertificateRepository implements OfficialCertificateRepository
     });
   }
 
-  bool isStorageFilePresent(String path) => _simulatedStorageFiles.contains(path);
+  bool isStorageFilePresent(String path) =>
+      _simulatedStorageFiles.contains(path);
 }
 
 final mockOfficialCertificateRepo = MockOfficialCertificateRepository();

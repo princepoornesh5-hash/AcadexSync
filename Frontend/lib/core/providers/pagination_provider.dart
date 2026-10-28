@@ -66,7 +66,11 @@ abstract class PaginationNotifier<T> extends StateNotifier<PaginatedState<T>> {
   }
 
   Future<void> loadMore() async {
-    if (!mounted || state.isFetchingMore || state.hasReachedMax || state.isLoading) return;
+    if (!mounted ||
+        state.isFetchingMore ||
+        state.hasReachedMax ||
+        state.isLoading)
+      return;
 
     state = state.copyWith(isFetchingMore: true, error: null);
     try {

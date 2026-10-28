@@ -44,12 +44,16 @@ class MockActivationRepository implements AccountActivationRepository {
     ),
   ];
 
-  Future<void> _delay() async => await Future.delayed(const Duration(milliseconds: 500));
+  Future<void> _delay() async =>
+      await Future.delayed(const Duration(milliseconds: 500));
 
   @override
   Future<String> generateActivationCode(Student student) async {
     await _delay();
-    final String plaintextCode = const Uuid().v4().substring(0, 8).toUpperCase();
+    final String plaintextCode = const Uuid()
+        .v4()
+        .substring(0, 8)
+        .toUpperCase();
     final record = ActivationRecord(
       id: const Uuid().v4(),
       studentId: student.id,
@@ -67,7 +71,10 @@ class MockActivationRepository implements AccountActivationRepository {
   @override
   Future<String> generateFacultyActivationCode(Faculty faculty) async {
     await _delay();
-    final String plaintextCode = const Uuid().v4().substring(0, 8).toUpperCase();
+    final String plaintextCode = const Uuid()
+        .v4()
+        .substring(0, 8)
+        .toUpperCase();
     final record = ActivationRecord(
       id: const Uuid().v4(),
       facultyId: faculty.id,
@@ -86,11 +93,14 @@ class MockActivationRepository implements AccountActivationRepository {
   Future<dynamic> validateActivation(String identifier, String code) async {
     await _delay();
     final inputHash = ActivationRecord.hashCodeString(code);
-    
+
     try {
-      final record = _records.firstWhere((r) => 
-        (r.rollNumber == identifier || r.employeeId == identifier) && r.codeHash == inputHash);
-      
+      final record = _records.firstWhere(
+        (r) =>
+            (r.rollNumber == identifier || r.employeeId == identifier) &&
+            r.codeHash == inputHash,
+      );
+
       if (record.status == ActivationStatus.used) {
         throw Exception("This activation code has already been used.");
       }
@@ -100,7 +110,7 @@ class MockActivationRepository implements AccountActivationRepository {
       if (record.status == ActivationStatus.disabled) {
         throw Exception("This activation code has been disabled.");
       }
-      
+
       if (record.role == AppRole.student) {
         final students = await mockAcademicRepo.getStudents();
         return students.firstWhere((s) => s.id == record.studentId).toJson();
@@ -110,30 +120,41 @@ class MockActivationRepository implements AccountActivationRepository {
       }
     } catch (e) {
       if (e is StateError) {
-        throw Exception("Invalid activation details."); // Generic error to prevent enumeration
+        throw Exception(
+          "Invalid activation details.",
+        ); // Generic error to prevent enumeration
       }
       rethrow;
     }
   }
 
   @override
-  Future<String> completeActivation(String identifier, String code, String newPassword) async {
+  Future<String> completeActivation(
+    String identifier,
+    String code,
+    String newPassword,
+  ) async {
     await _delay();
     await validateActivation(identifier, code);
-    
+
     final inputHash = ActivationRecord.hashCodeString(code);
-    final index = _records.indexWhere((r) => 
-      (r.rollNumber == identifier || r.employeeId == identifier) && r.codeHash == inputHash);
-    
+    final index = _records.indexWhere(
+      (r) =>
+          (r.rollNumber == identifier || r.employeeId == identifier) &&
+          r.codeHash == inputHash,
+    );
+
     if (index != -1) {
       _records[index] = _records[index].copyWith(
         status: ActivationStatus.used,
         usedAt: DateTime.now(),
       );
-      final id = _records[index].role == AppRole.student ? _records[index].studentId : _records[index].facultyId;
+      final id = _records[index].role == AppRole.student
+          ? _records[index].studentId
+          : _records[index].facultyId;
       return 'mock-uid-$id';
     }
-    
+
     throw Exception("Activation failed.");
   }
 }

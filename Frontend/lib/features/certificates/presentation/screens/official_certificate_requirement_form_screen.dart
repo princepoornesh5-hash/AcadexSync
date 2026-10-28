@@ -59,8 +59,12 @@ class _OfficialCertificateRequirementFormScreenState
     super.initState();
     final req = widget.requirement;
     _nameController = TextEditingController(text: req?.name ?? '');
-    _descriptionController = TextEditingController(text: req?.description ?? '');
-    _categoryController = TextEditingController(text: req?.category ?? 'General');
+    _descriptionController = TextEditingController(
+      text: req?.description ?? '',
+    );
+    _categoryController = TextEditingController(
+      text: req?.category ?? 'General',
+    );
 
     if (req != null) {
       _applicableTo = req.applicableTo;
@@ -116,7 +120,9 @@ class _OfficialCertificateRequirementFormScreenState
         sectionId: _selectedSectionId,
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
-        category: _categoryController.text.trim().isNotEmpty ? _categoryController.text.trim() : 'General',
+        category: _categoryController.text.trim().isNotEmpty
+            ? _categoryController.text.trim()
+            : 'General',
         required: _isRequired,
         verificationRequired: _isVerificationRequired,
         allowedFileTypes: _allowedFileTypes,
@@ -137,7 +143,11 @@ class _OfficialCertificateRequirementFormScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isEditing ? 'Requirement updated successfully!' : 'Requirement created successfully!'),
+            content: Text(
+              isEditing
+                  ? 'Requirement updated successfully!'
+                  : 'Requirement created successfully!',
+            ),
             backgroundColor: AcadexColors.success,
           ),
         );
@@ -159,7 +169,8 @@ class _OfficialCertificateRequirementFormScreenState
     final isEditing = widget.requirement != null;
 
     final authState = ref.watch(authProvider);
-    final isHod = authState is AuthAuthenticated && authState.user.role == AppRole.hod;
+    final isHod =
+        authState is AuthAuthenticated && authState.user.role == AppRole.hod;
 
     final departments = ref.watch(departmentsProvider).valueOrNull ?? [];
     final courses = ref.watch(coursesProvider).valueOrNull ?? [];
@@ -178,8 +189,11 @@ class _OfficialCertificateRequirementFormScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AcadexPageHeader(
-                  title: isEditing ? 'Edit Certificate Requirement' : 'New Certificate Requirement',
-                  subtitle: 'Define official college document requirements and upload rules for students.',
+                  title: isEditing
+                      ? 'Edit Certificate Requirement'
+                      : 'New Certificate Requirement',
+                  subtitle:
+                      'Define official college document requirements and upload rules for students.',
                 ),
                 const SizedBox(height: AcadexSpacing.space16),
 
@@ -189,11 +203,15 @@ class _OfficialCertificateRequirementFormScreenState
                     decoration: BoxDecoration(
                       color: AcadexColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(AcadexRadius.md),
-                      border: Border.all(color: AcadexColors.error.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: AcadexColors.error.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Text(
                       _errorMessage!,
-                      style: AcadexTypography.bodyMedium(color: AcadexColors.error),
+                      style: AcadexTypography.bodyMedium(
+                        color: AcadexColors.error,
+                      ),
                     ),
                   ),
                   const SizedBox(height: AcadexSpacing.space16),
@@ -208,7 +226,9 @@ class _OfficialCertificateRequirementFormScreenState
                       Text(
                         '1. Basic Information',
                         style: AcadexTypography.heading3(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       const SizedBox(height: AcadexSpacing.space16),
@@ -216,9 +236,12 @@ class _OfficialCertificateRequirementFormScreenState
                         controller: _nameController,
                         decoration: const InputDecoration(
                           labelText: 'Certificate Name *',
-                          hintText: 'e.g. Transfer Certificate, Study Certificate, Birth Certificate',
+                          hintText:
+                              'e.g. Transfer Certificate, Study Certificate, Birth Certificate',
                         ),
-                        validator: (val) => val == null || val.trim().isEmpty ? 'Certificate name is required' : null,
+                        validator: (val) => val == null || val.trim().isEmpty
+                            ? 'Certificate name is required'
+                            : null,
                       ),
                       const SizedBox(height: AcadexSpacing.space16),
                       TextFormField(
@@ -226,7 +249,8 @@ class _OfficialCertificateRequirementFormScreenState
                         maxLines: 2,
                         decoration: const InputDecoration(
                           labelText: 'Description',
-                          hintText: 'Provide instructions for the student regarding what document to upload.',
+                          hintText:
+                              'Provide instructions for the student regarding what document to upload.',
                         ),
                       ),
                       const SizedBox(height: AcadexSpacing.space16),
@@ -234,7 +258,8 @@ class _OfficialCertificateRequirementFormScreenState
                         controller: _categoryController,
                         decoration: const InputDecoration(
                           labelText: 'Category',
-                          hintText: 'e.g. Admission, Academic, General, Disciplinary',
+                          hintText:
+                              'e.g. Admission, Academic, General, Disciplinary',
                         ),
                       ),
                     ],
@@ -251,7 +276,9 @@ class _OfficialCertificateRequirementFormScreenState
                       Text(
                         '2. Applicability Scope',
                         style: AcadexTypography.heading3(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       const SizedBox(height: AcadexSpacing.space16),
@@ -260,15 +287,22 @@ class _OfficialCertificateRequirementFormScreenState
                         Text(
                           'Scoped to your Department: ${authState.user.departmentId?.toUpperCase() ?? 'HOD'}',
                           style: AcadexTypography.bodyMedium(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ),
                         ),
                       ] else ...[
                         DropdownButtonFormField<RequirementApplicability>(
                           value: _applicableTo,
-                          decoration: const InputDecoration(labelText: 'Apply To *'),
+                          decoration: const InputDecoration(
+                            labelText: 'Apply To *',
+                          ),
                           items: RequirementApplicability.values.map((a) {
-                            return DropdownMenuItem(value: a, child: Text(a.displayName));
+                            return DropdownMenuItem(
+                              value: a,
+                              child: Text(a.displayName),
+                            );
                           }).toList(),
                           onChanged: (val) {
                             if (val != null) {
@@ -280,57 +314,107 @@ class _OfficialCertificateRequirementFormScreenState
                         ),
                         const SizedBox(height: AcadexSpacing.space16),
 
-                        if (_applicableTo != RequirementApplicability.college) ...[
+                        if (_applicableTo !=
+                            RequirementApplicability.college) ...[
                           DropdownButtonFormField<String>(
                             value: _selectedDepartmentId,
-                            decoration: const InputDecoration(labelText: 'Department'),
+                            decoration: const InputDecoration(
+                              labelText: 'Department',
+                            ),
                             items: [
-                              const DropdownMenuItem(value: null, child: Text('All Departments')),
-                              ...departments.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name))),
+                              const DropdownMenuItem(
+                                value: null,
+                                child: Text('All Departments'),
+                              ),
+                              ...departments.map(
+                                (d) => DropdownMenuItem(
+                                  value: d.id,
+                                  child: Text(d.name),
+                                ),
+                              ),
                             ],
-                            onChanged: (val) => setState(() => _selectedDepartmentId = val),
+                            onChanged: (val) =>
+                                setState(() => _selectedDepartmentId = val),
                           ),
                           const SizedBox(height: AcadexSpacing.space16),
                         ],
 
                         if (_applicableTo == RequirementApplicability.course ||
-                            _applicableTo == RequirementApplicability.semester ||
-                            _applicableTo == RequirementApplicability.section) ...[
+                            _applicableTo ==
+                                RequirementApplicability.semester ||
+                            _applicableTo ==
+                                RequirementApplicability.section) ...[
                           DropdownButtonFormField<String>(
                             value: _selectedCourseId,
-                            decoration: const InputDecoration(labelText: 'Course'),
+                            decoration: const InputDecoration(
+                              labelText: 'Course',
+                            ),
                             items: [
-                              const DropdownMenuItem(value: null, child: Text('All Courses')),
-                              ...courses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))),
+                              const DropdownMenuItem(
+                                value: null,
+                                child: Text('All Courses'),
+                              ),
+                              ...courses.map(
+                                (c) => DropdownMenuItem(
+                                  value: c.id,
+                                  child: Text(c.name),
+                                ),
+                              ),
                             ],
-                            onChanged: (val) => setState(() => _selectedCourseId = val),
+                            onChanged: (val) =>
+                                setState(() => _selectedCourseId = val),
                           ),
                           const SizedBox(height: AcadexSpacing.space16),
                         ],
 
-                        if (_applicableTo == RequirementApplicability.semester ||
-                            _applicableTo == RequirementApplicability.section) ...[
+                        if (_applicableTo ==
+                                RequirementApplicability.semester ||
+                            _applicableTo ==
+                                RequirementApplicability.section) ...[
                           DropdownButtonFormField<String>(
                             value: _selectedSemesterId,
-                            decoration: const InputDecoration(labelText: 'Semester'),
+                            decoration: const InputDecoration(
+                              labelText: 'Semester',
+                            ),
                             items: [
-                              const DropdownMenuItem(value: null, child: Text('All Semesters')),
-                              ...semesters.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))),
+                              const DropdownMenuItem(
+                                value: null,
+                                child: Text('All Semesters'),
+                              ),
+                              ...semesters.map(
+                                (s) => DropdownMenuItem(
+                                  value: s.id,
+                                  child: Text(s.name),
+                                ),
+                              ),
                             ],
-                            onChanged: (val) => setState(() => _selectedSemesterId = val),
+                            onChanged: (val) =>
+                                setState(() => _selectedSemesterId = val),
                           ),
                           const SizedBox(height: AcadexSpacing.space16),
                         ],
 
-                        if (_applicableTo == RequirementApplicability.section) ...[
+                        if (_applicableTo ==
+                            RequirementApplicability.section) ...[
                           DropdownButtonFormField<String>(
                             value: _selectedSectionId,
-                            decoration: const InputDecoration(labelText: 'Section'),
+                            decoration: const InputDecoration(
+                              labelText: 'Section',
+                            ),
                             items: [
-                              const DropdownMenuItem(value: null, child: Text('All Sections')),
-                              ...sections.map((sec) => DropdownMenuItem(value: sec.id, child: Text(sec.name))),
+                              const DropdownMenuItem(
+                                value: null,
+                                child: Text('All Sections'),
+                              ),
+                              ...sections.map(
+                                (sec) => DropdownMenuItem(
+                                  value: sec.id,
+                                  child: Text(sec.name),
+                                ),
+                              ),
                             ],
-                            onChanged: (val) => setState(() => _selectedSectionId = val),
+                            onChanged: (val) =>
+                                setState(() => _selectedSectionId = val),
                           ),
                           const SizedBox(height: AcadexSpacing.space16),
                         ],
@@ -349,50 +433,63 @@ class _OfficialCertificateRequirementFormScreenState
                       Text(
                         '3. Submission Rules',
                         style: AcadexTypography.heading3(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       const SizedBox(height: AcadexSpacing.space16),
                       SwitchListTile(
                         title: const Text('Mandatory Document'),
-                        subtitle: const Text('Students must submit this document to complete requirements.'),
+                        subtitle: const Text(
+                          'Students must submit this document to complete requirements.',
+                        ),
                         value: _isRequired,
                         onChanged: (val) => setState(() => _isRequired = val),
                       ),
                       SwitchListTile(
                         title: const Text('Verification Required'),
-                        subtitle: const Text('Requires Admin/HOD review and approval after student submission.'),
+                        subtitle: const Text(
+                          'Requires Admin/HOD review and approval after student submission.',
+                        ),
                         value: _isVerificationRequired,
-                        onChanged: (val) => setState(() => _isVerificationRequired = val),
+                        onChanged: (val) =>
+                            setState(() => _isVerificationRequired = val),
                       ),
                       const SizedBox(height: AcadexSpacing.space16),
                       Text(
                         'Accepted File Formats',
                         style: AcadexTypography.title(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       const SizedBox(height: AcadexSpacing.space8),
                       Wrap(
                         spacing: 8,
-                        children: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'].map((ext) {
-                          final isSelected = _allowedFileTypes.contains(ext);
-                          return FilterChip(
-                            label: Text(ext.toUpperCase()),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              setState(() {
-                                if (selected) {
-                                  _allowedFileTypes.add(ext);
-                                } else {
-                                  if (_allowedFileTypes.length > 1) {
-                                    _allowedFileTypes.remove(ext);
-                                  }
-                                }
-                              });
-                            },
-                          );
-                        }).toList(),
+                        children: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx']
+                            .map((ext) {
+                              final isSelected = _allowedFileTypes.contains(
+                                ext,
+                              );
+                              return FilterChip(
+                                label: Text(ext.toUpperCase()),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  setState(() {
+                                    if (selected) {
+                                      _allowedFileTypes.add(ext);
+                                    } else {
+                                      if (_allowedFileTypes.length > 1) {
+                                        _allowedFileTypes.remove(ext);
+                                      }
+                                    }
+                                  });
+                                },
+                              );
+                            })
+                            .toList(),
                       ),
                     ],
                   ),
@@ -408,15 +505,22 @@ class _OfficialCertificateRequirementFormScreenState
                       Text(
                         '4. Status',
                         style: AcadexTypography.heading3(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       const SizedBox(height: AcadexSpacing.space16),
                       DropdownButtonFormField<RequirementStatus>(
                         value: _status,
-                        decoration: const InputDecoration(labelText: 'Requirement Status'),
+                        decoration: const InputDecoration(
+                          labelText: 'Requirement Status',
+                        ),
                         items: RequirementStatus.values.map((s) {
-                          return DropdownMenuItem(value: s, child: Text(s.name.toUpperCase()));
+                          return DropdownMenuItem(
+                            value: s,
+                            child: Text(s.name.toUpperCase()),
+                          );
                         }).toList(),
                         onChanged: (val) {
                           if (val != null) setState(() => _status = val);
@@ -434,7 +538,11 @@ class _OfficialCertificateRequirementFormScreenState
                     AcadexButton(
                       label: 'Cancel',
                       variant: AcadexButtonVariant.secondary,
-                      onPressed: _isSubmitting ? null : () => context.safePop(fallbackRoute: '/certificates/official'),
+                      onPressed: _isSubmitting
+                          ? null
+                          : () => context.safePop(
+                              fallbackRoute: '/certificates/official',
+                            ),
                     ),
                     const SizedBox(width: AcadexSpacing.space16),
                     AcadexButton(

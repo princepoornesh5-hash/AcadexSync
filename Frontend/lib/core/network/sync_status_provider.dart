@@ -11,6 +11,7 @@ class SyncStatusNotifier extends StateNotifier<SyncStatus> {
   void setFailed() => state = SyncStatus.failed;
 }
 
-final syncStatusProvider = StateNotifierProvider<SyncStatusNotifier, SyncStatus>((ref) {
-  return SyncStatusNotifier();
-});
+final syncStatusProvider =
+    StateNotifierProvider<SyncStatusNotifier, SyncStatus>((ref) {
+      return SyncStatusNotifier();
+    });

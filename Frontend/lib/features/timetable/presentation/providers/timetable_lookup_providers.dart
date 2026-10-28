@@ -3,13 +3,11 @@ import '../../../academic_structure/domain/models/academic_models.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
 import '../../domain/models/timetable_models.dart';
 
-enum TimetableViewMode {
-  day,
-  week,
-  list,
-}
+enum TimetableViewMode { day, week, list }
 
-final timetableViewModeProvider = StateProvider<TimetableViewMode>((ref) => TimetableViewMode.day);
+final timetableViewModeProvider = StateProvider<TimetableViewMode>(
+  (ref) => TimetableViewMode.day,
+);
 
 final timetableSelectedDateProvider = StateProvider<DateTime>((ref) {
   final now = DateTime.now();
@@ -52,7 +50,9 @@ final timetableCourseMapProvider = Provider<Map<String, Course>>((ref) {
   return {for (var c in list) c.id: c};
 });
 
-final timetableAcademicYearMapProvider = Provider<Map<String, AcademicYear>>((ref) {
+final timetableAcademicYearMapProvider = Provider<Map<String, AcademicYear>>((
+  ref,
+) {
   final yearsAsync = ref.watch(academicYearsProvider);
   final list = yearsAsync.valueOrNull ?? [];
   return {for (var y in list) y.id: y};

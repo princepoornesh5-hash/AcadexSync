@@ -24,10 +24,12 @@ class ContextProgramSelector extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ContextProgramSelector> createState() => _ContextProgramSelectorState();
+  ConsumerState<ContextProgramSelector> createState() =>
+      _ContextProgramSelectorState();
 }
 
-class _ContextProgramSelectorState extends ConsumerState<ContextProgramSelector> {
+class _ContextProgramSelectorState
+    extends ConsumerState<ContextProgramSelector> {
   @override
   void initState() {
     super.initState();
@@ -63,16 +65,26 @@ class _ContextProgramSelectorState extends ConsumerState<ContextProgramSelector>
       return Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.warningLight,
+          color: isDark
+              ? AcadexColors.darkSurfaceCard
+              : AcadexColors.warningLight,
           borderRadius: AcadexRadius.borderRadiusMd,
           border: Border.all(color: AcadexColors.warning),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('No $programLabel Found', style: const TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.warning)),
+            Text(
+              'No $programLabel Found',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AcadexColors.warning,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text('You must create at least one ${programLabel.toLowerCase()} before proceeding.'),
+            Text(
+              'You must create at least one ${programLabel.toLowerCase()} before proceeding.',
+            ),
           ],
         ),
       );
@@ -85,13 +97,21 @@ class _ContextProgramSelectorState extends ConsumerState<ContextProgramSelector>
         key: const Key('single_program_autoresolved_banner'),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.primary.withValues(alpha: 0.05),
+          color: isDark
+              ? AcadexColors.darkSurfaceCard
+              : AcadexColors.primary.withValues(alpha: 0.05),
           borderRadius: AcadexRadius.borderRadiusMd,
-          border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.2)),
+          border: Border.all(
+            color: AcadexColors.primary.withValues(alpha: 0.2),
+          ),
         ),
         child: Row(
           children: [
-            const Icon(LucideIcons.graduationCap, size: 20, color: AcadexColors.primary),
+            const Icon(
+              LucideIcons.graduationCap,
+              size: 20,
+              color: AcadexColors.primary,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -99,16 +119,24 @@ class _ContextProgramSelectorState extends ConsumerState<ContextProgramSelector>
                 children: [
                   Text(
                     '${singleCourse.name} (${singleCourse.code})',
-                    style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+                    style: AcadexTypography.body(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ).copyWith(fontWeight: FontWeight.w600),
                   ),
                   Text(
                     'Auto-resolved ($programLabel)',
-                    style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(fontWeight: FontWeight.w500),
+                    style: AcadexTypography.caption(
+                      color: AcadexColors.primary,
+                    ).copyWith(fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
             ),
-            const Icon(LucideIcons.checkCircle2, size: 16, color: AcadexColors.success),
+            const Icon(
+              LucideIcons.checkCircle2,
+              size: 16,
+              color: AcadexColors.success,
+            ),
           ],
         ),
       );
@@ -117,15 +145,21 @@ class _ContextProgramSelectorState extends ConsumerState<ContextProgramSelector>
     // Multiple programs: show standard dropdown
     return DropdownButtonFormField<String>(
       key: const Key('context_program_dropdown'),
-      dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+      dropdownColor: isDark
+          ? AcadexColors.darkSurfaceCard
+          : AcadexColors.surface,
       value: widget.selectedCourseId,
       decoration: InputDecoration(hintText: 'Select $programLabel'),
-      validator: (v) => v == null ? (widget.validatorMessage ?? '$programLabel is required') : null,
+      validator: (v) => v == null
+          ? (widget.validatorMessage ?? '$programLabel is required')
+          : null,
       items: widget.courses
-          .map((c) => DropdownMenuItem(
-                value: c.id,
-                child: Text('${c.name} (${c.code})'),
-              ))
+          .map(
+            (c) => DropdownMenuItem(
+              value: c.id,
+              child: Text('${c.name} (${c.code})'),
+            ),
+          )
           .toList(),
       onChanged: widget.isEdit ? null : widget.onCourseChanged,
     );

@@ -3,11 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Preset variants for the 3D Particle Sphere.
-enum ParticleSphereVariant {
-  login,
-  splash,
-  dashboard,
-}
+enum ParticleSphereVariant { login, splash, dashboard }
 
 /// Internal descriptor for a 3D spherical particle generated deterministically.
 class _SphereParticle3D {
@@ -287,14 +283,14 @@ class _AnimatedParticleSphereBackgroundState
           baseRadius = w < 640
               ? minDim * 0.44
               : w < 1024
-                  ? minDim * 0.48
-                  : minDim * 0.54;
+              ? minDim * 0.48
+              : minDim * 0.54;
         } else {
           baseRadius = w < 640
               ? minDim * 0.48
               : w < 1024
-                  ? minDim * 0.52
-                  : minDim * 0.58;
+              ? minDim * 0.52
+              : minDim * 0.58;
         }
 
         final sphereCenter = Offset(
@@ -304,7 +300,11 @@ class _AnimatedParticleSphereBackgroundState
 
         final canvas = RepaintBoundary(
           child: AnimatedBuilder(
-            animation: Listenable.merge([_rotationController, _themeController, _mousePosNotifier]),
+            animation: Listenable.merge([
+              _rotationController,
+              _themeController,
+              _mousePosNotifier,
+            ]),
             builder: (context, _) {
               return CustomPaint(
                 size: Size(w, h),
@@ -316,7 +316,9 @@ class _AnimatedParticleSphereBackgroundState
                   sphereRadius: baseRadius,
                   intensity: _effectiveIntensity,
                   drawBackground: widget.drawBackground,
-                  mousePos: widget.enableMouseParallax ? _mousePosNotifier.value : null,
+                  mousePos: widget.enableMouseParallax
+                      ? _mousePosNotifier.value
+                      : null,
                   screenSize: Size(w, h),
                 ),
               );
@@ -328,7 +330,8 @@ class _AnimatedParticleSphereBackgroundState
       },
     );
 
-    final hasPointerSupport = widget.enableMouseParallax &&
+    final hasPointerSupport =
+        widget.enableMouseParallax &&
         (kIsWeb ||
             defaultTargetPlatform == TargetPlatform.macOS ||
             defaultTargetPlatform == TargetPlatform.windows ||
@@ -355,10 +358,7 @@ class _AnimatedParticleSphereBackgroundState
 
     return Stack(
       fit: StackFit.expand,
-      children: [
-        backgroundLayer,
-        widget.child!,
-      ],
+      children: [backgroundLayer, widget.child!],
     );
   }
 }
@@ -483,15 +483,17 @@ class _ParticleSpherePainter extends CustomPainter {
       final lightFactor = 0.35 + (0.65 * diffuseLight);
 
       // Opacity calculation based on depth, lighting, theme, and intensity
-      final darkOpacity = (p.baseBrightness *
-              (0.08 + 0.85 * frontBoost * lightFactor) *
-              intensity)
-          .clamp(0.03, 0.95);
+      final darkOpacity =
+          (p.baseBrightness *
+                  (0.08 + 0.85 * frontBoost * lightFactor) *
+                  intensity)
+              .clamp(0.03, 0.95);
 
-      final lightOpacity = (p.baseBrightness *
-              (0.12 + 0.70 * frontBoost * lightFactor) *
-              (intensity * 1.1))
-          .clamp(0.06, 0.85);
+      final lightOpacity =
+          (p.baseBrightness *
+                  (0.12 + 0.70 * frontBoost * lightFactor) *
+                  (intensity * 1.1))
+              .clamp(0.06, 0.85);
 
       final dynamicOpacity =
           lightOpacity + (darkOpacity - lightOpacity) * themeProgress;
@@ -546,8 +548,8 @@ class _ParticleSpherePainter extends CustomPainter {
 
       // Draw soft outer bloom halo for highlight nodes
       if (p.isHighlight) {
-        final glowAlpha =
-            (dynamicOpacity * (0.22 + 0.10 * themeProgress)).clamp(0.0, 1.0);
+        final glowAlpha = (dynamicOpacity * (0.22 + 0.10 * themeProgress))
+            .clamp(0.0, 1.0);
         glowPaint.color = finalColor.withValues(alpha: glowAlpha);
         canvas.drawCircle(
           Offset(screenX, screenY),
@@ -564,7 +566,11 @@ class _ParticleSpherePainter extends CustomPainter {
         final specRadius = renderRadius * 0.34;
         final specX = screenX - renderRadius * 0.28;
         final specY = screenY - renderRadius * 0.28;
-        final specAlpha = (dynamicOpacity * (0.35 + 0.35 * frontBoost * diffuseLight)).clamp(0.0, 0.85);
+        final specAlpha =
+            (dynamicOpacity * (0.35 + 0.35 * frontBoost * diffuseLight)).clamp(
+              0.0,
+              0.85,
+            );
         specularPaint.color = Colors.white.withValues(alpha: specAlpha);
         canvas.drawCircle(Offset(specX, specY), specRadius, specularPaint);
       }
@@ -612,11 +618,19 @@ class _ParticleSpherePainter extends CustomPainter {
     final glowRadius = sphereRadius * 1.55;
     final glowRect = Rect.fromCircle(center: sphereCenter, radius: glowRadius);
 
-    final darkGlow1 = const Color(0xFF38BDF8).withValues(alpha: 0.08 * intensity);
-    final darkGlow2 = const Color(0xFF6366F1).withValues(alpha: 0.05 * intensity);
+    final darkGlow1 = const Color(
+      0xFF38BDF8,
+    ).withValues(alpha: 0.08 * intensity);
+    final darkGlow2 = const Color(
+      0xFF6366F1,
+    ).withValues(alpha: 0.05 * intensity);
 
-    final lightGlow1 = const Color(0xFF0284C7).withValues(alpha: 0.06 * intensity);
-    final lightGlow2 = const Color(0xFF3B82F6).withValues(alpha: 0.03 * intensity);
+    final lightGlow1 = const Color(
+      0xFF0284C7,
+    ).withValues(alpha: 0.06 * intensity);
+    final lightGlow2 = const Color(
+      0xFF3B82F6,
+    ).withValues(alpha: 0.03 * intensity);
 
     final g1 = Color.lerp(lightGlow1, darkGlow1, themeProgress)!;
     final g2 = Color.lerp(lightGlow2, darkGlow2, themeProgress)!;

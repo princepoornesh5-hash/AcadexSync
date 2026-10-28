@@ -13,16 +13,15 @@ import '../providers/practicals_providers.dart';
 class NewPracticalSessionScreen extends ConsumerStatefulWidget {
   final String? initialFacultyAssignmentId;
 
-  const NewPracticalSessionScreen({
-    super.key,
-    this.initialFacultyAssignmentId,
-  });
+  const NewPracticalSessionScreen({super.key, this.initialFacultyAssignmentId});
 
   @override
-  ConsumerState<NewPracticalSessionScreen> createState() => _NewPracticalSessionScreenState();
+  ConsumerState<NewPracticalSessionScreen> createState() =>
+      _NewPracticalSessionScreenState();
 }
 
-class _NewPracticalSessionScreenState extends ConsumerState<NewPracticalSessionScreen> {
+class _NewPracticalSessionScreenState
+    extends ConsumerState<NewPracticalSessionScreen> {
   final _formKey = GlobalKey<FormState>();
 
   String? _selectedFacultyAssignmentId;
@@ -70,7 +69,10 @@ class _NewPracticalSessionScreenState extends ConsumerState<NewPracticalSessionS
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedFacultyAssignmentId == null) {
-      AcadexSnackBar.showError(context, 'Please select a teaching assignment for this practical');
+      AcadexSnackBar.showError(
+        context,
+        'Please select a teaching assignment for this practical',
+      );
       return;
     }
 
@@ -78,18 +80,29 @@ class _NewPracticalSessionScreenState extends ConsumerState<NewPracticalSessionS
     try {
       final sessNum = int.tryParse(_sessionNumberController.text.trim()) ?? 1;
 
-      final session = await ref.read(practicalActionProvider.notifier).createSession({
-        'facultyAssignmentId': _selectedFacultyAssignmentId,
-        'topic': _topicController.text.trim(),
-        'sessionNumber': sessNum,
-        'scheduledDate': _scheduledDate.toIso8601String(),
-        'startTime': _startTimeController.text.trim().isNotEmpty ? _startTimeController.text.trim() : null,
-        'endTime': _endTimeController.text.trim().isNotEmpty ? _endTimeController.text.trim() : null,
-        'instructions': _instructionsController.text.trim().isNotEmpty ? _instructionsController.text.trim() : null,
-      });
+      final session = await ref
+          .read(practicalActionProvider.notifier)
+          .createSession({
+            'facultyAssignmentId': _selectedFacultyAssignmentId,
+            'topic': _topicController.text.trim(),
+            'sessionNumber': sessNum,
+            'scheduledDate': _scheduledDate.toIso8601String(),
+            'startTime': _startTimeController.text.trim().isNotEmpty
+                ? _startTimeController.text.trim()
+                : null,
+            'endTime': _endTimeController.text.trim().isNotEmpty
+                ? _endTimeController.text.trim()
+                : null,
+            'instructions': _instructionsController.text.trim().isNotEmpty
+                ? _instructionsController.text.trim()
+                : null,
+          });
 
       if (mounted) {
-        AcadexSnackBar.showSuccess(context, 'Practical lab session scheduled successfully!');
+        AcadexSnackBar.showSuccess(
+          context,
+          'Practical lab session scheduled successfully!',
+        );
         if (session != null) {
           context.pushReplacement('/practicals/${session.id}');
         } else {
@@ -114,16 +127,22 @@ class _NewPracticalSessionScreenState extends ConsumerState<NewPracticalSessionS
     final subjects = ref.watch(subjectsProvider).valueOrNull ?? [];
 
     // Filter to practical or all active teaching assignments
-    final List<FacultyAssignment> availableAssignments = myAssignments.isNotEmpty
+    final List<FacultyAssignment> availableAssignments =
+        myAssignments.isNotEmpty
         ? myAssignments
         : (ref.watch(facultyAssignmentsProvider).valueOrNull ?? []);
 
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/practicals'),
         ),
         title: Text(
@@ -144,7 +163,9 @@ class _NewPracticalSessionScreenState extends ConsumerState<NewPracticalSessionS
               Text(
                 'TEACHING CONTEXT',
                 style: AcadexTypography.eyebrow(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
               const SizedBox(height: 6),
@@ -153,24 +174,35 @@ class _NewPracticalSessionScreenState extends ConsumerState<NewPracticalSessionS
                 isExpanded: true,
                 hint: const Text('Select Practical Class / Subject'),
                 decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: AcadexRadius.borderRadiusMd,
                     borderSide: BorderSide(
-                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                      color: isDark
+                          ? AcadexColors.darkHairline
+                          : AcadexColors.hairline,
                     ),
                   ),
                 ),
                 items: availableAssignments.map((fa) {
-                  final sub = subjects.where((s) => s.id == fa.subjectId).firstOrNull;
-                  final label = sub != null ? '${sub.code} - ${sub.name}' : 'Subject (${fa.subjectId})';
+                  final sub = subjects
+                      .where((s) => s.id == fa.subjectId)
+                      .firstOrNull;
+                  final label = sub != null
+                      ? '${sub.code} - ${sub.name}'
+                      : 'Subject (${fa.subjectId})';
                   return DropdownMenuItem<String>(
                     value: fa.id,
                     child: Text(label, overflow: TextOverflow.ellipsis),
                   );
                 }).toList(),
-                onChanged: (val) => setState(() => _selectedFacultyAssignmentId = val),
-                validator: (val) => val == null ? 'Please select a subject' : null,
+                onChanged: (val) =>
+                    setState(() => _selectedFacultyAssignmentId = val),
+                validator: (val) =>
+                    val == null ? 'Please select a subject' : null,
               ),
 
               const SizedBox(height: 16),
@@ -179,7 +211,9 @@ class _NewPracticalSessionScreenState extends ConsumerState<NewPracticalSessionS
               Text(
                 'PRACTICAL DETAILS',
                 style: AcadexTypography.eyebrow(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
               const SizedBox(height: 6),
@@ -188,14 +222,19 @@ class _NewPracticalSessionScreenState extends ConsumerState<NewPracticalSessionS
                 decoration: InputDecoration(
                   labelText: 'Topic / Experiment Title *',
                   hintText: 'e.g. Experiment 3: Stacks & Queues Implementation',
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: AcadexRadius.borderRadiusMd,
                   ),
                 ),
                 validator: (val) {
-                  if (val == null || val.trim().isEmpty) return 'Topic is required';
-                  if (val.trim().length < 2) return 'Topic must be at least 2 characters';
+                  if (val == null || val.trim().isEmpty)
+                    return 'Topic is required';
+                  if (val.trim().length < 2)
+                    return 'Topic must be at least 2 characters';
                   return null;
                 },
               ),
@@ -210,7 +249,10 @@ class _NewPracticalSessionScreenState extends ConsumerState<NewPracticalSessionS
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         labelText: 'Session #',
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
                         ),
@@ -223,21 +265,36 @@ class _NewPracticalSessionScreenState extends ConsumerState<NewPracticalSessionS
                       onTap: _pickDate,
                       borderRadius: AcadexRadius.borderRadiusMd,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 13,
+                        ),
                         decoration: BoxDecoration(
                           borderRadius: AcadexRadius.borderRadiusMd,
                           border: Border.all(
-                            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                            color: isDark
+                                ? AcadexColors.darkHairline
+                                : AcadexColors.hairline,
                           ),
                         ),
                         child: Row(
                           children: [
-                            const Icon(LucideIcons.calendar, size: 16, color: AcadexColors.primary),
+                            const Icon(
+                              LucideIcons.calendar,
+                              size: 16,
+                              color: AcadexColors.primary,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                _scheduledDate.toLocal().toString().substring(0, 10),
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                _scheduledDate.toLocal().toString().substring(
+                                  0,
+                                  10,
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],
@@ -258,7 +315,10 @@ class _NewPracticalSessionScreenState extends ConsumerState<NewPracticalSessionS
                       decoration: InputDecoration(
                         labelText: 'Start Time',
                         hintText: '10:00',
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
                         ),
@@ -272,7 +332,10 @@ class _NewPracticalSessionScreenState extends ConsumerState<NewPracticalSessionS
                       decoration: InputDecoration(
                         labelText: 'End Time',
                         hintText: '12:00',
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
                         ),
@@ -288,7 +351,9 @@ class _NewPracticalSessionScreenState extends ConsumerState<NewPracticalSessionS
               Text(
                 'INSTRUCTIONS & OBJECTIVES',
                 style: AcadexTypography.eyebrow(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
               const SizedBox(height: 6),
@@ -296,7 +361,8 @@ class _NewPracticalSessionScreenState extends ConsumerState<NewPracticalSessionS
                 controller: _instructionsController,
                 maxLines: 4,
                 decoration: InputDecoration(
-                  hintText: 'Add lab instructions, prerequisites, or experiment guidelines for students...',
+                  hintText:
+                      'Add lab instructions, prerequisites, or experiment guidelines for students...',
                   contentPadding: const EdgeInsets.all(12),
                   border: OutlineInputBorder(
                     borderRadius: AcadexRadius.borderRadiusMd,
@@ -311,7 +377,9 @@ class _NewPracticalSessionScreenState extends ConsumerState<NewPracticalSessionS
                 width: double.infinity,
                 height: 48,
                 child: AcadexButton(
-                  label: _isSaving ? 'Scheduling...' : 'Schedule Practical Session',
+                  label: _isSaving
+                      ? 'Scheduling...'
+                      : 'Schedule Practical Session',
                   icon: LucideIcons.calendarCheck,
                   onPressed: _isSaving ? null : _handleSubmit,
                 ),

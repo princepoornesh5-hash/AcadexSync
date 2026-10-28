@@ -81,12 +81,16 @@ class MockFileStorageRepository implements FileStorageRepository {
   }
 
   @override
-  Future<void> updateMetadata(String storagePath, Map<String, String> newMetadata) async {
+  Future<void> updateMetadata(
+    String storagePath,
+    Map<String, String> newMetadata,
+  ) async {
     if (!_storage.containsKey(storagePath)) {
       throw Exception('Object not found at path: $storagePath');
     }
     final existing = _storage[storagePath]!;
-    final updatedMetadata = Map<String, dynamic>.from(existing.metadata)..addAll(newMetadata);
+    final updatedMetadata = Map<String, dynamic>.from(existing.metadata)
+      ..addAll(newMetadata);
     _storage[storagePath] = existing.copyWith(
       metadata: updatedMetadata,
       updatedAt: DateTime.now(),

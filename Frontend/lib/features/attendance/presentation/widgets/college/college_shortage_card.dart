@@ -13,16 +13,13 @@ class CollegeShortageCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isCritical = shortage.status == ShortageStatus.critical;
     final color = isCritical ? AcadexColors.error : AcadexColors.warning;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
         borderRadius: AcadexRadius.borderRadiusLg,
-        border: Border.all(
-          color: color.withValues(alpha: 0.35),
-          width: 1,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.35), width: 1),
         boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
       ),
       child: Padding(
@@ -40,7 +37,9 @@ class CollegeShortageCard extends StatelessWidget {
               child: Center(
                 child: Text(
                   "${shortage.currentPercentage.toInt()}%",
-                  style: AcadexTypography.title(color: color).copyWith(fontSize: 14),
+                  style: AcadexTypography.title(
+                    color: color,
+                  ).copyWith(fontSize: 14),
                 ),
               ),
             ),
@@ -66,7 +65,9 @@ class CollegeShortageCard extends StatelessWidget {
                   Text(
                     shortage.semester,
                     style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
                 ],

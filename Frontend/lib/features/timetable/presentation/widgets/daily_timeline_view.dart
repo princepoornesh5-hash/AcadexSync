@@ -58,10 +58,13 @@ class DailyTimelineView extends ConsumerWidget {
     String? resolvedFaId = entry.facultyAssignmentId;
     if (resolvedFaId == null || resolvedFaId.isEmpty) {
       final myAssignments = ref.read(myFacultyAssignmentsProvider);
-      final match = myAssignments.where((a) =>
-        a.subjectId == entry.subjectId &&
-        (a.sectionId == null || a.sectionId == entry.sectionId)
-      ).firstOrNull;
+      final match = myAssignments
+          .where(
+            (a) =>
+                a.subjectId == entry.subjectId &&
+                (a.sectionId == null || a.sectionId == entry.sectionId),
+          )
+          .firstOrNull;
       if (match != null) {
         resolvedFaId = match.id;
       }
@@ -70,7 +73,9 @@ class DailyTimelineView extends ConsumerWidget {
     if (resolvedFaId == null || resolvedFaId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Cannot mark attendance: This timetable entry is not associated with an authorized teaching assignment.'),
+          content: Text(
+            'Cannot mark attendance: This timetable entry is not associated with an authorized teaching assignment.',
+          ),
           backgroundColor: AcadexColors.error,
         ),
       );
@@ -164,20 +169,24 @@ class DailyTimelineView extends ConsumerWidget {
                   children: [
                     Text(
                       dayName,
-                      style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface).copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
+                      style: AcadexTypography.title(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ).copyWith(fontWeight: FontWeight.w700, fontSize: 14),
                     ),
                     Text(
                       '• $formattedFullDate',
                       style: AcadexTypography.caption(
-                        color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                        color:
+                            Theme.of(context).textTheme.bodySmall?.color ??
+                            AcadexColors.inkMuted,
                       ).copyWith(fontSize: 12),
                     ),
                     if (isHoliday) ...[
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: AcadexColors.warning.withValues(alpha: 0.15),
                           borderRadius: AcadexRadius.borderRadiusXs,
@@ -200,7 +209,9 @@ class DailyTimelineView extends ConsumerWidget {
                       ? 'No regular classes scheduled'
                       : '${entries.length} ${entries.length == 1 ? "class" : "classes"} scheduled',
                   style: AcadexTypography.caption(
-                    color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                    color:
+                        Theme.of(context).textTheme.bodySmall?.color ??
+                        AcadexColors.inkMuted,
                   ),
                 ),
               ],
@@ -218,17 +229,27 @@ class DailyTimelineView extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 40),
+              const Icon(
+                LucideIcons.alertCircle,
+                color: AcadexColors.error,
+                size: 40,
+              ),
               const SizedBox(height: 12),
               Text(
                 'Unable to load timetable schedule',
-                style: AcadexTypography.heading3(color: Theme.of(context).colorScheme.onSurface),
+                style: AcadexTypography.heading3(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
                 errorMessage!,
                 textAlign: TextAlign.center,
-                style: AcadexTypography.caption(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                style: AcadexTypography.caption(
+                  color:
+                      Theme.of(context).textTheme.bodySmall?.color ??
+                      AcadexColors.inkMuted,
+                ),
               ),
               if (onRetry != null) ...[
                 const SizedBox(height: 16),
@@ -274,9 +295,13 @@ class DailyTimelineView extends ConsumerWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
             decoration: BoxDecoration(
-              color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
+              color: isDark
+                  ? Theme.of(context).colorScheme.surface
+                  : Colors.white,
               borderRadius: AcadexRadius.borderRadiusLg,
-              border: Border.all(color: AcadexColors.warning.withValues(alpha: 0.4)),
+              border: Border.all(
+                color: AcadexColors.warning.withValues(alpha: 0.4),
+              ),
               boxShadow: isDark ? null : AcadexShadows.lightSm,
             ),
             child: Column(
@@ -297,7 +322,10 @@ class DailyTimelineView extends ConsumerWidget {
                 ),
                 const SizedBox(height: 14),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AcadexColors.warning.withValues(alpha: 0.15),
                     borderRadius: AcadexRadius.borderRadiusSm,
@@ -314,11 +342,12 @@ class DailyTimelineView extends ConsumerWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  holidayReason != null && holidayReason.isNotEmpty ? holidayReason : 'Academic Holiday',
-                  style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface).copyWith(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 18,
-                  ),
+                  holidayReason != null && holidayReason.isNotEmpty
+                      ? holidayReason
+                      : 'Academic Holiday',
+                  style: AcadexTypography.title(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ).copyWith(fontWeight: FontWeight.w800, fontSize: 18),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 6),
@@ -326,7 +355,9 @@ class DailyTimelineView extends ConsumerWidget {
                   formattedFullDate,
                   textAlign: TextAlign.center,
                   style: AcadexTypography.caption(
-                    color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                    color:
+                        Theme.of(context).textTheme.bodySmall?.color ??
+                        AcadexColors.inkMuted,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -334,7 +365,9 @@ class DailyTimelineView extends ConsumerWidget {
                   'No regular classes scheduled.',
                   textAlign: TextAlign.center,
                   style: AcadexTypography.body(
-                    color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                    color:
+                        Theme.of(context).textTheme.bodySmall?.color ??
+                        AcadexColors.inkMuted,
                   ).copyWith(fontSize: 13),
                 ),
               ],
@@ -357,9 +390,13 @@ class DailyTimelineView extends ConsumerWidget {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
+                  color: isDark
+                      ? Theme.of(context).colorScheme.surface
+                      : Colors.white,
                   borderRadius: AcadexRadius.borderRadiusLg,
-                  border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AcadexColors.primary.withValues(alpha: 0.3),
+                  ),
                   boxShadow: isDark ? null : AcadexShadows.lightSm,
                 ),
                 child: Row(
@@ -371,7 +408,11 @@ class DailyTimelineView extends ConsumerWidget {
                         color: AcadexColors.primary.withValues(alpha: 0.12),
                         borderRadius: AcadexRadius.borderRadiusMd,
                       ),
-                      child: const Icon(LucideIcons.calendar, size: 20, color: AcadexColors.primary),
+                      child: const Icon(
+                        LucideIcons.calendar,
+                        size: 20,
+                        color: AcadexColors.primary,
+                      ),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -379,9 +420,14 @@ class DailyTimelineView extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
-                              color: AcadexColors.primary.withValues(alpha: 0.12),
+                              color: AcadexColors.primary.withValues(
+                                alpha: 0.12,
+                              ),
                               borderRadius: AcadexRadius.borderRadiusXs,
                             ),
                             child: Text(
@@ -396,34 +442,52 @@ class DailyTimelineView extends ConsumerWidget {
                           const SizedBox(height: 6),
                           Text(
                             event.title,
-                            style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface).copyWith(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                            ),
+                            style:
+                                AcadexTypography.title(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ).copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                ),
                           ),
                           if (event.description.isNotEmpty) ...[
                             const SizedBox(height: 4),
                             Text(
                               event.description,
                               style: AcadexTypography.caption(
-                                color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall?.color ??
+                                    AcadexColors.inkMuted,
                               ),
                             ),
                           ],
-                          if (event.location != null && event.location!.isNotEmpty) ...[
+                          if (event.location != null &&
+                              event.location!.isNotEmpty) ...[
                             const SizedBox(height: 6),
                             Row(
                               children: [
                                 Icon(
                                   LucideIcons.mapPin,
                                   size: 13,
-                                  color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall?.color ??
+                                      AcadexColors.inkMuted,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   event.location!,
                                   style: AcadexTypography.caption(
-                                    color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall?.color ??
+                                        AcadexColors.inkMuted,
                                   ).copyWith(fontSize: 12),
                                 ),
                               ],
@@ -442,7 +506,9 @@ class DailyTimelineView extends ConsumerWidget {
                 child: Text(
                   'No regular timetable classes scheduled on this day.',
                   style: AcadexTypography.caption(
-                    color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                    color:
+                        Theme.of(context).textTheme.bodySmall?.color ??
+                        AcadexColors.inkMuted,
                   ),
                 ),
               ),
@@ -459,9 +525,13 @@ class DailyTimelineView extends ConsumerWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
             decoration: BoxDecoration(
-              color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
+              color: isDark
+                  ? Theme.of(context).colorScheme.surface
+                  : Colors.white,
               borderRadius: AcadexRadius.borderRadiusLg,
-              border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.6)),
+              border: Border.all(
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.6),
+              ),
               boxShadow: isDark ? null : AcadexShadows.lightSm,
             ),
             child: Column(
@@ -483,17 +553,18 @@ class DailyTimelineView extends ConsumerWidget {
                 const SizedBox(height: 16),
                 Text(
                   'No classes scheduled',
-                  style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface).copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
+                  style: AcadexTypography.title(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ).copyWith(fontWeight: FontWeight.w700, fontSize: 16),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   formattedFullDate,
                   textAlign: TextAlign.center,
                   style: AcadexTypography.caption(
-                    color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                    color:
+                        Theme.of(context).textTheme.bodySmall?.color ??
+                        AcadexColors.inkMuted,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -503,7 +574,9 @@ class DailyTimelineView extends ConsumerWidget {
                       : 'No classes are scheduled for your section on this date.',
                   textAlign: TextAlign.center,
                   style: AcadexTypography.caption(
-                    color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                    color:
+                        Theme.of(context).textTheme.bodySmall?.color ??
+                        AcadexColors.inkMuted,
                   ),
                 ),
               ],
@@ -530,11 +603,17 @@ class DailyTimelineView extends ConsumerWidget {
             decoration: BoxDecoration(
               color: AcadexColors.primary.withValues(alpha: 0.08),
               borderRadius: AcadexRadius.borderRadiusMd,
-              border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.2)),
+              border: Border.all(
+                color: AcadexColors.primary.withValues(alpha: 0.2),
+              ),
             ),
             child: Row(
               children: [
-                const Icon(LucideIcons.info, size: 16, color: AcadexColors.primary),
+                const Icon(
+                  LucideIcons.info,
+                  size: 16,
+                  color: AcadexColors.primary,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -574,7 +653,10 @@ class DailyTimelineView extends ConsumerWidget {
           );
 
           final timeLabel = _formatTimeLabel(entry.startTime);
-          final timeRangeText = _formatTimeRange(entry.startTime, entry.endTime);
+          final timeRangeText = _formatTimeRange(
+            entry.startTime,
+            entry.endTime,
+          );
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 14),
@@ -594,7 +676,9 @@ class DailyTimelineView extends ConsumerWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                            color:
+                                Theme.of(context).textTheme.bodySmall?.color ??
+                                AcadexColors.inkMuted,
                           ),
                         ),
                       ),
@@ -603,7 +687,9 @@ class DailyTimelineView extends ConsumerWidget {
                         width: 1.5,
                         height: 50,
                         margin: const EdgeInsets.only(left: 12),
-                        color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.5),
                       ),
                     ],
                   ),
@@ -622,9 +708,15 @@ class DailyTimelineView extends ConsumerWidget {
                       borderRadius: AcadexRadius.borderRadiusLg,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
+                          color: isDark
+                              ? Theme.of(context).colorScheme.surface
+                              : Colors.white,
                           borderRadius: AcadexRadius.borderRadiusLg,
-                          border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.6)),
+                          border: Border.all(
+                            color: Theme.of(
+                              context,
+                            ).dividerColor.withValues(alpha: 0.6),
+                          ),
                           boxShadow: isDark ? null : AcadexShadows.lightSm,
                         ),
                         padding: const EdgeInsets.all(16),
@@ -635,19 +727,34 @@ class DailyTimelineView extends ConsumerWidget {
                             if (entry.isSubstituted) ...[
                               Container(
                                 margin: const EdgeInsets.only(bottom: 6),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AcadexColors.warning.withValues(alpha: 0.15),
+                                  color: AcadexColors.warning.withValues(
+                                    alpha: 0.15,
+                                  ),
                                   borderRadius: AcadexRadius.borderRadiusSm,
-                                  border: Border.all(color: AcadexColors.warning.withValues(alpha: 0.3)),
+                                  border: Border.all(
+                                    color: AcadexColors.warning.withValues(
+                                      alpha: 0.3,
+                                    ),
+                                  ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.swap_horiz_rounded, size: 14, color: AcadexColors.warning),
+                                    const Icon(
+                                      Icons.swap_horiz_rounded,
+                                      size: 14,
+                                      color: AcadexColors.warning,
+                                    ),
                                     const SizedBox(width: 4),
                                     Text(
-                                      isFaculty ? 'Substitute Duty' : 'Substitute: $facultyName',
+                                      isFaculty
+                                          ? 'Substitute Duty'
+                                          : 'Substitute: $facultyName',
                                       style: const TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.bold,
@@ -660,11 +767,16 @@ class DailyTimelineView extends ConsumerWidget {
                             ],
                             Text(
                               subjectName,
-                              style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface).copyWith(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 16,
-                                letterSpacing: -0.2,
-                              ),
+                              style:
+                                  AcadexTypography.title(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                  ).copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 16,
+                                    letterSpacing: -0.2,
+                                  ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -676,16 +788,25 @@ class DailyTimelineView extends ConsumerWidget {
                                 Icon(
                                   LucideIcons.clock,
                                   size: 14,
-                                  color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall?.color ??
+                                      AcadexColors.inkMuted,
                                 ),
                                 const SizedBox(width: 6),
                                 Flexible(
                                   child: Text(
                                     timeRangeText,
-                                    style: AcadexTypography.bodySmall(color: Theme.of(context).colorScheme.onSurface).copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13,
-                                    ),
+                                    style:
+                                        AcadexTypography.bodySmall(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                        ).copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                        ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -694,7 +815,12 @@ class DailyTimelineView extends ConsumerWidget {
                             ),
 
                             const SizedBox(height: 10),
-                            Divider(height: 1, color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
+                            Divider(
+                              height: 1,
+                              color: Theme.of(
+                                context,
+                              ).dividerColor.withValues(alpha: 0.5),
+                            ),
                             const SizedBox(height: 10),
 
                             // Metadata Row: Room, Section, and Faculty (if student)
@@ -711,15 +837,24 @@ class DailyTimelineView extends ConsumerWidget {
                                       Icon(
                                         LucideIcons.mapPin,
                                         size: 13,
-                                        color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).textTheme.bodySmall?.color ??
+                                            AcadexColors.inkMuted,
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
-                                        entry.building != null && entry.building!.isNotEmpty
+                                        entry.building != null &&
+                                                entry.building!.isNotEmpty
                                             ? '${entry.building} • ${entry.roomNumber}'
                                             : 'Room ${entry.roomNumber}',
                                         style: AcadexTypography.caption(
-                                          color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).textTheme.bodySmall?.color ??
+                                              AcadexColors.inkMuted,
                                         ).copyWith(fontSize: 12),
                                       ),
                                     ],
@@ -727,9 +862,14 @@ class DailyTimelineView extends ConsumerWidget {
 
                                 // Section
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                                    color: Theme.of(
+                                      context,
+                                    ).dividerColor.withValues(alpha: 0.1),
                                     borderRadius: AcadexRadius.borderRadiusXs,
                                   ),
                                   child: Text(
@@ -737,7 +877,11 @@ class DailyTimelineView extends ConsumerWidget {
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
-                                      color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall?.color ??
+                                          AcadexColors.inkMuted,
                                     ),
                                   ),
                                 ),
@@ -750,13 +894,21 @@ class DailyTimelineView extends ConsumerWidget {
                                       Icon(
                                         LucideIcons.user,
                                         size: 13,
-                                        color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).textTheme.bodySmall?.color ??
+                                            AcadexColors.inkMuted,
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
                                         facultyName,
                                         style: AcadexTypography.caption(
-                                          color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).textTheme.bodySmall?.color ??
+                                              AcadexColors.inkMuted,
                                         ).copyWith(fontSize: 12),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -772,16 +924,30 @@ class DailyTimelineView extends ConsumerWidget {
                               Align(
                                 alignment: Alignment.centerLeft,
                                 child: ElevatedButton.icon(
-                                  onPressed: () => _onMarkAttendance(context, ref, entry, subjectName, sectionName),
-                                  icon: const Icon(LucideIcons.clipboardCheck, size: 15),
+                                  onPressed: () => _onMarkAttendance(
+                                    context,
+                                    ref,
+                                    entry,
+                                    subjectName,
+                                    sectionName,
+                                  ),
+                                  icon: const Icon(
+                                    LucideIcons.clipboardCheck,
+                                    size: 15,
+                                  ),
                                   label: const Text('Mark Attendance'),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AcadexColors.primary,
                                     foregroundColor: Colors.white,
                                     elevation: 0,
                                     visualDensity: VisualDensity.compact,
-                                    shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: AcadexRadius.borderRadiusMd,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 8,
+                                    ),
                                   ),
                                 ),
                               ),

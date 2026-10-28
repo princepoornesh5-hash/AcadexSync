@@ -160,11 +160,7 @@ class AcadexScoreboardCard extends StatelessWidget {
         color: Color(0xFF60A5FA),
         shape: BoxShape.circle,
         boxShadow: [
-          BoxShadow(
-            color: Color(0xFF3B82F6),
-            blurRadius: 3,
-            spreadRadius: 0.5,
-          ),
+          BoxShadow(color: Color(0xFF3B82F6), blurRadius: 3, spreadRadius: 0.5),
         ],
       ),
     );
@@ -187,16 +183,9 @@ class AcadexScoreboardCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF161F30),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: const Color(0xFF283548),
-          width: 1.0,
-        ),
+        border: Border.all(color: const Color(0xFF283548), width: 1.0),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 3,
-            offset: Offset(0, 1),
-          ),
+          BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
         ],
       ),
       child: Stack(
@@ -220,16 +209,12 @@ class AcadexScoreboardCard extends StatelessWidget {
 
           // Hidden test/semantics node during animation; full visible text when calm
           if (isWiping && oldHours != null)
-            Opacity(
-              opacity: 0.0,
-              child: _buildDigitText(oldHours, fontSize),
-            )
+            Opacity(opacity: 0.0, child: _buildDigitText(oldHours, fontSize))
           else if (isWriting)
-            Opacity(
-              opacity: 0.0,
-              child: _buildDigitText(hours, fontSize),
-            )
-          else if (oldHours != null && wipeProgress == 0.0 && writeProgress == 0.0)
+            Opacity(opacity: 0.0, child: _buildDigitText(hours, fontSize))
+          else if (oldHours != null &&
+              wipeProgress == 0.0 &&
+              writeProgress == 0.0)
             _buildDigitText(oldHours, fontSize)
           else
             _buildDigitText(hours, fontSize),
@@ -268,16 +253,9 @@ class AcadexScoreboardCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF161F30),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: const Color(0xFF283548),
-          width: 1.0,
-        ),
+        border: Border.all(color: const Color(0xFF283548), width: 1.0),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 3,
-            offset: Offset(0, 1),
-          ),
+          BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
         ],
       ),
       child: Stack(
@@ -301,16 +279,12 @@ class AcadexScoreboardCard extends StatelessWidget {
 
           // Hidden test/semantics node during animation; full visible text when calm
           if (isWiping && oldDigits != null)
-            Opacity(
-              opacity: 0.0,
-              child: _buildDigitText(oldDigits, fontSize),
-            )
+            Opacity(opacity: 0.0, child: _buildDigitText(oldDigits, fontSize))
           else if (isWriting)
-            Opacity(
-              opacity: 0.0,
-              child: _buildDigitText(digits, fontSize),
-            )
-          else if (oldDigits != null && wipeProgress == 0.0 && writeProgress == 0.0)
+            Opacity(opacity: 0.0, child: _buildDigitText(digits, fontSize))
+          else if (oldDigits != null &&
+              wipeProgress == 0.0 &&
+              writeProgress == 0.0)
             _buildDigitText(oldDigits, fontSize)
           else
             _buildDigitText(digits, fontSize),
@@ -349,16 +323,9 @@ class AcadexScoreboardCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF161F30),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: const Color(0xFF283548),
-          width: 1.0,
-        ),
+        border: Border.all(color: const Color(0xFF283548), width: 1.0),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 3,
-            offset: Offset(0, 1),
-          ),
+          BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
         ],
       ),
       child: Stack(
@@ -382,16 +349,15 @@ class AcadexScoreboardCard extends StatelessWidget {
 
           // Hidden test/semantics node during animation; full visible text when calm
           if (isWiping && oldPeriod != null)
-            Opacity(
-              opacity: 0.0,
-              child: _buildPeriodText(oldPeriod, fontSize),
-            )
+            Opacity(opacity: 0.0, child: _buildPeriodText(oldPeriod, fontSize))
           else if (isWriting)
             Opacity(
               opacity: 0.0,
               child: _buildPeriodText(currentPeriod, fontSize),
             )
-          else if (oldPeriod != null && wipeProgress == 0.0 && writeProgress == 0.0)
+          else if (oldPeriod != null &&
+              wipeProgress == 0.0 &&
+              writeProgress == 0.0)
             _buildPeriodText(oldPeriod, fontSize)
           else
             _buildPeriodText(currentPeriod, fontSize),

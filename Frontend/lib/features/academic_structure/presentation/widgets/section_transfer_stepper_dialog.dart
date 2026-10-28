@@ -34,10 +34,12 @@ class SectionTransferStepperDialog extends ConsumerStatefulWidget {
   }
 
   @override
-  ConsumerState<SectionTransferStepperDialog> createState() => _SectionTransferStepperDialogState();
+  ConsumerState<SectionTransferStepperDialog> createState() =>
+      _SectionTransferStepperDialogState();
 }
 
-class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferStepperDialog> {
+class _SectionTransferStepperDialogState
+    extends ConsumerState<SectionTransferStepperDialog> {
   int _currentStep = 0;
   final Set<String> _selectedStudentIds = {};
   String _studentSearchQuery = '';
@@ -53,12 +55,14 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
     super.initState();
     _selectedStudentIds.addAll(widget.initialStudents.map((s) => s.id));
     if (widget.initialStudents.isNotEmpty) {
-      _currentStep = 1; // Move directly to Target Section if students pre-selected
+      _currentStep =
+          1; // Move directly to Target Section if students pre-selected
     }
   }
 
   int get _eligibleCount => _validationResults.where((r) => r.canMove).length;
-  int get _ineligibleCount => _validationResults.where((r) => !r.canMove).length;
+  int get _ineligibleCount =>
+      _validationResults.where((r) => !r.canMove).length;
 
   Future<void> _runValidation() async {
     if (_targetSectionId == null || _selectedStudentIds.isEmpty) return;
@@ -95,26 +99,30 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
   }
 
   Future<void> _executeTransfer() async {
-    final eligibleIds = _validationResults.where((r) => r.canMove).map((r) => r.studentId).toList();
+    final eligibleIds = _validationResults
+        .where((r) => r.canMove)
+        .map((r) => r.studentId)
+        .toList();
     if (eligibleIds.isEmpty || _targetSectionId == null) return;
 
     setState(() {
       _isProcessing = true;
       _progress = 0.1;
-      _statusMessage = 'Initiating transfer for ${eligibleIds.length} students...';
+      _statusMessage =
+          'Initiating transfer for ${eligibleIds.length} students...';
     });
 
     try {
       await Future.delayed(const Duration(milliseconds: 200));
       setState(() {
         _progress = 0.5;
-        _statusMessage = 'Updating section rosters & preserving academic history...';
+        _statusMessage =
+            'Updating section rosters & preserving academic history...';
       });
 
-      await ref.read(sectionsProvider.notifier).executeBulkTransfer(
-        eligibleIds,
-        _targetSectionId!,
-      );
+      await ref
+          .read(sectionsProvider.notifier)
+          .executeBulkTransfer(eligibleIds, _targetSectionId!);
 
       setState(() {
         _progress = 1.0;
@@ -149,8 +157,12 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
     final isDark = theme.brightness == Brightness.dark;
 
     return Dialog(
-      backgroundColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.lg)),
+      backgroundColor: isDark
+          ? AcadexColors.darkSurfaceCard
+          : AcadexColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AcadexRadius.lg),
+      ),
       child: Container(
         width: 680,
         constraints: const BoxConstraints(maxHeight: 680),
@@ -167,16 +179,32 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
                     color: AcadexColors.secondary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(AcadexRadius.md),
                   ),
-                  child: const Icon(LucideIcons.arrowRightLeft, color: AcadexColors.secondary, size: 22),
+                  child: const Icon(
+                    LucideIcons.arrowRightLeft,
+                    color: AcadexColors.secondary,
+                    size: 22,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Section Transfer Engine", style: AcadexTypography.heading3(color: theme.colorScheme.onSurface)),
+                      Text(
+                        "Section Transfer Engine",
+                        style: AcadexTypography.heading3(
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
                       const SizedBox(height: 2),
-                      Text("Move students between sections with automatic capacity validation.", style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+                      Text(
+                        "Move students between sections with automatic capacity validation.",
+                        style: AcadexTypography.caption(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.7,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -246,22 +274,32 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
                 color: isCompleted
                     ? AcadexColors.secondary
                     : isActive
-                        ? AcadexColors.secondary.withValues(alpha: 0.15)
-                        : theme.dividerColor.withValues(alpha: 0.5),
+                    ? AcadexColors.secondary.withValues(alpha: 0.15)
+                    : theme.dividerColor.withValues(alpha: 0.5),
                 border: Border.all(
-                  color: (isActive || isCompleted) ? AcadexColors.secondary : Colors.transparent,
+                  color: (isActive || isCompleted)
+                      ? AcadexColors.secondary
+                      : Colors.transparent,
                   width: 1.5,
                 ),
               ),
               child: Center(
                 child: isCompleted
-                    ? const Icon(LucideIcons.check, size: 14, color: Colors.white)
+                    ? const Icon(
+                        LucideIcons.check,
+                        size: 14,
+                        color: Colors.white,
+                      )
                     : Text(
                         "${stepIdx + 1}",
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: isActive ? AcadexColors.secondary : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: isActive
+                              ? AcadexColors.secondary
+                              : theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
+                                ),
                         ),
                       ),
               ),
@@ -272,7 +310,9 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                color: isActive ? theme.colorScheme.onSurface : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                color: isActive
+                    ? theme.colorScheme.onSurface
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
           ],
@@ -298,14 +338,19 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
 
   // STEP 1: Select Students
   Widget _buildStep1SelectStudents(ThemeData theme) {
-    final studentState = ref.watch(studentsProvider((sectionId: widget.sourceSectionId, departmentId: null)));
+    final studentState = ref.watch(
+      studentsProvider((sectionId: widget.sourceSectionId, departmentId: null)),
+    );
     final secMap = ref.watch(sectionMapProvider);
     final allStudents = studentState.items;
     final filtered = allStudents.where((s) {
-      if (widget.sourceSectionId != null && s.sectionId != widget.sourceSectionId) return false;
+      if (widget.sourceSectionId != null &&
+          s.sectionId != widget.sourceSectionId)
+        return false;
       if (_studentSearchQuery.isNotEmpty) {
         final q = _studentSearchQuery.toLowerCase();
-        return s.name.toLowerCase().contains(q) || s.rollNumber.toLowerCase().contains(q);
+        return s.name.toLowerCase().contains(q) ||
+            s.rollNumber.toLowerCase().contains(q);
       }
       return true;
     }).toList();
@@ -322,7 +367,9 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
                   hintText: "Search students by name or roll number...",
                   prefixIcon: const Icon(LucideIcons.search, size: 18),
                   isDense: true,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AcadexRadius.md),
+                  ),
                 ),
                 onChanged: (v) => setState(() => _studentSearchQuery = v),
               ),
@@ -330,10 +377,16 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
             const SizedBox(width: 12),
             TextButton.icon(
               icon: Icon(
-                _selectedStudentIds.length == filtered.length ? LucideIcons.checkSquare : LucideIcons.square,
+                _selectedStudentIds.length == filtered.length
+                    ? LucideIcons.checkSquare
+                    : LucideIcons.square,
                 size: 18,
               ),
-              label: Text(_selectedStudentIds.length == filtered.length ? "Deselect All" : "Select All"),
+              label: Text(
+                _selectedStudentIds.length == filtered.length
+                    ? "Deselect All"
+                    : "Select All",
+              ),
               onPressed: () {
                 setState(() {
                   if (_selectedStudentIds.length == filtered.length) {
@@ -351,14 +404,21 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(
             "${_selectedStudentIds.length} student(s) selected",
-            style: AcadexTypography.caption(color: AcadexColors.secondary).copyWith(fontWeight: FontWeight.bold),
+            style: AcadexTypography.caption(
+              color: AcadexColors.secondary,
+            ).copyWith(fontWeight: FontWeight.bold),
           ),
         ),
         const SizedBox(height: 8),
         Expanded(
           child: filtered.isEmpty
               ? Center(
-                  child: Text("No matching students found.", style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+                  child: Text(
+                    "No matching students found.",
+                    style: AcadexTypography.caption(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
                 )
               : ListView.separated(
                   itemCount: filtered.length,
@@ -371,8 +431,20 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
                       value: isSelected,
                       dense: true,
                       activeColor: AcadexColors.secondary,
-                      title: Text(student.name, style: AcadexTypography.body(color: theme.colorScheme.onSurface).copyWith(fontWeight: FontWeight.w600)),
-                      subtitle: Text("Roll: ${student.rollNumber} • ${AcadexEntityFormatters.formatSectionLabel(secMap[student.sectionId]?.name, rawId: student.sectionId, fallback: 'Section Not Assigned')}", style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+                      title: Text(
+                        student.name,
+                        style: AcadexTypography.body(
+                          color: theme.colorScheme.onSurface,
+                        ).copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: Text(
+                        "Roll: ${student.rollNumber} • ${AcadexEntityFormatters.formatSectionLabel(secMap[student.sectionId]?.name, rawId: student.sectionId, fallback: 'Section Not Assigned')}",
+                        style: AcadexTypography.caption(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
+                        ),
+                      ),
                       onChanged: (checked) {
                         setState(() {
                           if (checked == true) {
@@ -393,19 +465,36 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
   // STEP 2: Target Section
   Widget _buildStep2TargetSection(ThemeData theme) {
     final sections = ref.watch(sectionsProvider).valueOrNull ?? [];
-    final eligibleSections = sections.where((s) => s.isActive && s.id != widget.sourceSectionId).toList();
+    final eligibleSections = sections
+        .where((s) => s.isActive && s.id != widget.sourceSectionId)
+        .toList();
 
     return Column(
       key: const ValueKey(1),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Select Target Section", style: AcadexTypography.heading3(color: theme.colorScheme.onSurface)),
+        Text(
+          "Select Target Section",
+          style: AcadexTypography.heading3(color: theme.colorScheme.onSurface),
+        ),
         const SizedBox(height: 6),
-        Text("Students will be moved to this section after validating capacity.", style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+        Text(
+          "Students will be moved to this section after validating capacity.",
+          style: AcadexTypography.caption(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
         const SizedBox(height: 16),
         Expanded(
           child: eligibleSections.isEmpty
-              ? Center(child: Text("No alternative sections available.", style: AcadexTypography.body(color: theme.colorScheme.onSurface)))
+              ? Center(
+                  child: Text(
+                    "No alternative sections available.",
+                    style: AcadexTypography.body(
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                )
               : ListView.builder(
                   itemCount: eligibleSections.length,
                   itemBuilder: (context, index) {
@@ -414,10 +503,14 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
 
                     return Consumer(
                       builder: (context, ref, _) {
-                        final capAsync = ref.watch(sectionCapacityInfoProvider(sec.id));
+                        final capAsync = ref.watch(
+                          sectionCapacityInfoProvider(sec.id),
+                        );
 
                         return capAsync.when(
-                          loading: () => const ListTile(title: Text("Loading section capacity...")),
+                          loading: () => const ListTile(
+                            title: Text("Loading section capacity..."),
+                          ),
                           error: (_, __) => ListTile(title: Text(sec.name)),
                           data: (capInfo) {
                             final isFull = capInfo.isFull;
@@ -426,11 +519,19 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
                               margin: const EdgeInsets.only(bottom: 10),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? AcadexColors.secondary.withValues(alpha: 0.08)
+                                    ? AcadexColors.secondary.withValues(
+                                        alpha: 0.08,
+                                      )
                                     : theme.cardColor,
-                                borderRadius: BorderRadius.circular(AcadexRadius.md),
+                                borderRadius: BorderRadius.circular(
+                                  AcadexRadius.md,
+                                ),
                                 border: Border.all(
-                                  color: isSelected ? AcadexColors.secondary : theme.dividerColor.withValues(alpha: 0.6),
+                                  color: isSelected
+                                      ? AcadexColors.secondary
+                                      : theme.dividerColor.withValues(
+                                          alpha: 0.6,
+                                        ),
                                   width: isSelected ? 2 : 1,
                                 ),
                               ),
@@ -439,38 +540,72 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
                                   value: sec.id,
                                   groupValue: _targetSectionId,
                                   activeColor: AcadexColors.secondary,
-                                  onChanged: isFull ? null : (val) => setState(() => _targetSectionId = val),
+                                  onChanged: isFull
+                                      ? null
+                                      : (val) => setState(
+                                          () => _targetSectionId = val,
+                                        ),
                                 ),
                                 title: Row(
                                   children: [
-                                    Text("Section ${sec.name}", style: AcadexTypography.body(color: theme.colorScheme.onSurface).copyWith(fontWeight: FontWeight.bold)),
+                                    Text(
+                                      "Section ${sec.name}",
+                                      style: AcadexTypography.body(
+                                        color: theme.colorScheme.onSurface,
+                                      ).copyWith(fontWeight: FontWeight.bold),
+                                    ),
                                     const SizedBox(width: 10),
                                     if (isFull)
-                                      const AcadexBadge(label: "FULL", variant: AcadexBadgeVariant.warning)
+                                      const AcadexBadge(
+                                        label: "FULL",
+                                        variant: AcadexBadgeVariant.warning,
+                                      )
                                     else
-                                      AcadexBadge(label: "${capInfo.availableSeats} seats left", variant: AcadexBadgeVariant.success),
+                                      AcadexBadge(
+                                        label:
+                                            "${capInfo.availableSeats} seats left",
+                                        variant: AcadexBadgeVariant.success,
+                                      ),
                                   ],
                                 ),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const SizedBox(height: 4),
-                                    Text("Enrolled: ${capInfo.enrolledCount} / ${capInfo.capacity} students (${capInfo.utilizationPercentage.toStringAsFixed(1)}% full)", style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+                                    Text(
+                                      "Enrolled: ${capInfo.enrolledCount} / ${capInfo.capacity} students (${capInfo.utilizationPercentage.toStringAsFixed(1)}% full)",
+                                      style: AcadexTypography.caption(
+                                        color: theme.colorScheme.onSurface
+                                            .withValues(alpha: 0.7),
+                                      ),
+                                    ),
                                     const SizedBox(height: 6),
                                     ClipRRect(
                                       borderRadius: BorderRadius.circular(4),
                                       child: LinearProgressIndicator(
-                                        value: capInfo.capacity > 0 ? (capInfo.enrolledCount / capInfo.capacity).clamp(0.0, 1.0) : 0.0,
-                                        backgroundColor: theme.dividerColor.withValues(alpha: 0.3),
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          capInfo.utilizationPercentage > 90 ? AcadexColors.warning : AcadexColors.secondary,
-                                        ),
+                                        value: capInfo.capacity > 0
+                                            ? (capInfo.enrolledCount /
+                                                      capInfo.capacity)
+                                                  .clamp(0.0, 1.0)
+                                            : 0.0,
+                                        backgroundColor: theme.dividerColor
+                                            .withValues(alpha: 0.3),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              capInfo.utilizationPercentage > 90
+                                                  ? AcadexColors.warning
+                                                  : AcadexColors.secondary,
+                                            ),
                                         minHeight: 6,
                                       ),
                                     ),
                                   ],
                                 ),
-                                onTap: isFull ? null : () => setState(() => _targetSectionId = sec.id),
+                                onTap: isFull
+                                    ? null
+                                    : () => setState(
+                                        () => _targetSectionId = sec.id,
+                                      ),
                               ),
                             );
                           },
@@ -496,22 +631,38 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Pre-Flight Validation Breakdown", style: AcadexTypography.heading3(color: theme.colorScheme.onSurface)),
+                  Text(
+                    "Pre-Flight Validation Breakdown",
+                    style: AcadexTypography.heading3(
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text("${_selectedStudentIds.length} selected • $_eligibleCount eligible • $_ineligibleCount rejected", style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+                  Text(
+                    "${_selectedStudentIds.length} selected • $_eligibleCount eligible • $_ineligibleCount rejected",
+                    style: AcadexTypography.caption(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
                 ],
               ),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: _ineligibleCount == 0 ? AcadexColors.success.withValues(alpha: 0.12) : AcadexColors.warning.withValues(alpha: 0.12),
+                color: _ineligibleCount == 0
+                    ? AcadexColors.success.withValues(alpha: 0.12)
+                    : AcadexColors.warning.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(AcadexRadius.md),
               ),
               child: Text(
-                _ineligibleCount == 0 ? "ALL APPROVED" : "$_ineligibleCount REJECTED",
+                _ineligibleCount == 0
+                    ? "ALL APPROVED"
+                    : "$_ineligibleCount REJECTED",
                 style: TextStyle(
-                  color: _ineligibleCount == 0 ? AcadexColors.success : AcadexColors.warning,
+                  color: _ineligibleCount == 0
+                      ? AcadexColors.success
+                      : AcadexColors.warning,
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),
@@ -529,23 +680,47 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
               return ListTile(
                 dense: true,
                 leading: Icon(
-                  result.canMove ? LucideIcons.checkCircle : LucideIcons.xCircle,
-                  color: result.canMove ? AcadexColors.success : AcadexColors.warning,
+                  result.canMove
+                      ? LucideIcons.checkCircle
+                      : LucideIcons.xCircle,
+                  color: result.canMove
+                      ? AcadexColors.success
+                      : AcadexColors.warning,
                   size: 20,
                 ),
-                title: Text(result.studentName, style: AcadexTypography.body(color: theme.colorScheme.onSurface).copyWith(fontWeight: FontWeight.w600)),
-                subtitle: Text("Roll: ${result.rollNumber}", style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+                title: Text(
+                  result.studentName,
+                  style: AcadexTypography.body(
+                    color: theme.colorScheme.onSurface,
+                  ).copyWith(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  "Roll: ${result.rollNumber}",
+                  style: AcadexTypography.caption(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
                 trailing: result.canMove
-                    ? const AcadexBadge(label: "Eligible", variant: AcadexBadgeVariant.success)
+                    ? const AcadexBadge(
+                        label: "Eligible",
+                        variant: AcadexBadgeVariant.success,
+                      )
                     : Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AcadexColors.warning.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(AcadexRadius.sm),
                         ),
                         child: Text(
                           result.reason ?? "Ineligible",
-                          style: const TextStyle(color: AcadexColors.warning, fontSize: 11, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            color: AcadexColors.warning,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
               );
@@ -566,7 +741,10 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
           children: [
             const CircularProgressIndicator(color: AcadexColors.secondary),
             const SizedBox(height: 20),
-            Text(_statusMessage, style: AcadexTypography.body(color: theme.colorScheme.onSurface)),
+            Text(
+              _statusMessage,
+              style: AcadexTypography.body(color: theme.colorScheme.onSurface),
+            ),
             const SizedBox(height: 16),
             SizedBox(
               width: 320,
@@ -585,9 +763,17 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
       key: const ValueKey(3),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Confirm Section Transfer", style: AcadexTypography.heading3(color: theme.colorScheme.onSurface)),
+        Text(
+          "Confirm Section Transfer",
+          style: AcadexTypography.heading3(color: theme.colorScheme.onSurface),
+        ),
         const SizedBox(height: 6),
-        Text("Please review the final transfer cohort before committing changes.", style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+        Text(
+          "Please review the final transfer cohort before committing changes.",
+          style: AcadexTypography.caption(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+        ),
         const SizedBox(height: 20),
         Container(
           padding: const EdgeInsets.all(16),
@@ -598,11 +784,23 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
           ),
           child: Column(
             children: [
-              _buildSummaryRow(theme, "Transferring Students", "$_eligibleCount active student(s)"),
+              _buildSummaryRow(
+                theme,
+                "Transferring Students",
+                "$_eligibleCount active student(s)",
+              ),
               const Divider(height: 20),
-              _buildSummaryRow(theme, "Target Section", "Section $_targetSectionId"),
+              _buildSummaryRow(
+                theme,
+                "Target Section",
+                "Section $_targetSectionId",
+              ),
               const Divider(height: 20),
-              _buildSummaryRow(theme, "Historical Roster Status", "Preserved immutably in Timeline"),
+              _buildSummaryRow(
+                theme,
+                "Historical Roster Status",
+                "Preserved immutably in Timeline",
+              ),
             ],
           ),
         ),
@@ -621,7 +819,9 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
               Expanded(
                 child: Text(
                   "Historical attendance, notes, and timetable entries will NOT be corrupted. They remain locked to the original section context.",
-                  style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.85)),
+                  style: AcadexTypography.caption(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
+                  ),
                 ),
               ),
             ],
@@ -635,8 +835,18 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
-        Text(value, style: AcadexTypography.body(color: theme.colorScheme.onSurface).copyWith(fontWeight: FontWeight.bold)),
+        Text(
+          label,
+          style: AcadexTypography.caption(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+        Text(
+          value,
+          style: AcadexTypography.body(
+            color: theme.colorScheme.onSurface,
+          ).copyWith(fontWeight: FontWeight.bold),
+        ),
       ],
     );
   }
@@ -678,14 +888,25 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
             else if (_currentStep == 1)
               ElevatedButton.icon(
                 icon: _isValidating
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Icon(LucideIcons.shieldCheck, size: 16),
-                label: Text(_isValidating ? "Validating..." : "Validate Transfer"),
+                label: Text(
+                  _isValidating ? "Validating..." : "Validate Transfer",
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AcadexColors.secondary,
                   foregroundColor: Colors.white,
                 ),
-                onPressed: _targetSectionId == null || _isValidating ? null : _runValidation,
+                onPressed: _targetSectionId == null || _isValidating
+                    ? null
+                    : _runValidation,
               )
             else if (_currentStep == 2)
               ElevatedButton.icon(
@@ -695,7 +916,9 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
                   backgroundColor: AcadexColors.secondary,
                   foregroundColor: Colors.white,
                 ),
-                onPressed: _eligibleCount == 0 ? null : () => setState(() => _currentStep = 3),
+                onPressed: _eligibleCount == 0
+                    ? null
+                    : () => setState(() => _currentStep = 3),
               )
             else if (_currentStep == 3)
               ElevatedButton.icon(

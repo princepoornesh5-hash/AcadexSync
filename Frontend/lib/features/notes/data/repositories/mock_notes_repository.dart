@@ -14,18 +14,17 @@ class MockNotesRepository implements NotesRepository {
   final List<FacultyAssignment> assignments;
   final List<NoteModel> _notes = [];
   bool _initialized = false;
-  
+
   final _controller = StreamController<List<NoteModel>>.broadcast();
 
-  MockNotesRepository({
-    this.currentUser,
-    List<FacultyAssignment>? assignments,
-  }) : assignments = assignments ?? [] {
+  MockNotesRepository({this.currentUser, List<FacultyAssignment>? assignments})
+    : assignments = assignments ?? [] {
     _generateInitialData();
     _initialized = true;
   }
 
-  Future<void> _delay() async => await Future.delayed(const Duration(milliseconds: 200));
+  Future<void> _delay() async =>
+      await Future.delayed(const Duration(milliseconds: 200));
 
   void _emit() {
     if (!_controller.isClosed) {
@@ -41,7 +40,8 @@ class MockNotesRepository implements NotesRepository {
         id: 'note-1',
         title: 'Introduction to Operating Systems',
         description: 'First lecture notes on OS concepts.',
-        content: 'Operating Systems manage computer hardware and software resources...\n\nKey Concepts:\n- Processes\n- Threads\n- Memory Management',
+        content:
+            'Operating Systems manage computer hardware and software resources...\n\nKey Concepts:\n- Processes\n- Threads\n- Memory Management',
         resourceType: ResourceType.textNote,
         chapter: 'Chapter 1: Basics',
         subjectId: 'sub-os',
@@ -106,7 +106,8 @@ class MockNotesRepository implements NotesRepository {
         fileType: 'pdf',
         fileSize: 1024 * 1024 * 2, // 2MB
         fileUrl: 'mock://storage/notes/OSI_Model_Reference.pdf',
-        subjectId: 'sub-os', // Giving to OS so it shows up for default mock user
+        subjectId:
+            'sub-os', // Giving to OS so it shows up for default mock user
         sectionId: 'sec-3a',
         courseId: 'crs-cse',
         departmentId: 'dept-cse',
@@ -136,7 +137,7 @@ class MockNotesRepository implements NotesRepository {
       _generateInitialData();
       _initialized = true;
     }
-    
+
     Future.microtask(() => _emit());
 
     return _controller.stream.map((allNotes) {
@@ -145,27 +146,27 @@ class MockNotesRepository implements NotesRepository {
           // Students only see published notes for their specific section/semester
           return allNotes.where((n) {
             return n.status == NoteStatus.published &&
-                   (collegeId == null || n.collegeId == collegeId) &&
-                   (departmentId == null || n.departmentId == departmentId) &&
-                   (courseId == null || n.courseId == courseId) &&
-                   (semesterId == null || n.semesterId == semesterId) &&
-                   (sectionId == null || n.sectionId == sectionId);
+                (collegeId == null || n.collegeId == collegeId) &&
+                (departmentId == null || n.departmentId == departmentId) &&
+                (courseId == null || n.courseId == courseId) &&
+                (semesterId == null || n.semesterId == semesterId) &&
+                (sectionId == null || n.sectionId == sectionId);
           }).toList();
-          
+
         case AppRole.faculty:
           // Faculty sees all their own notes regardless of status
           return allNotes.where((n) => n.authorUserId == userId).toList();
-          
+
         case AppRole.hod:
           // HODs see all notes in their department
           if (departmentId == null) return [];
           return allNotes.where((n) => n.departmentId == departmentId).toList();
-          
+
         case AppRole.collegeAdmin:
           // College Admins see all notes in their college
           if (collegeId == null) return [];
           return allNotes.where((n) => n.collegeId == collegeId).toList();
-          
+
         case AppRole.superAdmin:
           // Super Admins see all notes
           return allNotes;
@@ -231,23 +232,34 @@ class MockNotesRepository implements NotesRepository {
     await _delay();
     if (currentUser != null) {
       if (currentUser!.role == AppRole.student) {
-        throw const BackendPermissionException("Students cannot author lesson notes");
+        throw const BackendPermissionException(
+          "Students cannot author lesson notes",
+        );
       }
       if (currentUser!.role == AppRole.collegeAdmin) {
-        throw const BackendPermissionException("College admins cannot author lesson notes; lesson materials are faculty-owned");
+        throw const BackendPermissionException(
+          "College admins cannot author lesson notes; lesson materials are faculty-owned",
+        );
       }
       if (currentUser!.role == AppRole.faculty) {
-        if (currentUser!.collegeId != null && currentUser!.collegeId != note.collegeId) {
-          throw const BackendPermissionException("Cross-college note authoring is prohibited");
+        if (currentUser!.collegeId != null &&
+            currentUser!.collegeId != note.collegeId) {
+          throw const BackendPermissionException(
+            "Cross-college note authoring is prohibited",
+          );
         }
         if (assignments.isNotEmpty) {
-          final hasAssignment = assignments.any((a) =>
-              a.facultyId == (currentUser?.id ?? note.facultyId) &&
-              a.subjectId == note.subjectId &&
-              a.sectionId == note.sectionId &&
-              a.isActive);
+          final hasAssignment = assignments.any(
+            (a) =>
+                a.facultyId == (currentUser?.id ?? note.facultyId) &&
+                a.subjectId == note.subjectId &&
+                a.sectionId == note.sectionId &&
+                a.isActive,
+          );
           if (!hasAssignment) {
-            throw const BackendValidationException("Faculty cannot create notes for unassigned subjects or sections");
+            throw const BackendValidationException(
+              "Faculty cannot create notes for unassigned subjects or sections",
+            );
           }
         }
       }
@@ -257,7 +269,9 @@ class MockNotesRepository implements NotesRepository {
       id: note.id.isNotEmpty ? note.id : const Uuid().v4(),
       createdAt: note.createdAt,
       updatedAt: DateTime.now(),
-      publishedAt: note.status == NoteStatus.published ? (note.publishedAt ?? DateTime.now()) : null,
+      publishedAt: note.status == NoteStatus.published
+          ? (note.publishedAt ?? DateTime.now())
+          : null,
     );
     _notes.add(newNote);
     _emit();
@@ -268,14 +282,17 @@ class MockNotesRepository implements NotesRepository {
     await _delay();
     final index = _notes.indexWhere((n) => n.id == note.id);
     if (index == -1) throw Exception('Note not found');
-    
+
     final existing = _notes[index];
     DateTime? publishedAt = existing.publishedAt;
-    
-    if (existing.status != NoteStatus.published && note.status == NoteStatus.published) {
+
+    if (existing.status != NoteStatus.published &&
+        note.status == NoteStatus.published) {
       publishedAt = DateTime.now();
-    } else if (note.status == NoteStatus.unpublished || note.status == NoteStatus.draft) {
-      publishedAt = null; // Maybe keep it? Or reset it. Usually it's reset or kept. Let's reset for now.
+    } else if (note.status == NoteStatus.unpublished ||
+        note.status == NoteStatus.draft) {
+      publishedAt =
+          null; // Maybe keep it? Or reset it. Usually it's reset or kept. Let's reset for now.
     }
 
     _notes[index] = note.copyWith(

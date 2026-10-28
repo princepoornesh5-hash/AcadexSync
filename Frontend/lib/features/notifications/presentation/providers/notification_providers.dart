@@ -13,7 +13,9 @@ import '../../data/repositories/notification_repository.dart';
 import '../../data/repositories/api_notification_repository.dart';
 
 // --- Repository Provider ---
-final apiNotificationRepositoryProvider = Provider<ApiNotificationRepository>((ref) {
+final apiNotificationRepositoryProvider = Provider<ApiNotificationRepository>((
+  ref,
+) {
   return ApiNotificationRepository();
 });
 
@@ -27,19 +29,35 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
   return NotificationService(repo, firestoreService);
 });
 
-final attendanceNotificationDispatcherProvider = Provider<AttendanceNotificationDispatcher>((ref) {
-  final repo = ref.watch(notificationRepositoryProvider);
-  return AttendanceNotificationDispatcher(notificationRepository: repo);
-});
-
+final attendanceNotificationDispatcherProvider =
+    Provider<AttendanceNotificationDispatcher>((ref) {
+      final repo = ref.watch(notificationRepositoryProvider);
+      return AttendanceNotificationDispatcher(notificationRepository: repo);
+    });
 
 // --- Filter Providers ---
-enum NotificationFilter { all, unread, academic, tasks, calendar, system, read, announcements, attendance, notes, timetable, security }
+enum NotificationFilter {
+  all,
+  unread,
+  academic,
+  tasks,
+  calendar,
+  system,
+  read,
+  announcements,
+  attendance,
+  notes,
+  timetable,
+  security,
+}
 
-final notificationFilterProvider = StateProvider<NotificationFilter>((ref) => NotificationFilter.all);
+final notificationFilterProvider = StateProvider<NotificationFilter>(
+  (ref) => NotificationFilter.all,
+);
 
 // --- Stream Notifier Provider ---
-class NotificationsNotifier extends AutoDisposeStreamNotifier<List<NotificationModel>> {
+class NotificationsNotifier
+    extends AutoDisposeStreamNotifier<List<NotificationModel>> {
   @override
   Stream<List<NotificationModel>> build() {
     final authState = ref.watch(authProvider);
@@ -48,7 +66,7 @@ class NotificationsNotifier extends AutoDisposeStreamNotifier<List<NotificationM
     if (authState is! AuthAuthenticated) {
       return Stream.value([]);
     }
-    
+
     final prefs = prefsAsync.value ?? NotificationPreferences.defaults();
 
     final repo = ref.watch(notificationRepositoryProvider);
@@ -58,15 +76,19 @@ class NotificationsNotifier extends AutoDisposeStreamNotifier<List<NotificationM
   Future<void> markAsRead(String id) async {
     final authState = ref.read(authProvider);
     if (authState is! AuthAuthenticated) return;
-    
-    await ref.read(notificationRepositoryProvider).markAsRead(id, authState.user.id);
+
+    await ref
+        .read(notificationRepositoryProvider)
+        .markAsRead(id, authState.user.id);
   }
 
   Future<void> markAsUnread(String id) async {
     final authState = ref.read(authProvider);
     if (authState is! AuthAuthenticated) return;
-    
-    await ref.read(notificationRepositoryProvider).markAsUnread(id, authState.user.id);
+
+    await ref
+        .read(notificationRepositoryProvider)
+        .markAsUnread(id, authState.user.id);
   }
 
   Future<void> archiveNotification(String id) async {
@@ -79,28 +101,36 @@ class NotificationsNotifier extends AutoDisposeStreamNotifier<List<NotificationM
   Future<void> markAllAsRead() async {
     final authState = ref.read(authProvider);
     if (authState is! AuthAuthenticated) return;
-    
-    await ref.read(notificationRepositoryProvider).markAllAsRead(authState.user.id);
+
+    await ref
+        .read(notificationRepositoryProvider)
+        .markAllAsRead(authState.user.id);
   }
 
   Future<void> deleteNotification(String id) async {
     final authState = ref.read(authProvider);
     if (authState is! AuthAuthenticated) return;
-    
-    await ref.read(notificationRepositoryProvider).deleteNotification(id, authState.user.id);
+
+    await ref
+        .read(notificationRepositoryProvider)
+        .deleteNotification(id, authState.user.id);
   }
 
   Future<void> clearAll() async {
     final authState = ref.read(authProvider);
     if (authState is! AuthAuthenticated) return;
-    
+
     await ref.read(notificationRepositoryProvider).clearAll(authState.user.id);
   }
 }
 
-final notificationsProvider = StreamNotifierProvider.autoDispose<NotificationsNotifier, List<NotificationModel>>(() {
-  return NotificationsNotifier();
-});
+final notificationsProvider =
+    StreamNotifierProvider.autoDispose<
+      NotificationsNotifier,
+      List<NotificationModel>
+    >(() {
+      return NotificationsNotifier();
+    });
 
 // --- Computed Providers ---
 
@@ -112,98 +142,128 @@ final unreadNotificationCountProvider = Provider.autoDispose<int>((ref) {
   );
 });
 
-final filteredNotificationsProvider = Provider.autoDispose<List<NotificationModel>>((ref) {
-  final asyncNotifications = ref.watch(notificationsProvider);
-  final filter = ref.watch(notificationFilterProvider);
+final filteredNotificationsProvider =
+    Provider.autoDispose<List<NotificationModel>>((ref) {
+      final asyncNotifications = ref.watch(notificationsProvider);
+      final filter = ref.watch(notificationFilterProvider);
 
-  return asyncNotifications.maybeWhen(
-    data: (notifications) {
-      switch (filter) {
-        case NotificationFilter.all:
-          return notifications;
-        case NotificationFilter.unread:
-          return notifications.where((n) => !n.isRead).toList();
-        case NotificationFilter.read:
-          return notifications.where((n) => n.isRead).toList();
-        case NotificationFilter.academic:
-          return notifications
-              .where((n) =>
-                  n.category == NotificationCategory.academic ||
-                  n.category == NotificationCategory.assessment ||
-                  n.category == NotificationCategory.result)
-              .toList();
-        case NotificationFilter.tasks:
-          return notifications
-              .where((n) =>
-                  n.category == NotificationCategory.assignment ||
-                  n.category == NotificationCategory.practical)
-              .toList();
-        case NotificationFilter.calendar:
-          return notifications
-              .where((n) =>
-                  n.category == NotificationCategory.calendar ||
-                  n.category == NotificationCategory.timetable)
-              .toList();
-        case NotificationFilter.system:
-          return notifications
-              .where((n) =>
-                  n.category == NotificationCategory.system ||
-                  n.category == NotificationCategory.security)
-              .toList();
-        case NotificationFilter.attendance:
-          return notifications.where((n) => n.category == NotificationCategory.attendance).toList();
-        case NotificationFilter.announcements:
-          return notifications.where((n) => n.category == NotificationCategory.announcement).toList();
-        case NotificationFilter.notes:
-          return notifications.where((n) => n.category == NotificationCategory.notes).toList();
-        case NotificationFilter.timetable:
-          return notifications.where((n) => n.category == NotificationCategory.timetable).toList();
-        case NotificationFilter.security:
-          return notifications.where((n) => n.category == NotificationCategory.security).toList();
-      }
-    },
-    orElse: () => [],
-  );
-});
+      return asyncNotifications.maybeWhen(
+        data: (notifications) {
+          switch (filter) {
+            case NotificationFilter.all:
+              return notifications;
+            case NotificationFilter.unread:
+              return notifications.where((n) => !n.isRead).toList();
+            case NotificationFilter.read:
+              return notifications.where((n) => n.isRead).toList();
+            case NotificationFilter.academic:
+              return notifications
+                  .where(
+                    (n) =>
+                        n.category == NotificationCategory.academic ||
+                        n.category == NotificationCategory.assessment ||
+                        n.category == NotificationCategory.result,
+                  )
+                  .toList();
+            case NotificationFilter.tasks:
+              return notifications
+                  .where(
+                    (n) =>
+                        n.category == NotificationCategory.assignment ||
+                        n.category == NotificationCategory.practical,
+                  )
+                  .toList();
+            case NotificationFilter.calendar:
+              return notifications
+                  .where(
+                    (n) =>
+                        n.category == NotificationCategory.calendar ||
+                        n.category == NotificationCategory.timetable,
+                  )
+                  .toList();
+            case NotificationFilter.system:
+              return notifications
+                  .where(
+                    (n) =>
+                        n.category == NotificationCategory.system ||
+                        n.category == NotificationCategory.security,
+                  )
+                  .toList();
+            case NotificationFilter.attendance:
+              return notifications
+                  .where((n) => n.category == NotificationCategory.attendance)
+                  .toList();
+            case NotificationFilter.announcements:
+              return notifications
+                  .where((n) => n.category == NotificationCategory.announcement)
+                  .toList();
+            case NotificationFilter.notes:
+              return notifications
+                  .where((n) => n.category == NotificationCategory.notes)
+                  .toList();
+            case NotificationFilter.timetable:
+              return notifications
+                  .where((n) => n.category == NotificationCategory.timetable)
+                  .toList();
+            case NotificationFilter.security:
+              return notifications
+                  .where((n) => n.category == NotificationCategory.security)
+                  .toList();
+          }
+        },
+        orElse: () => [],
+      );
+    });
 
 // --- Announcements Providers ---
-final announcementsProvider = FutureProvider.autoDispose<List<AnnouncementModel>>((ref) async {
-  final repo = ref.watch(apiNotificationRepositoryProvider);
-  return repo.fetchAnnouncements(manage: false);
-});
+final announcementsProvider =
+    FutureProvider.autoDispose<List<AnnouncementModel>>((ref) async {
+      final repo = ref.watch(apiNotificationRepositoryProvider);
+      return repo.fetchAnnouncements(manage: false);
+    });
 
-final announcementByIdProvider = FutureProvider.autoDispose.family<AnnouncementModel?, String>((ref, id) async {
-  final repo = ref.watch(apiNotificationRepositoryProvider);
-  return repo.getAnnouncementById(id);
-});
+final announcementByIdProvider = FutureProvider.autoDispose
+    .family<AnnouncementModel?, String>((ref, id) async {
+      final repo = ref.watch(apiNotificationRepositoryProvider);
+      return repo.getAnnouncementById(id);
+    });
 
 class AdminAnnouncementFilter {
   final AnnouncementStatus? status;
   final AnnouncementAudienceScope? audienceScope;
   final String? departmentId;
 
-  const AdminAnnouncementFilter({this.status, this.audienceScope, this.departmentId});
+  const AdminAnnouncementFilter({
+    this.status,
+    this.audienceScope,
+    this.departmentId,
+  });
 }
 
-final adminAnnouncementFilterProvider = StateProvider<AdminAnnouncementFilter>((ref) => const AdminAnnouncementFilter());
+final adminAnnouncementFilterProvider = StateProvider<AdminAnnouncementFilter>(
+  (ref) => const AdminAnnouncementFilter(),
+);
 
-final adminAnnouncementsProvider = FutureProvider.autoDispose<List<AnnouncementModel>>((ref) async {
-  final repo = ref.watch(apiNotificationRepositoryProvider);
-  final filter = ref.watch(adminAnnouncementFilterProvider);
-  return repo.fetchAnnouncements(
-    manage: true,
-    status: filter.status?.apiValue,
-    audienceScope: filter.audienceScope?.apiValue,
-    departmentId: filter.departmentId,
-  );
-});
+final adminAnnouncementsProvider =
+    FutureProvider.autoDispose<List<AnnouncementModel>>((ref) async {
+      final repo = ref.watch(apiNotificationRepositoryProvider);
+      final filter = ref.watch(adminAnnouncementFilterProvider);
+      return repo.fetchAnnouncements(
+        manage: true,
+        status: filter.status?.apiValue,
+        audienceScope: filter.audienceScope?.apiValue,
+        departmentId: filter.departmentId,
+      );
+    });
 
 // --- Announcement Creation State ---
 class AnnouncementCreationNotifier extends StateNotifier<AsyncValue<void>> {
   final Ref _ref;
   AnnouncementCreationNotifier(this._ref) : super(const AsyncData(null));
 
-  Future<AnnouncementModel> createAnnouncement(Map<String, dynamic> payload) async {
+  Future<AnnouncementModel> createAnnouncement(
+    Map<String, dynamic> payload,
+  ) async {
     state = const AsyncLoading();
     try {
       final repo = _ref.read(apiNotificationRepositoryProvider);
@@ -284,6 +344,9 @@ class AnnouncementCreationNotifier extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final announcementCreationProvider = StateNotifierProvider<AnnouncementCreationNotifier, AsyncValue<void>>((ref) {
-  return AnnouncementCreationNotifier(ref);
-});
+final announcementCreationProvider =
+    StateNotifierProvider<AnnouncementCreationNotifier, AsyncValue<void>>((
+      ref,
+    ) {
+      return AnnouncementCreationNotifier(ref);
+    });

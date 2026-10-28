@@ -55,7 +55,7 @@ const envSchema = z.object({
     .string()
     .transform((val) => parseInt(val, 10))
     .pipe(z.number().positive())
-    .default('600'), // 10 minutes in seconds
+    .default('300'), // 5 minutes in seconds
     
   OTP_MAX_ATTEMPTS: z
     .string()
@@ -153,6 +153,15 @@ const envSchema = z.object({
     .transform((val) => parseInt(val, 10))
     .pipe(z.number().positive())
     .default('15000'),
+
+  // Resend Transactional Email Delivery Configuration
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM_EMAIL: z.string().default('onboarding@resend.dev'),
+  RESEND_TIMEOUT_MS: z
+    .union([z.string(), z.number()])
+    .transform((val) => (typeof val === 'number' ? val : parseInt(val, 10)))
+    .pipe(z.number().positive())
+    .default('10000'),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

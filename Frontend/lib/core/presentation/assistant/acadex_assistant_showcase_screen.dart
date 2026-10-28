@@ -32,7 +32,8 @@ class _AcadexAssistantShowcaseScreenState
   bool _darkCanvas = false;
   bool _simulateReducedMotion = false;
   bool _enableShadow = true;
-  String _statusMessage = 'Assistant ready. Tap any action or drag to direct gaze.';
+  String _statusMessage =
+      'Assistant ready. Tap any action or drag to direct gaze.';
 
   @override
   void initState() {
@@ -64,9 +65,11 @@ class _AcadexAssistantShowcaseScreenState
         : (isSystemDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC));
 
     return Scaffold(
-      backgroundColor: isSystemDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      backgroundColor: isSystemDark
+          ? AcadexColors.darkCanvas
+          : AcadexColors.canvas,
       appBar: AppBar(
-        title: const Text('ACADEX Assistant Studio'),
+        title: const Text('ACADEXSYNC Assistant Studio'),
         backgroundColor: isSystemDark ? AcadexColors.darkSurface : Colors.white,
         elevation: 0,
         actions: [
@@ -98,7 +101,10 @@ class _AcadexAssistantShowcaseScreenState
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AcadexColors.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(6),
@@ -114,21 +120,25 @@ class _AcadexAssistantShowcaseScreenState
                       Text(
                         'Pose: ${_controller.pose.name}',
                         style: AcadexTypography.caption(
-                          color: isSystemDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isSystemDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'ACADEX Academic Mentor & Campus Assistant',
+                    'ACADEXSYNC Academic Mentor & Campus Assistant',
                     style: AcadexTypography.heading2(),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     _statusMessage,
                     style: AcadexTypography.body(
-                      color: isSystemDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                      color: isSystemDark
+                          ? AcadexColors.darkInkSecondary
+                          : AcadexColors.inkSecondary,
                     ),
                   ),
                 ],
@@ -157,7 +167,10 @@ class _AcadexAssistantShowcaseScreenState
                     ),
                   ],
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 24,
+                  horizontal: 16,
+                ),
                 child: Column(
                   children: [
                     // Interactive Touch / Gaze Area
@@ -165,11 +178,18 @@ class _AcadexAssistantShowcaseScreenState
                       onPanUpdate: (details) {
                         final size = _characterSize;
                         final local = details.localPosition;
-                        final dx = ((local.dx - (size / 2)) / (size / 2)).clamp(-1.0, 1.0);
-                        final dy = ((local.dy - (size / 2)) / (size / 2)).clamp(-1.0, 1.0);
+                        final dx = ((local.dx - (size / 2)) / (size / 2)).clamp(
+                          -1.0,
+                          1.0,
+                        );
+                        final dy = ((local.dy - (size / 2)) / (size / 2)).clamp(
+                          -1.0,
+                          1.0,
+                        );
                         _controller.lookAt(Offset(dx, dy));
                         setState(() {
-                          _statusMessage = 'Tracking gaze to: (${dx.toStringAsFixed(2)}, ${dy.toStringAsFixed(2)})';
+                          _statusMessage =
+                              'Tracking gaze to: (${dx.toStringAsFixed(2)}, ${dy.toStringAsFixed(2)})';
                         });
                       },
                       onPanEnd: (_) {
@@ -180,9 +200,9 @@ class _AcadexAssistantShowcaseScreenState
                         height: _characterSize,
                         alignment: Alignment.center,
                         child: MediaQuery(
-                          data: MediaQuery.of(context).copyWith(
-                            disableAnimations: _simulateReducedMotion,
-                          ),
+                          data: MediaQuery.of(
+                            context,
+                          ).copyWith(disableAnimations: _simulateReducedMotion),
                           child: AcadexAssistant(
                             size: _characterSize,
                             controller: _controller,
@@ -190,10 +210,15 @@ class _AcadexAssistantShowcaseScreenState
                             onTap: () {
                               _controller.playGreeting(
                                 onComplete: () {
-                                  setState(() => _statusMessage = 'Greeting finished.');
+                                  setState(
+                                    () => _statusMessage = 'Greeting finished.',
+                                  );
                                 },
                               );
-                              setState(() => _statusMessage = 'Playing greeting animation...');
+                              setState(
+                                () => _statusMessage =
+                                    'Playing greeting animation...',
+                              );
                             },
                           ),
                         ),
@@ -205,7 +230,9 @@ class _AcadexAssistantShowcaseScreenState
                       style: AcadexTypography.caption(
                         color: _darkCanvas
                             ? const Color(0xFF94A3B8)
-                            : (isSystemDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                            : (isSystemDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted),
                       ),
                     ),
                   ],
@@ -230,7 +257,10 @@ class _AcadexAssistantShowcaseScreenState
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: AcadexColors.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(4),
@@ -250,18 +280,27 @@ class _AcadexAssistantShowcaseScreenState
                   Text(
                     'Mechanical scoreboard displays live IST. Tap the clock or action buttons below to test the full underground emergence, greeting, wipe, write, magic flourish, and descent sequence.',
                     style: AcadexTypography.caption(
-                      color: isSystemDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isSystemDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
                   const SizedBox(height: 16),
                   Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
-                        color: isSystemDark ? const Color(0xFF161E2E) : const Color(0xFFF1F5F9),
+                        color: isSystemDark
+                            ? const Color(0xFF161E2E)
+                            : const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isSystemDark ? const Color(0xFF283548) : const Color(0xFFCBD5E1),
+                          color: isSystemDark
+                              ? const Color(0xFF283548)
+                              : const Color(0xFFCBD5E1),
                         ),
                       ),
                       child: AcadexLiveTimeBoard(
@@ -269,7 +308,10 @@ class _AcadexAssistantShowcaseScreenState
                         userName: 'Poornesh',
                         onMinuteSequenceFinished: () {
                           if (mounted) {
-                            setState(() => _statusMessage = 'Minute change sequence completed.');
+                            setState(
+                              () => _statusMessage =
+                                  'Minute change sequence completed.',
+                            );
                           }
                         },
                       ),
@@ -284,7 +326,10 @@ class _AcadexAssistantShowcaseScreenState
                         label: '⏱️ Trigger Minute Transition',
                         size: AcadexButtonSize.sm,
                         onPressed: () {
-                          setState(() => _statusMessage = 'Triggered choreographed minute change animation.');
+                          setState(
+                            () => _statusMessage =
+                                'Triggered choreographed minute change animation.',
+                          );
                           _timeBoardKey.currentState?.triggerMinuteChange();
                         },
                       ),
@@ -293,7 +338,10 @@ class _AcadexAssistantShowcaseScreenState
                         size: AcadexButtonSize.sm,
                         variant: AcadexButtonVariant.secondary,
                         onPressed: () {
-                          setState(() => _statusMessage = 'Testing midnight roll-over transition.');
+                          setState(
+                            () => _statusMessage =
+                                'Testing midnight roll-over transition.',
+                          );
                           _timeBoardKey.currentState?.triggerMinuteChange(
                             nextTime: DateTime(2026, 10, 6, 0, 0),
                           );
@@ -304,7 +352,10 @@ class _AcadexAssistantShowcaseScreenState
                         size: AcadexButtonSize.sm,
                         variant: AcadexButtonVariant.secondary,
                         onPressed: () {
-                          setState(() => _statusMessage = 'Testing noon transition (AM -> PM).');
+                          setState(
+                            () => _statusMessage =
+                                'Testing noon transition (AM -> PM).',
+                          );
                           _timeBoardKey.currentState?.triggerMinuteChange(
                             nextTime: DateTime(2026, 10, 5, 12, 0),
                           );
@@ -315,7 +366,10 @@ class _AcadexAssistantShowcaseScreenState
                         size: AcadexButtonSize.sm,
                         variant: AcadexButtonVariant.secondary,
                         onPressed: () {
-                          setState(() => _statusMessage = 'Testing hour roll-over transition (12 PM -> 1 PM).');
+                          setState(
+                            () => _statusMessage =
+                                'Testing hour roll-over transition (12 PM -> 1 PM).',
+                          );
                           _timeBoardKey.currentState?.triggerMinuteChange(
                             nextTime: DateTime(2026, 10, 5, 13, 0),
                           );
@@ -333,7 +387,10 @@ class _AcadexAssistantShowcaseScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('CHOREOGRAPHED ACTIONS', style: AcadexTypography.heading3()),
+                  Text(
+                    'CHOREOGRAPHED ACTIONS',
+                    style: AcadexTypography.heading3(),
+                  ),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 10,
@@ -343,10 +400,18 @@ class _AcadexAssistantShowcaseScreenState
                         label: '👋 Greeting',
                         size: AcadexButtonSize.sm,
                         onPressed: () {
-                          setState(() => _statusMessage = 'Playing greeting gesture...');
-                          _controller.playGreeting(onComplete: () {
-                            if (mounted) setState(() => _statusMessage = 'Greeting complete.');
-                          });
+                          setState(
+                            () =>
+                                _statusMessage = 'Playing greeting gesture...',
+                          );
+                          _controller.playGreeting(
+                            onComplete: () {
+                              if (mounted)
+                                setState(
+                                  () => _statusMessage = 'Greeting complete.',
+                                );
+                            },
+                          );
                         },
                       ),
                       AcadexButton(
@@ -355,22 +420,38 @@ class _AcadexAssistantShowcaseScreenState
                         variant: AcadexButtonVariant.secondary,
                         onPressed: () {
                           setState(() => _statusMessage = 'Waving hand...');
-                          _controller.playWave(onComplete: () {
-                            if (mounted) setState(() => _statusMessage = 'Wave complete.');
-                          });
+                          _controller.playWave(
+                            onComplete: () {
+                              if (mounted)
+                                setState(
+                                  () => _statusMessage = 'Wave complete.',
+                                );
+                            },
+                          );
                         },
                       ),
                       AcadexButton(
                         label: '✨ Magic Gesture',
                         size: AcadexButtonSize.sm,
                         onPressed: () {
-                          setState(() => _statusMessage = 'Casting signature magic sparkle gesture...');
+                          setState(
+                            () => _statusMessage =
+                                'Casting signature magic sparkle gesture...',
+                          );
                           _controller.playMagicGesture(
                             onSparklePeak: () {
-                              if (mounted) setState(() => _statusMessage = '✨ Magic flourish peak reached!');
+                              if (mounted)
+                                setState(
+                                  () => _statusMessage =
+                                      '✨ Magic flourish peak reached!',
+                                );
                             },
                             onComplete: () {
-                              if (mounted) setState(() => _statusMessage = 'Magic gesture complete.');
+                              if (mounted)
+                                setState(
+                                  () => _statusMessage =
+                                      'Magic gesture complete.',
+                                );
                             },
                           );
                         },
@@ -380,10 +461,18 @@ class _AcadexAssistantShowcaseScreenState
                         size: AcadexButtonSize.sm,
                         variant: AcadexButtonVariant.secondary,
                         onPressed: () {
-                          setState(() => _statusMessage = 'Sweeping horizontal wipe...');
-                          _controller.playWipe(onComplete: () {
-                            if (mounted) setState(() => _statusMessage = 'Wipe complete.');
-                          });
+                          setState(
+                            () =>
+                                _statusMessage = 'Sweeping horizontal wipe...',
+                          );
+                          _controller.playWipe(
+                            onComplete: () {
+                              if (mounted)
+                                setState(
+                                  () => _statusMessage = 'Wipe complete.',
+                                );
+                            },
+                          );
                         },
                       ),
                       AcadexButton(
@@ -391,10 +480,17 @@ class _AcadexAssistantShowcaseScreenState
                         size: AcadexButtonSize.sm,
                         variant: AcadexButtonVariant.secondary,
                         onPressed: () {
-                          setState(() => _statusMessage = 'Writing with stylus...');
-                          _controller.playWrite(onComplete: () {
-                            if (mounted) setState(() => _statusMessage = 'Writing complete.');
-                          });
+                          setState(
+                            () => _statusMessage = 'Writing with stylus...',
+                          );
+                          _controller.playWrite(
+                            onComplete: () {
+                              if (mounted)
+                                setState(
+                                  () => _statusMessage = 'Writing complete.',
+                                );
+                            },
+                          );
                         },
                       ),
                       AcadexButton(
@@ -411,10 +507,15 @@ class _AcadexAssistantShowcaseScreenState
                         size: AcadexButtonSize.sm,
                         variant: AcadexButtonVariant.soft,
                         onPressed: () {
-                          setState(() => _statusMessage = 'Emerging into view...');
-                          _controller.playAppear(onComplete: () {
-                            if (mounted) setState(() => _statusMessage = 'Appeared.');
-                          });
+                          setState(
+                            () => _statusMessage = 'Emerging into view...',
+                          );
+                          _controller.playAppear(
+                            onComplete: () {
+                              if (mounted)
+                                setState(() => _statusMessage = 'Appeared.');
+                            },
+                          );
                         },
                       ),
                       AcadexButton(
@@ -422,10 +523,16 @@ class _AcadexAssistantShowcaseScreenState
                         size: AcadexButtonSize.sm,
                         variant: AcadexButtonVariant.soft,
                         onPressed: () {
-                          setState(() => _statusMessage = 'Descending and fading out...');
-                          _controller.playDisappear(onComplete: () {
-                            if (mounted) setState(() => _statusMessage = 'Disappeared.');
-                          });
+                          setState(
+                            () =>
+                                _statusMessage = 'Descending and fading out...',
+                          );
+                          _controller.playDisappear(
+                            onComplete: () {
+                              if (mounted)
+                                setState(() => _statusMessage = 'Disappeared.');
+                            },
+                          );
                         },
                       ),
                     ],
@@ -440,7 +547,10 @@ class _AcadexAssistantShowcaseScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('FACIAL EXPRESSIONS', style: AcadexTypography.heading3()),
+                  Text(
+                    'FACIAL EXPRESSIONS',
+                    style: AcadexTypography.heading3(),
+                  ),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
@@ -450,11 +560,16 @@ class _AcadexAssistantShowcaseScreenState
                       return ChoiceChip(
                         label: Text(expr.name),
                         selected: isSelected,
-                        selectedColor: AcadexColors.primary.withValues(alpha: 0.15),
+                        selectedColor: AcadexColors.primary.withValues(
+                          alpha: 0.15,
+                        ),
                         onSelected: (selected) {
                           if (selected) {
                             _controller.setExpression(expr);
-                            setState(() => _statusMessage = 'Expression changed to: ${expr.name}');
+                            setState(
+                              () => _statusMessage =
+                                  'Expression changed to: ${expr.name}',
+                            );
                           }
                         },
                       );
@@ -470,7 +585,10 @@ class _AcadexAssistantShowcaseScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('SIZE PRESETS & ACCESSIBILITY', style: AcadexTypography.heading3()),
+                  Text(
+                    'SIZE PRESETS & ACCESSIBILITY',
+                    style: AcadexTypography.heading3(),
+                  ),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
@@ -478,7 +596,10 @@ class _AcadexAssistantShowcaseScreenState
                     children: [
                       ActionChip(
                         label: const Text('Compact (80dp)'),
-                        avatar: const Icon(Icons.photo_size_select_small, size: 16),
+                        avatar: const Icon(
+                          Icons.photo_size_select_small,
+                          size: 16,
+                        ),
                         onPressed: () => setState(() => _characterSize = 80.0),
                       ),
                       ActionChip(
@@ -504,9 +625,12 @@ class _AcadexAssistantShowcaseScreenState
                     child: SwitchListTile.adaptive(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Simulate Reduced Motion'),
-                      subtitle: const Text('Renders static canonical posture for accessibility compliance'),
+                      subtitle: const Text(
+                        'Renders static canonical posture for accessibility compliance',
+                      ),
                       value: _simulateReducedMotion,
-                      onChanged: (val) => setState(() => _simulateReducedMotion = val),
+                      onChanged: (val) =>
+                          setState(() => _simulateReducedMotion = val),
                     ),
                   ),
                   Material(
@@ -514,7 +638,9 @@ class _AcadexAssistantShowcaseScreenState
                     child: SwitchListTile.adaptive(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Dynamic Floor Shadow'),
-                      subtitle: const Text('Ambient ground contact shadow with breathing scale'),
+                      subtitle: const Text(
+                        'Ambient ground contact shadow with breathing scale',
+                      ),
                       value: _enableShadow,
                       onChanged: (val) => setState(() => _enableShadow = val),
                     ),

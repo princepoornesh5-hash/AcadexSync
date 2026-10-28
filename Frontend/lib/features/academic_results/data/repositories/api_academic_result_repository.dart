@@ -7,7 +7,7 @@ class ApiAcademicResultRepository {
   final ApiClient _apiClient;
 
   ApiAcademicResultRepository({ApiClient? apiClient})
-      : _apiClient = apiClient ?? apiClientInstance;
+    : _apiClient = apiClient ?? apiClientInstance;
 
   static ApiClient get apiClientInstance => apiClient;
 
@@ -19,7 +19,8 @@ class ApiAcademicResultRepository {
       final response = await _apiClient.dio.get(
         '/academic-results/my-official',
         queryParameters: {
-          if (semesterId != null && semesterId.isNotEmpty) 'semesterId': semesterId,
+          if (semesterId != null && semesterId.isNotEmpty)
+            'semesterId': semesterId,
         },
       );
 
@@ -33,12 +34,16 @@ class ApiAcademicResultRepository {
       if (e.response?.statusCode == 404) {
         return null;
       }
-      throw AcadexException.fromDio(e, context: 'Failed to fetch student official result');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to fetch student official result',
+      );
     }
   }
 
   /// Admin/HOD query academic results with filters.
-  Future<({List<AcademicResultModel> results, int total, int page, int pages})> queryResults({
+  Future<({List<AcademicResultModel> results, int total, int page, int pages})>
+  queryResults({
     String? courseId,
     String? academicYearId,
     String? semesterId,
@@ -52,8 +57,10 @@ class ApiAcademicResultRepository {
         '/academic-results',
         queryParameters: {
           if (courseId != null && courseId.isNotEmpty) 'courseId': courseId,
-          if (academicYearId != null && academicYearId.isNotEmpty) 'academicYearId': academicYearId,
-          if (semesterId != null && semesterId.isNotEmpty) 'semesterId': semesterId,
+          if (academicYearId != null && academicYearId.isNotEmpty)
+            'academicYearId': academicYearId,
+          if (semesterId != null && semesterId.isNotEmpty)
+            'semesterId': semesterId,
           if (sectionId != null && sectionId.isNotEmpty) 'sectionId': sectionId,
           if (status != null) 'status': status.value,
           'page': page,
@@ -68,12 +75,19 @@ class ApiAcademicResultRepository {
       final pages = (data['pages'] as num?)?.toInt() ?? 1;
 
       final results = rawList
-          .map((item) => AcademicResultModel.fromJson(Map<String, dynamic>.from(item as Map)))
+          .map(
+            (item) => AcademicResultModel.fromJson(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
           .toList();
 
       return (results: results, total: total, page: curPage, pages: pages);
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to query academic results');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to query academic results',
+      );
     }
   }
 
@@ -84,7 +98,10 @@ class ApiAcademicResultRepository {
       final data = response.data['data'] as Map<String, dynamic>? ?? {};
       return AcademicResultModel.fromJson(data);
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to fetch result detail');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to fetch result detail',
+      );
     }
   }
 
@@ -110,7 +127,10 @@ class ApiAcademicResultRepository {
       final data = response.data['data'] as Map<String, dynamic>? ?? {};
       return AcademicResultModel.fromJson(data);
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to calculate semester result');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to calculate semester result',
+      );
     }
   }
 
@@ -133,45 +153,66 @@ class ApiAcademicResultRepository {
       );
       return Map<String, dynamic>.from(response.data['data'] as Map? ?? {});
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to calculate class results');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to calculate class results',
+      );
     }
   }
 
   /// Transitions result to UNDER_REVIEW.
   Future<AcademicResultModel> reviewResult(String id) async {
     try {
-      final response = await _apiClient.dio.post('/academic-results/$id/review');
+      final response = await _apiClient.dio.post(
+        '/academic-results/$id/review',
+      );
       final data = response.data['data'] as Map<String, dynamic>? ?? {};
       return AcademicResultModel.fromJson(data);
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to review academic result');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to review academic result',
+      );
     }
   }
 
   /// Locks and finalizes academic result.
   Future<AcademicResultModel> finalizeResult(String id) async {
     try {
-      final response = await _apiClient.dio.post('/academic-results/$id/finalize');
+      final response = await _apiClient.dio.post(
+        '/academic-results/$id/finalize',
+      );
       final data = response.data['data'] as Map<String, dynamic>? ?? {};
       return AcademicResultModel.fromJson(data);
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to finalize academic result');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to finalize academic result',
+      );
     }
   }
 
   /// Officially publishes finalized academic result.
   Future<AcademicResultModel> publishResult(String id) async {
     try {
-      final response = await _apiClient.dio.post('/academic-results/$id/publish');
+      final response = await _apiClient.dio.post(
+        '/academic-results/$id/publish',
+      );
       final data = response.data['data'] as Map<String, dynamic>? ?? {};
       return AcademicResultModel.fromJson(data);
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to publish academic result');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to publish academic result',
+      );
     }
   }
 
   /// Reopens finalized/published result with mandatory audit justification.
-  Future<AcademicResultModel> reopenResult(String id, {required String reason}) async {
+  Future<AcademicResultModel> reopenResult(
+    String id, {
+    required String reason,
+  }) async {
     try {
       final response = await _apiClient.dio.post(
         '/academic-results/$id/reopen',
@@ -180,12 +221,17 @@ class ApiAcademicResultRepository {
       final data = response.data['data'] as Map<String, dynamic>? ?? {};
       return AcademicResultModel.fromJson(data);
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to reopen academic result');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to reopen academic result',
+      );
     }
   }
 
   /// Gets effective rule configuration for a course.
-  Future<Map<String, dynamic>> getEffectiveRuleConfig({required String courseId}) async {
+  Future<Map<String, dynamic>> getEffectiveRuleConfig({
+    required String courseId,
+  }) async {
     try {
       final response = await _apiClient.dio.get(
         '/academic-results/rules/effective',
@@ -193,7 +239,10 @@ class ApiAcademicResultRepository {
       );
       return Map<String, dynamic>.from(response.data['data'] as Map? ?? {});
     } on DioException catch (e) {
-      throw AcadexException.fromDio(e, context: 'Failed to fetch academic rule configuration');
+      throw AcadexException.fromDio(
+        e,
+        context: 'Failed to fetch academic rule configuration',
+      );
     }
   }
 }

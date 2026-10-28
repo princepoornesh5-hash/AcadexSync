@@ -27,7 +27,11 @@ class AcadexNavRail extends ConsumerWidget {
     }
 
     final navItems = AcadexNavigationService.getPrimaryNavItems(role);
-    final activeItem = AcadexNavigationService.resolveActiveItem(activeRoute, role, candidates: navItems);
+    final activeItem = AcadexNavigationService.resolveActiveItem(
+      activeRoute,
+      role,
+      candidates: navItems,
+    );
     int selectedIndex = activeItem != null
         ? navItems.indexWhere((it) => it.id == activeItem.id)
         : -1;
@@ -85,10 +89,7 @@ class AcadexNavRail extends ConsumerWidget {
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
-          right: BorderSide(
-            color: AcadexColors.hairline,
-            width: 1.0,
-          ),
+          right: BorderSide(color: AcadexColors.hairline, width: 1.0),
         ),
       ),
       child: rail,

@@ -17,14 +17,26 @@ class FirebaseAttendanceAlertRepository implements AttendanceAlertRepository {
   void _debugLog(String operation, Map<String, dynamic> metadata) {
     if (kDebugMode) {
       final safeMetadata = Map<String, dynamic>.from(metadata)
-        ..removeWhere((key, _) => key.toLowerCase().contains('password') || key.toLowerCase().contains('secret'));
-      final formatted = safeMetadata.entries.map((e) => '${e.key}=${e.value}').join(', ');
-      developer.log('[AttendanceAlerts] $operation: $formatted', name: 'Acadex.AttendanceAlerts');
+        ..removeWhere(
+          (key, _) =>
+              key.toLowerCase().contains('password') ||
+              key.toLowerCase().contains('secret'),
+        );
+      final formatted = safeMetadata.entries
+          .map((e) => '${e.key}=${e.value}')
+          .join(', ');
+      developer.log(
+        '[AttendanceAlerts] $operation: $formatted',
+        name: 'Acadex.AttendanceAlerts',
+      );
     }
   }
 
   /// Builds query filters enforcing role scoping and multi-tenant security
-  Map<String, dynamic> _buildScopeFilters(UserModel user, AttendanceAlertFilter? filter) {
+  Map<String, dynamic> _buildScopeFilters(
+    UserModel user,
+    AttendanceAlertFilter? filter,
+  ) {
     final filters = <String, dynamic>{};
 
     // 1. Tenant Isolation
@@ -97,7 +109,10 @@ class FirebaseAttendanceAlertRepository implements AttendanceAlertRepository {
 
     List<Map<String, dynamic>> rawDocs;
     if (filters.isNotEmpty) {
-      rawDocs = await _firestoreService.queryCollection(collectionName, filters);
+      rawDocs = await _firestoreService.queryCollection(
+        collectionName,
+        filters,
+      );
     } else {
       rawDocs = await _firestoreService.getCollection(collectionName);
     }
@@ -114,7 +129,12 @@ class FirebaseAttendanceAlertRepository implements AttendanceAlertRepository {
         final sectionMatch = a.sectionId?.toLowerCase().contains(q) ?? false;
         final titleMatch = a.title.toLowerCase().contains(q);
         final messageMatch = a.message.toLowerCase().contains(q);
-        return studentMatch || rollMatch || subjectMatch || sectionMatch || titleMatch || messageMatch;
+        return studentMatch ||
+            rollMatch ||
+            subjectMatch ||
+            sectionMatch ||
+            titleMatch ||
+            messageMatch;
       }).toList();
     }
 
@@ -141,7 +161,9 @@ class FirebaseAttendanceAlertRepository implements AttendanceAlertRepository {
           : (b.severity == AttendanceAlertSeverity.warning ? 1 : 0);
 
       if (severityWeightA != severityWeightB) {
-        return severityWeightB.compareTo(severityWeightA); // Higher severity first
+        return severityWeightB.compareTo(
+          severityWeightA,
+        ); // Higher severity first
       }
       return b.createdAt.compareTo(a.createdAt); // Newest first
     });
@@ -155,7 +177,11 @@ class FirebaseAttendanceAlertRepository implements AttendanceAlertRepository {
     AttendanceAlertFilter? filter,
     String? searchQuery,
   }) async* {
-    final alerts = await getAlerts(user: user, filter: filter, searchQuery: searchQuery);
+    final alerts = await getAlerts(
+      user: user,
+      filter: filter,
+      searchQuery: searchQuery,
+    );
     yield alerts;
   }
 
@@ -174,7 +200,11 @@ class FirebaseAttendanceAlertRepository implements AttendanceAlertRepository {
       'severity': alert.severity.name,
       'studentId': alert.studentId,
     });
-    await _firestoreService.setDocument(collectionName, alert.id, alert.toJson());
+    await _firestoreService.setDocument(
+      collectionName,
+      alert.id,
+      alert.toJson(),
+    );
   }
 
   @override
@@ -202,13 +232,14 @@ class FirebaseAttendanceAlertRepository implements AttendanceAlertRepository {
 
   @override
   Future<void> markAllAsRead({required UserModel user}) async {
-    final alerts = await getAlerts(user: user, filter: const AttendanceAlertFilter(unreadOnly: true));
+    final alerts = await getAlerts(
+      user: user,
+      filter: const AttendanceAlertFilter(unreadOnly: true),
+    );
     final now = DateTime.now();
-    final updatedList = alerts.map((a) => a.copyWith(
-          isRead: true,
-          readAt: now,
-          updatedAt: now,
-        )).toList();
+    final updatedList = alerts
+        .map((a) => a.copyWith(isRead: true, readAt: now, updatedAt: now))
+        .toList();
     await saveAlerts(updatedList);
   }
 
@@ -238,7 +269,9 @@ class FirebaseAttendanceAlertRepository implements AttendanceAlertRepository {
   }
 
   @override
-  Future<AttendanceAlertSummary> getAlertSummary({required UserModel user}) async {
+  Future<AttendanceAlertSummary> getAlertSummary({
+    required UserModel user,
+  }) async {
     final allScopedAlerts = await getAlerts(user: user);
     return AttendanceAlertSummary.fromAlerts(allScopedAlerts);
   }

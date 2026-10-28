@@ -116,7 +116,9 @@ class AttendanceAlertCard extends StatelessWidget {
                               child: Text(
                                 alert.title,
                                 style: AcadexTypography.body(
-                                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
                                 ).copyWith(fontWeight: FontWeight.w700),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -126,7 +128,9 @@ class AttendanceAlertCard extends StatelessWidget {
                         Text(
                           _formatDate(alert.createdAt),
                           style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ).copyWith(fontSize: 10),
                         ),
                       ],
@@ -140,19 +144,26 @@ class AttendanceAlertCard extends StatelessWidget {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       AcadexBadge(
-                        label: alert.severity == AttendanceAlertSeverity.critical
+                        label:
+                            alert.severity == AttendanceAlertSeverity.critical
                             ? 'Critical'
-                            : (alert.severity == AttendanceAlertSeverity.warning ? 'Warning' : 'Info'),
-                        variant: alert.severity == AttendanceAlertSeverity.critical
+                            : (alert.severity == AttendanceAlertSeverity.warning
+                                  ? 'Warning'
+                                  : 'Info'),
+                        variant:
+                            alert.severity == AttendanceAlertSeverity.critical
                             ? AcadexBadgeVariant.danger
-                            : (alert.severity == AttendanceAlertSeverity.warning ? AcadexBadgeVariant.warning : AcadexBadgeVariant.info),
+                            : (alert.severity == AttendanceAlertSeverity.warning
+                                  ? AcadexBadgeVariant.warning
+                                  : AcadexBadgeVariant.info),
                       ),
                       if (alert.status == AttendanceAlertStatus.resolved)
                         const AcadexBadge(
                           label: 'Resolved',
                           variant: AcadexBadgeVariant.success,
                         )
-                      else if (alert.status == AttendanceAlertStatus.acknowledged)
+                      else if (alert.status ==
+                          AttendanceAlertStatus.acknowledged)
                         const AcadexBadge(
                           label: 'Acknowledged',
                           variant: AcadexBadgeVariant.neutral,
@@ -168,7 +179,9 @@ class AttendanceAlertCard extends StatelessWidget {
               Text(
                 alert.message,
                 style: AcadexTypography.bodySmall(
-                  color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                  color: isDark
+                      ? AcadexColors.darkInkSecondary
+                      : AcadexColors.inkSecondary,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -186,53 +199,90 @@ class AttendanceAlertCard extends StatelessWidget {
                       runSpacing: 4,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        if (alert.studentName != null && alert.studentName!.isNotEmpty)
+                        if (alert.studentName != null &&
+                            alert.studentName!.isNotEmpty)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
-                              color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                              color: isDark
+                                  ? AcadexColors.darkCanvasSoft
+                                  : AcadexColors.canvasSoft,
                               borderRadius: AcadexRadius.borderRadiusSm,
                             ),
                             child: Text(
                               '${alert.studentName} (${alert.rollNumber ?? "--"})',
-                              style: AcadexTypography.caption(
-                                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                              ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
+                              style:
+                                  AcadexTypography.caption(
+                                    color: isDark
+                                        ? AcadexColors.darkInkSecondary
+                                        : AcadexColors.inkSecondary,
+                                  ).copyWith(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
                           ),
-                        if (alert.subjectName != null && alert.subjectName!.isNotEmpty)
+                        if (alert.subjectName != null &&
+                            alert.subjectName!.isNotEmpty)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
-                              color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                              color: isDark
+                                  ? AcadexColors.darkCanvasSoft
+                                  : AcadexColors.canvasSoft,
                               borderRadius: AcadexRadius.borderRadiusSm,
                             ),
                             child: Text(
                               alert.subjectName!,
                               style: AcadexTypography.caption(
-                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
                               ).copyWith(fontSize: 11),
                             ),
                           ),
-                        if (alert.recoverySessionsNeeded != null && alert.recoverySessionsNeeded! > 0)
+                        if (alert.recoverySessionsNeeded != null &&
+                            alert.recoverySessionsNeeded! > 0)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
-                              color: AcadexColors.warning.withValues(alpha: 0.15),
+                              color: AcadexColors.warning.withValues(
+                                alpha: 0.15,
+                              ),
                               borderRadius: AcadexRadius.borderRadiusSm,
-                              border: Border.all(color: AcadexColors.warning.withValues(alpha: 0.3)),
+                              border: Border.all(
+                                color: AcadexColors.warning.withValues(
+                                  alpha: 0.3,
+                                ),
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(LucideIcons.target, size: 10, color: AcadexColors.warning),
+                                const Icon(
+                                  LucideIcons.target,
+                                  size: 10,
+                                  color: AcadexColors.warning,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   'Needs ${alert.recoverySessionsNeeded} consecutive classes',
-                                  style: AcadexTypography.caption(color: AcadexColors.warning).copyWith(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style:
+                                      AcadexTypography.caption(
+                                        color: AcadexColors.warning,
+                                      ).copyWith(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                 ),
                               ],
                             ),
@@ -250,12 +300,17 @@ class AttendanceAlertCard extends StatelessWidget {
                           tooltip: 'Mark as read',
                           onPressed: onMarkAsRead,
                           padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                          constraints: const BoxConstraints(
+                            minWidth: 28,
+                            minHeight: 28,
+                          ),
                         ),
                       Icon(
                         LucideIcons.chevronRight,
                         size: 16,
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                     ],
                   ),

@@ -78,13 +78,12 @@ class AcadexHeroCard extends StatelessWidget {
                   Flexible(
                     child: Text(
                       eyebrow.toUpperCase(),
-                      style: AcadexTypography.eyebrow(
-                        color: accentColor,
-                      ).copyWith(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.6,
-                        fontSize: 10.5,
-                      ),
+                      style: AcadexTypography.eyebrow(color: accentColor)
+                          .copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.6,
+                            fontSize: 10.5,
+                          ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -122,12 +121,15 @@ class AcadexHeroCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: AcadexTypography.heading2(
-                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                      ).copyWith(
-                        fontSize: isMobile ? 17 : 20,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style:
+                          AcadexTypography.heading2(
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
+                          ).copyWith(
+                            fontSize: isMobile ? 17 : 20,
+                            fontWeight: FontWeight.w700,
+                          ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -136,10 +138,10 @@ class AcadexHeroCard extends StatelessWidget {
                       Text(
                         subtitle!,
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                        ).copyWith(
-                          fontSize: isMobile ? 12 : 13,
-                        ),
+                          color: isDark
+                              ? AcadexColors.darkInkSecondary
+                              : AcadexColors.inkSecondary,
+                        ).copyWith(fontSize: isMobile ? 12 : 13),
                       ),
                     ],
                   ],
@@ -170,15 +172,26 @@ class AcadexHeroCard extends StatelessWidget {
                       elevation: 0,
                       minimumSize: const Size(48, 44),
                       tapTargetSize: MaterialTapTargetSize.padded,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: AcadexRadius.borderRadiusMd,
                       ),
                     ),
-                    icon: Icon(primaryActionIcon ?? Icons.arrow_forward, size: 16, color: Colors.white),
+                    icon: Icon(
+                      primaryActionIcon ?? Icons.arrow_forward,
+                      size: 16,
+                      color: Colors.white,
+                    ),
                     label: Text(
                       primaryActionLabel!,
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5, color: Colors.white),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12.5,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 if (secondaryActionLabel != null)
@@ -190,14 +203,21 @@ class AcadexHeroCard extends StatelessWidget {
                       minimumSize: const Size(48, 44),
                       tapTargetSize: MaterialTapTargetSize.padded,
                       side: BorderSide(color: secondaryBtnBorder, width: 1.2),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: AcadexRadius.borderRadiusMd,
                       ),
                     ),
                     child: Text(
                       secondaryActionLabel!,
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5, color: secondaryBtnText),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12.5,
+                        color: secondaryBtnText,
+                      ),
                     ),
                   ),
               ],

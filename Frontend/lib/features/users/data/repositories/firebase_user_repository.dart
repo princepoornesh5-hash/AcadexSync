@@ -19,7 +19,7 @@ class FirebaseUserRepository implements UserRepository {
     String? searchQuery,
   }) async {
     final filters = <String, dynamic>{};
-    
+
     // Server-side equality scoping
     if (scopeCollegeId != null) {
       filters['collegeId'] = scopeCollegeId;
@@ -45,10 +45,13 @@ class FirebaseUserRepository implements UserRepository {
         final query = searchQuery.toLowerCase();
         final nameMatch = user.name.toLowerCase().contains(query);
         final emailMatch = user.email.toLowerCase().contains(query);
-        final empIdMatch = user.employeeId?.toLowerCase().contains(query) ?? false;
-        final rollNoMatch = user.rollNumber?.toLowerCase().contains(query) ?? false;
-        
-        if (!nameMatch && !emailMatch && !empIdMatch && !rollNoMatch) return false;
+        final empIdMatch =
+            user.employeeId?.toLowerCase().contains(query) ?? false;
+        final rollNoMatch =
+            user.rollNumber?.toLowerCase().contains(query) ?? false;
+
+        if (!nameMatch && !emailMatch && !empIdMatch && !rollNoMatch)
+          return false;
       }
       return true;
     }).toList();

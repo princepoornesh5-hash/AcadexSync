@@ -2,17 +2,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/api_academic_result_repository.dart';
 import '../../domain/models/academic_result_models.dart';
 
-final academicResultRepositoryProvider = Provider<ApiAcademicResultRepository>((ref) {
+final academicResultRepositoryProvider = Provider<ApiAcademicResultRepository>((
+  ref,
+) {
   return ApiAcademicResultRepository();
 });
 
 /// Student official result provider for a given semester (or null for latest).
-final studentOfficialResultProvider = FutureProvider.family<StudentOfficialResultModel?, String?>(
-  (ref, semesterId) async {
-    final repo = ref.watch(academicResultRepositoryProvider);
-    return repo.getStudentOfficialResult(semesterId: semesterId);
-  },
-);
+final studentOfficialResultProvider =
+    FutureProvider.family<StudentOfficialResultModel?, String?>((
+      ref,
+      semesterId,
+    ) async {
+      final repo = ref.watch(academicResultRepositoryProvider);
+      return repo.getStudentOfficialResult(semesterId: semesterId);
+    });
 
 /// Filter state for admin/HOD academic results querying.
 class AcademicResultFilterState {
@@ -56,13 +60,17 @@ class AcademicResultFilterState {
   }
 }
 
-class AcademicResultFilterNotifier extends StateNotifier<AcademicResultFilterState> {
+class AcademicResultFilterNotifier
+    extends StateNotifier<AcademicResultFilterState> {
   AcademicResultFilterNotifier() : super(const AcademicResultFilterState());
 
   void setCourseId(String? id) => state = state.copyWith(courseId: id, page: 1);
-  void setAcademicYearId(String? id) => state = state.copyWith(academicYearId: id, page: 1);
-  void setSemesterId(String? id) => state = state.copyWith(semesterId: id, page: 1);
-  void setSectionId(String? id) => state = state.copyWith(sectionId: id, page: 1);
+  void setAcademicYearId(String? id) =>
+      state = state.copyWith(academicYearId: id, page: 1);
+  void setSemesterId(String? id) =>
+      state = state.copyWith(semesterId: id, page: 1);
+  void setSectionId(String? id) =>
+      state = state.copyWith(sectionId: id, page: 1);
   void setStatus(ResultLifecycleStatus? status) {
     if (status == null) {
       state = state.copyWith(clearStatus: true, page: 1);
@@ -70,42 +78,53 @@ class AcademicResultFilterNotifier extends StateNotifier<AcademicResultFilterSta
       state = state.copyWith(status: status, page: 1);
     }
   }
+
   void setPage(int page) => state = state.copyWith(page: page);
   void reset() => state = const AcademicResultFilterState();
 }
 
-final academicResultFilterProvider = StateNotifierProvider<AcademicResultFilterNotifier, AcademicResultFilterState>((ref) {
-  return AcademicResultFilterNotifier();
-});
+final academicResultFilterProvider =
+    StateNotifierProvider<
+      AcademicResultFilterNotifier,
+      AcademicResultFilterState
+    >((ref) {
+      return AcademicResultFilterNotifier();
+    });
 
 /// Provider for queried admin/HOD results list.
-final adminResultsQueryProvider = FutureProvider<({List<AcademicResultModel> results, int total, int page, int pages})>((ref) async {
-  final filters = ref.watch(academicResultFilterProvider);
-  final repo = ref.watch(academicResultRepositoryProvider);
+final adminResultsQueryProvider =
+    FutureProvider<
+      ({List<AcademicResultModel> results, int total, int page, int pages})
+    >((ref) async {
+      final filters = ref.watch(academicResultFilterProvider);
+      final repo = ref.watch(academicResultRepositoryProvider);
 
-  return repo.queryResults(
-    courseId: filters.courseId,
-    academicYearId: filters.academicYearId,
-    semesterId: filters.semesterId,
-    sectionId: filters.sectionId,
-    status: filters.status,
-    page: filters.page,
-    limit: filters.limit,
-  );
-});
+      return repo.queryResults(
+        courseId: filters.courseId,
+        academicYearId: filters.academicYearId,
+        semesterId: filters.semesterId,
+        sectionId: filters.sectionId,
+        status: filters.status,
+        page: filters.page,
+        limit: filters.limit,
+      );
+    });
 
 /// Single result detail provider.
-final resultDetailProvider = FutureProvider.family<AcademicResultModel, String>((ref, id) async {
-  final repo = ref.watch(academicResultRepositoryProvider);
-  return repo.getResultDetail(id);
-});
+final resultDetailProvider = FutureProvider.family<AcademicResultModel, String>(
+  (ref, id) async {
+    final repo = ref.watch(academicResultRepositoryProvider);
+    return repo.getResultDetail(id);
+  },
+);
 
 /// Action controller for admin result operations (review, finalize, publish, reopen, calculate).
 class AcademicResultActionNotifier extends StateNotifier<AsyncValue<void>> {
   final ApiAcademicResultRepository _repo;
   final Ref _ref;
 
-  AcademicResultActionNotifier(this._repo, this._ref) : super(const AsyncValue.data(null));
+  AcademicResultActionNotifier(this._repo, this._ref)
+    : super(const AsyncValue.data(null));
 
   Future<bool> calculateClass({
     required String semesterId,
@@ -188,7 +207,10 @@ class AcademicResultActionNotifier extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final academicResultActionProvider = StateNotifierProvider<AcademicResultActionNotifier, AsyncValue<void>>((ref) {
-  final repo = ref.watch(academicResultRepositoryProvider);
-  return AcademicResultActionNotifier(repo, ref);
-});
+final academicResultActionProvider =
+    StateNotifierProvider<AcademicResultActionNotifier, AsyncValue<void>>((
+      ref,
+    ) {
+      final repo = ref.watch(academicResultRepositoryProvider);
+      return AcademicResultActionNotifier(repo, ref);
+    });

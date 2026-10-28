@@ -41,10 +41,12 @@ class StudentPromotionStepperDialog extends ConsumerStatefulWidget {
   }
 
   @override
-  ConsumerState<StudentPromotionStepperDialog> createState() => _StudentPromotionStepperDialogState();
+  ConsumerState<StudentPromotionStepperDialog> createState() =>
+      _StudentPromotionStepperDialogState();
 }
 
-class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotionStepperDialog> {
+class _StudentPromotionStepperDialogState
+    extends ConsumerState<StudentPromotionStepperDialog> {
   int _currentStep = 0;
   final Set<String> _selectedStudentIds = {};
   String? _targetAcademicYearId;
@@ -67,8 +69,12 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
     final isDark = theme.brightness == Brightness.dark;
 
     return Dialog(
-      backgroundColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.lg)),
+      backgroundColor: isDark
+          ? AcadexColors.darkSurfaceCard
+          : AcadexColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AcadexRadius.lg),
+      ),
       child: Container(
         width: 720,
         constraints: const BoxConstraints(maxHeight: 700),
@@ -85,16 +91,32 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
                     color: AcadexColors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(AcadexRadius.md),
                   ),
-                  child: const Icon(LucideIcons.arrowUpRight, color: AcadexColors.primary, size: 22),
+                  child: const Icon(
+                    LucideIcons.arrowUpRight,
+                    color: AcadexColors.primary,
+                    size: 22,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Academic Promotion Engine", style: AcadexTypography.heading3(color: theme.colorScheme.onSurface)),
+                      Text(
+                        "Academic Promotion Engine",
+                        style: AcadexTypography.heading3(
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
                       const SizedBox(height: 2),
-                      Text("Promote students to next semester while preserving academic history.", style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+                      Text(
+                        "Promote students to next semester while preserving academic history.",
+                        style: AcadexTypography.caption(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.7,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -120,7 +142,10 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
                 transitionBuilder: (child, animation) => FadeTransition(
                   opacity: animation,
                   child: SlideTransition(
-                    position: Tween<Offset>(begin: const Offset(0.02, 0), end: Offset.zero).animate(animation),
+                    position: Tween<Offset>(
+                      begin: const Offset(0.02, 0),
+                      end: Offset.zero,
+                    ).animate(animation),
                     child: child,
                   ),
                 ),
@@ -134,17 +159,34 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
             if (_errorMessage != null) ...[
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: AcadexColors.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AcadexRadius.xs),
-                  border: Border.all(color: AcadexColors.error.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AcadexColors.error.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.alertCircle, size: 16, color: AcadexColors.error),
+                    const Icon(
+                      LucideIcons.alertCircle,
+                      size: 16,
+                      color: AcadexColors.error,
+                    ),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(_errorMessage!, style: const TextStyle(color: AcadexColors.error, fontSize: 13))),
+                    Expanded(
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(
+                          color: AcadexColors.error,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -170,8 +212,13 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AcadexColors.primary,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AcadexRadius.md),
+                      ),
                     ),
                     onPressed: _onNextPressed,
                     child: Text(_getNextButtonLabel()),
@@ -194,7 +241,9 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
           return Expanded(
             child: Container(
               height: 2,
-              color: isCompleted ? AcadexColors.primary : theme.dividerColor.withValues(alpha: 0.2),
+              color: isCompleted
+                  ? AcadexColors.primary
+                  : theme.dividerColor.withValues(alpha: 0.2),
             ),
           );
         }
@@ -213,21 +262,33 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
                 shape: BoxShape.circle,
                 color: isCompleted
                     ? AcadexColors.primary
-                    : (isActive ? AcadexColors.primary.withValues(alpha: 0.15) : theme.dividerColor.withValues(alpha: 0.1)),
+                    : (isActive
+                          ? AcadexColors.primary.withValues(alpha: 0.15)
+                          : theme.dividerColor.withValues(alpha: 0.1)),
                 border: Border.all(
-                  color: isActive || isCompleted ? AcadexColors.primary : theme.dividerColor.withValues(alpha: 0.3),
+                  color: isActive || isCompleted
+                      ? AcadexColors.primary
+                      : theme.dividerColor.withValues(alpha: 0.3),
                   width: 1.5,
                 ),
               ),
               child: Center(
                 child: isCompleted
-                    ? const Icon(LucideIcons.check, size: 14, color: Colors.white)
+                    ? const Icon(
+                        LucideIcons.check,
+                        size: 14,
+                        color: Colors.white,
+                      )
                     : Text(
                         "${stepIndex + 1}",
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: isActive ? AcadexColors.primary : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: isActive
+                              ? AcadexColors.primary
+                              : theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
+                                ),
                         ),
                       ),
               ),
@@ -238,7 +299,9 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                color: isActive ? AcadexColors.primary : theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                color: isActive
+                    ? AcadexColors.primary
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -266,7 +329,9 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
 
   // STEP 1: Select Students
   Widget _buildStep1SelectStudents(ThemeData theme, bool isDark) {
-    final allSelected = _selectedStudentIds.length == widget.initialStudents.length && widget.initialStudents.isNotEmpty;
+    final allSelected =
+        _selectedStudentIds.length == widget.initialStudents.length &&
+        widget.initialStudents.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -279,14 +344,19 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
               style: AcadexTypography.title(color: theme.colorScheme.onSurface),
             ),
             TextButton.icon(
-              icon: Icon(allSelected ? LucideIcons.squareCheck : LucideIcons.square, size: 16),
+              icon: Icon(
+                allSelected ? LucideIcons.squareCheck : LucideIcons.square,
+                size: 16,
+              ),
               label: Text(allSelected ? "Deselect All" : "Select All"),
               onPressed: () {
                 setState(() {
                   if (allSelected) {
                     _selectedStudentIds.clear();
                   } else {
-                    _selectedStudentIds.addAll(widget.initialStudents.map((s) => s.id));
+                    _selectedStudentIds.addAll(
+                      widget.initialStudents.map((s) => s.id),
+                    );
                   }
                 });
               },
@@ -296,7 +366,11 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
         const SizedBox(height: 12),
         Expanded(
           child: widget.initialStudents.isEmpty
-              ? const Center(child: Text("No students available for promotion in this scope."))
+              ? const Center(
+                  child: Text(
+                    "No students available for promotion in this scope.",
+                  ),
+                )
               : ListView.separated(
                   itemCount: widget.initialStudents.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
@@ -316,12 +390,19 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
                       },
                       borderRadius: BorderRadius.circular(AcadexRadius.md),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
-                          color: isChecked ? AcadexColors.primary.withValues(alpha: 0.08) : Colors.transparent,
+                          color: isChecked
+                              ? AcadexColors.primary.withValues(alpha: 0.08)
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(AcadexRadius.md),
                           border: Border.all(
-                            color: isChecked ? AcadexColors.primary : theme.dividerColor.withValues(alpha: 0.15),
+                            color: isChecked
+                                ? AcadexColors.primary
+                                : theme.dividerColor.withValues(alpha: 0.15),
                           ),
                         ),
                         child: Row(
@@ -341,10 +422,18 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
                             const SizedBox(width: 8),
                             CircleAvatar(
                               radius: 16,
-                              backgroundColor: AcadexColors.primary.withValues(alpha: 0.12),
+                              backgroundColor: AcadexColors.primary.withValues(
+                                alpha: 0.12,
+                              ),
                               child: Text(
-                                s.name.isNotEmpty ? s.name[0].toUpperCase() : 'S',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AcadexColors.primary),
+                                s.name.isNotEmpty
+                                    ? s.name[0].toUpperCase()
+                                    : 'S',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: AcadexColors.primary,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -352,8 +441,20 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(s.name, style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
-                                  Text("Roll: ${s.rollNumber} • ${s.email}", style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+                                  Text(
+                                    s.name,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  Text(
+                                    "Roll: ${s.rollNumber} • ${s.email}",
+                                    style: AcadexTypography.caption(
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.6),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -396,11 +497,16 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Step 2: Source Academic Placement", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
+          Text(
+            "Step 2: Source Academic Placement",
+            style: AcadexTypography.title(color: theme.colorScheme.onSurface),
+          ),
           const SizedBox(height: 6),
           Text(
             "Verifying source parameters for the ${_selectedStudentIds.length} selected students.",
-            style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+            style: AcadexTypography.caption(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
           ),
           const SizedBox(height: 20),
           Container(
@@ -408,19 +514,60 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
             decoration: BoxDecoration(
               color: isDark ? AcadexColors.darkCanvas : AcadexColors.canvasSoft,
               borderRadius: BorderRadius.circular(AcadexRadius.md),
-              border: Border.all(color: theme.dividerColor.withValues(alpha: 0.15)),
+              border: Border.all(
+                color: theme.dividerColor.withValues(alpha: 0.15),
+              ),
             ),
             child: Column(
               children: [
-                _buildInfoRow("Department", AcadexEntityFormatters.formatDepartmentLabel(dept?.name, rawId: firstStudent.departmentId), LucideIcons.building, theme),
+                _buildInfoRow(
+                  "Department",
+                  AcadexEntityFormatters.formatDepartmentLabel(
+                    dept?.name,
+                    rawId: firstStudent.departmentId,
+                  ),
+                  LucideIcons.building,
+                  theme,
+                ),
                 const Divider(height: 20),
-                _buildInfoRow("Course", "${AcadexEntityFormatters.formatCourseLabel(crs?.name, rawId: firstStudent.courseId)}${crsCode != null && !AcadexEntityFormatters.isRawIdentifier(crsCode) ? ' ($crsCode)' : ''}", LucideIcons.book, theme),
+                _buildInfoRow(
+                  "Course",
+                  "${AcadexEntityFormatters.formatCourseLabel(crs?.name, rawId: firstStudent.courseId)}${crsCode != null && !AcadexEntityFormatters.isRawIdentifier(crsCode) ? ' ($crsCode)' : ''}",
+                  LucideIcons.book,
+                  theme,
+                ),
                 const Divider(height: 20),
-                _buildInfoRow("Current Academic Year", AcadexEntityFormatters.formatAcademicYearLabel(yr?.name, rawId: firstStudent.academicYearId), LucideIcons.calendar, theme),
+                _buildInfoRow(
+                  "Current Academic Year",
+                  AcadexEntityFormatters.formatAcademicYearLabel(
+                    yr?.name,
+                    rawId: firstStudent.academicYearId,
+                  ),
+                  LucideIcons.calendar,
+                  theme,
+                ),
                 const Divider(height: 20),
-                _buildInfoRow("Current Semester", AcadexEntityFormatters.formatSemesterLabel(sem?.name, semesterNumber: sem?.semesterNumber, rawId: firstStudent.semesterId), LucideIcons.layers, theme),
+                _buildInfoRow(
+                  "Current Semester",
+                  AcadexEntityFormatters.formatSemesterLabel(
+                    sem?.name,
+                    semesterNumber: sem?.semesterNumber,
+                    rawId: firstStudent.semesterId,
+                  ),
+                  LucideIcons.layers,
+                  theme,
+                ),
                 const Divider(height: 20),
-                _buildInfoRow("Current Section", AcadexEntityFormatters.formatSectionLabel(sec?.name, rawId: firstStudent.sectionId, fallback: 'Section Not Assigned'), LucideIcons.layoutGrid, theme),
+                _buildInfoRow(
+                  "Current Section",
+                  AcadexEntityFormatters.formatSectionLabel(
+                    sec?.name,
+                    rawId: firstStudent.sectionId,
+                    fallback: 'Section Not Assigned',
+                  ),
+                  LucideIcons.layoutGrid,
+                  theme,
+                ),
               ],
             ),
           ),
@@ -444,51 +591,92 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Step 3: Choose Target Academic Placement", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
+          Text(
+            "Step 3: Choose Target Academic Placement",
+            style: AcadexTypography.title(color: theme.colorScheme.onSurface),
+          ),
           const SizedBox(height: 6),
           Text(
             "Select destination academic year, semester, and section. Cross-course or cross-department placement is prevented.",
-            style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+            style: AcadexTypography.caption(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
           ),
           const SizedBox(height: 20),
 
           // Target Academic Year
-          Text("Target Academic Year *", style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
+          Text(
+            "Target Academic Year *",
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
           const SizedBox(height: 6),
           academicYearsAsync.when(
             data: (years) => DropdownButtonFormField<String>(
               key: ValueKey('target_ay_$_targetAcademicYearId'),
-              dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+              dropdownColor: isDark
+                  ? AcadexColors.darkSurfaceCard
+                  : AcadexColors.surface,
               decoration: const InputDecoration(
                 prefixIcon: Icon(LucideIcons.calendar, size: 18),
                 hintText: "Select Target Academic Year",
               ),
               initialValue: _targetAcademicYearId,
-              items: years.map((y) => DropdownMenuItem(value: y.id, child: Text(y.name))).toList(),
+              items: years
+                  .map(
+                    (y) => DropdownMenuItem(value: y.id, child: Text(y.name)),
+                  )
+                  .toList(),
               onChanged: (val) => setState(() => _targetAcademicYearId = val),
             ),
             loading: () => const LinearProgressIndicator(),
-            error: (e, _) => Text('Error: $e', style: const TextStyle(color: AcadexColors.error)),
+            error: (e, _) => Text(
+              'Error: $e',
+              style: const TextStyle(color: AcadexColors.error),
+            ),
           ),
           const SizedBox(height: 16),
 
           // Target Semester
-          Text("Target Semester *", style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
+          Text(
+            "Target Semester *",
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
           const SizedBox(height: 6),
           semestersAsync.when(
             data: (semesters) {
               // Filter to matching course
-              final filtered = semesters.where((s) => s.courseId == firstStudent.courseId).toList();
+              final filtered = semesters
+                  .where((s) => s.courseId == firstStudent.courseId)
+                  .toList();
 
               return DropdownButtonFormField<String>(
-                key: ValueKey('target_sem_${firstStudent.courseId}_$_targetSemesterId'),
-                dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                key: ValueKey(
+                  'target_sem_${firstStudent.courseId}_$_targetSemesterId',
+                ),
+                dropdownColor: isDark
+                    ? AcadexColors.darkSurfaceCard
+                    : AcadexColors.surface,
                 decoration: const InputDecoration(
                   prefixIcon: Icon(LucideIcons.layers, size: 18),
                   hintText: "Select Target Semester",
                 ),
                 initialValue: _targetSemesterId,
-                items: filtered.map((sem) => DropdownMenuItem(value: sem.id, child: Text("${sem.name} (Course: ${firstStudent.courseId})"))).toList(),
+                items: filtered
+                    .map(
+                      (sem) => DropdownMenuItem(
+                        value: sem.id,
+                        child: Text(
+                          "${sem.name} (Course: ${firstStudent.courseId})",
+                        ),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (val) => setState(() {
                   _targetSemesterId = val;
                   _targetSectionId = null;
@@ -496,33 +684,62 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
               );
             },
             loading: () => const LinearProgressIndicator(),
-            error: (e, _) => Text('Error: $e', style: const TextStyle(color: AcadexColors.error)),
+            error: (e, _) => Text(
+              'Error: $e',
+              style: const TextStyle(color: AcadexColors.error),
+            ),
           ),
           const SizedBox(height: 16),
 
           // Target Section
-          Text("Target Section *", style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
+          Text(
+            "Target Section *",
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
           const SizedBox(height: 6),
           sectionsAsync.when(
             data: (sections) {
               final filtered = _targetSemesterId != null
-                  ? sections.where((sec) => sec.semesterId == _targetSemesterId).toList()
+                  ? sections
+                        .where((sec) => sec.semesterId == _targetSemesterId)
+                        .toList()
                   : <Section>[];
 
               return DropdownButtonFormField<String>(
-                key: ValueKey('target_sec_${_targetSemesterId}_$_targetSectionId'),
-                dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                key: ValueKey(
+                  'target_sec_${_targetSemesterId}_$_targetSectionId',
+                ),
+                dropdownColor: isDark
+                    ? AcadexColors.darkSurfaceCard
+                    : AcadexColors.surface,
                 decoration: InputDecoration(
                   prefixIcon: const Icon(LucideIcons.layoutGrid, size: 18),
-                  hintText: _targetSemesterId == null ? "Select semester first" : "Select Target Section",
+                  hintText: _targetSemesterId == null
+                      ? "Select semester first"
+                      : "Select Target Section",
                 ),
                 initialValue: _targetSectionId,
-                items: filtered.map((sec) => DropdownMenuItem(value: sec.id, child: Text("Section ${sec.name}"))).toList(),
-                onChanged: _targetSemesterId == null ? null : (val) => setState(() => _targetSectionId = val),
+                items: filtered
+                    .map(
+                      (sec) => DropdownMenuItem(
+                        value: sec.id,
+                        child: Text("Section ${sec.name}"),
+                      ),
+                    )
+                    .toList(),
+                onChanged: _targetSemesterId == null
+                    ? null
+                    : (val) => setState(() => _targetSectionId = val),
               );
             },
             loading: () => const LinearProgressIndicator(),
-            error: (e, _) => Text('Error: $e', style: const TextStyle(color: AcadexColors.error)),
+            error: (e, _) => Text(
+              'Error: $e',
+              style: const TextStyle(color: AcadexColors.error),
+            ),
           ),
         ],
       ),
@@ -540,21 +757,45 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
       orElse: () => widget.initialStudents.first,
     );
 
-    final currentSem = AcadexEntityFormatters.formatSemesterLabel(semMap[firstStudent.semesterId]?.name, semesterNumber: semMap[firstStudent.semesterId]?.semesterNumber, rawId: firstStudent.semesterId);
-    final currentSec = AcadexEntityFormatters.formatSectionLabel(secMap[firstStudent.sectionId]?.name, rawId: firstStudent.sectionId, fallback: 'Section Not Assigned');
-    final targetSem = AcadexEntityFormatters.formatSemesterLabel(semMap[_targetSemesterId]?.name, semesterNumber: semMap[_targetSemesterId]?.semesterNumber, rawId: _targetSemesterId);
-    final targetSec = AcadexEntityFormatters.formatSectionLabel(secMap[_targetSectionId]?.name, rawId: _targetSectionId, fallback: 'Section Not Assigned');
-    final targetYr = AcadexEntityFormatters.formatAcademicYearLabel(yrMap[_targetAcademicYearId]?.name, rawId: _targetAcademicYearId);
+    final currentSem = AcadexEntityFormatters.formatSemesterLabel(
+      semMap[firstStudent.semesterId]?.name,
+      semesterNumber: semMap[firstStudent.semesterId]?.semesterNumber,
+      rawId: firstStudent.semesterId,
+    );
+    final currentSec = AcadexEntityFormatters.formatSectionLabel(
+      secMap[firstStudent.sectionId]?.name,
+      rawId: firstStudent.sectionId,
+      fallback: 'Section Not Assigned',
+    );
+    final targetSem = AcadexEntityFormatters.formatSemesterLabel(
+      semMap[_targetSemesterId]?.name,
+      semesterNumber: semMap[_targetSemesterId]?.semesterNumber,
+      rawId: _targetSemesterId,
+    );
+    final targetSec = AcadexEntityFormatters.formatSectionLabel(
+      secMap[_targetSectionId]?.name,
+      rawId: _targetSectionId,
+      fallback: 'Section Not Assigned',
+    );
+    final targetYr = AcadexEntityFormatters.formatAcademicYearLabel(
+      yrMap[_targetAcademicYearId]?.name,
+      rawId: _targetAcademicYearId,
+    );
 
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Step 4: Review Promotion Summary", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
+          Text(
+            "Step 4: Review Promotion Summary",
+            style: AcadexTypography.title(color: theme.colorScheme.onSurface),
+          ),
           const SizedBox(height: 6),
           Text(
             "Verify the transition details below before confirming promotion.",
-            style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+            style: AcadexTypography.caption(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
           ),
           const SizedBox(height: 20),
 
@@ -569,15 +810,29 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
                 ],
               ),
               borderRadius: BorderRadius.circular(AcadexRadius.md),
-              border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.2)),
+              border: Border.all(
+                color: AcadexColors.primary.withValues(alpha: 0.2),
+              ),
             ),
             child: Column(
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("Selected Students", style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
-                    Text("${_selectedStudentIds.length} Student(s)", style: const TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.primary)),
+                    Text(
+                      "Selected Students",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    Text(
+                      "${_selectedStudentIds.length} Student(s)",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AcadexColors.primary,
+                      ),
+                    ),
                   ],
                 ),
                 const Divider(height: 24),
@@ -587,22 +842,63 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("FROM", style: AcadexTypography.eyebrow(color: AcadexColors.error)),
+                          Text(
+                            "FROM",
+                            style: AcadexTypography.eyebrow(
+                              color: AcadexColors.error,
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Text(currentSem, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          Text("Section $currentSec", style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+                          Text(
+                            currentSem,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Text(
+                            "Section $currentSec",
+                            style: AcadexTypography.caption(
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.7,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    const Icon(LucideIcons.arrowRight, color: AcadexColors.primary, size: 24),
+                    const Icon(
+                      LucideIcons.arrowRight,
+                      color: AcadexColors.primary,
+                      size: 24,
+                    ),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text("TO", style: AcadexTypography.eyebrow(color: AcadexColors.success)),
+                          Text(
+                            "TO",
+                            style: AcadexTypography.eyebrow(
+                              color: AcadexColors.success,
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Text(targetSem, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AcadexColors.success)),
-                          Text("Section $targetSec • $targetYr", style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+                          Text(
+                            targetSem,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: AcadexColors.success,
+                            ),
+                          ),
+                          Text(
+                            "Section $targetSec • $targetYr",
+                            style: AcadexTypography.caption(
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.7,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -621,12 +917,18 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
             ),
             child: Row(
               children: [
-                const Icon(LucideIcons.shieldCheck, size: 18, color: AcadexColors.primary),
+                const Icon(
+                  LucideIcons.shieldCheck,
+                  size: 18,
+                  color: AcadexColors.primary,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     "All historical attendance, timetable, notes and certificates for previous terms remain immutably archived in StudentAcademicHistory.",
-                    style: AcadexTypography.caption(color: theme.colorScheme.onSurface),
+                    style: AcadexTypography.caption(
+                      color: theme.colorScheme.onSurface,
+                    ),
                   ),
                 ),
               ],
@@ -646,11 +948,16 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
           children: [
             const CircularProgressIndicator(),
             const SizedBox(height: 20),
-            Text(_statusMessage ?? "Processing academic promotion...", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
+            Text(
+              _statusMessage ?? "Processing academic promotion...",
+              style: AcadexTypography.title(color: theme.colorScheme.onSurface),
+            ),
             const SizedBox(height: 12),
             SizedBox(
               width: 300,
-              child: LinearProgressIndicator(value: _progressValue > 0 ? _progressValue : null),
+              child: LinearProgressIndicator(
+                value: _progressValue > 0 ? _progressValue : null,
+              ),
             ),
           ],
         ),
@@ -667,14 +974,25 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
               color: AcadexColors.success.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(LucideIcons.circleCheck, color: AcadexColors.success, size: 40),
+            child: const Icon(
+              LucideIcons.circleCheck,
+              color: AcadexColors.success,
+              size: 40,
+            ),
           ),
           const SizedBox(height: 16),
-          Text("Ready to Commit Promotion", style: AcadexTypography.heading3(color: theme.colorScheme.onSurface)),
+          Text(
+            "Ready to Commit Promotion",
+            style: AcadexTypography.heading3(
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
           const SizedBox(height: 8),
           Text(
             "Click 'Commit Promotion' below to atomically update placement and record academic history.",
-            style: AcadexTypography.body(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+            style: AcadexTypography.body(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -682,14 +1000,30 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
     );
   }
 
-  Widget _buildInfoRow(String label, String value, IconData icon, ThemeData theme) {
+  Widget _buildInfoRow(
+    String label,
+    String value,
+    IconData icon,
+    ThemeData theme,
+  ) {
     return Row(
       children: [
         Icon(icon, size: 18, color: AcadexColors.primary),
         const SizedBox(width: 12),
-        Text(label, style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+        Text(
+          label,
+          style: TextStyle(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+        ),
         const Spacer(),
-        Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
       ],
     );
   }
@@ -716,7 +1050,10 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
 
     if (_currentStep == 0) {
       if (_selectedStudentIds.isEmpty) {
-        setState(() => _errorMessage = "Please select at least one student to promote.");
+        setState(
+          () =>
+              _errorMessage = "Please select at least one student to promote.",
+        );
         return;
       }
       setState(() => _currentStep = 1);
@@ -751,12 +1088,19 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
     });
 
     try {
-      await ref.read(studentsProvider((sectionId: widget.initialSectionId, departmentId: widget.initialDepartmentId)).notifier).promoteStudents(
-        _selectedStudentIds.toList(),
-        _targetSemesterId!,
-        _targetSectionId!,
-        targetAcademicYearId: _targetAcademicYearId,
-      );
+      await ref
+          .read(
+            studentsProvider((
+              sectionId: widget.initialSectionId,
+              departmentId: widget.initialDepartmentId,
+            )).notifier,
+          )
+          .promoteStudents(
+            _selectedStudentIds.toList(),
+            _targetSemesterId!,
+            _targetSectionId!,
+            targetAcademicYearId: _targetAcademicYearId,
+          );
 
       setState(() {
         _progressValue = 1.0;

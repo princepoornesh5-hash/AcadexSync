@@ -27,13 +27,17 @@ class AcadexBreakpoints {
     return DeviceType.desktop;
   }
 
-  static bool isSmallMobile(BuildContext context) => MediaQuery.sizeOf(context).width <= mobileSmallMax;
-  static bool isMobile(BuildContext context) => MediaQuery.sizeOf(context).width <= mobileMax;
+  static bool isSmallMobile(BuildContext context) =>
+      MediaQuery.sizeOf(context).width <= mobileSmallMax;
+  static bool isMobile(BuildContext context) =>
+      MediaQuery.sizeOf(context).width <= mobileMax;
   static bool isTablet(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     return width > mobileMax && width <= tabletMax;
   }
-  static bool isDesktop(BuildContext context) => MediaQuery.sizeOf(context).width >= desktopMin;
+
+  static bool isDesktop(BuildContext context) =>
+      MediaQuery.sizeOf(context).width >= desktopMin;
 
   /// Adaptive horizontal padding for pages
   static double responsiveHorizontalPadding(BuildContext context) {
@@ -57,7 +61,12 @@ class AcadexBreakpoints {
     return const EdgeInsets.all(AcadexSpacing.space14);
   }
 
-  static int getGridColumnCount(BuildContext context, {int mobile = 1, int tablet = 2, int desktop = 4}) {
+  static int getGridColumnCount(
+    BuildContext context, {
+    int mobile = 1,
+    int tablet = 2,
+    int desktop = 4,
+  }) {
     if (isDesktop(context)) return desktop;
     if (isTablet(context)) return tablet;
     return mobile;

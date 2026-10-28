@@ -39,7 +39,9 @@ class AttendanceCorrectionDialog extends ConsumerStatefulWidget {
       await showDialog(
         context: context,
         builder: (ctx) => Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 540),
             child: AttendanceCorrectionDialog(
@@ -66,7 +68,9 @@ class AttendanceCorrectionDialog extends ConsumerStatefulWidget {
               color: Theme.of(ctx).brightness == Brightness.dark
                   ? AcadexColors.darkSurface
                   : AcadexColors.surface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
             ),
             child: SafeArea(
               top: false,
@@ -85,10 +89,12 @@ class AttendanceCorrectionDialog extends ConsumerStatefulWidget {
   }
 
   @override
-  ConsumerState<AttendanceCorrectionDialog> createState() => _AttendanceCorrectionDialogState();
+  ConsumerState<AttendanceCorrectionDialog> createState() =>
+      _AttendanceCorrectionDialogState();
 }
 
-class _AttendanceCorrectionDialogState extends ConsumerState<AttendanceCorrectionDialog> {
+class _AttendanceCorrectionDialogState
+    extends ConsumerState<AttendanceCorrectionDialog> {
   late AttendanceStatus _selectedStatus;
   final _reasonController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -112,7 +118,8 @@ class _AttendanceCorrectionDialogState extends ConsumerState<AttendanceCorrectio
 
     if (_selectedStatus == widget.record.status) {
       setState(() {
-        _errorMessage = 'Please select a different attendance status to correct.';
+        _errorMessage =
+            'Please select a different attendance status to correct.';
       });
       return;
     }
@@ -128,12 +135,14 @@ class _AttendanceCorrectionDialogState extends ConsumerState<AttendanceCorrectio
         throw StateError('Record ID is not available for correction.');
       }
 
-      await ref.read(correctRecordProvider((
-        recordId: recordId,
-        newStatus: _selectedStatus,
-        reason: _reasonController.text.trim(),
-        sessionId: widget.sessionId,
-      )).future);
+      await ref.read(
+        correctRecordProvider((
+          recordId: recordId,
+          newStatus: _selectedStatus,
+          reason: _reasonController.text.trim(),
+          sessionId: widget.sessionId,
+        )).future,
+      );
 
       if (mounted) {
         Navigator.of(context).pop();
@@ -197,13 +206,17 @@ class _AttendanceCorrectionDialogState extends ConsumerState<AttendanceCorrectio
                           Text(
                             "Correct Attendance",
                             style: AcadexTypography.heading3(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ),
                           ),
                           Text(
                             "${widget.subjectName} • ${widget.sectionName}",
                             style: AcadexTypography.caption(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
                             ),
                           ),
                         ],
@@ -213,7 +226,9 @@ class _AttendanceCorrectionDialogState extends ConsumerState<AttendanceCorrectio
                   IconButton(
                     icon: Icon(
                       LucideIcons.x,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                       size: 18,
                     ),
                     onPressed: () => Navigator.of(context).pop(),
@@ -249,7 +264,9 @@ class _AttendanceCorrectionDialogState extends ConsumerState<AttendanceCorrectio
                       child: Text(
                         "Attendance corrections are strictly audited. All changes are permanently recorded in the institutional audit log with your user ID and timestamp.",
                         style: AcadexTypography.caption(
-                          color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1E40AF),
+                          color: isDark
+                              ? const Color(0xFF93C5FD)
+                              : const Color(0xFF1E40AF),
                         ),
                       ),
                     ),
@@ -265,7 +282,9 @@ class _AttendanceCorrectionDialogState extends ConsumerState<AttendanceCorrectio
                   color: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
                   ),
                 ),
                 child: Row(
@@ -278,29 +297,41 @@ class _AttendanceCorrectionDialogState extends ConsumerState<AttendanceCorrectio
                           Text(
                             widget.record.studentName,
                             style: AcadexTypography.body(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ).copyWith(fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             "Roll No: ${widget.record.rollNumber}",
                             style: AcadexTypography.caption(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
                             ),
                           ),
                         ],
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: (widget.record.status?.color ?? AcadexColors.inkMuted).withValues(alpha: 0.15),
+                        color:
+                            (widget.record.status?.color ??
+                                    AcadexColors.inkMuted)
+                                .withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         "Current: ${widget.record.status?.displayName ?? 'Unmarked'}",
                         style: AcadexTypography.caption(
-                          color: widget.record.status?.color ?? AcadexColors.inkMuted,
+                          color:
+                              widget.record.status?.color ??
+                              AcadexColors.inkMuted,
                         ).copyWith(fontWeight: FontWeight.w600),
                       ),
                     ),
@@ -313,45 +344,56 @@ class _AttendanceCorrectionDialogState extends ConsumerState<AttendanceCorrectio
               Text(
                 "SELECT NEW STATUS",
                 style: AcadexTypography.eyebrow(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: [
-                  AttendanceStatus.present,
-                  AttendanceStatus.absent,
-                  AttendanceStatus.late,
-                  AttendanceStatus.excused,
-                  AttendanceStatus.medicalLeave,
-                  AttendanceStatus.onDuty,
-                ].map((status) {
-                  final isSelected = _selectedStatus == status;
-                  return ChoiceChip(
-                    label: Text(status.displayName),
-                    selected: isSelected,
-                    selectedColor: status.color.withValues(alpha: 0.2),
-                    backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-                    labelStyle: TextStyle(
-                      fontSize: 12,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color: isSelected
-                          ? status.color
-                          : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
-                    ),
-                    side: BorderSide(
-                      color: isSelected
-                          ? status.color
-                          : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-                      width: isSelected ? 1.5 : 1,
-                    ),
-                    onSelected: (_) {
-                      setState(() => _selectedStatus = status);
-                    },
-                  );
-                }).toList(),
+                children:
+                    [
+                      AttendanceStatus.present,
+                      AttendanceStatus.absent,
+                      AttendanceStatus.late,
+                      AttendanceStatus.excused,
+                      AttendanceStatus.medicalLeave,
+                      AttendanceStatus.onDuty,
+                    ].map((status) {
+                      final isSelected = _selectedStatus == status;
+                      return ChoiceChip(
+                        label: Text(status.displayName),
+                        selected: isSelected,
+                        selectedColor: status.color.withValues(alpha: 0.2),
+                        backgroundColor: isDark
+                            ? AcadexColors.darkCanvas
+                            : AcadexColors.canvas,
+                        labelStyle: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: isSelected
+                              ? status.color
+                              : (isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink),
+                        ),
+                        side: BorderSide(
+                          color: isSelected
+                              ? status.color
+                              : (isDark
+                                    ? AcadexColors.darkHairline
+                                    : AcadexColors.hairline),
+                          width: isSelected ? 1.5 : 1,
+                        ),
+                        onSelected: (_) {
+                          setState(() => _selectedStatus = status);
+                        },
+                      );
+                    }).toList(),
               ),
               const SizedBox(height: 18),
 
@@ -359,7 +401,9 @@ class _AttendanceCorrectionDialogState extends ConsumerState<AttendanceCorrectio
               Text(
                 "REASON FOR CORRECTION *",
                 style: AcadexTypography.eyebrow(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
               const SizedBox(height: 8),
@@ -371,17 +415,24 @@ class _AttendanceCorrectionDialogState extends ConsumerState<AttendanceCorrectio
                   color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
                 ),
                 decoration: InputDecoration(
-                  hintText: "Enter explanation for this correction (e.g. Approved medical leave, OD request)...",
+                  hintText:
+                      "Enter explanation for this correction (e.g. Approved medical leave, OD request)...",
                   hintStyle: AcadexTypography.bodySmall(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                   filled: true,
-                  fillColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+                  fillColor: isDark
+                      ? AcadexColors.darkCanvas
+                      : AcadexColors.canvas,
                   contentPadding: const EdgeInsets.all(12),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                      color: isDark
+                          ? AcadexColors.darkHairline
+                          : AcadexColors.hairline,
                     ),
                   ),
                 ),
@@ -407,11 +458,15 @@ class _AttendanceCorrectionDialogState extends ConsumerState<AttendanceCorrectio
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
+                    onPressed: _isSubmitting
+                        ? null
+                        : () => Navigator.of(context).pop(),
                     child: Text(
                       "Cancel",
                       style: AcadexTypography.button(
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                     ),
                   ),

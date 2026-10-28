@@ -146,10 +146,14 @@ class AnnouncementModel {
       title: json['title']?.toString() ?? '',
       body: json['body']?.toString() ?? '',
       category: json['category']?.toString() ?? 'announcement',
-      audienceScope: AnnouncementAudienceScope.fromString(json['audienceScope']?.toString()),
+      audienceScope: AnnouncementAudienceScope.fromString(
+        json['audienceScope']?.toString(),
+      ),
       targetRole: json['targetRole'] != null
           ? AppRole.values.firstWhere(
-              (e) => e.value.toLowerCase() == json['targetRole'].toString().toLowerCase(),
+              (e) =>
+                  e.value.toLowerCase() ==
+                  json['targetRole'].toString().toLowerCase(),
               orElse: () => AppRole.student,
             )
           : null,
@@ -160,15 +164,21 @@ class AnnouncementModel {
       publishAt: json['publishAt'] != null
           ? DateTime.tryParse(json['publishAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
-      expiresAt: json['expiresAt'] != null ? DateTime.tryParse(json['expiresAt'].toString()) : null,
+      expiresAt: json['expiresAt'] != null
+          ? DateTime.tryParse(json['expiresAt'].toString())
+          : null,
       priority: NotificationPriority.values.firstWhere(
-        (e) => e.name.toLowerCase() == (json['priority']?.toString().toLowerCase() ?? ''),
+        (e) =>
+            e.name.toLowerCase() ==
+            (json['priority']?.toString().toLowerCase() ?? ''),
         orElse: () => NotificationPriority.normal,
       ),
       isPinned: json['isPinned'] == true,
       status: AnnouncementStatus.fromString(json['status']?.toString()),
       createdBy: rawCreatedBy.toString(),
-      publishedAt: json['publishedAt'] != null ? DateTime.tryParse(json['publishedAt'].toString()) : null,
+      publishedAt: json['publishedAt'] != null
+          ? DateTime.tryParse(json['publishedAt'].toString())
+          : null,
       recipientCount: (json['recipientCount'] as num?)?.toInt() ?? 0,
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()

@@ -63,7 +63,11 @@ class AcadexAcademicContextCard extends StatelessWidget {
     }
 
     if (sectionName != null && sectionName!.isNotEmpty) {
-      segments.add(sectionName!.toLowerCase().startsWith('sec') ? sectionName! : 'Section $sectionName');
+      segments.add(
+        sectionName!.toLowerCase().startsWith('sec')
+            ? sectionName!
+            : 'Section $sectionName',
+      );
     }
 
     if (academicYearName != null && academicYearName!.isNotEmpty) {
@@ -109,13 +113,16 @@ class AcadexAcademicContextCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             (title ?? 'Academic Context').toUpperCase(),
-                            style: AcadexTypography.eyebrow(
-                              color: isDark ? AcadexColors.primaryMuted : AcadexColors.primary,
-                            ).copyWith(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.6,
-                            ),
+                            style:
+                                AcadexTypography.eyebrow(
+                                  color: isDark
+                                      ? AcadexColors.primaryMuted
+                                      : AcadexColors.primary,
+                                ).copyWith(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.6,
+                                ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -141,7 +148,9 @@ class AcadexAcademicContextCard extends StatelessWidget {
                       Text(
                         breadcrumbsText,
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ).copyWith(fontSize: 12),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -177,20 +186,30 @@ class AcadexAcademicContextCard extends StatelessWidget {
                             children: [
                               Text(
                                 (title ?? 'Academic Context').toUpperCase(),
-                                style: AcadexTypography.eyebrow(
-                                  color: isDark ? AcadexColors.primaryMuted : AcadexColors.primary,
-                                ).copyWith(
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.6,
-                                ),
+                                style:
+                                    AcadexTypography.eyebrow(
+                                      color: isDark
+                                          ? AcadexColors.primaryMuted
+                                          : AcadexColors.primary,
+                                    ).copyWith(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.6,
+                                    ),
                               ),
-                              if (departmentCode != null && departmentCode!.isNotEmpty) ...[
+                              if (departmentCode != null &&
+                                  departmentCode!.isNotEmpty) ...[
                                 Text(
                                   ' • $departmentCode',
-                                  style: AcadexTypography.caption(
-                                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                                  ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
+                                  style:
+                                      AcadexTypography.caption(
+                                        color: isDark
+                                            ? AcadexColors.darkInkMuted
+                                            : AcadexColors.inkMuted,
+                                      ).copyWith(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                 ),
                               ],
                             ],
@@ -198,9 +217,15 @@ class AcadexAcademicContextCard extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             primaryName,
-                            style: AcadexTypography.title(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                            ).copyWith(fontSize: 14.5, fontWeight: FontWeight.w700),
+                            style:
+                                AcadexTypography.title(
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
+                                ).copyWith(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -209,7 +234,9 @@ class AcadexAcademicContextCard extends StatelessWidget {
                             Text(
                               breadcrumbsText,
                               style: AcadexTypography.caption(
-                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
                               ).copyWith(fontSize: 12),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -239,7 +266,9 @@ class AcadexAcademicContextCard extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 32, minWidth: 44),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: isDark ? AcadexColors.primary.withValues(alpha: 0.15) : AcadexColors.primaryLight,
+          color: isDark
+              ? AcadexColors.primary.withValues(alpha: 0.15)
+              : AcadexColors.primaryLight,
           borderRadius: AcadexRadius.borderRadiusSm,
           border: Border.all(
             color: AcadexColors.primary.withValues(alpha: 0.3),
@@ -249,7 +278,11 @@ class AcadexAcademicContextCard extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(LucideIcons.slidersHorizontal, size: 12, color: AcadexColors.primary),
+            const Icon(
+              LucideIcons.slidersHorizontal,
+              size: 12,
+              color: AcadexColors.primary,
+            ),
             const SizedBox(width: 5),
             Text(
               'Change',

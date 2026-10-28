@@ -10,10 +10,7 @@ import '../providers/practicals_providers.dart';
 class StudentPracticalsScreen extends ConsumerWidget {
   final String? subjectId;
 
-  const StudentPracticalsScreen({
-    super.key,
-    this.subjectId,
-  });
+  const StudentPracticalsScreen({super.key, this.subjectId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -23,9 +20,14 @@ class StudentPracticalsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/dashboard'),
         ),
         title: Text(
@@ -36,12 +38,15 @@ class StudentPracticalsScreen extends ConsumerWidget {
         ),
       ),
       body: historyAsync.when(
-        loading: () => const AcadexLoadingState(message: 'Loading your practical lab history...'),
+        loading: () => const AcadexLoadingState(
+          message: 'Loading your practical lab history...',
+        ),
         error: (err, stack) => Center(
           child: AcadexErrorState(
             message: "Couldn't load your practical labs.",
             retryLabel: 'Retry',
-            onRetry: () => ref.refresh(studentPracticalHistoryProvider(subjectId)),
+            onRetry: () =>
+                ref.refresh(studentPracticalHistoryProvider(subjectId)),
           ),
         ),
         data: (history) {
@@ -50,7 +55,8 @@ class StudentPracticalsScreen extends ConsumerWidget {
               child: AcadexEmptyState(
                 icon: LucideIcons.flaskConical,
                 title: 'No Practical Records Yet',
-                subtitle: 'You do not have any recorded practical lab participations.',
+                subtitle:
+                    'You do not have any recorded practical lab participations.',
               ),
             );
           }
@@ -90,7 +96,9 @@ class StudentPracticalsScreen extends ConsumerWidget {
         break;
       case PracticalParticipationStatus.notStarted:
         statusColor = AcadexColors.inkSecondary;
-        statusBg = isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft;
+        statusBg = isDark
+            ? AcadexColors.darkCanvasSoft
+            : AcadexColors.canvasSoft;
     }
 
     return Container(
@@ -112,14 +120,19 @@ class StudentPracticalsScreen extends ConsumerWidget {
                 child: Text(
                   '${item.subjectCode} • ${item.subjectName}',
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 7,
+                  vertical: 2.5,
+                ),
                 decoration: BoxDecoration(
                   color: statusBg,
                   borderRadius: BorderRadius.circular(4),
@@ -149,22 +162,38 @@ class StudentPracticalsScreen extends ConsumerWidget {
 
           Row(
             children: [
-              Icon(LucideIcons.calendar, size: 13, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              Icon(
+                LucideIcons.calendar,
+                size: 13,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
               const SizedBox(width: 4),
               Text(
                 item.scheduledDate.toLocal().toString().substring(0, 10),
                 style: AcadexTypography.caption(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
               if (item.roomNumber != null) ...[
                 const SizedBox(width: 12),
-                Icon(LucideIcons.doorClosed, size: 13, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                Icon(
+                  LucideIcons.doorClosed,
+                  size: 13,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   item.roomNumber!,
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                 ),
               ],
@@ -177,7 +206,9 @@ class StudentPracticalsScreen extends ConsumerWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                color: isDark
+                    ? AcadexColors.darkCanvasSoft
+                    : AcadexColors.canvasSoft,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -185,7 +216,9 @@ class StudentPracticalsScreen extends ConsumerWidget {
                 style: TextStyle(
                   fontSize: 11,
                   fontStyle: FontStyle.italic,
-                  color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                  color: isDark
+                      ? AcadexColors.darkInkSecondary
+                      : AcadexColors.inkSecondary,
                 ),
               ),
             ),

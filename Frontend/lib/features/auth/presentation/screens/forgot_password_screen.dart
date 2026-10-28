@@ -23,7 +23,8 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
@@ -36,7 +37,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  int _currentStep = 0; // 0: Request OTP, 1: Verify OTP, 2: Reset Password, 3: Success
+  int _currentStep =
+      0; // 0: Request OTP, 1: Verify OTP, 2: Reset Password, 3: Success
   bool _isLoading = false;
   String? _errorMessage;
   String? _resetToken;
@@ -200,7 +202,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     if (!_step3FormKey.currentState!.validate()) return;
 
     if (_resetToken == null || _resetToken!.isEmpty) {
-      setState(() => _errorMessage = "Missing authorization reset token. Please request a new code.");
+      setState(
+        () => _errorMessage =
+            "Missing authorization reset token. Please request a new code.",
+      );
       return;
     }
 
@@ -243,7 +248,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 28.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 28.0,
+              ),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 440),
                 child: Column(
@@ -255,9 +263,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                         alignment: Alignment.centerLeft,
                         child: TextButton.icon(
                           icon: const Icon(LucideIcons.arrowLeft, size: 16),
-                          label: Text(_currentStep == 0 ? 'Back to Sign In' : 'Back'),
+                          label: Text(
+                            _currentStep == 0 ? 'Back to Sign In' : 'Back',
+                          ),
                           style: TextButton.styleFrom(
-                            foregroundColor: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                            foregroundColor: isDark
+                                ? AcadexColors.darkInkSecondary
+                                : AcadexColors.inkSecondary,
                           ),
                           onPressed: () {
                             if (_currentStep == 0) {
@@ -281,10 +293,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                         child: _currentStep == 0
                             ? _buildStep1Identifier(isDark)
                             : _currentStep == 1
-                                ? _buildStep2Otp(isDark)
-                                : _currentStep == 2
-                                    ? _buildStep3NewPassword(isDark)
-                                    : _buildStep4Success(isDark),
+                            ? _buildStep2Otp(isDark)
+                            : _currentStep == 2
+                            ? _buildStep3NewPassword(isDark)
+                            : _buildStep4Success(isDark),
                       ),
                     ),
                   ],
@@ -329,8 +341,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: (step + 1) / 3.0,
-              backgroundColor: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-              valueColor: const AlwaysStoppedAnimation<Color>(AcadexColors.primary),
+              backgroundColor: isDark
+                  ? AcadexColors.darkHairline
+                  : AcadexColors.hairline,
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AcadexColors.primary,
+              ),
               minHeight: 4,
             ),
           ),
@@ -347,8 +363,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         color: completed
             ? AcadexColors.success
             : active
-                ? AcadexColors.primary
-                : AcadexColors.hairline,
+            ? AcadexColors.primary
+            : AcadexColors.hairline,
         shape: BoxShape.circle,
       ),
     );
@@ -367,10 +383,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                color: isDark
+                    ? AcadexColors.primaryHover.withValues(alpha: 0.2)
+                    : AcadexColors.primaryLight,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(LucideIcons.keyRound, size: 28, color: AcadexColors.primary),
+              child: const Icon(
+                LucideIcons.keyRound,
+                size: 28,
+                color: AcadexColors.primary,
+              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -404,7 +426,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             keyboardType: TextInputType.emailAddress,
             enabled: !_isLoading,
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return "Please enter your PIN Number, email, or phone";
+              if (v == null || v.trim().isEmpty)
+                return "Please enter your PIN Number, email, or phone";
               return null;
             },
           ),
@@ -436,10 +459,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                color: isDark
+                    ? AcadexColors.primaryHover.withValues(alpha: 0.2)
+                    : AcadexColors.primaryLight,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(LucideIcons.mailCheck, size: 28, color: AcadexColors.primary),
+              child: const Icon(
+                LucideIcons.mailCheck,
+                size: 28,
+                color: AcadexColors.primary,
+              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -473,8 +502,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             keyboardType: TextInputType.number,
             enabled: !_isLoading,
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return "Please enter the verification code";
-              if (v.trim().length < 6) return "Please enter the complete 6-digit code";
+              if (v == null || v.trim().isEmpty)
+                return "Please enter the verification code";
+              if (v.trim().length < 6)
+                return "Please enter the complete 6-digit code";
               return null;
             },
           ),
@@ -483,7 +514,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+              color: isDark
+                  ? AcadexColors.darkCanvasSoft
+                  : AcadexColors.canvasSoft,
               borderRadius: AcadexRadius.borderRadiusSm,
             ),
             child: Row(
@@ -492,7 +525,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 Icon(
                   LucideIcons.clock,
                   size: 14,
-                  color: _expirySeconds <= 60 ? AcadexColors.error : AcadexColors.primary,
+                  color: _expirySeconds <= 60
+                      ? AcadexColors.error
+                      : AcadexColors.primary,
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -500,7 +535,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   style: AcadexTypography.caption(
                     color: _expirySeconds <= 60
                         ? AcadexColors.error
-                        : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                        : (isDark
+                              ? AcadexColors.darkInkSecondary
+                              : AcadexColors.inkSecondary),
                   ).copyWith(fontWeight: FontWeight.w600),
                 ),
               ],
@@ -528,10 +565,14 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
               style: TextButton.styleFrom(
                 foregroundColor: _resendCooldownSeconds > 0
-                    ? (isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint)
+                    ? (isDark
+                          ? AcadexColors.darkInkFaint
+                          : AcadexColors.inkFaint)
                     : AcadexColors.primary,
               ),
-              onPressed: (_resendCooldownSeconds > 0 || _isLoading) ? null : _handleResendOtp,
+              onPressed: (_resendCooldownSeconds > 0 || _isLoading)
+                  ? null
+                  : _handleResendOtp,
             ),
           ),
         ],
@@ -560,10 +601,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                color: isDark
+                    ? AcadexColors.primaryHover.withValues(alpha: 0.2)
+                    : AcadexColors.primaryLight,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(LucideIcons.shieldCheck, size: 28, color: AcadexColors.primary),
+              child: const Icon(
+                LucideIcons.shieldCheck,
+                size: 28,
+                color: AcadexColors.primary,
+              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -592,7 +639,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           Text(
             'New Password',
             style: AcadexTypography.caption(
-              color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+              color: isDark
+                  ? AcadexColors.darkInkSecondary
+                  : AcadexColors.inkSecondary,
             ).copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
@@ -601,21 +650,28 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             enabled: !_isLoading,
             obscureText: !_isPasswordVisible,
             onChanged: (v) => setState(() {}),
-            style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+            style: AcadexTypography.body(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ),
             decoration: InputDecoration(
               hintText: '••••••••',
               prefixIcon: Icon(
                 LucideIcons.lock,
                 size: 18,
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
               suffixIcon: IconButton(
                 icon: Icon(
                   _isPasswordVisible ? LucideIcons.eyeOff : LucideIcons.eye,
                   size: 18,
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
-                onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                onPressed: () =>
+                    setState(() => _isPasswordVisible = !_isPasswordVisible),
               ),
             ),
             validator: (v) {
@@ -629,7 +685,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           Text(
             'Confirm Password',
             style: AcadexTypography.caption(
-              color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+              color: isDark
+                  ? AcadexColors.darkInkSecondary
+                  : AcadexColors.inkSecondary,
             ).copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
@@ -638,26 +696,38 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             enabled: !_isLoading,
             obscureText: !_isConfirmPasswordVisible,
             onChanged: (v) => setState(() {}),
-            style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+            style: AcadexTypography.body(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ),
             decoration: InputDecoration(
               hintText: '••••••••',
               prefixIcon: Icon(
                 LucideIcons.lock,
                 size: 18,
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _isConfirmPasswordVisible ? LucideIcons.eyeOff : LucideIcons.eye,
+                  _isConfirmPasswordVisible
+                      ? LucideIcons.eyeOff
+                      : LucideIcons.eye,
                   size: 18,
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
-                onPressed: () => setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible),
+                onPressed: () => setState(
+                  () => _isConfirmPasswordVisible = !_isConfirmPasswordVisible,
+                ),
               ),
             ),
             validator: (v) {
-              if (v == null || v.isEmpty) return "Please confirm your new password";
-              if (v != _newPasswordController.text) return "Passwords do not match";
+              if (v == null || v.isEmpty)
+                return "Please confirm your new password";
+              if (v != _newPasswordController.text)
+                return "Passwords do not match";
               return null;
             },
           ),
@@ -670,7 +740,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               color: isDark ? AcadexColors.darkCanvas : AcadexColors.canvasSoft,
               borderRadius: AcadexRadius.borderRadiusMd,
               border: Border.all(
-                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
               ),
             ),
             child: Column(
@@ -679,15 +751,29 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 Text(
                   'Password Requirements:',
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                    color: isDark
+                        ? AcadexColors.darkInkSecondary
+                        : AcadexColors.inkSecondary,
                   ).copyWith(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 8),
-                _buildRequirementItem('At least 8 characters', hasMinLength, isDark),
+                _buildRequirementItem(
+                  'At least 8 characters',
+                  hasMinLength,
+                  isDark,
+                ),
                 const SizedBox(height: 4),
-                _buildRequirementItem('Contains at least one letter', hasLetter, isDark),
+                _buildRequirementItem(
+                  'Contains at least one letter',
+                  hasLetter,
+                  isDark,
+                ),
                 const SizedBox(height: 4),
-                _buildRequirementItem('Contains at least one number', hasNumber, isDark),
+                _buildRequirementItem(
+                  'Contains at least one number',
+                  hasNumber,
+                  isDark,
+                ),
                 const SizedBox(height: 4),
                 _buildRequirementItem('Passwords match', isMatching, isDark),
               ],
@@ -721,7 +807,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               color: AcadexColors.success.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: const Icon(LucideIcons.checkCircle2, size: 36, color: AcadexColors.success),
+            child: const Icon(
+              LucideIcons.checkCircle2,
+              size: 36,
+              color: AcadexColors.success,
+            ),
           ),
         ),
         const SizedBox(height: 20),
@@ -769,7 +859,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             style: AcadexTypography.caption(
               color: isMet
                   ? (isDark ? AcadexColors.darkInk : AcadexColors.ink)
-                  : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                  : (isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted),
             ),
           ),
         ),
@@ -781,14 +873,20 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? AcadexColors.errorDarkContainer : AcadexColors.errorLight,
+        color: isDark
+            ? AcadexColors.errorDarkContainer
+            : AcadexColors.errorLight,
         borderRadius: AcadexRadius.borderRadiusMd,
         border: Border.all(color: AcadexColors.error),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(LucideIcons.circleAlert, size: 16, color: AcadexColors.error),
+          const Icon(
+            LucideIcons.circleAlert,
+            size: 16,
+            color: AcadexColors.error,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

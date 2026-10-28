@@ -25,18 +25,18 @@ class UserActivationResultDialog extends StatefulWidget {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => UserActivationResultDialog(
-        result: result,
-        isReissue: isReissue,
-      ),
+      builder: (ctx) =>
+          UserActivationResultDialog(result: result, isReissue: isReissue),
     );
   }
 
   @override
-  State<UserActivationResultDialog> createState() => _UserActivationResultDialogState();
+  State<UserActivationResultDialog> createState() =>
+      _UserActivationResultDialogState();
 }
 
-class _UserActivationResultDialogState extends State<UserActivationResultDialog> {
+class _UserActivationResultDialogState
+    extends State<UserActivationResultDialog> {
   bool _codeCopied = false;
   bool _allCopied = false;
 
@@ -112,7 +112,9 @@ class _UserActivationResultDialogState extends State<UserActivationResultDialog>
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusLg),
-      backgroundColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+      backgroundColor: isDark
+          ? AcadexColors.darkSurfaceCard
+          : AcadexColors.surface,
       child: SingleChildScrollView(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 520),
@@ -131,10 +133,15 @@ class _UserActivationResultDialogState extends State<UserActivationResultDialog>
                       color: AcadexColors.successLight,
                       shape: BoxShape.circle,
                       border: Border.all(
-                          color: AcadexColors.success.withValues(alpha: 0.3), width: 1.5),
+                        color: AcadexColors.success.withValues(alpha: 0.3),
+                        width: 1.5,
+                      ),
                     ),
-                    child: const Icon(LucideIcons.circleCheck,
-                        color: AcadexColors.success, size: 24),
+                    child: const Icon(
+                      LucideIcons.circleCheck,
+                      color: AcadexColors.success,
+                      size: 24,
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -146,14 +153,18 @@ class _UserActivationResultDialogState extends State<UserActivationResultDialog>
                               ? 'Activation Code Reissued'
                               : 'User Provisioned Successfully',
                           style: AcadexTypography.heading2(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ).copyWith(fontSize: 18),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'Share these credentials with the user to activate their account.',
                           style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                         ),
                       ],
@@ -167,7 +178,9 @@ class _UserActivationResultDialogState extends State<UserActivationResultDialog>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkCanvas : AcadexColors.canvasSoft,
+                  color: isDark
+                      ? AcadexColors.darkCanvas
+                      : AcadexColors.canvasSoft,
                   borderRadius: AcadexRadius.borderRadiusMd,
                   border: Border.all(
                     color: AcadexColors.primary.withValues(alpha: 0.35),
@@ -181,20 +194,29 @@ class _UserActivationResultDialogState extends State<UserActivationResultDialog>
                       children: [
                         Text(
                           'SINGLE-USE ACTIVATION CODE',
-                          style: AcadexTypography.eyebrow(color: AcadexColors.primary)
-                              .copyWith(letterSpacing: 1.2, fontWeight: FontWeight.w700),
+                          style:
+                              AcadexTypography.eyebrow(
+                                color: AcadexColors.primary,
+                              ).copyWith(
+                                letterSpacing: 1.2,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
                         InkWell(
                           onTap: _copyCode,
                           borderRadius: AcadexRadius.borderRadiusSm,
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
-                                  _codeCopied ? LucideIcons.check : LucideIcons.copy,
+                                  _codeCopied
+                                      ? LucideIcons.check
+                                      : LucideIcons.copy,
                                   size: 14,
                                   color: _codeCopied
                                       ? AcadexColors.success
@@ -220,8 +242,10 @@ class _UserActivationResultDialogState extends State<UserActivationResultDialog>
                     const SizedBox(height: 10),
                     Container(
                       width: double.infinity,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: isDark
                             ? AcadexColors.darkSurfaceCard
@@ -249,11 +273,13 @@ class _UserActivationResultDialogState extends State<UserActivationResultDialog>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(LucideIcons.clock,
-                            size: 13,
-                            color: isDark
-                                ? AcadexColors.darkInkMuted
-                                : AcadexColors.inkMuted),
+                        Icon(
+                          LucideIcons.clock,
+                          size: 13,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           'Expires: $expiryFormatted',
@@ -279,7 +305,9 @@ class _UserActivationResultDialogState extends State<UserActivationResultDialog>
                       : AcadexColors.canvas,
                   borderRadius: AcadexRadius.borderRadiusMd,
                   border: Border.all(
-                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
                   ),
                 ),
                 child: Column(
@@ -317,14 +345,19 @@ class _UserActivationResultDialogState extends State<UserActivationResultDialog>
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(LucideIcons.shieldAlert,
-                        color: AcadexColors.warning, size: 16),
+                    const Icon(
+                      LucideIcons.shieldAlert,
+                      color: AcadexColors.warning,
+                      size: 16,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'This code is shown ONCE and cannot be recovered. Copy it now before closing.',
                         style: AcadexTypography.caption(
-                          color: isDark ? const Color(0xFFFBBF24) : const Color(0xFF92400E),
+                          color: isDark
+                              ? const Color(0xFFFBBF24)
+                              : const Color(0xFF92400E),
                         ),
                       ),
                     ),
@@ -362,8 +395,13 @@ class _UserActivationResultDialogState extends State<UserActivationResultDialog>
     );
   }
 
-  Widget _row(bool isDark, String label, String value,
-      {bool mono = false, bool badge = false}) {
+  Widget _row(
+    bool isDark,
+    String label,
+    String value, {
+    bool mono = false,
+    bool badge = false,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -375,8 +413,7 @@ class _UserActivationResultDialogState extends State<UserActivationResultDialog>
         ),
         badge
             ? Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: AcadexColors.warning.withValues(alpha: 0.15),
                   borderRadius: AcadexRadius.borderRadiusXs,

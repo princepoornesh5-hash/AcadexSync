@@ -16,15 +16,23 @@ class ValidationBanner extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
+        color: isDark
+            ? AcadexColors.warningDarkContainer
+            : AcadexColors.warningLight,
         borderRadius: AcadexRadius.borderRadiusMd,
         border: Border.all(
-          color: isDark ? AcadexColors.warning.withValues(alpha: 0.4) : AcadexColors.warning.withValues(alpha: 0.3),
+          color: isDark
+              ? AcadexColors.warning.withValues(alpha: 0.4)
+              : AcadexColors.warning.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
         children: [
-          Icon(LucideIcons.alertTriangle, color: AcadexColors.warning, size: 18),
+          Icon(
+            LucideIcons.alertTriangle,
+            color: AcadexColors.warning,
+            size: 18,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(

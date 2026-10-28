@@ -16,9 +16,12 @@ class ApiTimetableRepository implements TimetableRepository {
   final Map<String, List<TimetableBreakModel>> _breaks = {};
   final Map<String, List<TimetableGridEntryModel>> _gridEntries = {};
 
-  final _periodsStreamController = StreamController<Map<String, List<TimetablePeriodModel>>>.broadcast();
-  final _breaksStreamController = StreamController<Map<String, List<TimetableBreakModel>>>.broadcast();
-  final _gridEntriesStreamController = StreamController<Map<String, List<TimetableGridEntryModel>>>.broadcast();
+  final _periodsStreamController =
+      StreamController<Map<String, List<TimetablePeriodModel>>>.broadcast();
+  final _breaksStreamController =
+      StreamController<Map<String, List<TimetableBreakModel>>>.broadcast();
+  final _gridEntriesStreamController =
+      StreamController<Map<String, List<TimetableGridEntryModel>>>.broadcast();
 
   ApiTimetableRepository([ApiClient? client]) : _client = client ?? apiClient;
 
@@ -73,10 +76,22 @@ class ApiTimetableRepository implements TimetableRepository {
           queryParameters: queryParams.isNotEmpty ? queryParams : null,
         );
         final body = response.data;
-        final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
-        final list = data is List ? data : (data is Map && data['entries'] is List ? data['entries'] as List : null);
+        final data = body is Map<String, dynamic>
+            ? (body['data'] ?? body)
+            : body;
+        final list = data is List
+            ? data
+            : (data is Map && data['entries'] is List
+                  ? data['entries'] as List
+                  : null);
         if (list != null) {
-          return _parseEntries(list, collegeId, departmentId, sectionId, facultyId);
+          return _parseEntries(
+            list,
+            collegeId,
+            departmentId,
+            sectionId,
+            facultyId,
+          );
         }
       } else if (sectionId != null && sectionId.isNotEmpty) {
         final response = await _client.dio.get(
@@ -84,8 +99,14 @@ class ApiTimetableRepository implements TimetableRepository {
           queryParameters: queryParams.isNotEmpty ? queryParams : null,
         );
         final body = response.data;
-        final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
-        final list = data is List ? data : (data is Map && data['entries'] is List ? data['entries'] as List : null);
+        final data = body is Map<String, dynamic>
+            ? (body['data'] ?? body)
+            : body;
+        final list = data is List
+            ? data
+            : (data is Map && data['entries'] is List
+                  ? data['entries'] as List
+                  : null);
         if (list != null) {
           return _parseEntries(list, collegeId, departmentId, sectionId, null);
         }
@@ -95,8 +116,14 @@ class ApiTimetableRepository implements TimetableRepository {
           queryParameters: queryParams.isNotEmpty ? queryParams : null,
         );
         final body = response.data;
-        final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
-        final list = data is List ? data : (data is Map && data['entries'] is List ? data['entries'] as List : null);
+        final data = body is Map<String, dynamic>
+            ? (body['data'] ?? body)
+            : body;
+        final list = data is List
+            ? data
+            : (data is Map && data['entries'] is List
+                  ? data['entries'] as List
+                  : null);
         if (list != null) {
           return _parseEntries(list, collegeId, departmentId, null, null);
         }
@@ -106,8 +133,14 @@ class ApiTimetableRepository implements TimetableRepository {
           queryParameters: queryParams.isNotEmpty ? queryParams : null,
         );
         final body = response.data;
-        final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
-        final list = data is List ? data : (data is Map && data['entries'] is List ? data['entries'] as List : null);
+        final data = body is Map<String, dynamic>
+            ? (body['data'] ?? body)
+            : body;
+        final list = data is List
+            ? data
+            : (data is Map && data['entries'] is List
+                  ? data['entries'] as List
+                  : null);
         if (list != null) {
           return _parseEntries(list, collegeId, departmentId, sectionId, null);
         }
@@ -131,13 +164,17 @@ class ApiTimetableRepository implements TimetableRepository {
   ) {
     return list.map((item) {
       final m = item as Map<String, dynamic>;
-      final dayStr = (m['dayOfWeek'] ?? m['day'] ?? 'monday').toString().toLowerCase();
+      final dayStr = (m['dayOfWeek'] ?? m['day'] ?? 'monday')
+          .toString()
+          .toLowerCase();
       final day = TimetableDay.values.firstWhere(
         (d) => d.name.toLowerCase() == dayStr,
         orElse: () => TimetableDay.monday,
       );
 
-      final sessionTypeStr = (m['sessionType'] ?? 'lecture').toString().toLowerCase();
+      final sessionTypeStr = (m['sessionType'] ?? 'lecture')
+          .toString()
+          .toLowerCase();
       final sessionType = TimetableSessionType.values.firstWhere(
         (s) => s.name.toLowerCase() == sessionTypeStr,
         orElse: () => TimetableSessionType.lecture,
@@ -145,7 +182,8 @@ class ApiTimetableRepository implements TimetableRepository {
 
       return TimetableModel(
         id: (m['id'] ?? m['_id'] ?? '').toString(),
-        timetableId: m['timetableId']?.toString() ?? m['parentTimetableId']?.toString(),
+        timetableId:
+            m['timetableId']?.toString() ?? m['parentTimetableId']?.toString(),
         collegeId: (m['collegeId'] ?? collegeId).toString(),
         departmentId: (m['departmentId'] ?? departmentId ?? '').toString(),
         courseId: (m['courseId'] ?? '').toString(),
@@ -153,7 +191,8 @@ class ApiTimetableRepository implements TimetableRepository {
         semesterId: (m['semesterId'] ?? '').toString(),
         sectionId: (m['sectionId'] ?? sectionId ?? '').toString(),
         subjectId: (m['subjectId'] ?? m['subject']?['_id'] ?? '').toString(),
-        facultyId: (m['facultyId'] ?? m['faculty']?['_id'] ?? facultyId ?? '').toString(),
+        facultyId: (m['facultyId'] ?? m['faculty']?['_id'] ?? facultyId ?? '')
+            .toString(),
         facultyAssignmentId: m['facultyAssignmentId']?.toString(),
         roomId: m['roomId']?.toString(),
         dayOfWeek: day,
@@ -163,17 +202,27 @@ class ApiTimetableRepository implements TimetableRepository {
         building: m['building']?.toString(),
         sessionType: sessionType,
         isSubstituted: m['isSubstituted'] == true,
-        subjectName: m['subjectName']?.toString() ?? m['subject']?['name']?.toString(),
-        subjectCode: m['subjectCode']?.toString() ?? m['subject']?['code']?.toString(),
-        sectionName: m['sectionName']?.toString() ?? m['section']?['name']?.toString(),
-        facultyName: m['facultyName']?.toString() ?? m['faculty']?['name']?.toString(),
-        courseName: m['courseName']?.toString() ?? m['course']?['name']?.toString(),
-        semesterName: m['semesterName']?.toString() ?? m['semester']?['name']?.toString(),
+        subjectName:
+            m['subjectName']?.toString() ?? m['subject']?['name']?.toString(),
+        subjectCode:
+            m['subjectCode']?.toString() ?? m['subject']?['code']?.toString(),
+        sectionName:
+            m['sectionName']?.toString() ?? m['section']?['name']?.toString(),
+        facultyName:
+            m['facultyName']?.toString() ?? m['faculty']?['name']?.toString(),
+        courseName:
+            m['courseName']?.toString() ?? m['course']?['name']?.toString(),
+        semesterName:
+            m['semesterName']?.toString() ?? m['semester']?['name']?.toString(),
         cohort: m['cohort']?.toString(),
         academicStage: m['academicStage']?.toString(),
         contextualDescription: m['contextualDescription']?.toString(),
-        createdAt: m['createdAt'] != null ? DateTime.tryParse(m['createdAt'].toString()) ?? DateTime.now() : DateTime.now(),
-        updatedAt: m['updatedAt'] != null ? DateTime.tryParse(m['updatedAt'].toString()) ?? DateTime.now() : DateTime.now(),
+        createdAt: m['createdAt'] != null
+            ? DateTime.tryParse(m['createdAt'].toString()) ?? DateTime.now()
+            : DateTime.now(),
+        updatedAt: m['updatedAt'] != null
+            ? DateTime.tryParse(m['updatedAt'].toString()) ?? DateTime.now()
+            : DateTime.now(),
       );
     }).toList();
   }
@@ -183,27 +232,36 @@ class ApiTimetableRepository implements TimetableRepository {
   // =========================================================================
 
   @override
-  Future<String> createTimetableContainer(TimetableContainerModel container) async {
+  Future<String> createTimetableContainer(
+    TimetableContainerModel container,
+  ) async {
     try {
-      final response = await _client.dio.post('/timetables', data: {
-        'collegeId': container.collegeId,
-        'departmentId': container.departmentId,
-        'courseId': container.courseId,
-        'academicYearId': container.academicYearId,
-        'semesterId': container.semesterId,
-        'sectionId': container.sectionId,
-        'name': container.name,
-        'status': container.status.name.toLowerCase(),
-        'timingMode': container.timingMode.name,
-        'activeDays': container.activeDays.map((d) => d.name.toLowerCase()).toList(),
-      });
+      final response = await _client.dio.post(
+        '/timetables',
+        data: {
+          'collegeId': container.collegeId,
+          'departmentId': container.departmentId,
+          'courseId': container.courseId,
+          'academicYearId': container.academicYearId,
+          'semesterId': container.semesterId,
+          'sectionId': container.sectionId,
+          'name': container.name,
+          'status': container.status.name.toLowerCase(),
+          'timingMode': container.timingMode.name,
+          'activeDays': container.activeDays
+              .map((d) => d.name.toLowerCase())
+              .toList(),
+        },
+      );
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
       final serverId = (data is Map<String, dynamic>)
           ? (data['id'] ?? data['_id'])?.toString()
           : null;
       if (serverId == null || serverId.trim().isEmpty) {
-        throw Exception('Failed to create timetable: Server returned an invalid or missing timetable ID.');
+        throw Exception(
+          'Failed to create timetable: Server returned an invalid or missing timetable ID.',
+        );
       }
       return serverId.trim();
     } on DioException catch (e) {
@@ -212,20 +270,29 @@ class ApiTimetableRepository implements TimetableRepository {
   }
 
   @override
-  Future<void> updateTimetableContainer(TimetableContainerModel container) async {
+  Future<void> updateTimetableContainer(
+    TimetableContainerModel container,
+  ) async {
     try {
-      await _client.dio.put('/timetables/${container.id}', data: {
-        'name': container.name,
-        'status': container.status.name.toLowerCase(),
-        'timingMode': container.timingMode.name,
-        'activeDays': container.activeDays.map((d) => d.name.toLowerCase()).toList(),
-        if (_periods.containsKey(container.id))
-          'periods': _periods[container.id]!.map((p) => p.toJson()).toList(),
-        if (_breaks.containsKey(container.id))
-          'breaks': _breaks[container.id]!.map((b) => b.toJson()).toList(),
-        if (_gridEntries.containsKey(container.id))
-          'entries': _gridEntries[container.id]!.map((e) => e.toJson()).toList(),
-      });
+      await _client.dio.put(
+        '/timetables/${container.id}',
+        data: {
+          'name': container.name,
+          'status': container.status.name.toLowerCase(),
+          'timingMode': container.timingMode.name,
+          'activeDays': container.activeDays
+              .map((d) => d.name.toLowerCase())
+              .toList(),
+          if (_periods.containsKey(container.id))
+            'periods': _periods[container.id]!.map((p) => p.toJson()).toList(),
+          if (_breaks.containsKey(container.id))
+            'breaks': _breaks[container.id]!.map((b) => b.toJson()).toList(),
+          if (_gridEntries.containsKey(container.id))
+            'entries': _gridEntries[container.id]!
+                .map((e) => e.toJson())
+                .toList(),
+        },
+      );
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to update timetable');
     }
@@ -253,7 +320,9 @@ class ApiTimetableRepository implements TimetableRepository {
   }
 
   @override
-  Future<TimetableContainerModel?> getTimetableContainer(String timetableId) async {
+  Future<TimetableContainerModel?> getTimetableContainer(
+    String timetableId,
+  ) async {
     try {
       final response = await _client.dio.get('/timetables/$timetableId');
       final body = response.data;
@@ -261,17 +330,24 @@ class ApiTimetableRepository implements TimetableRepository {
       if (data is Map<String, dynamic>) {
         if (data['periods'] is List) {
           _periods[timetableId] = (data['periods'] as List)
-              .map((p) => TimetablePeriodModel.fromJson(p as Map<String, dynamic>))
+              .map(
+                (p) => TimetablePeriodModel.fromJson(p as Map<String, dynamic>),
+              )
               .toList();
         }
         if (data['breaks'] is List) {
           _breaks[timetableId] = (data['breaks'] as List)
-              .map((b) => TimetableBreakModel.fromJson(b as Map<String, dynamic>))
+              .map(
+                (b) => TimetableBreakModel.fromJson(b as Map<String, dynamic>),
+              )
               .toList();
         }
         if (data['entries'] is List) {
           _gridEntries[timetableId] = (data['entries'] as List)
-              .map((e) => TimetableGridEntryModel.fromJson(e as Map<String, dynamic>))
+              .map(
+                (e) =>
+                    TimetableGridEntryModel.fromJson(e as Map<String, dynamic>),
+              )
               .toList();
         }
         return TimetableContainerModel.fromJson(data);
@@ -284,7 +360,9 @@ class ApiTimetableRepository implements TimetableRepository {
   }
 
   @override
-  Stream<TimetableContainerModel?> watchTimetableContainer(String timetableId) async* {
+  Stream<TimetableContainerModel?> watchTimetableContainer(
+    String timetableId,
+  ) async* {
     final container = await getTimetableContainer(timetableId);
     yield container;
   }
@@ -302,21 +380,36 @@ class ApiTimetableRepository implements TimetableRepository {
     try {
       final queryParams = <String, dynamic>{
         'collegeId': collegeId,
-        if (departmentId != null && departmentId.isNotEmpty) 'departmentId': departmentId,
+        if (departmentId != null && departmentId.isNotEmpty)
+          'departmentId': departmentId,
         if (courseId != null && courseId.isNotEmpty) 'courseId': courseId,
-        if (academicYearId != null && academicYearId.isNotEmpty) 'academicYearId': academicYearId,
-        if (semesterId != null && semesterId.isNotEmpty) 'semesterId': semesterId,
+        if (academicYearId != null && academicYearId.isNotEmpty)
+          'academicYearId': academicYearId,
+        if (semesterId != null && semesterId.isNotEmpty)
+          'semesterId': semesterId,
         if (sectionId != null && sectionId.isNotEmpty) 'sectionId': sectionId,
         if (status != null) 'status': status.name.toLowerCase(),
       };
 
-      final response = await _client.dio.get('/timetables', queryParameters: queryParams);
+      final response = await _client.dio.get(
+        '/timetables',
+        queryParameters: queryParams,
+      );
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
-      final list = data is List ? data : (data is Map && data['items'] is List ? data['items'] as List : null);
+      final list = data is List
+          ? data
+          : (data is Map && data['items'] is List
+                ? data['items'] as List
+                : null);
 
       if (list != null) {
-        return list.map((e) => TimetableContainerModel.fromJson(e as Map<String, dynamic>)).toList();
+        return list
+            .map(
+              (e) =>
+                  TimetableContainerModel.fromJson(e as Map<String, dynamic>),
+            )
+            .toList();
       }
       return [];
     } on DioException catch (e) {
@@ -346,7 +439,10 @@ class ApiTimetableRepository implements TimetableRepository {
   // =========================================================================
 
   @override
-  Future<void> savePeriod(String timetableId, TimetablePeriodModel period) async {
+  Future<void> savePeriod(
+    String timetableId,
+    TimetablePeriodModel period,
+  ) async {
     final current = _periods[timetableId] ?? [];
     final updated = [
       for (final p in current)
@@ -356,22 +452,27 @@ class ApiTimetableRepository implements TimetableRepository {
     _periods[timetableId] = updated;
     _periodsStreamController.add(_periods);
     try {
-      await _client.dio.put('/timetables/$timetableId', data: {
-        'periods': updated.map((p) => p.toJson()).toList(),
-      });
+      await _client.dio.put(
+        '/timetables/$timetableId',
+        data: {'periods': updated.map((p) => p.toJson()).toList()},
+      );
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to save timetable period');
     }
   }
 
   @override
-  Future<void> savePeriodsBatch(String timetableId, List<TimetablePeriodModel> periods) async {
+  Future<void> savePeriodsBatch(
+    String timetableId,
+    List<TimetablePeriodModel> periods,
+  ) async {
     _periods[timetableId] = periods;
     _periodsStreamController.add(_periods);
     try {
-      await _client.dio.put('/timetables/$timetableId', data: {
-        'periods': periods.map((p) => p.toJson()).toList(),
-      });
+      await _client.dio.put(
+        '/timetables/$timetableId',
+        data: {'periods': periods.map((p) => p.toJson()).toList()},
+      );
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to save timetable periods');
     }
@@ -384,9 +485,10 @@ class ApiTimetableRepository implements TimetableRepository {
     _periods[timetableId] = updated;
     _periodsStreamController.add(_periods);
     try {
-      await _client.dio.put('/timetables/$timetableId', data: {
-        'periods': updated.map((p) => p.toJson()).toList(),
-      });
+      await _client.dio.put(
+        '/timetables/$timetableId',
+        data: {'periods': updated.map((p) => p.toJson()).toList()},
+      );
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to delete timetable period');
     }
@@ -407,7 +509,10 @@ class ApiTimetableRepository implements TimetableRepository {
   }
 
   @override
-  Future<void> saveBreak(String timetableId, TimetableBreakModel breakModel) async {
+  Future<void> saveBreak(
+    String timetableId,
+    TimetableBreakModel breakModel,
+  ) async {
     final current = _breaks[timetableId] ?? [];
     final updated = [
       for (final b in current)
@@ -417,22 +522,27 @@ class ApiTimetableRepository implements TimetableRepository {
     _breaks[timetableId] = updated;
     _breaksStreamController.add(_breaks);
     try {
-      await _client.dio.put('/timetables/$timetableId', data: {
-        'breaks': updated.map((b) => b.toJson()).toList(),
-      });
+      await _client.dio.put(
+        '/timetables/$timetableId',
+        data: {'breaks': updated.map((b) => b.toJson()).toList()},
+      );
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to save timetable break');
     }
   }
 
   @override
-  Future<void> saveBreaksBatch(String timetableId, List<TimetableBreakModel> breaks) async {
+  Future<void> saveBreaksBatch(
+    String timetableId,
+    List<TimetableBreakModel> breaks,
+  ) async {
     _breaks[timetableId] = breaks;
     _breaksStreamController.add(_breaks);
     try {
-      await _client.dio.put('/timetables/$timetableId', data: {
-        'breaks': breaks.map((b) => b.toJson()).toList(),
-      });
+      await _client.dio.put(
+        '/timetables/$timetableId',
+        data: {'breaks': breaks.map((b) => b.toJson()).toList()},
+      );
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to save timetable breaks');
     }
@@ -445,9 +555,10 @@ class ApiTimetableRepository implements TimetableRepository {
     _breaks[timetableId] = updated;
     _breaksStreamController.add(_breaks);
     try {
-      await _client.dio.put('/timetables/$timetableId', data: {
-        'breaks': updated.map((b) => b.toJson()).toList(),
-      });
+      await _client.dio.put(
+        '/timetables/$timetableId',
+        data: {'breaks': updated.map((b) => b.toJson()).toList()},
+      );
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to delete timetable break');
     }
@@ -468,7 +579,10 @@ class ApiTimetableRepository implements TimetableRepository {
   }
 
   @override
-  Future<void> saveGridEntry(String timetableId, TimetableGridEntryModel entry) async {
+  Future<void> saveGridEntry(
+    String timetableId,
+    TimetableGridEntryModel entry,
+  ) async {
     if (!_gridEntries.containsKey(timetableId)) {
       await getTimetableContainer(timetableId);
     }
@@ -479,9 +593,10 @@ class ApiTimetableRepository implements TimetableRepository {
       if (!current.any((e) => e.id == entry.id)) entry,
     ];
     try {
-      await _client.dio.put('/timetables/$timetableId', data: {
-        'entries': updated.map((e) => e.toJson()).toList(),
-      });
+      await _client.dio.put(
+        '/timetables/$timetableId',
+        data: {'entries': updated.map((e) => e.toJson()).toList()},
+      );
       _gridEntries[timetableId] = updated;
       _gridEntriesStreamController.add(_gridEntries);
     } on DioException catch (e) {
@@ -490,11 +605,15 @@ class ApiTimetableRepository implements TimetableRepository {
   }
 
   @override
-  Future<void> saveGridEntriesBatch(String timetableId, List<TimetableGridEntryModel> entries) async {
+  Future<void> saveGridEntriesBatch(
+    String timetableId,
+    List<TimetableGridEntryModel> entries,
+  ) async {
     try {
-      await _client.dio.put('/timetables/$timetableId', data: {
-        'entries': entries.map((e) => e.toJson()).toList(),
-      });
+      await _client.dio.put(
+        '/timetables/$timetableId',
+        data: {'entries': entries.map((e) => e.toJson()).toList()},
+      );
       _gridEntries[timetableId] = entries;
       _gridEntriesStreamController.add(_gridEntries);
     } on DioException catch (e) {
@@ -510,7 +629,9 @@ class ApiTimetableRepository implements TimetableRepository {
       throw Exception('Timetable container not found: $timetableId');
     }
     if (container.status == TimetableStatus.published) {
-      throw StateError('Cannot modify entries in a published timetable. Please unpublish or revise first.');
+      throw StateError(
+        'Cannot modify entries in a published timetable. Please unpublish or revise first.',
+      );
     }
 
     final current = _gridEntries[timetableId] ?? [];
@@ -519,9 +640,10 @@ class ApiTimetableRepository implements TimetableRepository {
 
     // 3. Submit updated container through the existing PUT /timetables/:id endpoint
     try {
-      await _client.dio.put('/timetables/$timetableId', data: {
-        'entries': updated.map((e) => e.toJson()).toList(),
-      });
+      await _client.dio.put(
+        '/timetables/$timetableId',
+        data: {'entries': updated.map((e) => e.toJson()).toList()},
+      );
       // 4. Update frontend state ONLY after successful server response
       _gridEntries[timetableId] = updated;
       _gridEntriesStreamController.add(_gridEntries);
@@ -532,17 +654,24 @@ class ApiTimetableRepository implements TimetableRepository {
   }
 
   @override
-  Future<List<TimetableGridEntryModel>> getGridEntries(String timetableId) async {
-    if (_gridEntries.containsKey(timetableId)) return _gridEntries[timetableId]!;
+  Future<List<TimetableGridEntryModel>> getGridEntries(
+    String timetableId,
+  ) async {
+    if (_gridEntries.containsKey(timetableId))
+      return _gridEntries[timetableId]!;
     await getTimetableContainer(timetableId);
     return _gridEntries[timetableId] ?? [];
   }
 
   @override
-  Stream<List<TimetableGridEntryModel>> watchGridEntries(String timetableId) async* {
+  Stream<List<TimetableGridEntryModel>> watchGridEntries(
+    String timetableId,
+  ) async* {
     final initial = await getGridEntries(timetableId);
     yield initial;
-    yield* _gridEntriesStreamController.stream.map((map) => map[timetableId] ?? []);
+    yield* _gridEntriesStreamController.stream.map(
+      (map) => map[timetableId] ?? [],
+    );
   }
 
   @override
@@ -556,7 +685,10 @@ class ApiTimetableRepository implements TimetableRepository {
   }
 
   @override
-  Future<void> publishTimetable(String timetableId, {required String publishedBy}) async {
+  Future<void> publishTimetable(
+    String timetableId, {
+    required String publishedBy,
+  }) async {
     try {
       await _client.dio.post('/timetables/$timetableId/publish');
     } on DioException catch (e) {
@@ -577,7 +709,9 @@ class ApiTimetableRepository implements TimetableRepository {
   Future<void> createEntry(TimetableModel entry) async {
     final timetableId = entry.timetableId;
     if (timetableId == null || timetableId.isEmpty) {
-      throw ArgumentError('Cannot schedule class entry without an authoritative parent timetableId container reference.');
+      throw ArgumentError(
+        'Cannot schedule class entry without an authoritative parent timetableId container reference.',
+      );
     }
     final gridEntry = TimetableGridEntryModel(
       id: entry.id.isNotEmpty ? entry.id : const Uuid().v4(),
@@ -602,7 +736,9 @@ class ApiTimetableRepository implements TimetableRepository {
   Future<void> updateEntry(TimetableModel entry) async {
     final timetableId = entry.timetableId;
     if (timetableId == null || timetableId.isEmpty) {
-      throw ArgumentError('Cannot update timetable entry without an authoritative parent timetableId container reference.');
+      throw ArgumentError(
+        'Cannot update timetable entry without an authoritative parent timetableId container reference.',
+      );
     }
     final gridEntry = TimetableGridEntryModel(
       id: entry.id,
@@ -640,18 +776,33 @@ class ApiTimetableRepository implements TimetableRepository {
   }
 
   @override
-  Future<List<CalendarOverride>> getCalendarOverrides({String? date, String? from, String? to}) async {
+  Future<List<CalendarOverride>> getCalendarOverrides({
+    String? date,
+    String? from,
+    String? to,
+  }) async {
     try {
       final queryParams = <String, dynamic>{};
       if (date != null) queryParams['date'] = date;
       if (from != null) queryParams['from'] = from;
       if (to != null) queryParams['to'] = to;
-      final response = await _client.dio.get('/calendar-overrides', queryParameters: queryParams);
+      final response = await _client.dio.get(
+        '/calendar-overrides',
+        queryParameters: queryParams,
+      );
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
-      final items = data is List ? data : (data is Map && data['items'] is List ? data['items'] as List : null);
+      final items = data is List
+          ? data
+          : (data is Map && data['items'] is List
+                ? data['items'] as List
+                : null);
       if (items != null) {
-        return items.map((json) => CalendarOverride.fromJson(json as Map<String, dynamic>)).toList();
+        return items
+            .map(
+              (json) => CalendarOverride.fromJson(json as Map<String, dynamic>),
+            )
+            .toList();
       }
       return [];
     } on DioException catch (e) {
@@ -660,9 +811,14 @@ class ApiTimetableRepository implements TimetableRepository {
   }
 
   @override
-  Future<CalendarOverride> createCalendarOverride(CalendarOverride override) async {
+  Future<CalendarOverride> createCalendarOverride(
+    CalendarOverride override,
+  ) async {
     try {
-      final response = await _client.dio.post('/calendar-overrides', data: override.toJson());
+      final response = await _client.dio.post(
+        '/calendar-overrides',
+        data: override.toJson(),
+      );
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
       return CalendarOverride.fromJson(data as Map<String, dynamic>);
@@ -691,13 +847,23 @@ class ApiTimetableRepository implements TimetableRepository {
     try {
       final queryParams = <String, dynamic>{};
       if (date != null && date.isNotEmpty) queryParams['date'] = date;
-      if (timetableId != null && timetableId.isNotEmpty) queryParams['timetableId'] = timetableId;
-      if (departmentId != null && departmentId.isNotEmpty) queryParams['departmentId'] = departmentId;
+      if (timetableId != null && timetableId.isNotEmpty)
+        queryParams['timetableId'] = timetableId;
+      if (departmentId != null && departmentId.isNotEmpty)
+        queryParams['departmentId'] = departmentId;
 
-      final response = await _client.dio.get('/teacher-substitutions', queryParameters: queryParams);
+      final response = await _client.dio.get(
+        '/teacher-substitutions',
+        queryParameters: queryParams,
+      );
       final data = response.data['data'];
       if (data is List) {
-        return data.map((json) => TeacherSubstitution.fromJson(json as Map<String, dynamic>)).toList();
+        return data
+            .map(
+              (json) =>
+                  TeacherSubstitution.fromJson(json as Map<String, dynamic>),
+            )
+            .toList();
       }
       return [];
     } on DioException catch (e) {
@@ -706,9 +872,14 @@ class ApiTimetableRepository implements TimetableRepository {
   }
 
   @override
-  Future<TeacherSubstitution> createTeacherSubstitution(TeacherSubstitution substitution) async {
+  Future<TeacherSubstitution> createTeacherSubstitution(
+    TeacherSubstitution substitution,
+  ) async {
     try {
-      final response = await _client.dio.post('/teacher-substitutions', data: substitution.toJson());
+      final response = await _client.dio.post(
+        '/teacher-substitutions',
+        data: substitution.toJson(),
+      );
       final data = response.data['data'] as Map<String, dynamic>;
       return TeacherSubstitution.fromJson(data);
     } on DioException catch (e) {
@@ -725,4 +896,3 @@ class ApiTimetableRepository implements TimetableRepository {
     }
   }
 }
-

@@ -43,15 +43,18 @@ class MockAchievementRepository implements AchievementRepository {
         academicYearId: 'ay_2026',
         category: AchievementCategory.hackathon,
         title: 'National Innovation Hackathon Winner',
-        description: 'First prize in 36-hour hackathon for building an AI-powered smart campus energy management system.',
+        description:
+            'First prize in 36-hour hackathon for building an AI-powered smart campus energy management system.',
         issuer: 'Indian Institute of Technology (IIT)',
         achievementDate: DateTime(now.year, now.month - 1, 15),
         skills: ['Flutter', 'Python', 'IoT', 'AI/ML'],
         fileName: 'hackathon_winner_cert.pdf',
         fileType: 'pdf',
         fileSizeBytes: 2 * 1024 * 1024,
-        storagePath: '/colleges/college_1/students/student_1/achievements/hackathon_winner_cert.pdf',
-        fileUrl: 'https://firebasestorage.googleapis.com/mock/achievements/hackathon_winner_cert.pdf',
+        storagePath:
+            '/colleges/college_1/students/student_1/achievements/hackathon_winner_cert.pdf',
+        fileUrl:
+            'https://firebasestorage.googleapis.com/mock/achievements/hackathon_winner_cert.pdf',
         status: AchievementStatus.active,
         createdAt: now.subtract(const Duration(days: 30)),
         createdBy: 'Alice Johnson',
@@ -73,15 +76,18 @@ class MockAchievementRepository implements AchievementRepository {
         academicYearId: 'ay_2026',
         category: AchievementCategory.certification,
         title: 'Google Cloud Certified Professional Cloud Architect',
-        description: 'Demonstrated proficiency in cloud architecture, security, and scalable infrastructure deployment.',
+        description:
+            'Demonstrated proficiency in cloud architecture, security, and scalable infrastructure deployment.',
         issuer: 'Google Cloud',
         achievementDate: DateTime(now.year, now.month - 3, 10),
         skills: ['GCP', 'Kubernetes', 'Cloud Architecture'],
         fileName: 'gcp_architect.pdf',
         fileType: 'pdf',
         fileSizeBytes: 1024 * 750,
-        storagePath: '/colleges/college_1/students/student_1/achievements/gcp_architect.pdf',
-        fileUrl: 'https://firebasestorage.googleapis.com/mock/achievements/gcp_architect.pdf',
+        storagePath:
+            '/colleges/college_1/students/student_1/achievements/gcp_architect.pdf',
+        fileUrl:
+            'https://firebasestorage.googleapis.com/mock/achievements/gcp_architect.pdf',
         status: AchievementStatus.active,
         createdAt: now.subtract(const Duration(days: 90)),
         createdBy: 'Alice Johnson',
@@ -103,7 +109,8 @@ class MockAchievementRepository implements AchievementRepository {
         academicYearId: 'ay_2026',
         category: AchievementCategory.technical,
         title: 'Open Source Contributor — Flutter Core',
-        description: 'Merged 3 bugfix PRs into Flutter engine and framework repository.',
+        description:
+            'Merged 3 bugfix PRs into Flutter engine and framework repository.',
         issuer: 'GitHub / Flutter Community',
         achievementDate: DateTime(now.year, now.month - 2, 20),
         skills: ['Dart', 'C++', 'Open Source'],
@@ -126,15 +133,18 @@ class MockAchievementRepository implements AchievementRepository {
         academicYearId: 'ay_2026',
         category: AchievementCategory.internship,
         title: 'Software Engineering Intern — Acame Tech',
-        description: '2-month summer internship working on backend microservices and Redis caching layers.',
+        description:
+            '2-month summer internship working on backend microservices and Redis caching layers.',
         issuer: 'Acame Technologies',
         achievementDate: DateTime(now.year - 1, 8, 30),
         skills: ['Go', 'Redis', 'Docker'],
         fileName: 'internship_letter.png',
         fileType: 'png',
         fileSizeBytes: 1024 * 1200,
-        storagePath: '/colleges/college_1/students/student_1/achievements/internship_letter.png',
-        fileUrl: 'https://firebasestorage.googleapis.com/mock/achievements/internship_letter.png',
+        storagePath:
+            '/colleges/college_1/students/student_1/achievements/internship_letter.png',
+        fileUrl:
+            'https://firebasestorage.googleapis.com/mock/achievements/internship_letter.png',
         status: AchievementStatus.active,
         createdAt: now.subtract(const Duration(days: 350)),
         createdBy: 'Alice Johnson',
@@ -154,15 +164,18 @@ class MockAchievementRepository implements AchievementRepository {
         academicYearId: 'ay_2026',
         category: AchievementCategory.sports,
         title: 'Inter-University Badminton Championship — Gold Medalist',
-        description: 'Won Singles Gold in state level university badminton tournament.',
+        description:
+            'Won Singles Gold in state level university badminton tournament.',
         issuer: 'State Sports Authority',
         achievementDate: DateTime(now.year, 2, 10),
         skills: ['Badminton', 'Sportsmanship'],
         fileName: 'badminton_gold.jpg',
         fileType: 'jpg',
         fileSizeBytes: 1024 * 900,
-        storagePath: '/colleges/college_1/students/student_2/achievements/badminton_gold.jpg',
-        fileUrl: 'https://firebasestorage.googleapis.com/mock/achievements/badminton_gold.jpg',
+        storagePath:
+            '/colleges/college_1/students/student_2/achievements/badminton_gold.jpg',
+        fileUrl:
+            'https://firebasestorage.googleapis.com/mock/achievements/badminton_gold.jpg',
         status: AchievementStatus.active,
         createdAt: now.subtract(const Duration(days: 100)),
         createdBy: 'Bob Miller',
@@ -196,8 +209,7 @@ class MockAchievementRepository implements AchievementRepository {
       if (a.studentUid != studentUid || a.collegeId != collegeId) return false;
       if (status != null && a.status != status) return false;
       return true;
-    }).toList()
-      ..sort((a, b) => b.achievementDate.compareTo(a.achievementDate));
+    }).toList()..sort((a, b) => b.achievementDate.compareTo(a.achievementDate));
   }
 
   @override
@@ -220,28 +232,43 @@ class MockAchievementRepository implements AchievementRepository {
     // 1. Role & Identity checks
     if (currentUser != null) {
       if (currentUser!.role == AppRole.superAdmin) {
-        throw const BackendPermissionException('Super Admin cannot manage routine student achievements.');
+        throw const BackendPermissionException(
+          'Super Admin cannot manage routine student achievements.',
+        );
       }
-      if (currentUser!.role == AppRole.student && currentUser!.id != achievement.studentUid) {
-        throw const BackendPermissionException('Students can only create achievements for themselves.');
+      if (currentUser!.role == AppRole.student &&
+          currentUser!.id != achievement.studentUid) {
+        throw const BackendPermissionException(
+          'Students can only create achievements for themselves.',
+        );
       }
-      if (currentUser!.collegeId != null && currentUser!.collegeId != achievement.collegeId) {
-        throw const BackendPermissionException('Tenant isolation error: College mismatch.');
+      if (currentUser!.collegeId != null &&
+          currentUser!.collegeId != achievement.collegeId) {
+        throw const BackendPermissionException(
+          'Tenant isolation error: College mismatch.',
+        );
       }
-      if (currentUser!.departmentId != null && currentUser!.departmentId != achievement.departmentId) {
-        throw const BackendPermissionException('Department mismatch: Student must use authenticated department.');
+      if (currentUser!.departmentId != null &&
+          currentUser!.departmentId != achievement.departmentId) {
+        throw const BackendPermissionException(
+          'Department mismatch: Student must use authenticated department.',
+        );
       }
     }
 
     // 2. File validations
     if (achievement.fileSizeBytes > 10 * 1024 * 1024) {
-      throw const BackendValidationException('Achievement file size exceeds 10MB limit.');
+      throw const BackendValidationException(
+        'Achievement file size exceeds 10MB limit.',
+      );
     }
 
     if (achievement.fileType != null && achievement.fileType!.isNotEmpty) {
       final allowed = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
       if (!allowed.contains(achievement.fileType!.toLowerCase())) {
-        throw const BackendValidationException('Unsupported file format. Allowed: PDF, JPG, PNG, DOC, DOCX.');
+        throw const BackendValidationException(
+          'Unsupported file format. Allowed: PDF, JPG, PNG, DOC, DOCX.',
+        );
       }
     }
 
@@ -270,7 +297,9 @@ class MockAchievementRepository implements AchievementRepository {
   }) async {
     await _delay();
 
-    final existingIndex = _achievements.indexWhere((a) => a.id == achievement.id);
+    final existingIndex = _achievements.indexWhere(
+      (a) => a.id == achievement.id,
+    );
     if (existingIndex == -1) {
       throw const BackendDatabaseException('Achievement not found');
     }
@@ -278,8 +307,11 @@ class MockAchievementRepository implements AchievementRepository {
 
     // 1. Role boundary & Academic Identity immutability
     if (currentUser != null) {
-      if (currentUser!.role == AppRole.student && currentUser!.id != existing.studentUid) {
-        throw const BackendPermissionException('Cannot update another student\'s achievement.');
+      if (currentUser!.role == AppRole.student &&
+          currentUser!.id != existing.studentUid) {
+        throw const BackendPermissionException(
+          'Cannot update another student\'s achievement.',
+        );
       }
       // Immutable academic fields verification
       if (achievement.studentUid != existing.studentUid ||
@@ -288,13 +320,17 @@ class MockAchievementRepository implements AchievementRepository {
           achievement.courseId != existing.courseId ||
           achievement.semesterId != existing.semesterId ||
           achievement.sectionId != existing.sectionId) {
-        throw const BackendValidationException('Academic identity fields are immutable.');
+        throw const BackendValidationException(
+          'Academic identity fields are immutable.',
+        );
       }
     }
 
     // 2. File validations
     if (achievement.fileSizeBytes > 10 * 1024 * 1024) {
-      throw const BackendValidationException('Achievement file size exceeds 10MB limit.');
+      throw const BackendValidationException(
+        'Achievement file size exceeds 10MB limit.',
+      );
     }
 
     // 3. Storage replacement & cleanup
@@ -308,10 +344,14 @@ class MockAchievementRepository implements AchievementRepository {
     }
 
     // 4. Update status if re-requesting verification
-    AchievementVerificationStatus nextVerification = existing.verificationStatus;
-    if (achievement.isVerificationRequested && existing.verificationStatus == AchievementVerificationStatus.unverified) {
+    AchievementVerificationStatus nextVerification =
+        existing.verificationStatus;
+    if (achievement.isVerificationRequested &&
+        existing.verificationStatus ==
+            AchievementVerificationStatus.unverified) {
       nextVerification = AchievementVerificationStatus.pending;
-    } else if (achievement.isVerificationRequested && existing.verificationStatus == AchievementVerificationStatus.rejected) {
+    } else if (achievement.isVerificationRequested &&
+        existing.verificationStatus == AchievementVerificationStatus.rejected) {
       nextVerification = AchievementVerificationStatus.pending;
     }
 
@@ -330,15 +370,23 @@ class MockAchievementRepository implements AchievementRepository {
   }) async {
     await _delay();
 
-    final existing = _achievements.where((a) => a.id == achievementId).firstOrNull;
+    final existing = _achievements
+        .where((a) => a.id == achievementId)
+        .firstOrNull;
     if (existing == null) return;
 
     if (currentUser != null) {
-      if (currentUser!.role == AppRole.student && currentUser!.id != existing.studentUid) {
-        throw const BackendPermissionException('Cannot delete another student\'s achievement.');
+      if (currentUser!.role == AppRole.student &&
+          currentUser!.id != existing.studentUid) {
+        throw const BackendPermissionException(
+          'Cannot delete another student\'s achievement.',
+        );
       }
-      if (currentUser!.role == AppRole.faculty && currentUser!.departmentId != existing.departmentId) {
-        throw const BackendPermissionException('Faculty cannot delete achievements outside their department.');
+      if (currentUser!.role == AppRole.faculty &&
+          currentUser!.departmentId != existing.departmentId) {
+        throw const BackendPermissionException(
+          'Faculty cannot delete achievements outside their department.',
+        );
       }
     }
 
@@ -362,7 +410,9 @@ class MockAchievementRepository implements AchievementRepository {
   }) async {
     await _delay();
 
-    final existingIndex = _achievements.indexWhere((a) => a.id == achievementId);
+    final existingIndex = _achievements.indexWhere(
+      (a) => a.id == achievementId,
+    );
     if (existingIndex == -1) {
       throw const BackendDatabaseException('Achievement not found');
     }
@@ -371,23 +421,35 @@ class MockAchievementRepository implements AchievementRepository {
     // 1. Review authority check
     if (currentUser != null) {
       if (currentUser!.role == AppRole.student) {
-        throw const BackendPermissionException('Students cannot verify achievements.');
+        throw const BackendPermissionException(
+          'Students cannot verify achievements.',
+        );
       }
       if (currentUser!.role == AppRole.superAdmin) {
-        throw const BackendPermissionException('Super Admin cannot perform routine verifications.');
+        throw const BackendPermissionException(
+          'Super Admin cannot perform routine verifications.',
+        );
       }
-      if (currentUser!.role == AppRole.hod && currentUser!.departmentId != existing.departmentId) {
-        throw const BackendPermissionException('HOD cannot verify achievements from another department.');
+      if (currentUser!.role == AppRole.hod &&
+          currentUser!.departmentId != existing.departmentId) {
+        throw const BackendPermissionException(
+          'HOD cannot verify achievements from another department.',
+        );
       }
-      if (currentUser!.role == AppRole.faculty && currentUser!.departmentId != existing.departmentId) {
-        throw const BackendPermissionException('Faculty cannot verify achievements from another department.');
+      if (currentUser!.role == AppRole.faculty &&
+          currentUser!.departmentId != existing.departmentId) {
+        throw const BackendPermissionException(
+          'Faculty cannot verify achievements from another department.',
+        );
       }
     }
 
     // 2. Reason validation for rejection
     if (status == AchievementVerificationStatus.rejected) {
       if (verificationNote == null || verificationNote.trim().isEmpty) {
-        throw const BackendValidationException('A verification note is mandatory when rejecting an achievement.');
+        throw const BackendValidationException(
+          'A verification note is mandatory when rejecting an achievement.',
+        );
       }
     }
 
@@ -415,7 +477,8 @@ class MockAchievementRepository implements AchievementRepository {
     await _delay();
 
     return _achievements.where((a) {
-      if (requester.collegeId != null && a.collegeId != requester.collegeId) return false;
+      if (requester.collegeId != null && a.collegeId != requester.collegeId)
+        return false;
 
       // Role Scoping
       switch (requester.role) {
@@ -423,13 +486,19 @@ class MockAchievementRepository implements AchievementRepository {
           if (a.studentUid != requester.id) return false;
           break;
         case AppRole.faculty:
-          if (requester.departmentId != null && a.departmentId != requester.departmentId) return false;
-          if (requester.sectionId != null && a.sectionId.isNotEmpty && a.sectionId != requester.sectionId) {
+          if (requester.departmentId != null &&
+              a.departmentId != requester.departmentId)
+            return false;
+          if (requester.sectionId != null &&
+              a.sectionId.isNotEmpty &&
+              a.sectionId != requester.sectionId) {
             return false;
           }
           break;
         case AppRole.hod:
-          if (requester.departmentId != null && a.departmentId != requester.departmentId) return false;
+          if (requester.departmentId != null &&
+              a.departmentId != requester.departmentId)
+            return false;
           break;
         case AppRole.collegeAdmin:
           // Can access all departments in the college
@@ -445,11 +514,12 @@ class MockAchievementRepository implements AchievementRepository {
       if (semesterId != null && a.semesterId != semesterId) return false;
       if (sectionId != null && a.sectionId != sectionId) return false;
       if (category != null && a.category != category) return false;
-      if (verificationStatus != null && a.verificationStatus != verificationStatus) return false;
+      if (verificationStatus != null &&
+          a.verificationStatus != verificationStatus)
+        return false;
 
       return true;
-    }).toList()
-      ..sort((a, b) => b.achievementDate.compareTo(a.achievementDate));
+    }).toList()..sort((a, b) => b.achievementDate.compareTo(a.achievementDate));
   }
 
   @override
@@ -477,7 +547,10 @@ class MockAchievementRepository implements AchievementRepository {
     required String studentUid,
     required String collegeId,
   }) async {
-    final list = await getStudentAchievements(studentUid: studentUid, collegeId: collegeId);
+    final list = await getStudentAchievements(
+      studentUid: studentUid,
+      collegeId: collegeId,
+    );
     final currentYear = DateTime.now().year;
 
     int total = list.length;

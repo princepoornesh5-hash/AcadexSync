@@ -23,13 +23,16 @@ import {
   signAccessToken,
   signRefreshToken,
   signPasswordResetToken,
+  signRegistrationToken,
+  verifyRegistrationToken,
   verifyJwtToken,
   hashToken,
 } from '../utils/token';
-import { normalizeIdentifier } from '../utils/identifier';
+import { normalizeIdentifier, normalizeEmail } from '../utils/identifier';
 import { ApiError } from '../utils/apiError';
 import { env } from '../config/env';
 import { AuditService } from './audit.service';
+import { Logger } from '../utils/logger';
 
 export interface ClientMetadata {
   userAgent?: string;
@@ -128,6 +131,19 @@ export class AuthService {
     user.lastLoginAt = new Date();
     await user.save();
 
+    return this.issueSessionForUser(user, metadata, 'USER_LOGIN');
+  }
+
+  /**
+   * Internal session issuance engine:
+   * Resolves authorized workspaces, creates AuthSession, signs JWTs,
+   * records audit logs, and formats the unified login/session response.
+   */
+  static async issueSessionForUser(
+    user: IUser,
+    metadata: ClientMetadata,
+    action: string = 'USER_LOGIN'
+  ): Promise<LoginResult> {
     const sessionId = crypto.randomUUID();
 
     // -------------------------------------------------------------------------
@@ -175,7 +191,7 @@ export class AuthService {
         actorUserId: user.id,
         actorEmail: user.email,
         actorRole: AppRole.SUPER_ADMIN,
-        action: 'USER_LOGIN',
+        action,
         entityType: 'User',
         entityId: user.id,
         metadata: { loginType: 'SUPER_ADMIN' },
@@ -198,7 +214,7 @@ export class AuthService {
     // -------------------------------------------------------------------------
     const eligibleMemberships = await WorkspaceMembershipService.getEligibleMembershipsForUser(user.id);
 
-    let activeCollegeId: string;
+    let activeCollegeId: string | undefined;
     let activeRole: AppRole;
     let activeDepartmentId: string | null = null;
     let activeInstituteId: string;
@@ -248,6 +264,15 @@ export class AuthService {
         activeRole = user.role;
         activeDepartmentId = user.departmentId?.toString() || null;
         activeInstituteId = user.instituteId;
+        activeMembershipId = null;
+        requiresWorkspaceSelection = false;
+      } else if (!user.collegeId) {
+        // Global identity with no institutional memberships (e.g. self-registered email user)
+        activeCollegeId = undefined;
+        activeCollegeName = '';
+        activeRole = user.role || AppRole.STUDENT;
+        activeDepartmentId = null;
+        activeInstituteId = user.instituteId || '';
         activeMembershipId = null;
         requiresWorkspaceSelection = false;
       } else {
@@ -303,7 +328,7 @@ export class AuthService {
       actorUserId: user.id,
       actorEmail: user.email,
       actorRole: activeRole,
-      action: 'USER_LOGIN',
+      action,
       entityType: 'User',
       entityId: user.id,
       collegeId: activeCollegeId,
@@ -327,16 +352,18 @@ export class AuthService {
       isDefault: !!m.isDefault,
     }));
 
-    const activeWorkspace = {
-      collegeId: activeCollegeId,
-      collegeName: activeCollegeName,
-      membershipId: activeMembershipId,
-      role: activeRole,
-      instituteId: activeInstituteId,
-    };
+    const activeWorkspace = activeCollegeId
+      ? {
+          collegeId: activeCollegeId,
+          collegeName: activeCollegeName,
+          membershipId: activeMembershipId,
+          role: activeRole,
+          instituteId: activeInstituteId,
+        }
+      : null;
 
     const userJson: any = user.toJSON();
-    userJson.collegeId = activeCollegeId;
+    userJson.collegeId = activeCollegeId || null;
     userJson.role = activeRole;
     userJson.instituteId = activeInstituteId;
     userJson.departmentId = activeDepartmentId;
@@ -350,6 +377,228 @@ export class AuthService {
       availableWorkspaces,
       requiresWorkspaceSelection,
     };
+  }
+
+  /**
+   * Login with Email OTP - Step 1: Request OTP challenge
+   */
+  static async requestLoginOtp(rawEmail: string): Promise<{ message: string }> {
+    const genericResponse = {
+      message: 'If an active account exists with this email, a verification code has been sent.',
+    };
+
+    if (!rawEmail || typeof rawEmail !== 'string' || !rawEmail.includes('@')) {
+      return genericResponse;
+    }
+
+    const normalizedEmail = normalizeEmail(rawEmail);
+    const user = await User.findOne({ email: normalizedEmail });
+
+    if (!user || user.accountStatus !== AccountStatus.ACTIVE) {
+      return genericResponse;
+    }
+
+    try {
+      await OtpService.requestOtp({
+        userId: user._id,
+        destination: normalizedEmail,
+        purpose: OtpPurpose.LOGIN,
+        deliveryMethod: OtpDeliveryMethod.EMAIL,
+        expiresInSeconds: 300,
+      });
+    } catch (err: unknown) {
+      if (err instanceof ApiError && err.statusCode === 429) {
+        throw err;
+      }
+      Logger.error('[AUTH] Login OTP dispatch failed', err);
+      throw ApiError.internal('Failed to deliver verification code. Please try again later.');
+    }
+
+    return genericResponse;
+  }
+
+  /**
+   * Login with Email OTP - Step 2: Verify OTP and issue session
+   */
+  static async loginWithOtp(
+    rawEmail: string,
+    otp: string,
+    metadata: ClientMetadata = {}
+  ): Promise<LoginResult> {
+    if (!rawEmail || typeof rawEmail !== 'string') {
+      throw ApiError.badRequest('Email is required');
+    }
+    if (!otp || typeof otp !== 'string') {
+      throw ApiError.badRequest('Verification code is required');
+    }
+
+    const normalizedEmail = normalizeEmail(rawEmail);
+    const user = await User.findOne({ email: normalizedEmail });
+
+    if (!user || user.accountStatus !== AccountStatus.ACTIVE) {
+      throw ApiError.unauthorized('Invalid verification code or email');
+    }
+
+    // Verify and consume OTP server-side
+    await OtpService.verifyAndConsumeOtp({
+      userId: user._id,
+      destination: normalizedEmail,
+      purpose: OtpPurpose.LOGIN,
+      otp: otp.trim(),
+    });
+
+    user.lastLoginAt = new Date();
+    await user.save();
+
+    return this.issueSessionForUser(user, metadata, 'USER_LOGIN_OTP');
+  }
+
+  /**
+   * Account Registration - Step 1: Request Email OTP
+   */
+  static async registerRequestOtp(rawEmail: string): Promise<{ message: string }> {
+    const genericResponse = {
+      message: 'If this email is eligible for registration, a verification code has been sent.',
+    };
+
+    if (!rawEmail || typeof rawEmail !== 'string' || !rawEmail.includes('@')) {
+      throw ApiError.badRequest('A valid email address is required');
+    }
+
+    const normalizedEmail = normalizeEmail(rawEmail);
+
+    // Basic format check
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      throw ApiError.badRequest('Invalid email address format');
+    }
+
+    // Check if account already exists for this email
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      // Generic response prevents account enumeration
+      return genericResponse;
+    }
+
+    try {
+      await OtpService.requestOtp({
+        destination: normalizedEmail,
+        purpose: OtpPurpose.REGISTRATION,
+        deliveryMethod: OtpDeliveryMethod.EMAIL,
+        expiresInSeconds: 300,
+      });
+    } catch (err: unknown) {
+      if (err instanceof ApiError && err.statusCode === 429) {
+        throw err;
+      }
+      Logger.error('[AUTH] Registration OTP dispatch failed', err);
+      throw ApiError.internal('Failed to deliver verification code. Please try again later.');
+    }
+
+    return genericResponse;
+  }
+
+  /**
+   * Account Registration - Step 2: Verify Email OTP and issue registrationToken
+   */
+  static async registerVerifyOtp(
+    rawEmail: string,
+    otp: string
+  ): Promise<{ registrationToken: string; message: string }> {
+    if (!rawEmail || typeof rawEmail !== 'string') {
+      throw ApiError.badRequest('Email is required');
+    }
+    if (!otp || typeof otp !== 'string') {
+      throw ApiError.badRequest('Verification code is required');
+    }
+
+    const normalizedEmail = normalizeEmail(rawEmail);
+
+    // Verify and consume OTP
+    await OtpService.verifyAndConsumeOtp({
+      destination: normalizedEmail,
+      purpose: OtpPurpose.REGISTRATION,
+      otp: otp.trim(),
+    });
+
+    // Issue short-lived registration token
+    const registrationToken = signRegistrationToken({ email: normalizedEmail }, 600);
+
+    return {
+      registrationToken,
+      message: 'Email verified successfully. Please set your password to complete registration.',
+    };
+  }
+
+  /**
+   * Account Registration - Step 3: Complete registration and password setup
+   */
+  static async registerComplete(
+    registrationToken: string,
+    password: string,
+    confirmPassword: string,
+    name?: string,
+    metadata: ClientMetadata = {}
+  ): Promise<LoginResult> {
+    if (!registrationToken || typeof registrationToken !== 'string') {
+      throw ApiError.badRequest('registrationToken is required');
+    }
+    if (!password || typeof password !== 'string') {
+      throw ApiError.badRequest('Password is required');
+    }
+    if (!confirmPassword || typeof confirmPassword !== 'string') {
+      throw ApiError.badRequest('Confirm Password is required');
+    }
+
+    if (password !== confirmPassword) {
+      throw ApiError.badRequest('Passwords do not match');
+    }
+
+    // Validate password policy
+    const policy = PasswordService.validatePassword(password);
+    if (!policy.valid) {
+      throw ApiError.badRequest(policy.message || 'Password does not meet security requirements.');
+    }
+
+    // Validate registration token
+    const { email: verifiedEmail } = verifyRegistrationToken(registrationToken);
+    const normalizedEmail = normalizeEmail(verifiedEmail);
+
+    // Prevent duplicate user creation
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      throw ApiError.conflict('An account with this email address already exists.');
+    }
+
+    const passwordHash = await PasswordService.hashPassword(password);
+    const userName = name?.trim() || normalizedEmail.split('@')[0];
+
+    // Create user with base role and NO institutional college access
+    const newUser = await User.create({
+      name: userName,
+      email: normalizedEmail,
+      passwordHash,
+      role: AppRole.STUDENT,
+      collegeId: null,
+      departmentId: null,
+      accountStatus: AccountStatus.ACTIVE,
+      activationStatus: 'activated',
+    });
+
+    await AuditService.log({
+      actorUserId: newUser.id,
+      actorEmail: newUser.email,
+      actorRole: AppRole.STUDENT,
+      action: 'USER_REGISTERED',
+      entityType: 'User',
+      entityId: newUser.id,
+      metadata: { registrationMethod: 'EMAIL_OTP' },
+      ipAddress: metadata.ipAddress,
+      userAgent: metadata.userAgent,
+    });
+
+    // Issue supported session response
+    return this.issueSessionForUser(newUser, metadata, 'USER_REGISTERED');
   }
 
   /**

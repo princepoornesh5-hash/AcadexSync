@@ -19,7 +19,10 @@ class ReportsListScreen extends ConsumerWidget {
     final bodyContent = reportsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, stack) => Center(
-        child: Text('Error loading reports', style: GoogleFonts.inter(color: DashboardColors.error)),
+        child: Text(
+          'Error loading reports',
+          style: GoogleFonts.inter(color: DashboardColors.error),
+        ),
       ),
       data: (reports) {
         if (reports.isEmpty) {
@@ -27,11 +30,28 @@ class ReportsListScreen extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(LucideIcons.fileX, size: 48, color: DashboardColors.textSecondary),
+                const Icon(
+                  LucideIcons.fileX,
+                  size: 48,
+                  color: DashboardColors.textSecondary,
+                ),
                 const SizedBox(height: 16),
-                Text('No Reports Found', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: DashboardColors.textPrimary)),
+                Text(
+                  'No Reports Found',
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: DashboardColors.textPrimary,
+                  ),
+                ),
                 const SizedBox(height: 8),
-                Text('Try adjusting your filters or date range.', style: GoogleFonts.inter(fontSize: 14, color: DashboardColors.textSecondary)),
+                Text(
+                  'Try adjusting your filters or date range.',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: DashboardColors.textSecondary,
+                  ),
+                ),
               ],
             ),
           );
@@ -63,7 +83,11 @@ class ReportsListScreen extends ConsumerWidget {
                         color: DashboardColors.primary.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(LucideIcons.fileBarChart2, color: DashboardColors.primary, size: 24),
+                      child: const Icon(
+                        LucideIcons.fileBarChart2,
+                        color: DashboardColors.primary,
+                        size: 24,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -72,19 +96,30 @@ class ReportsListScreen extends ConsumerWidget {
                         children: [
                           Text(
                             report.title,
-                            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: DashboardColors.textPrimary),
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: DashboardColors.textPrimary,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Generated ${DateFormat('MMM d, yyyy').format(report.generatedAt)}',
-                            style: GoogleFonts.inter(fontSize: 13, color: DashboardColors.textSecondary),
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              color: DashboardColors.textSecondary,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    const Icon(LucideIcons.chevronRight, color: DashboardColors.textSecondary, size: 20),
+                    const Icon(
+                      LucideIcons.chevronRight,
+                      color: DashboardColors.textSecondary,
+                      size: 20,
+                    ),
                   ],
                 ),
               ),
@@ -107,7 +142,11 @@ class ReportsListScreen extends ConsumerWidget {
         ),
         title: Text(
           'Reports',
-          style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white),
+          style: GoogleFonts.inter(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,

@@ -28,7 +28,9 @@ class CollegeAdminDashboard extends ConsumerWidget {
       },
       child: dashboardAsync.when(
         loading: () => const Center(
-          child: AcadexLoadingState(message: 'Loading institutional dashboard...'),
+          child: AcadexLoadingState.spinner(
+            message: 'Loading institutional dashboard...',
+          ),
         ),
         error: (err, _) => AcadexErrorState.fromError(
           error: err,
@@ -52,7 +54,12 @@ class CollegeAdminDashboard extends ConsumerWidget {
               _buildInstitutionalOverview(context, dashboard.summary, isDark),
 
               // 4. Institutional Operations (Tactile Quick Actions Grid)
-              _buildAcademicOperations(context, ref, dashboard.quickActions, isDark),
+              _buildAcademicOperations(
+                context,
+                ref,
+                dashboard.quickActions,
+                isDark,
+              ),
 
               // 5. Institutional Alerts & Pending Actions
               if (dashboard.alerts.isNotEmpty)
@@ -167,7 +174,9 @@ class CollegeAdminDashboard extends ConsumerWidget {
             Text(
               'College Scope',
               style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
             ),
           ],
@@ -191,7 +200,10 @@ class CollegeAdminDashboard extends ConsumerWidget {
             final itemWidth = (w - (crossAxisCount - 1) * 8) / crossAxisCount;
             final textScale = MediaQuery.textScalerOf(context).scale(1.0);
             final targetCardHeight = 80.0 * textScale.clamp(1.0, 1.6);
-            final childAspectRatio = (itemWidth / targetCardHeight).clamp(0.85, 1.45);
+            final childAspectRatio = (itemWidth / targetCardHeight).clamp(
+              0.85,
+              1.45,
+            );
 
             return GridView.builder(
               shrinkWrap: true,
@@ -233,14 +245,18 @@ class CollegeAdminDashboard extends ConsumerWidget {
     final bool hasProvidedActions = quickActions.isNotEmpty;
 
     final actions = hasProvidedActions
-        ? quickActions.map((a) => (
-            id: a.id.isNotEmpty ? a.id : a.label,
-            label: a.label,
-            icon: _resolveIcon(a.icon),
-            route: a.route,
-            isPrimary: a.isPrimary,
-            badgeCount: a.badgeCount,
-          )).toList()
+        ? quickActions
+              .map(
+                (a) => (
+                  id: a.id.isNotEmpty ? a.id : a.label,
+                  label: a.label,
+                  icon: _resolveIcon(a.icon),
+                  route: a.route,
+                  isPrimary: a.isPrimary,
+                  badgeCount: a.badgeCount,
+                ),
+              )
+              .toList()
         : [
             (
               id: 'ca_structure',
@@ -351,7 +367,9 @@ class CollegeAdminDashboard extends ConsumerWidget {
             final w = constraints.maxWidth;
             final isWide = w >= 600;
             final count = actions.length;
-            final crossAxisCount = isWide ? (count > 4 ? 4 : count) : (w < 340 ? 2 : 4);
+            final crossAxisCount = isWide
+                ? (count > 4 ? 4 : count)
+                : (w < 340 ? 2 : 4);
 
             final itemWidth = (w - (crossAxisCount - 1) * 8) / crossAxisCount;
             final textScale = MediaQuery.textScalerOf(context).scale(1.0);
@@ -383,10 +401,9 @@ class CollegeAdminDashboard extends ConsumerWidget {
                   badgeCount: act.badgeCount,
                   isCompact: true,
                   onTap: () {
-                    ref.read(navigationProvider.notifier).selectDashboardAction(
-                      route: act.route,
-                      id: act.id,
-                    );
+                    ref
+                        .read(navigationProvider.notifier)
+                        .selectDashboardAction(route: act.route, id: act.id);
                     context.push(act.route);
                   },
                 );

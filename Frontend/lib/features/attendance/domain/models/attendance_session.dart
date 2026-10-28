@@ -78,10 +78,14 @@ class AttendanceSession {
   bool get isCancelled => status == 'cancelled';
 
   int get totalStudents => records.length;
-  int get presentCount => records.where((r) => r.status == AttendanceStatus.present).length;
-  int get absentCount => records.where((r) => r.status == AttendanceStatus.absent).length;
-  int get lateCount => records.where((r) => r.status == AttendanceStatus.late).length;
-  int get excusedCount => records.where((r) => r.status == AttendanceStatus.excused).length;
+  int get presentCount =>
+      records.where((r) => r.status == AttendanceStatus.present).length;
+  int get absentCount =>
+      records.where((r) => r.status == AttendanceStatus.absent).length;
+  int get lateCount =>
+      records.where((r) => r.status == AttendanceStatus.late).length;
+  int get excusedCount =>
+      records.where((r) => r.status == AttendanceStatus.excused).length;
   int get unmarkedCount => records.where((r) => r.status == null).length;
 
   double get attendancePercentage {
@@ -145,11 +149,13 @@ class AttendanceSession {
       isLocked: isLocked ?? this.isLocked,
       isSubstitution: isSubstitution ?? this.isSubstitution,
       substituteFacultyId: substituteFacultyId ?? this.substituteFacultyId,
-      substituteFacultyName: substituteFacultyName ?? this.substituteFacultyName,
+      substituteFacultyName:
+          substituteFacultyName ?? this.substituteFacultyName,
       substitutionId: substitutionId ?? this.substitutionId,
       originalFacultyId: originalFacultyId ?? this.originalFacultyId,
       originalFacultyName: originalFacultyName ?? this.originalFacultyName,
-      originalFacultyAssignmentId: originalFacultyAssignmentId ?? this.originalFacultyAssignmentId,
+      originalFacultyAssignmentId:
+          originalFacultyAssignmentId ?? this.originalFacultyAssignmentId,
       substitutionReason: substitutionReason ?? this.substitutionReason,
       createdAt: createdAt ?? this.createdAt,
       createdBy: createdBy ?? this.createdBy,
@@ -171,31 +177,58 @@ class AttendanceSession {
       subjectName: (json['subjectName'] ?? '').toString(),
       sectionId: (json['sectionId'] ?? '').toString(),
       sectionName: (json['sectionName'] ?? '').toString(),
-      timeSlot: (json['timeSlot'] ?? '').toString().replaceAll('–', '-').replaceAll('—', '-').trim(),
-      date: json['date'] != null ? DateTime.tryParse(json['date'].toString()) ?? DateTime.now() : DateTime.now(),
-      records: (json['records'] as List<dynamic>?)
+      timeSlot: (json['timeSlot'] ?? '')
+          .toString()
+          .replaceAll('–', '-')
+          .replaceAll('—', '-')
+          .trim(),
+      date: json['date'] != null
+          ? DateTime.tryParse(json['date'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      records:
+          (json['records'] as List<dynamic>?)
               ?.map((e) => AttendanceRecord.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
       status: statusStr,
-      timetableId: (json['timetableId'] ?? json['timetable']?['_id'])?.toString(),
-      timetableEntryId: (json['timetableEntryId'] ?? json['entry']?['_id'])?.toString(),
-      facultyAssignmentId: (json['facultyAssignmentId'] ?? json['facultyAssignment']?['_id'])?.toString(),
+      timetableId: (json['timetableId'] ?? json['timetable']?['_id'])
+          ?.toString(),
+      timetableEntryId: (json['timetableEntryId'] ?? json['entry']?['_id'])
+          ?.toString(),
+      facultyAssignmentId:
+          (json['facultyAssignmentId'] ?? json['facultyAssignment']?['_id'])
+              ?.toString(),
       roomNumber: json['roomNumber'] as String?,
       building: json['building'] as String?,
       isSubmitted: json['isSubmitted'] as bool? ?? false,
       isLocked: locked,
       isSubstitution: json['isSubstitution'] as bool? ?? false,
-      substituteFacultyId: (json['substituteFacultyId'] ?? json['substituteFaculty']?['_id'])?.toString(),
-      substituteFacultyName: (json['substituteFacultyName'] ?? json['substituteFaculty']?['name'])?.toString(),
-      substitutionId: (json['substitutionId'] ?? json['substitution']?['_id'])?.toString(),
-      originalFacultyId: (json['originalFacultyId'] ?? json['originalFaculty']?['_id'])?.toString(),
-      originalFacultyName: (json['originalFacultyName'] ?? json['originalFaculty']?['name'])?.toString(),
-      originalFacultyAssignmentId: (json['originalFacultyAssignmentId'] ?? json['originalFacultyAssignment']?['_id'])?.toString(),
+      substituteFacultyId:
+          (json['substituteFacultyId'] ?? json['substituteFaculty']?['_id'])
+              ?.toString(),
+      substituteFacultyName:
+          (json['substituteFacultyName'] ?? json['substituteFaculty']?['name'])
+              ?.toString(),
+      substitutionId: (json['substitutionId'] ?? json['substitution']?['_id'])
+          ?.toString(),
+      originalFacultyId:
+          (json['originalFacultyId'] ?? json['originalFaculty']?['_id'])
+              ?.toString(),
+      originalFacultyName:
+          (json['originalFacultyName'] ?? json['originalFaculty']?['name'])
+              ?.toString(),
+      originalFacultyAssignmentId:
+          (json['originalFacultyAssignmentId'] ??
+                  json['originalFacultyAssignment']?['_id'])
+              ?.toString(),
       substitutionReason: json['substitutionReason'] as String?,
-      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : null,
       createdBy: json['createdBy'] as String?,
-      lastModifiedAt: json['lastModifiedAt'] != null ? DateTime.tryParse(json['lastModifiedAt'].toString()) : null,
+      lastModifiedAt: json['lastModifiedAt'] != null
+          ? DateTime.tryParse(json['lastModifiedAt'].toString())
+          : null,
       lastModifiedBy: json['lastModifiedBy'] as String?,
       version: json['version'] as int? ?? 1,
     );
@@ -217,18 +250,23 @@ class AttendanceSession {
       'status': status,
       if (timetableId != null) 'timetableId': timetableId,
       if (timetableEntryId != null) 'timetableEntryId': timetableEntryId,
-      if (facultyAssignmentId != null) 'facultyAssignmentId': facultyAssignmentId,
+      if (facultyAssignmentId != null)
+        'facultyAssignmentId': facultyAssignmentId,
       if (roomNumber != null) 'roomNumber': roomNumber,
       if (building != null) 'building': building,
       'isSubmitted': isSubmitted,
       'isLocked': isLocked,
       'isSubstitution': isSubstitution,
-      if (substituteFacultyId != null) 'substituteFacultyId': substituteFacultyId,
-      if (substituteFacultyName != null) 'substituteFacultyName': substituteFacultyName,
+      if (substituteFacultyId != null)
+        'substituteFacultyId': substituteFacultyId,
+      if (substituteFacultyName != null)
+        'substituteFacultyName': substituteFacultyName,
       if (substitutionId != null) 'substitutionId': substitutionId,
       if (originalFacultyId != null) 'originalFacultyId': originalFacultyId,
-      if (originalFacultyName != null) 'originalFacultyName': originalFacultyName,
-      if (originalFacultyAssignmentId != null) 'originalFacultyAssignmentId': originalFacultyAssignmentId,
+      if (originalFacultyName != null)
+        'originalFacultyName': originalFacultyName,
+      if (originalFacultyAssignmentId != null)
+        'originalFacultyAssignmentId': originalFacultyAssignmentId,
       if (substitutionReason != null) 'substitutionReason': substitutionReason,
       'createdAt': createdAt?.toIso8601String(),
       'createdBy': createdBy,

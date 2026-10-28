@@ -8,6 +8,8 @@ import '../../../../core/presentation/design_system/acadex_spacing.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_sliver_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_sliver_page_header.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../domain/models/profile_models.dart';
 import '../providers/profile_providers.dart';
@@ -119,14 +121,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider);
 
-    return Container(
-      color: DashboardColors.background,
+    return Material(
+      color: Colors.transparent,
       child: profileAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: DashboardColors.primary),
+        loading: () => const Padding(
+          padding: EdgeInsets.symmetric(vertical: 48),
+          child: Center(
+            child: CircularProgressIndicator(color: AcadexColors.primary),
+          ),
         ),
-        error: (err, _) => Center(
-          child: Text('Error loading profile: $err'),
+        error: (err, _) => Padding(
+          padding: const EdgeInsets.all(AcadexSpacing.lg),
+          child: Center(child: Text('Error loading profile: $err')),
         ),
         data: (profile) {
           _populateFromProfile(profile);
@@ -147,8 +153,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       children: [
                         const Row(
                           children: [
-                            Icon(LucideIcons.pencil,
-                                size: 18, color: DashboardColors.primary),
+                            Icon(
+                              LucideIcons.pencil,
+                              size: 18,
+                              color: DashboardColors.primary,
+                            ),
                             SizedBox(width: 8),
                             Text(
                               'Editable Information',
@@ -202,7 +211,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           maxLength: 500,
                           decoration: const InputDecoration(
                             labelText: 'Bio / About',
-                            hintText: 'Short professional or academic summary...',
+                            hintText:
+                                'Short professional or academic summary...',
                             prefixIcon: Icon(LucideIcons.fileText, size: 18),
                             border: OutlineInputBorder(),
                             alignLabelWithHint: true,
@@ -215,8 +225,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             decoration: const InputDecoration(
                               labelText: 'Qualification',
                               hintText: 'e.g. Ph.D, M.Tech',
-                              prefixIcon:
-                                  Icon(LucideIcons.graduationCap, size: 18),
+                              prefixIcon: Icon(
+                                LucideIcons.graduationCap,
+                                size: 18,
+                              ),
                               border: OutlineInputBorder(),
                             ),
                           ),
@@ -243,8 +255,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       children: [
                         const Row(
                           children: [
-                            Icon(LucideIcons.lock,
-                                size: 18, color: DashboardColors.textSecondary),
+                            Icon(
+                              LucideIcons.lock,
+                              size: 18,
+                              color: DashboardColors.textSecondary,
+                            ),
                             SizedBox(width: 8),
                             Text(
                               'Managed by Institution',
@@ -260,7 +275,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         const Text(
                           'The fields below are official institutional and academic identifiers. Contact administration to request changes.',
                           style: TextStyle(
-                              fontSize: 12, color: DashboardColors.textMuted),
+                            fontSize: 12,
+                            color: DashboardColors.textMuted,
+                          ),
                         ),
                         const SizedBox(height: AcadexSpacing.md),
                         _buildReadOnlyField(
@@ -294,7 +311,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           ),
                         ],
                         if (role == AppRole.student &&
-                            profile.roleProfile.student?.rollNumber != null) ...[
+                            profile.roleProfile.student?.rollNumber !=
+                                null) ...[
                           const SizedBox(height: AcadexSpacing.sm),
                           _buildReadOnlyField(
                             label: 'Roll Number',
@@ -304,7 +322,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           ),
                         ],
                         if ((role == AppRole.faculty || role == AppRole.hod) &&
-                            profile.roleProfile.faculty?.employeeId != null) ...[
+                            profile.roleProfile.faculty?.employeeId !=
+                                null) ...[
                           const SizedBox(height: AcadexSpacing.sm),
                           _buildReadOnlyField(
                             label: 'Employee ID',
@@ -392,7 +411,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ],
             ),
           ),
-          const Icon(LucideIcons.lock, size: 13, color: DashboardColors.textMuted),
+          const Icon(
+            LucideIcons.lock,
+            size: 13,
+            color: DashboardColors.textMuted,
+          ),
         ],
       ),
     );

@@ -82,7 +82,9 @@ class _CertificateCardState extends State<CertificateCard> {
         duration: AcadexMotion.micro,
         curve: Curves.easeOut,
         margin: const EdgeInsets.only(bottom: 14),
-        transform: _isHovered ? Matrix4.translationValues(0, -2, 0) : Matrix4.identity(),
+        transform: _isHovered
+            ? Matrix4.translationValues(0, -2, 0)
+            : Matrix4.identity(),
         decoration: BoxDecoration(
           color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
           borderRadius: BorderRadius.circular(AcadexRadius.lg),
@@ -95,17 +97,21 @@ class _CertificateCardState extends State<CertificateCard> {
           boxShadow: _isHovered
               ? [
                   BoxShadow(
-                    color: isDark ? Colors.black45 : Colors.black.withValues(alpha: 0.08),
+                    color: isDark
+                        ? Colors.black45
+                        : Colors.black.withValues(alpha: 0.08),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
-                  )
+                  ),
                 ]
               : [
                   BoxShadow(
-                    color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.03),
+                    color: isDark
+                        ? Colors.black26
+                        : Colors.black.withValues(alpha: 0.03),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
-                  )
+                  ),
                 ],
         ),
         child: Material(
@@ -125,19 +131,32 @@ class _CertificateCardState extends State<CertificateCard> {
                       CertificateTypeBadge(type: c.type),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
-                          color: isDark ? statusColor.withValues(alpha: 0.18) : statusColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(AcadexRadius.full),
+                          color: isDark
+                              ? statusColor.withValues(alpha: 0.18)
+                              : statusColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(
+                            AcadexRadius.full,
+                          ),
                           border: Border.all(
-                            color: isDark ? statusColor.withValues(alpha: 0.35) : statusColor.withValues(alpha: 0.25),
+                            color: isDark
+                                ? statusColor.withValues(alpha: 0.35)
+                                : statusColor.withValues(alpha: 0.25),
                           ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             if (c.isVerified) ...[
-                              Icon(LucideIcons.badgeCheck, size: 12, color: statusColor),
+                              Icon(
+                                LucideIcons.badgeCheck,
+                                size: 12,
+                                color: statusColor,
+                              ),
                               const SizedBox(width: 4),
                             ],
                             Text(
@@ -157,10 +176,18 @@ class _CertificateCardState extends State<CertificateCard> {
                           icon: Icon(
                             LucideIcons.ellipsisVertical,
                             size: 18,
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
-                          color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              AcadexRadius.md,
+                            ),
+                          ),
+                          color: isDark
+                              ? AcadexColors.darkSurface
+                              : AcadexColors.surface,
                           itemBuilder: (_) => [
                             if (widget.onEdit != null)
                               PopupMenuItem(
@@ -169,7 +196,10 @@ class _CertificateCardState extends State<CertificateCard> {
                                   children: [
                                     const Icon(LucideIcons.pencil, size: 15),
                                     const SizedBox(width: 8),
-                                    Text('Edit Details', style: GoogleFonts.inter(fontSize: 13)),
+                                    Text(
+                                      'Edit Details',
+                                      style: GoogleFonts.inter(fontSize: 13),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -178,9 +208,19 @@ class _CertificateCardState extends State<CertificateCard> {
                                 value: 'delete',
                                 child: Row(
                                   children: [
-                                    const Icon(LucideIcons.trash2, size: 15, color: AcadexColors.error),
+                                    const Icon(
+                                      LucideIcons.trash2,
+                                      size: 15,
+                                      color: AcadexColors.error,
+                                    ),
                                     const SizedBox(width: 8),
-                                    Text('Remove', style: GoogleFonts.inter(fontSize: 13, color: AcadexColors.error)),
+                                    Text(
+                                      'Remove',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        color: AcadexColors.error,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -201,7 +241,9 @@ class _CertificateCardState extends State<CertificateCard> {
                         Icon(
                           LucideIcons.user,
                           size: 13,
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                         const SizedBox(width: 5),
                         Text(
@@ -209,7 +251,9 @@ class _CertificateCardState extends State<CertificateCard> {
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                            color: isDark
+                                ? AcadexColors.darkInkSecondary
+                                : AcadexColors.inkSecondary,
                           ),
                         ),
                       ],
@@ -236,7 +280,9 @@ class _CertificateCardState extends State<CertificateCard> {
                       Icon(
                         LucideIcons.building,
                         size: 13,
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                       const SizedBox(width: 5),
                       Expanded(
@@ -244,7 +290,9 @@ class _CertificateCardState extends State<CertificateCard> {
                           c.issuer,
                           style: GoogleFonts.inter(
                             fontSize: 13,
-                            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                            color: isDark
+                                ? AcadexColors.darkInkSecondary
+                                : AcadexColors.inkSecondary,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -265,22 +313,31 @@ class _CertificateCardState extends State<CertificateCard> {
                           Icon(
                             LucideIcons.calendar,
                             size: 12,
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             'Issued: ${DateFormat('dd MMM yyyy').format(c.issueDate)}',
                             style: GoogleFonts.inter(
                               fontSize: 11,
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
                             ),
                           ),
                         ],
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white10 : AcadexColors.secondaryLight,
+                          color: isDark
+                              ? Colors.white10
+                              : AcadexColors.secondaryLight,
                           borderRadius: BorderRadius.circular(AcadexRadius.xs),
                         ),
                         child: Text(
@@ -288,7 +345,9 @@ class _CertificateCardState extends State<CertificateCard> {
                           style: GoogleFonts.inter(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
-                            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                            color: isDark
+                                ? AcadexColors.darkInkSecondary
+                                : AcadexColors.inkSecondary,
                           ),
                         ),
                       ),
@@ -296,23 +355,31 @@ class _CertificateCardState extends State<CertificateCard> {
                         c.fileSizeDisplay,
                         style: GoogleFonts.inter(
                           fontSize: 11,
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                       ),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            _isPreviewable ? LucideIcons.eye : LucideIcons.download,
+                            _isPreviewable
+                                ? LucideIcons.eye
+                                : LucideIcons.download,
                             size: 11,
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                           const SizedBox(width: 3),
                           Text(
                             _isPreviewable ? 'Preview' : 'Download',
                             style: GoogleFonts.inter(
                               fontSize: 11,
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
                             ),
                           ),
                         ],

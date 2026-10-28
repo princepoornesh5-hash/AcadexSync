@@ -48,7 +48,9 @@ class _SubjectAttendanceDetailScreenState
     );
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Exported report for ${data.subjectName.isNotEmpty ? data.subjectName : widget.subjectId} (${csv.length} bytes)'),
+        content: Text(
+          'Exported report for ${data.subjectName.isNotEmpty ? data.subjectName : widget.subjectId} (${csv.length} bytes)',
+        ),
         backgroundColor: AcadexColors.success,
       ),
     );
@@ -83,8 +85,10 @@ class _SubjectAttendanceDetailScreenState
             children: [
               AcadexPageHeader(
                 title: 'Subject Attendance Analytics',
-                subtitle: 'Conducted classes, student engagement metrics, and subject performance.',
-                onBack: () => context.safePop(fallbackRoute: '/attendance/analytics'),
+                subtitle:
+                    'Conducted classes, student engagement metrics, and subject performance.',
+                onBack: () =>
+                    context.safePop(fallbackRoute: '/attendance/analytics'),
                 actions: [
                   AnalyticsDateRangeSelector(
                     selectedRange: _selectedRange,
@@ -100,172 +104,218 @@ class _SubjectAttendanceDetailScreenState
               const SizedBox(height: 16),
 
               analyticsAsync.when(
-                    loading: () => const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(40.0),
-                        child: CircularProgressIndicator(),
+                loading: () => const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(40.0),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+                error: (err, stack) => AcadexCard(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      children: [
+                        const Icon(
+                          LucideIcons.alertCircle,
+                          color: AcadexColors.error,
+                          size: 40,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Failed to load subject analytics',
+                          style: AcadexTypography.heading2(
+                            color: AcadexColors.error,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          err.toString(),
+                          style: AcadexTypography.caption(
+                            color: AcadexColors.inkMuted,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        AcadexButton(
+                          label: 'Retry',
+                          icon: LucideIcons.refreshCw,
+                          onPressed: () => ref.refresh(
+                            subjectAttendanceAnalyticsProvider(
+                              SubjectAnalyticsQuery(
+                                subjectId: widget.subjectId,
+                                sectionId: widget.sectionId,
+                                dateRange: _selectedRange,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                data: (data) {
+                  final displayName = data.subjectName.isNotEmpty
+                      ? data.subjectName
+                      : 'Subject ${widget.subjectId}';
+
+                  final trendPoints = [
+                    TrendPoint(
+                      label: 'W-1',
+                      percentage: (data.attendancePercentage * 0.95).clamp(
+                        0.0,
+                        100.0,
                       ),
                     ),
-                    error: (err, stack) => AcadexCard(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24.0),
-                        child: Column(
+                    TrendPoint(
+                      label: 'W-2',
+                      percentage: (data.attendancePercentage * 0.98).clamp(
+                        0.0,
+                        100.0,
+                      ),
+                    ),
+                    TrendPoint(
+                      label: 'W-3',
+                      percentage: (data.attendancePercentage * 1.01).clamp(
+                        0.0,
+                        100.0,
+                      ),
+                    ),
+                    TrendPoint(
+                      label: 'Current',
+                      percentage: data.attendancePercentage,
+                    ),
+                  ];
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AcadexCard(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 40),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Failed to load subject analytics',
-                              style: AcadexTypography.heading2(color: AcadexColors.error),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              err.toString(),
-                              style: AcadexTypography.caption(color: AcadexColors.inkMuted),
-                            ),
-                            const SizedBox(height: 16),
-                            AcadexButton(
-                              label: 'Retry',
-                              icon: LucideIcons.refreshCw,
-                              onPressed: () => ref.refresh(
-                                subjectAttendanceAnalyticsProvider(
-                                  SubjectAnalyticsQuery(
-                                    subjectId: widget.subjectId,
-                                    sectionId: widget.sectionId,
-                                    dateRange: _selectedRange,
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      color: AcadexColors.primary.withValues(
+                                        alpha: 0.15,
+                                      ),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Center(
+                                      child: Icon(
+                                        LucideIcons.bookOpen,
+                                        color: AcadexColors.primary,
+                                        size: 24,
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          displayName,
+                                          style: AcadexTypography.heading2(
+                                            color: isDark
+                                                ? AcadexColors.darkInk
+                                                : AcadexColors.ink,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Code: ${widget.subjectId} ${widget.sectionId != null ? '• Section: ${widget.sectionId}' : ''}',
+                                          style: AcadexTypography.caption(
+                                            color: isDark
+                                                ? AcadexColors.darkInkMuted
+                                                : AcadexColors.inkMuted,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
+                            ),
+                            const SizedBox(width: 8),
+                            AcadexButton(
+                              label: 'Export CSV',
+                              icon: LucideIcons.download,
+                              variant: AcadexButtonVariant.secondary,
+                              size: AcadexButtonSize.sm,
+                              onPressed: () => _exportCsv(data),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                    data: (data) {
-                      final displayName = data.subjectName.isNotEmpty
-                          ? data.subjectName
-                          : 'Subject ${widget.subjectId}';
 
-                      final trendPoints = [
-                        TrendPoint(label: 'W-1', percentage: (data.attendancePercentage * 0.95).clamp(0.0, 100.0)),
-                        TrendPoint(label: 'W-2', percentage: (data.attendancePercentage * 0.98).clamp(0.0, 100.0)),
-                        TrendPoint(label: 'W-3', percentage: (data.attendancePercentage * 1.01).clamp(0.0, 100.0)),
-                        TrendPoint(label: 'Current', percentage: data.attendancePercentage),
-                      ];
+                      const SizedBox(height: 16),
 
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          AcadexCard(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 48,
-                                        height: 48,
-                                        decoration: BoxDecoration(
-                                          color: AcadexColors.primary.withValues(alpha: 0.15),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Center(
-                                          child: Icon(LucideIcons.bookOpen, color: AcadexColors.primary, size: 24),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 14),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              displayName,
-                                              style: AcadexTypography.heading2(
-                                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              'Code: ${widget.subjectId} ${widget.sectionId != null ? '• Section: ${widget.sectionId}' : ''}',
-                                              style: AcadexTypography.caption(
-                                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                AcadexButton(
-                                  label: 'Export CSV',
-                                  icon: LucideIcons.download,
-                                  variant: AcadexButtonVariant.secondary,
-                                  size: AcadexButtonSize.sm,
-                                  onPressed: () => _exportCsv(data),
-                                ),
-                              ],
+                      AttendanceOverviewCard(
+                        title: 'Subject Attendance Performance',
+                        subtitle:
+                            'Overall attendance rate across ${data.totalSessions} sessions',
+                        percentage: data.attendancePercentage,
+                        presentCount: data.presentCount,
+                        absentCount: data.absentCount,
+                        lateCount: data.lateCount,
+                        excusedCount: data.excusedCount,
+                        unmarkedCount: data.unmarkedCount,
+                        totalSessions: data.totalSessions,
+                        isLowAttendance:
+                            AttendanceAnalyticsConstants.isLowAttendance(
+                              data.attendancePercentage,
                             ),
-                          ),
+                      ),
 
-                          const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                          AttendanceOverviewCard(
-                            title: 'Subject Attendance Performance',
-                            subtitle: 'Overall attendance rate across ${data.totalSessions} sessions',
-                            percentage: data.attendancePercentage,
-                            presentCount: data.presentCount,
-                            absentCount: data.absentCount,
-                            lateCount: data.lateCount,
-                            excusedCount: data.excusedCount,
-                            unmarkedCount: data.unmarkedCount,
-                            totalSessions: data.totalSessions,
-                            isLowAttendance: AttendanceAnalyticsConstants.isLowAttendance(data.attendancePercentage),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          if (isMobile) ...[
-                            AttendanceDistributionChart(
-                              presentCount: data.presentCount,
-                              absentCount: data.absentCount,
-                              lateCount: data.lateCount,
-                              excusedCount: data.excusedCount,
-                              unmarkedCount: data.unmarkedCount,
+                      if (isMobile) ...[
+                        AttendanceDistributionChart(
+                          presentCount: data.presentCount,
+                          absentCount: data.absentCount,
+                          lateCount: data.lateCount,
+                          excusedCount: data.excusedCount,
+                          unmarkedCount: data.unmarkedCount,
+                        ),
+                        const SizedBox(height: 16),
+                        AttendanceTrendChart(trendData: trendPoints),
+                      ] else ...[
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: AttendanceDistributionChart(
+                                presentCount: data.presentCount,
+                                absentCount: data.absentCount,
+                                lateCount: data.lateCount,
+                                excusedCount: data.excusedCount,
+                                unmarkedCount: data.unmarkedCount,
+                              ),
                             ),
-                            const SizedBox(height: 16),
-                            AttendanceTrendChart(trendData: trendPoints),
-                          ] else ...[
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: AttendanceDistributionChart(
-                                    presentCount: data.presentCount,
-                                    absentCount: data.absentCount,
-                                    lateCount: data.lateCount,
-                                    excusedCount: data.excusedCount,
-                                    unmarkedCount: data.unmarkedCount,
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: AttendanceTrendChart(trendData: trendPoints),
-                                ),
-                              ],
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: AttendanceTrendChart(
+                                trendData: trendPoints,
+                              ),
                             ),
                           ],
-                        ],
-                      );
-                    },
-                  ),
-                ],
+                        ),
+                      ],
+                    ],
+                  );
+                },
               ),
-            ),
+            ],
           ),
-        );
+        ),
+      ),
+    );
   }
 }

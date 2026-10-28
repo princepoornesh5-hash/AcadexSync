@@ -10,7 +10,7 @@ class MockTimetableRepository implements TimetableRepository {
   final List<TimetableModel> _entries = [];
   bool _initialized = false;
   final Duration latency;
-  
+
   final _controller = StreamController<List<TimetableModel>>.broadcast();
 
   MockTimetableRepository({this.latency = Duration.zero}) {
@@ -50,13 +50,31 @@ class MockTimetableRepository implements TimetableRepository {
       switch (role) {
         case AppRole.student:
           return sectionId != null
-              ? allEntries.where((e) => e.sectionId == sectionId && (collegeId == null || e.collegeId == collegeId)).toList()
+              ? allEntries
+                    .where(
+                      (e) =>
+                          e.sectionId == sectionId &&
+                          (collegeId == null || e.collegeId == collegeId),
+                    )
+                    .toList()
               : [];
         case AppRole.faculty:
-          return allEntries.where((e) => e.facultyId == userId && (collegeId == null || e.collegeId == collegeId)).toList();
+          return allEntries
+              .where(
+                (e) =>
+                    e.facultyId == userId &&
+                    (collegeId == null || e.collegeId == collegeId),
+              )
+              .toList();
         case AppRole.hod:
           return departmentId != null
-              ? allEntries.where((e) => e.departmentId == departmentId && (collegeId == null || e.collegeId == collegeId)).toList()
+              ? allEntries
+                    .where(
+                      (e) =>
+                          e.departmentId == departmentId &&
+                          (collegeId == null || e.collegeId == collegeId),
+                    )
+                    .toList()
               : [];
         case AppRole.collegeAdmin:
           return collegeId != null
@@ -84,7 +102,8 @@ class MockTimetableRepository implements TimetableRepository {
     await _delay();
     var list = _entries.where((entry) {
       if (entry.collegeId != collegeId) return false;
-      if (departmentId != null && entry.departmentId != departmentId) return false;
+      if (departmentId != null && entry.departmentId != departmentId)
+        return false;
       if (courseId != null && entry.courseId != courseId) return false;
       if (semesterId != null && entry.semesterId != semesterId) return false;
       if (sectionId != null && entry.sectionId != sectionId) return false;
@@ -94,20 +113,30 @@ class MockTimetableRepository implements TimetableRepository {
     if (date != null && date.isNotEmpty) {
       // 1. Calendar overrides
       final overrides = _overrides.where((o) => o.date == date).toList();
-      final hasHoliday = overrides.any((o) => o.type == CalendarOverrideType.holiday);
+      final hasHoliday = overrides.any(
+        (o) => o.type == CalendarOverrideType.holiday,
+      );
       if (hasHoliday) return [];
 
       list = list.where((entry) {
-        final isCancelled = overrides.any((o) =>
-            o.type == CalendarOverrideType.cancelled &&
-            (o.timetableEntryId == null || o.timetableEntryId!.isEmpty || o.timetableEntryId == entry.id));
+        final isCancelled = overrides.any(
+          (o) =>
+              o.type == CalendarOverrideType.cancelled &&
+              (o.timetableEntryId == null ||
+                  o.timetableEntryId!.isEmpty ||
+                  o.timetableEntryId == entry.id),
+        );
         return !isCancelled;
       }).toList();
 
       // 2. Substitutions
-      final activeSubs = _substitutions.where((s) => s.date == date && s.status.toLowerCase() != 'cancelled').toList();
+      final activeSubs = _substitutions
+          .where((s) => s.date == date && s.status.toLowerCase() != 'cancelled')
+          .toList();
       list = list.map((entry) {
-        final sub = activeSubs.where((s) => s.timetableEntryId == entry.id).firstOrNull;
+        final sub = activeSubs
+            .where((s) => s.timetableEntryId == entry.id)
+            .firstOrNull;
         if (sub != null) {
           return entry.copyWith(
             facultyId: sub.substituteFacultyId,
@@ -134,7 +163,9 @@ class MockTimetableRepository implements TimetableRepository {
     await _delay();
     for (final existing in _entries) {
       if (existing.id == entry.id) continue; // Skip self for updates
-      if (existing.collegeId.isNotEmpty && entry.collegeId.isNotEmpty && existing.collegeId != entry.collegeId) {
+      if (existing.collegeId.isNotEmpty &&
+          entry.collegeId.isNotEmpty &&
+          existing.collegeId != entry.collegeId) {
         continue; // Different college
       }
 
@@ -154,7 +185,8 @@ class MockTimetableRepository implements TimetableRepository {
           );
         }
         // Room Conflict
-        if (existing.roomNumber == entry.roomNumber && existing.building == entry.building) {
+        if (existing.roomNumber == entry.roomNumber &&
+            existing.building == entry.building) {
           throw TimetableConflictException(
             "Room ${entry.roomNumber} is already occupied during this time.",
             conflictingEntry: existing,
@@ -167,13 +199,13 @@ class MockTimetableRepository implements TimetableRepository {
   @override
   Future<void> createEntry(TimetableModel entry) async {
     await checkConflicts(entry);
-    
+
     final newEntry = entry.copyWith(
       id: entry.id.isNotEmpty ? entry.id : const Uuid().v4(),
       createdAt: entry.createdAt,
       updatedAt: DateTime.now(),
     );
-    
+
     _entries.add(newEntry);
     _emit();
   }
@@ -181,7 +213,7 @@ class MockTimetableRepository implements TimetableRepository {
   @override
   Future<void> updateEntry(TimetableModel entry) async {
     await checkConflicts(entry);
-    
+
     final index = _entries.indexWhere((e) => e.id == entry.id);
     if (index == -1) throw Exception("Entry not found");
 
@@ -205,24 +237,33 @@ class MockTimetableRepository implements TimetableRepository {
   final Map<String, List<TimetableBreakModel>> _breaks = {};
   final Map<String, List<TimetableGridEntryModel>> _gridEntries = {};
 
-  final _containersController = StreamController<List<TimetableContainerModel>>.broadcast();
+  final _containersController =
+      StreamController<List<TimetableContainerModel>>.broadcast();
 
   @override
-  Future<String> createTimetableContainer(TimetableContainerModel container) async {
+  Future<String> createTimetableContainer(
+    TimetableContainerModel container,
+  ) async {
     await _delay();
     container.validate();
     // Simulate server-assigned MongoDB ObjectId (or use container.id if provided e.g. for pre-seeded mocks)
     final id = container.id.isNotEmpty
         ? container.id
         : '507f1f77bcf86cd799439${(_containers.length + 100).toRadixString(16).padLeft(3, '0')}';
-    final toSave = container.copyWith(id: id, createdAt: DateTime.now(), updatedAt: DateTime.now());
+    final toSave = container.copyWith(
+      id: id,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
     _containers[id] = toSave;
     _containersController.add(_containers.values.toList());
     return id;
   }
 
   @override
-  Future<void> updateTimetableContainer(TimetableContainerModel container) async {
+  Future<void> updateTimetableContainer(
+    TimetableContainerModel container,
+  ) async {
     await _delay();
     container.validate();
     _containers[container.id] = container.copyWith(updatedAt: DateTime.now());
@@ -235,7 +276,9 @@ class MockTimetableRepository implements TimetableRepository {
   Future<void> deleteTimetableContainer(String timetableId) async {
     await _delay();
     if (simulateAttendanceConflictOnDelete) {
-      throw Exception('Cannot delete timetable with existing attendance sessions. Please archive the timetable instead to preserve historical attendance records.');
+      throw Exception(
+        'Cannot delete timetable with existing attendance sessions. Please archive the timetable instead to preserve historical attendance records.',
+      );
     }
     _containers.remove(timetableId);
     _periods.remove(timetableId);
@@ -260,13 +303,17 @@ class MockTimetableRepository implements TimetableRepository {
   }
 
   @override
-  Future<TimetableContainerModel?> getTimetableContainer(String timetableId) async {
+  Future<TimetableContainerModel?> getTimetableContainer(
+    String timetableId,
+  ) async {
     await _delay();
     return _containers[timetableId];
   }
 
   @override
-  Stream<TimetableContainerModel?> watchTimetableContainer(String timetableId) async* {
+  Stream<TimetableContainerModel?> watchTimetableContainer(
+    String timetableId,
+  ) async* {
     yield _containers[timetableId];
     yield* _containersController.stream.map((_) => _containers[timetableId]);
   }
@@ -286,7 +333,8 @@ class MockTimetableRepository implements TimetableRepository {
       if (c.collegeId != collegeId) return false;
       if (departmentId != null && c.departmentId != departmentId) return false;
       if (courseId != null && c.courseId != courseId) return false;
-      if (academicYearId != null && c.academicYearId != academicYearId) return false;
+      if (academicYearId != null && c.academicYearId != academicYearId)
+        return false;
       if (semesterId != null && c.semesterId != semesterId) return false;
       if (sectionId != null && c.sectionId != sectionId) return false;
       if (status != null && c.status != status) return false;
@@ -304,7 +352,8 @@ class MockTimetableRepository implements TimetableRepository {
     List<TimetableContainerModel> filter(List<TimetableContainerModel> list) {
       return list.where((c) {
         if (c.collegeId != collegeId) return false;
-        if (departmentId != null && c.departmentId != departmentId) return false;
+        if (departmentId != null && c.departmentId != departmentId)
+          return false;
         if (sectionId != null && c.sectionId != sectionId) return false;
         if (status != null && c.status != status) return false;
         return true;
@@ -316,7 +365,10 @@ class MockTimetableRepository implements TimetableRepository {
   }
 
   @override
-  Future<void> savePeriod(String timetableId, TimetablePeriodModel period) async {
+  Future<void> savePeriod(
+    String timetableId,
+    TimetablePeriodModel period,
+  ) async {
     await _delay();
     period.validate();
     final list = _periods.putIfAbsent(timetableId, () => []);
@@ -325,7 +377,10 @@ class MockTimetableRepository implements TimetableRepository {
   }
 
   @override
-  Future<void> savePeriodsBatch(String timetableId, List<TimetablePeriodModel> periods) async {
+  Future<void> savePeriodsBatch(
+    String timetableId,
+    List<TimetablePeriodModel> periods,
+  ) async {
     await _delay();
     for (final p in periods) {
       p.validate();
@@ -353,11 +408,16 @@ class MockTimetableRepository implements TimetableRepository {
 
   @override
   Stream<List<TimetablePeriodModel>> watchPeriods(String timetableId) {
-    return Stream.value(List<TimetablePeriodModel>.from(_periods[timetableId] ?? []));
+    return Stream.value(
+      List<TimetablePeriodModel>.from(_periods[timetableId] ?? []),
+    );
   }
 
   @override
-  Future<void> saveBreak(String timetableId, TimetableBreakModel breakModel) async {
+  Future<void> saveBreak(
+    String timetableId,
+    TimetableBreakModel breakModel,
+  ) async {
     await _delay();
     breakModel.validate();
     final list = _breaks.putIfAbsent(timetableId, () => []);
@@ -366,7 +426,10 @@ class MockTimetableRepository implements TimetableRepository {
   }
 
   @override
-  Future<void> saveBreaksBatch(String timetableId, List<TimetableBreakModel> breaks) async {
+  Future<void> saveBreaksBatch(
+    String timetableId,
+    List<TimetableBreakModel> breaks,
+  ) async {
     await _delay();
     for (final b in breaks) {
       b.validate();
@@ -392,11 +455,16 @@ class MockTimetableRepository implements TimetableRepository {
 
   @override
   Stream<List<TimetableBreakModel>> watchBreaks(String timetableId) {
-    return Stream.value(List<TimetableBreakModel>.from(_breaks[timetableId] ?? []));
+    return Stream.value(
+      List<TimetableBreakModel>.from(_breaks[timetableId] ?? []),
+    );
   }
 
   @override
-  Future<void> saveGridEntry(String timetableId, TimetableGridEntryModel entry) async {
+  Future<void> saveGridEntry(
+    String timetableId,
+    TimetableGridEntryModel entry,
+  ) async {
     await _delay();
     entry.validate();
     final list = _gridEntries.putIfAbsent(timetableId, () => []);
@@ -405,7 +473,10 @@ class MockTimetableRepository implements TimetableRepository {
   }
 
   @override
-  Future<void> saveGridEntriesBatch(String timetableId, List<TimetableGridEntryModel> entries) async {
+  Future<void> saveGridEntriesBatch(
+    String timetableId,
+    List<TimetableGridEntryModel> entries,
+  ) async {
     await _delay();
     for (final e in entries) {
       e.validate();
@@ -424,14 +495,18 @@ class MockTimetableRepository implements TimetableRepository {
   }
 
   @override
-  Future<List<TimetableGridEntryModel>> getGridEntries(String timetableId) async {
+  Future<List<TimetableGridEntryModel>> getGridEntries(
+    String timetableId,
+  ) async {
     await _delay();
     return List<TimetableGridEntryModel>.from(_gridEntries[timetableId] ?? []);
   }
 
   @override
   Stream<List<TimetableGridEntryModel>> watchGridEntries(String timetableId) {
-    return Stream.value(List<TimetableGridEntryModel>.from(_gridEntries[timetableId] ?? []));
+    return Stream.value(
+      List<TimetableGridEntryModel>.from(_gridEntries[timetableId] ?? []),
+    );
   }
 
   @override
@@ -450,8 +525,11 @@ class MockTimetableRepository implements TimetableRepository {
       for (int j = i + 1; j < entries.length; j++) {
         final e1 = entries[i];
         final e2 = entries[j];
-        if (e1.dayOfWeek == e2.dayOfWeek && (e1.overlapsHorizontallyWith(e2) || e1.overlapsTimeWith(e2))) {
-          throw TimetableConflictException("Conflict detected on ${e1.dayOfWeek.displayName}");
+        if (e1.dayOfWeek == e2.dayOfWeek &&
+            (e1.overlapsHorizontallyWith(e2) || e1.overlapsTimeWith(e2))) {
+          throw TimetableConflictException(
+            "Conflict detected on ${e1.dayOfWeek.displayName}",
+          );
         }
       }
     }
@@ -466,7 +544,10 @@ class MockTimetableRepository implements TimetableRepository {
   }
 
   @override
-  Future<void> publishTimetable(String timetableId, {required String publishedBy}) async {
+  Future<void> publishTimetable(
+    String timetableId, {
+    required String publishedBy,
+  }) async {
     await validateTimetableForPublishing(timetableId);
     final container = _containers[timetableId]!;
     final entries = _gridEntries[timetableId] ?? [];
@@ -487,25 +568,27 @@ class MockTimetableRepository implements TimetableRepository {
     for (final entry in entries) {
       final projectedId = 'pub_${timetableId}_${entry.id}';
       _entries.removeWhere((e) => e.id == projectedId);
-      _entries.add(TimetableModel(
-        id: projectedId,
-        collegeId: container.collegeId,
-        departmentId: container.departmentId,
-        courseId: container.courseId,
-        academicYearId: container.academicYearId,
-        semesterId: container.semesterId,
-        sectionId: container.sectionId,
-        subjectId: entry.subjectId,
-        facultyId: entry.facultyId,
-        dayOfWeek: entry.dayOfWeek,
-        startTime: entry.startTime,
-        endTime: entry.endTime,
-        roomNumber: entry.roomNumber,
-        building: entry.building,
-        sessionType: entry.sessionType,
-        createdAt: container.createdAt,
-        updatedAt: now,
-      ));
+      _entries.add(
+        TimetableModel(
+          id: projectedId,
+          collegeId: container.collegeId,
+          departmentId: container.departmentId,
+          courseId: container.courseId,
+          academicYearId: container.academicYearId,
+          semesterId: container.semesterId,
+          sectionId: container.sectionId,
+          subjectId: entry.subjectId,
+          facultyId: entry.facultyId,
+          dayOfWeek: entry.dayOfWeek,
+          startTime: entry.startTime,
+          endTime: entry.endTime,
+          roomNumber: entry.roomNumber,
+          building: entry.building,
+          sessionType: entry.sessionType,
+          createdAt: container.createdAt,
+          updatedAt: now,
+        ),
+      );
     }
     _emit();
     _containersController.add(_containers.values.toList());
@@ -516,14 +599,18 @@ class MockTimetableRepository implements TimetableRepository {
     final container = _containers[timetableId];
     if (container == null) return;
     _entries.removeWhere((e) => e.id.startsWith('pub_${timetableId}_'));
-    _containers[timetableId] = container.copyWith(status: TimetableStatus.draft, clearPublished: true, updatedAt: DateTime.now());
+    _containers[timetableId] = container.copyWith(
+      status: TimetableStatus.draft,
+      clearPublished: true,
+      updatedAt: DateTime.now(),
+    );
     _emit();
     _containersController.add(_containers.values.toList());
   }
 
   void _generateInitialData() {
     final now = DateTime.now();
-    
+
     // Mock Data for "col-1" -> "dept-cse" -> "sec-3a"
     _entries.addAll([
       TimetableModel(
@@ -589,7 +676,11 @@ class MockTimetableRepository implements TimetableRepository {
   final List<CalendarOverride> _overrides = [];
 
   @override
-  Future<List<CalendarOverride>> getCalendarOverrides({String? date, String? from, String? to}) async {
+  Future<List<CalendarOverride>> getCalendarOverrides({
+    String? date,
+    String? from,
+    String? to,
+  }) async {
     await _delay();
     var list = List<CalendarOverride>.from(_overrides);
     if (date != null) list = list.where((o) => o.date == date).toList();
@@ -597,7 +688,9 @@ class MockTimetableRepository implements TimetableRepository {
   }
 
   @override
-  Future<CalendarOverride> createCalendarOverride(CalendarOverride override) async {
+  Future<CalendarOverride> createCalendarOverride(
+    CalendarOverride override,
+  ) async {
     await _delay();
     _overrides.add(override);
     return override;
@@ -620,21 +713,31 @@ class MockTimetableRepository implements TimetableRepository {
     await _delay();
     var list = List<TeacherSubstitution>.from(_substitutions);
     if (date != null) list = list.where((s) => s.date == date).toList();
-    if (timetableId != null) list = list.where((s) => s.timetableId == timetableId).toList();
-    if (departmentId != null) list = list.where((s) => s.departmentId == departmentId).toList();
+    if (timetableId != null)
+      list = list.where((s) => s.timetableId == timetableId).toList();
+    if (departmentId != null)
+      list = list.where((s) => s.departmentId == departmentId).toList();
     return list;
   }
 
   @override
-  Future<TeacherSubstitution> createTeacherSubstitution(TeacherSubstitution substitution) async {
+  Future<TeacherSubstitution> createTeacherSubstitution(
+    TeacherSubstitution substitution,
+  ) async {
     await _delay();
-    final duplicate = _substitutions.where((s) =>
-      s.timetableId == substitution.timetableId &&
-      s.timetableEntryId == substitution.timetableEntryId &&
-      s.date == substitution.date &&
-      s.status.toLowerCase() != 'cancelled').firstOrNull;
+    final duplicate = _substitutions
+        .where(
+          (s) =>
+              s.timetableId == substitution.timetableId &&
+              s.timetableEntryId == substitution.timetableEntryId &&
+              s.date == substitution.date &&
+              s.status.toLowerCase() != 'cancelled',
+        )
+        .firstOrNull;
     if (duplicate != null) {
-      throw Exception('An active substitution already exists for this timetable entry on this date.');
+      throw Exception(
+        'An active substitution already exists for this timetable entry on this date.',
+      );
     }
     final created = substitution.id.isNotEmpty
         ? substitution
@@ -649,4 +752,3 @@ class MockTimetableRepository implements TimetableRepository {
     _substitutions.removeWhere((s) => s.id == id);
   }
 }
-

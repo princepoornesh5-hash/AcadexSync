@@ -19,9 +19,17 @@ class LowAttendanceList extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     // Strict regulatory threshold filter (< 75.0%)
-    final lowStudents = students.where((s) => AttendanceAnalyticsConstants.isLowAttendance(s.attendancePercentage)).toList();
+    final lowStudents = students
+        .where(
+          (s) => AttendanceAnalyticsConstants.isLowAttendance(
+            s.attendancePercentage,
+          ),
+        )
+        .toList();
     // Sort lowest attendance first
-    lowStudents.sort((a, b) => a.attendancePercentage.compareTo(b.attendancePercentage));
+    lowStudents.sort(
+      (a, b) => a.attendancePercentage.compareTo(b.attendancePercentage),
+    );
 
     return AcadexCard(
       child: Column(
@@ -33,13 +41,19 @@ class LowAttendanceList extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.alertTriangle, size: 18, color: AcadexColors.error),
+                    const Icon(
+                      LucideIcons.alertTriangle,
+                      size: 18,
+                      color: AcadexColors.error,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         title,
                         style: AcadexTypography.heading2(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                     ),
@@ -60,13 +74,21 @@ class LowAttendanceList extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AcadexColors.success.withValues(alpha: isDark ? 0.12 : 0.06),
+                color: AcadexColors.success.withValues(
+                  alpha: isDark ? 0.12 : 0.06,
+                ),
                 borderRadius: AcadexRadius.borderRadiusMd,
-                border: Border.all(color: AcadexColors.success.withValues(alpha: 0.25)),
+                border: Border.all(
+                  color: AcadexColors.success.withValues(alpha: 0.25),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.checkCircle2, color: AcadexColors.success, size: 24),
+                  const Icon(
+                    LucideIcons.checkCircle2,
+                    color: AcadexColors.success,
+                    size: 24,
+                  ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
@@ -75,14 +97,18 @@ class LowAttendanceList extends StatelessWidget {
                         Text(
                           'No Students in Critical Shortage',
                           style: AcadexTypography.body(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ).copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'All students currently meet or exceed the 75% regulatory requirement.',
                           style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                         ),
                       ],
@@ -99,8 +125,12 @@ class LowAttendanceList extends StatelessWidget {
               separatorBuilder: (context, index) => const Divider(height: 16),
               itemBuilder: (context, index) {
                 final student = lowStudents[index];
-                final displayName = student.studentName.isNotEmpty ? student.studentName : student.studentId;
-                final rollNumber = student.rollNumber.isNotEmpty ? student.rollNumber : 'Roll: --';
+                final displayName = student.studentName.isNotEmpty
+                    ? student.studentName
+                    : student.studentId;
+                final rollNumber = student.rollNumber.isNotEmpty
+                    ? student.rollNumber
+                    : 'Roll: --';
 
                 return Row(
                   children: [
@@ -114,9 +144,9 @@ class LowAttendanceList extends StatelessWidget {
                       child: Center(
                         child: Text(
                           '${index + 1}',
-                          style: AcadexTypography.caption(color: AcadexColors.error).copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: AcadexTypography.caption(
+                            color: AcadexColors.error,
+                          ).copyWith(fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -128,14 +158,18 @@ class LowAttendanceList extends StatelessWidget {
                           Text(
                             displayName,
                             style: AcadexTypography.body(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ).copyWith(fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '$rollNumber • Section: ${student.sectionId.isNotEmpty ? student.sectionId : '--'} • ${student.presentCount}/${student.totalSessions} present',
                             style: AcadexTypography.caption(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
                             ),
                           ),
                         ],
@@ -147,10 +181,9 @@ class LowAttendanceList extends StatelessWidget {
                       children: [
                         Text(
                           '${student.attendancePercentage.toStringAsFixed(1)}%',
-                          style: AcadexTypography.body(color: AcadexColors.error).copyWith(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 16,
-                          ),
+                          style: AcadexTypography.body(
+                            color: AcadexColors.error,
+                          ).copyWith(fontWeight: FontWeight.w800, fontSize: 16),
                         ),
                         const SizedBox(height: 2),
                         const AcadexBadge(

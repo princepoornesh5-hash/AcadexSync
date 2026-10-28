@@ -22,7 +22,9 @@ class SuperAdminDashboard extends ConsumerWidget {
       },
       child: dashboardAsync.when(
         loading: () => const Center(
-          child: AcadexLoadingState(message: 'Loading platform administration...'),
+          child: AcadexLoadingState.spinner(
+            message: 'Loading platform administration...',
+          ),
         ),
         error: (err, _) => AcadexErrorState.fromError(
           error: err,
@@ -44,9 +46,7 @@ class SuperAdminDashboard extends ConsumerWidget {
 
               // 3. Platform Shortcuts (Immediate 8px gap below hero, matching HOD standard)
               const SizedBox(height: 8),
-              DashboardQuickActionsGrid(
-                quickActions: dashboard.quickActions,
-              ),
+              DashboardQuickActionsGrid(quickActions: dashboard.quickActions),
 
               // 4. Platform Alerts & Pending Actions
               if (dashboard.alerts.isNotEmpty)
@@ -96,7 +96,10 @@ class SuperAdminDashboard extends ConsumerWidget {
             final itemWidth = (w - (crossAxisCount - 1) * 8) / crossAxisCount;
             final textScale = MediaQuery.textScalerOf(context).scale(1.0);
             final targetCardHeight = 80.0 * textScale.clamp(1.0, 1.6);
-            final childAspectRatio = (itemWidth / targetCardHeight).clamp(0.85, 1.45);
+            final childAspectRatio = (itemWidth / targetCardHeight).clamp(
+              0.85,
+              1.45,
+            );
 
             return GridView.count(
               shrinkWrap: true,
@@ -109,7 +112,8 @@ class SuperAdminDashboard extends ConsumerWidget {
                 DashboardCompactTile(
                   title: 'Total Colleges',
                   value: '${summary.collegesCount}',
-                  subtitle: '${summary.activeCollegesCount} active institutions',
+                  subtitle:
+                      '${summary.activeCollegesCount} active institutions',
                   icon: LucideIcons.building,
                   color: AcadexColors.primary,
                   onTap: () => context.push('/academics/colleges'),

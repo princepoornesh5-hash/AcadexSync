@@ -44,7 +44,10 @@ class _MarksSliderRowState extends State<MarksSliderRow>
   @override
   void initState() {
     super.initState();
-    _currentValue = (widget.currentMark ?? 0).toDouble().clamp(0.0, widget.maximumMarks.toDouble());
+    _currentValue = (widget.currentMark ?? 0).toDouble().clamp(
+      0.0,
+      widget.maximumMarks.toDouble(),
+    );
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 180),
@@ -60,7 +63,10 @@ class _MarksSliderRowState extends State<MarksSliderRow>
     super.didUpdateWidget(oldWidget);
     if (widget.currentMark != oldWidget.currentMark && !_isDragging) {
       setState(() {
-        _currentValue = (widget.currentMark ?? 0).toDouble().clamp(0.0, widget.maximumMarks.toDouble());
+        _currentValue = (widget.currentMark ?? 0).toDouble().clamp(
+          0.0,
+          widget.maximumMarks.toDouble(),
+        );
       });
     }
   }
@@ -91,7 +97,8 @@ class _MarksSliderRowState extends State<MarksSliderRow>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final int currentInt = _currentValue.round();
     final hasMark = widget.currentMark != null || widget.student.marks != null;
-    final isReviewed = widget.student.reviewStatus == FacultyReviewStatus.reviewed || hasMark;
+    final isReviewed =
+        widget.student.reviewStatus == FacultyReviewStatus.reviewed || hasMark;
     final maxMarks = widget.maximumMarks > 0 ? widget.maximumMarks : 10;
 
     return Container(
@@ -102,7 +109,9 @@ class _MarksSliderRowState extends State<MarksSliderRow>
         borderRadius: AcadexRadius.borderRadiusMd,
         border: Border.all(
           color: isReviewed
-              ? (isDark ? AcadexColors.primaryDark.withOpacity(0.3) : AcadexColors.primaryLight)
+              ? (isDark
+                    ? AcadexColors.primaryDark.withOpacity(0.3)
+                    : AcadexColors.primaryLight)
               : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
           width: isReviewed ? 1.2 : 1.0,
         ),
@@ -129,7 +138,9 @@ class _MarksSliderRowState extends State<MarksSliderRow>
                 Text(
                   '(${widget.student.rollNumber})',
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                 ),
               ],
@@ -144,11 +155,16 @@ class _MarksSliderRowState extends State<MarksSliderRow>
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 1.5,
+                  ),
                   decoration: BoxDecoration(
                     color: isReviewed
                         ? const Color(0xFFDCFCE7)
-                        : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
+                        : (isDark
+                              ? AcadexColors.darkCanvasSoft
+                              : AcadexColors.canvasSoft),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -156,14 +172,19 @@ class _MarksSliderRowState extends State<MarksSliderRow>
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
-                      color: isReviewed ? const Color(0xFF15803D) : AcadexColors.inkSecondary,
+                      color: isReviewed
+                          ? const Color(0xFF15803D)
+                          : AcadexColors.inkSecondary,
                     ),
                   ),
                 ),
                 if (widget.student.isLate) ...[
                   const SizedBox(width: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 1.5,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFEE2E2),
                       borderRadius: BorderRadius.circular(4),
@@ -184,27 +205,42 @@ class _MarksSliderRowState extends State<MarksSliderRow>
                     onTap: widget.onInspect,
                     borderRadius: BorderRadius.circular(4),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2.5,
+                      ),
                       margin: const EdgeInsets.only(right: 4),
                       decoration: BoxDecoration(
-                        color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                        color: isDark
+                            ? AcadexColors.darkCanvasSoft
+                            : AcadexColors.canvasSoft,
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(
-                          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                          color: isDark
+                              ? AcadexColors.darkHairline
+                              : AcadexColors.hairline,
                           width: 0.8,
                         ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(LucideIcons.fileText, size: 10, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                          Icon(
+                            LucideIcons.fileText,
+                            size: 10,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
+                          ),
                           const SizedBox(width: 2.5),
                           Text(
                             'Review',
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ),
                           ),
                         ],
@@ -216,9 +252,14 @@ class _MarksSliderRowState extends State<MarksSliderRow>
                   onTap: _setFullMarks,
                   borderRadius: BorderRadius.circular(4),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2.5,
+                    ),
                     decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.primaryTint,
+                      color: isDark
+                          ? AcadexColors.darkCanvasSoft
+                          : AcadexColors.primaryTint,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: const Text(
@@ -235,16 +276,20 @@ class _MarksSliderRowState extends State<MarksSliderRow>
             ),
           ),
 
-
-
           const SizedBox(height: 2),
 
           // Slider & floating mark bubble area
           LayoutBuilder(
             builder: (context, constraints) {
-              final sliderWidth = constraints.maxWidth - 70; // reserving space for right label
-              final thumbFraction = maxMarks > 0 ? (_currentValue / maxMarks).clamp(0.0, 1.0) : 0.0;
-              final bubbleLeft = (thumbFraction * (sliderWidth - 28)).clamp(0.0, sliderWidth - 28);
+              final sliderWidth =
+                  constraints.maxWidth - 70; // reserving space for right label
+              final thumbFraction = maxMarks > 0
+                  ? (_currentValue / maxMarks).clamp(0.0, 1.0)
+                  : 0.0;
+              final bubbleLeft = (thumbFraction * (sliderWidth - 28)).clamp(
+                0.0,
+                sliderWidth - 28,
+              );
 
               return Stack(
                 clipBehavior: Clip.none,
@@ -257,14 +302,26 @@ class _MarksSliderRowState extends State<MarksSliderRow>
                           data: SliderTheme.of(context).copyWith(
                             trackHeight: 4,
                             activeTrackColor: AcadexColors.primary,
-                            inactiveTrackColor: isDark ? AcadexColors.darkHairline : const Color(0xFFE2E8F0),
+                            inactiveTrackColor: isDark
+                                ? AcadexColors.darkHairline
+                                : const Color(0xFFE2E8F0),
                             thumbColor: AcadexColors.primary,
-                            overlayColor: AcadexColors.primary.withOpacity(0.12),
-                            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
-                            overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
-                            tickMarkShape: const RoundSliderTickMarkShape(tickMarkRadius: 1.5),
+                            overlayColor: AcadexColors.primary.withOpacity(
+                              0.12,
+                            ),
+                            thumbShape: const RoundSliderThumbShape(
+                              enabledThumbRadius: 7,
+                            ),
+                            overlayShape: const RoundSliderOverlayShape(
+                              overlayRadius: 14,
+                            ),
+                            tickMarkShape: const RoundSliderTickMarkShape(
+                              tickMarkRadius: 1.5,
+                            ),
                             activeTickMarkColor: Colors.white70,
-                            inactiveTickMarkColor: isDark ? Colors.white10 : Colors.black12,
+                            inactiveTickMarkColor: isDark
+                                ? Colors.white10
+                                : Colors.black12,
                           ),
                           child: Slider(
                             value: _currentValue,
@@ -300,7 +357,9 @@ class _MarksSliderRowState extends State<MarksSliderRow>
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ),
                         ),
                       ),
@@ -321,7 +380,10 @@ class _MarksSliderRowState extends State<MarksSliderRow>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF0F172A),
                                   borderRadius: BorderRadius.circular(6),
@@ -355,7 +417,9 @@ class _MarksSliderRowState extends State<MarksSliderRow>
                               // Downward pointing arrow
                               CustomPaint(
                                 size: const Size(8, 4),
-                                painter: _TrianglePainter(color: const Color(0xFF0F172A)),
+                                painter: _TrianglePainter(
+                                  color: const Color(0xFF0F172A),
+                                ),
                               ),
                             ],
                           ),
@@ -390,5 +454,6 @@ class _TrianglePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _TrianglePainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(covariant _TrianglePainter oldDelegate) =>
+      oldDelegate.color != color;
 }

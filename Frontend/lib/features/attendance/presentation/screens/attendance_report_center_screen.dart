@@ -15,10 +15,12 @@ class AttendanceReportCenterScreen extends ConsumerStatefulWidget {
   const AttendanceReportCenterScreen({super.key});
 
   @override
-  ConsumerState<AttendanceReportCenterScreen> createState() => _AttendanceReportCenterScreenState();
+  ConsumerState<AttendanceReportCenterScreen> createState() =>
+      _AttendanceReportCenterScreenState();
 }
 
-class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportCenterScreen> {
+class _AttendanceReportCenterScreenState
+    extends ConsumerState<AttendanceReportCenterScreen> {
   int _previewPage = 1;
   static const int _previewPageSize = 10;
   String _tableSearchQuery = '';
@@ -58,7 +60,11 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
       SnackBar(
         content: Row(
           children: [
-            const Icon(LucideIcons.fileSpreadsheet, color: Colors.white, size: 18),
+            const Icon(
+              LucideIcons.fileSpreadsheet,
+              color: Colors.white,
+              size: 18,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -112,18 +118,26 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
         : allowedTypes.first;
 
     final effectiveFilter = currentFilter.copyWith(reportType: effectiveType);
-    final reportAsync = ref.watch(attendanceReportDataProvider(effectiveFilter));
+    final reportAsync = ref.watch(
+      attendanceReportDataProvider(effectiveFilter),
+    );
 
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
         title: Text(
           'Attendance Report Center',
-          style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          style: AcadexTypography.heading3(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
         ),
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         elevation: 0,
-        iconTheme: IconThemeData(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+        iconTheme: IconThemeData(
+          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+        ),
         actions: [
           reportAsync.maybeWhen(
             data: (report) => Padding(
@@ -135,14 +149,23 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
                     icon: const Icon(LucideIcons.fileSpreadsheet, size: 16),
                     label: const Text('Export CSV'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      foregroundColor: isDark
+                          ? AcadexColors.darkInk
+                          : AcadexColors.ink,
                     ),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton.icon(
                     onPressed: () => _exportPdf(report),
-                    icon: const Icon(LucideIcons.fileText, size: 16, color: Colors.white),
-                    label: const Text('Export PDF', style: TextStyle(color: Colors.white)),
+                    icon: const Icon(
+                      LucideIcons.fileText,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                    label: const Text(
+                      'Export PDF',
+                      style: TextStyle(color: Colors.white),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AcadexColors.primary,
                     ),
@@ -162,7 +185,9 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
             // Report Type Selector
             Text(
               'Select Report Type',
-              style: AcadexTypography.title(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+              style: AcadexTypography.title(
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              ),
             ),
             const SizedBox(height: 8),
             SingleChildScrollView(
@@ -181,16 +206,28 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
                             _previewPage = 1;
                             _tableSearchQuery = '';
                           });
-                          ref.read(attendanceReportFilterProvider.notifier).state =
-                              effectiveFilter.copyWith(reportType: type);
+                          ref
+                              .read(attendanceReportFilterProvider.notifier)
+                              .state = effectiveFilter.copyWith(
+                            reportType: type,
+                          );
                         }
                       },
-                      selectedColor: AcadexColors.primary.withValues(alpha: 0.15),
-                      labelStyle: AcadexTypography.bodySmall(
-                        color: isSelected
-                            ? AcadexColors.primary
-                            : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                      ).copyWith(fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500),
+                      selectedColor: AcadexColors.primary.withValues(
+                        alpha: 0.15,
+                      ),
+                      labelStyle:
+                          AcadexTypography.bodySmall(
+                            color: isSelected
+                                ? AcadexColors.primary
+                                : (isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted),
+                          ).copyWith(
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
                     ),
                   );
                 }).toList(),
@@ -204,10 +241,13 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
 
             // Report Preview Area
             reportAsync.when(
-              loading: () => const AcadexLoadingState(message: 'Generating attendance report...'),
+              loading: () => const AcadexLoadingState(
+                message: 'Generating attendance report...',
+              ),
               error: (err, _) => AcadexErrorState(
                 message: 'Failed to generate report: $err',
-                onRetry: () => ref.refresh(attendanceReportDataProvider(effectiveFilter)),
+                onRetry: () =>
+                    ref.refresh(attendanceReportDataProvider(effectiveFilter)),
               ),
               data: (report) => _buildReportPreview(context, report, isDark),
             ),
@@ -217,24 +257,36 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
     );
   }
 
-  Widget _buildFilterBar(BuildContext context, AttendanceReportFilter filter, bool isDark) {
+  Widget _buildFilterBar(
+    BuildContext context,
+    AttendanceReportFilter filter,
+    bool isDark,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(LucideIcons.slidersHorizontal, size: 16, color: AcadexColors.primary),
+              const Icon(
+                LucideIcons.slidersHorizontal,
+                size: 16,
+                color: AcadexColors.primary,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Report Filters & Scope',
-                style: AcadexTypography.title(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                style: AcadexTypography.title(
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ),
               ),
               const Spacer(),
               if (filter.dateRange != null)
@@ -255,7 +307,9 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
             children: [
               ActionChip(
                 avatar: const Icon(LucideIcons.calendarDays, size: 14),
-                label: Text(AttendanceReportExporter.formatDateRange(filter.dateRange)),
+                label: Text(
+                  AttendanceReportExporter.formatDateRange(filter.dateRange),
+                ),
                 onPressed: () => _showDateRangePicker(context, filter),
               ),
               ActionChip(
@@ -291,13 +345,19 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
     );
   }
 
-  void _showDateRangePicker(BuildContext context, AttendanceReportFilter filter) async {
+  void _showDateRangePicker(
+    BuildContext context,
+    AttendanceReportFilter filter,
+  ) async {
     final picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       initialDateRange: filter.dateRange != null
-          ? DateTimeRange(start: filter.dateRange!.startDate, end: filter.dateRange!.endDate)
+          ? DateTimeRange(
+              start: filter.dateRange!.startDate,
+              end: filter.dateRange!.endDate,
+            )
           : null,
     );
 
@@ -306,16 +366,23 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
         startDate: picked.start,
         endDate: picked.end,
       );
-      ref.read(attendanceReportFilterProvider.notifier).state = filter.copyWith(dateRange: range);
+      ref.read(attendanceReportFilterProvider.notifier).state = filter.copyWith(
+        dateRange: range,
+      );
     }
   }
 
-  Widget _buildReportPreview(BuildContext context, AttendanceReportResult report, bool isDark) {
+  Widget _buildReportPreview(
+    BuildContext context,
+    AttendanceReportResult report,
+    bool isDark,
+  ) {
     if (report.rows.isEmpty) {
       return const AcadexEmptyState(
         icon: LucideIcons.fileQuestion,
         title: 'No Report Data',
-        subtitle: 'No attendance records match the selected scope and criteria.',
+        subtitle:
+            'No attendance records match the selected scope and criteria.',
       );
     }
 
@@ -339,7 +406,9 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -355,25 +424,36 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
                   children: [
                     Text(
                       report.title,
-                      style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                      style: AcadexTypography.heading3(
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       report.scopeDescription,
-                      style: AcadexTypography.bodySmall(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                      style: AcadexTypography.bodySmall(
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
+                      ),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AcadexColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   '${report.totalRecords} Total Records',
-                  style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(fontWeight: FontWeight.w700),
+                  style: AcadexTypography.caption(
+                    color: AcadexColors.primary,
+                  ).copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
             ],
@@ -385,7 +465,9 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                color: isDark
+                    ? AcadexColors.darkCanvasSoft
+                    : AcadexColors.canvasSoft,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Wrap(
@@ -397,13 +479,20 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
                     children: [
                       Text(
                         e.key,
-                        style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                        style: AcadexTypography.caption(
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         e.value.toString(),
-                        style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink)
-                            .copyWith(fontWeight: FontWeight.w700),
+                        style: AcadexTypography.body(
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
+                        ).copyWith(fontWeight: FontWeight.w700),
                       ),
                     ],
                   );
@@ -418,9 +507,14 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
             decoration: InputDecoration(
               hintText: 'Search within table...',
               prefixIcon: const Icon(LucideIcons.search, size: 16),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
               isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
             ),
             onChanged: (val) {
               setState(() {
@@ -452,8 +546,13 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
                 return DataRow(
                   cells: row.map((cell) {
                     final str = cell.toString();
-                    final isCritical = str.contains('CRITICAL') || str.contains('NON-COMPLIANT');
-                    final isSuccess = str.contains('GOOD') || str.contains('HEALTHY') || str.contains('VERIFIED');
+                    final isCritical =
+                        str.contains('CRITICAL') ||
+                        str.contains('NON-COMPLIANT');
+                    final isSuccess =
+                        str.contains('GOOD') ||
+                        str.contains('HEALTHY') ||
+                        str.contains('VERIFIED');
 
                     Color? textColor;
                     if (isCritical) textColor = AcadexColors.error;
@@ -462,9 +561,18 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
                     return DataCell(
                       Text(
                         str,
-                        style: AcadexTypography.bodySmall(
-                          color: textColor ?? (isDark ? AcadexColors.darkInk : AcadexColors.ink),
-                        ).copyWith(fontWeight: isCritical ? FontWeight.w700 : FontWeight.w400),
+                        style:
+                            AcadexTypography.bodySmall(
+                              color:
+                                  textColor ??
+                                  (isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink),
+                            ).copyWith(
+                              fontWeight: isCritical
+                                  ? FontWeight.w700
+                                  : FontWeight.w400,
+                            ),
                       ),
                     );
                   }).toList(),
@@ -480,7 +588,11 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
             children: [
               Text(
                 'Showing ${startIndex + 1}–$endIndex of $totalRows rows',
-                style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                style: AcadexTypography.caption(
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
+                ),
               ),
               Row(
                 children: [
@@ -492,7 +604,9 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
                   ),
                   Text(
                     'Page $currentPage of $totalPages',
-                    style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                    style: AcadexTypography.caption(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(LucideIcons.chevronRight, size: 18),

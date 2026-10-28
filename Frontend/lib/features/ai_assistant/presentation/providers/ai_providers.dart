@@ -11,7 +11,10 @@ import '../../data/repositories/mock_ai_repository.dart';
 
 final aiRepositoryProvider = Provider<AiRepository>((ref) {
   // Use MockAiRepository only if explicitly requested at compile time with --dart-define=USE_MOCK_AI=true
-  const bool forceMock = bool.fromEnvironment('USE_MOCK_AI', defaultValue: false);
+  const bool forceMock = bool.fromEnvironment(
+    'USE_MOCK_AI',
+    defaultValue: false,
+  );
   if (forceMock) {
     return MockAiRepository();
   }
@@ -22,7 +25,8 @@ class AiChatState {
   final List<AiMessage> messages;
   final bool isLoading;
   final String? error;
-  final String? errorCategory; // 'application_limit', 'gemini_quota_limit', 'timeout', 'auth_config', 'network', 'generic'
+  final String?
+  errorCategory; // 'application_limit', 'gemini_quota_limit', 'timeout', 'auth_config', 'network', 'generic'
   final int? retryAfterSeconds;
   final int? cooldownRemainingSeconds;
   final AiStreamStatus streamStatus;
@@ -70,12 +74,16 @@ class AiChatState {
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
       errorCategory: clearError ? null : (errorCategory ?? this.errorCategory),
-      retryAfterSeconds: clearError ? null : (retryAfterSeconds ?? this.retryAfterSeconds),
+      retryAfterSeconds: clearError
+          ? null
+          : (retryAfterSeconds ?? this.retryAfterSeconds),
       cooldownRemainingSeconds: clearCooldown
           ? null
           : (cooldownRemainingSeconds ?? this.cooldownRemainingSeconds),
       streamStatus: streamStatus ?? this.streamStatus,
-      activeMessageId: clearActiveMessage ? null : (activeMessageId ?? this.activeMessageId),
+      activeMessageId: clearActiveMessage
+          ? null
+          : (activeMessageId ?? this.activeMessageId),
       lastSubmittedQuery: lastSubmittedQuery ?? this.lastSubmittedQuery,
       correlationId: correlationId ?? this.correlationId,
     );
@@ -94,12 +102,15 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
   }
 
   void _initWelcomeMessage() {
-    state = state.copyWith(messages: [
-      AiMessage(
-        text: "Hello! I am your Acadex AI Assistant. How can I help you with your academic tasks today?",
-        isAi: true,
-      ),
-    ]);
+    state = state.copyWith(
+      messages: [
+        AiMessage(
+          text:
+              "Hello! I am your Acadex AI Assistant. How can I help you with your academic tasks today?",
+          isAi: true,
+        ),
+      ],
+    );
   }
 
   void _startCooldown(int seconds) {
@@ -146,7 +157,9 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
 
     if (state.activeMessageId != null) {
       final updatedMessages = List<AiMessage>.from(state.messages);
-      final idx = updatedMessages.indexWhere((m) => m.id == state.activeMessageId);
+      final idx = updatedMessages.indexWhere(
+        (m) => m.id == state.activeMessageId,
+      );
       if (idx != -1) {
         final activeMsg = updatedMessages[idx];
         if (activeMsg.text.trim().isNotEmpty) {
@@ -183,17 +196,21 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
       return Future.value();
     }
 
-    final queryToRetry = state.lastSubmittedQuery ??
+    final queryToRetry =
+        state.lastSubmittedQuery ??
         (state.messages.where((m) => !m.isAi).isNotEmpty
             ? state.messages.where((m) => !m.isAi).last.text
             : null);
 
-    if (queryToRetry == null || queryToRetry.trim().isEmpty) return Future.value();
+    if (queryToRetry == null || queryToRetry.trim().isEmpty)
+      return Future.value();
 
     // If last message was a failed or interrupted AI message, remove it cleanly before retrying
     if (state.messages.isNotEmpty && state.messages.last.isAi) {
       final lastAi = state.messages.last;
-      if (lastAi.actionStatus == null || lastAi.actionStatus == 'FAILED' || lastAi.isInterrupted) {
+      if (lastAi.actionStatus == null ||
+          lastAi.actionStatus == 'FAILED' ||
+          lastAi.isInterrupted) {
         final trimmed = List<AiMessage>.from(state.messages)..removeLast();
         state = state.copyWith(messages: trimmed, clearError: true);
       }
@@ -211,7 +228,9 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
 
     // Rapid double-submission protection (ignore rapid clicks within 800ms)
     final now = DateTime.now();
-    if (!isRetry && _lastRequestTime != null && now.difference(_lastRequestTime!) < const Duration(milliseconds: 800)) {
+    if (!isRetry &&
+        _lastRequestTime != null &&
+        now.difference(_lastRequestTime!) < const Duration(milliseconds: 800)) {
       return;
     }
     _lastRequestTime = now;
@@ -219,7 +238,8 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
     stopGenerating();
 
     final assistantId = const Uuid().v4();
-    final clientCorrelationId = 'cli_${now.millisecondsSinceEpoch}_${const Uuid().v4().substring(0, 8)}';
+    final clientCorrelationId =
+        'cli_${now.millisecondsSinceEpoch}_${const Uuid().v4().substring(0, 8)}';
 
     if (isRetry) {
       // Re-use existing user message in history, clear error and set connecting
@@ -264,17 +284,24 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
       }
 
       // Bounded conversational history (last 6 turns, excluding welcome)
-      final historyEligible = state.messages.where((m) =>
-          m.text.isNotEmpty &&
-          m.id != assistantId &&
-          !m.text.startsWith('Hello! I am your Acadex AI Assistant')).toList();
-      final boundedHistory =
-          historyEligible.length > 6 ? historyEligible.sublist(historyEligible.length - 6) : historyEligible;
+      final historyEligible = state.messages
+          .where(
+            (m) =>
+                m.text.isNotEmpty &&
+                m.id != assistantId &&
+                !m.text.startsWith('Hello! I am your Acadex AI Assistant'),
+          )
+          .toList();
+      final boundedHistory = historyEligible.length > 6
+          ? historyEligible.sublist(historyEligible.length - 6)
+          : historyEligible;
       final historyPayload = boundedHistory
-          .map((m) => <String, String>{
-                'role': m.isAi ? 'assistant' : 'user',
-                'content': m.text,
-              })
+          .map(
+            (m) => <String, String>{
+              'role': m.isAi ? 'assistant' : 'user',
+              'content': m.text,
+            },
+          )
           .toList();
 
       state = state.copyWith(streamStatus: AiStreamStatus.waitingForFirstChunk);
@@ -294,7 +321,9 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
               final currentMsgs = List<AiMessage>.from(state.messages);
               final idx = currentMsgs.indexWhere((m) => m.id == assistantId);
               if (idx != -1) {
-                currentMsgs[idx] = currentMsgs[idx].copyWith(correlationId: e.correlationId);
+                currentMsgs[idx] = currentMsgs[idx].copyWith(
+                  correlationId: e.correlationId,
+                );
                 state = state.copyWith(
                   messages: currentMsgs,
                   correlationId: e.correlationId,
@@ -306,12 +335,14 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
               final currentMsgs = List<AiMessage>.from(state.messages);
               final idx = currentMsgs.indexWhere((m) => m.id == assistantId);
               if (idx == -1) {
-                currentMsgs.add(AiMessage(
-                  id: assistantId,
-                  text: e.text,
-                  isAi: true,
-                  isStreaming: true,
-                ));
+                currentMsgs.add(
+                  AiMessage(
+                    id: assistantId,
+                    text: e.text,
+                    isAi: true,
+                    isStreaming: true,
+                  ),
+                );
               } else {
                 currentMsgs[idx] = currentMsgs[idx].copyWith(
                   text: currentMsgs[idx].text + e.text,
@@ -328,14 +359,16 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
               final currentMsgs = List<AiMessage>.from(state.messages);
               final idx = currentMsgs.indexWhere((m) => m.id == assistantId);
               if (idx == -1) {
-                currentMsgs.add(AiMessage(
-                  id: assistantId,
-                  text: '',
-                  isAi: true,
-                  isStreaming: true,
-                  proposal: e.proposal,
-                  actionStatus: 'PENDING',
-                ));
+                currentMsgs.add(
+                  AiMessage(
+                    id: assistantId,
+                    text: '',
+                    isAi: true,
+                    isStreaming: true,
+                    proposal: e.proposal,
+                    actionStatus: 'PENDING',
+                  ),
+                );
               } else {
                 currentMsgs[idx] = currentMsgs[idx].copyWith(
                   proposal: e.proposal,
@@ -349,20 +382,25 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
               final currentMsgs = List<AiMessage>.from(state.messages);
               final idx = currentMsgs.indexWhere((m) => m.id == assistantId);
               if (idx == -1) {
-                currentMsgs.add(AiMessage(
-                  id: assistantId,
-                  text: e.answer,
-                  isAi: true,
-                  isStreaming: false,
-                  proposal: e.proposal,
-                  actionStatus: e.proposal != null ? 'PENDING' : null,
-                ));
+                currentMsgs.add(
+                  AiMessage(
+                    id: assistantId,
+                    text: e.answer,
+                    isAi: true,
+                    isStreaming: false,
+                    proposal: e.proposal,
+                    actionStatus: e.proposal != null ? 'PENDING' : null,
+                  ),
+                );
               } else {
                 currentMsgs[idx] = currentMsgs[idx].copyWith(
-                  text: currentMsgs[idx].text.isEmpty ? e.answer : currentMsgs[idx].text,
+                  text: currentMsgs[idx].text.isEmpty
+                      ? e.answer
+                      : currentMsgs[idx].text,
                   isStreaming: false,
                   proposal: e.proposal ?? currentMsgs[idx].proposal,
-                  actionStatus: (e.proposal != null || currentMsgs[idx].proposal != null)
+                  actionStatus:
+                      (e.proposal != null || currentMsgs[idx].proposal != null)
                       ? (currentMsgs[idx].actionStatus ?? 'PENDING')
                       : null,
                 );
@@ -521,7 +559,9 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
       final expiryDate = DateTime.tryParse(expiresAtStr);
       if (expiryDate != null && DateTime.now().isAfter(expiryDate)) {
         final expiredMessages = List<AiMessage>.from(state.messages);
-        expiredMessages[messageIndex] = currentMsg.copyWith(actionStatus: 'EXPIRED');
+        expiredMessages[messageIndex] = currentMsg.copyWith(
+          actionStatus: 'EXPIRED',
+        );
         state = state.copyWith(
           messages: expiredMessages,
           error: 'Action proposal has expired. Please request a fresh preview.',
@@ -532,7 +572,9 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
 
     // Set message to confirming
     final updatedMessages = List<AiMessage>.from(state.messages);
-    updatedMessages[messageIndex] = currentMsg.copyWith(actionStatus: 'CONFIRMING');
+    updatedMessages[messageIndex] = currentMsg.copyWith(
+      actionStatus: 'CONFIRMING',
+    );
     state = state.copyWith(messages: updatedMessages, error: null);
 
     try {
@@ -548,10 +590,10 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
       final successSummary = actionType == 'CREATE_ASSIGNMENT'
           ? 'Assignment created and published successfully to student coursework.'
           : actionType == 'CREATE_REQUEST'
-              ? 'Request submitted successfully to the responsible authority.'
-              : actionType == 'RESPOND_REQUEST'
-                  ? 'Request decision recorded and applied successfully.'
-                  : 'Calendar event successfully scheduled and published in the academic calendar.';
+          ? 'Request submitted successfully to the responsible authority.'
+          : actionType == 'RESPOND_REQUEST'
+          ? 'Request decision recorded and applied successfully.'
+          : 'Calendar event successfully scheduled and published in the academic calendar.';
 
       final finalMessages = List<AiMessage>.from(state.messages);
       final idx = finalMessages.indexWhere((m) => m.id == messageId);
@@ -573,7 +615,11 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
           lowerErr.contains('connection') ||
           lowerErr.contains('network') ||
           lowerErr.contains('504')) {
-        await reconcileActionStatus(actionId, messageId, fallbackError: rawError);
+        await reconcileActionStatus(
+          actionId,
+          messageId,
+          fallbackError: rawError,
+        );
       } else {
         final isExpired = lowerErr.contains('expired');
         final failedMessages = List<AiMessage>.from(state.messages);
@@ -598,7 +644,9 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
 
     final currentMsg = state.messages[messageIndex];
     final reconcilingMessages = List<AiMessage>.from(state.messages);
-    reconcilingMessages[messageIndex] = currentMsg.copyWith(actionStatus: 'RECONCILING');
+    reconcilingMessages[messageIndex] = currentMsg.copyWith(
+      actionStatus: 'RECONCILING',
+    );
     state = state.copyWith(messages: reconcilingMessages, error: null);
 
     try {
@@ -607,7 +655,8 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
 
       if (!mounted) return;
 
-      final serverStatus = (statusData['status'] as String? ?? 'PENDING').toUpperCase();
+      final serverStatus = (statusData['status'] as String? ?? 'PENDING')
+          .toUpperCase();
       final updatedMessages = List<AiMessage>.from(state.messages);
       final idx = updatedMessages.indexWhere((m) => m.id == messageId);
       if (idx == -1) return;
@@ -617,26 +666,40 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
         final successSummary = actionType == 'CREATE_ASSIGNMENT'
             ? 'Assignment verified as successfully created and published.'
             : actionType == 'CREATE_REQUEST'
-                ? 'Request verified as successfully submitted for review.'
-                : actionType == 'RESPOND_REQUEST'
-                    ? 'Request decision verified as successfully recorded.'
-                    : 'Calendar event verified as successfully scheduled and published.';
+            ? 'Request verified as successfully submitted for review.'
+            : actionType == 'RESPOND_REQUEST'
+            ? 'Request decision verified as successfully recorded.'
+            : 'Calendar event verified as successfully scheduled and published.';
         updatedMessages[idx] = updatedMessages[idx].copyWith(
           actionStatus: 'EXECUTED',
           executionResultSummary: successSummary,
         );
         state = state.copyWith(messages: updatedMessages, error: null);
       } else if (serverStatus == 'CANCELLED') {
-        updatedMessages[idx] = updatedMessages[idx].copyWith(actionStatus: 'CANCELLED');
-        state = state.copyWith(messages: updatedMessages, error: 'Proposal was cancelled.');
-      } else if (serverStatus == 'EXPIRED') {
-        updatedMessages[idx] = updatedMessages[idx].copyWith(actionStatus: 'EXPIRED');
-        state = state.copyWith(messages: updatedMessages, error: 'Action proposal has expired.');
-      } else {
-        updatedMessages[idx] = updatedMessages[idx].copyWith(actionStatus: 'FAILED');
+        updatedMessages[idx] = updatedMessages[idx].copyWith(
+          actionStatus: 'CANCELLED',
+        );
         state = state.copyWith(
           messages: updatedMessages,
-          error: fallbackError ?? 'Operation was not saved on server. You can safely retry.',
+          error: 'Proposal was cancelled.',
+        );
+      } else if (serverStatus == 'EXPIRED') {
+        updatedMessages[idx] = updatedMessages[idx].copyWith(
+          actionStatus: 'EXPIRED',
+        );
+        state = state.copyWith(
+          messages: updatedMessages,
+          error: 'Action proposal has expired.',
+        );
+      } else {
+        updatedMessages[idx] = updatedMessages[idx].copyWith(
+          actionStatus: 'FAILED',
+        );
+        state = state.copyWith(
+          messages: updatedMessages,
+          error:
+              fallbackError ??
+              'Operation was not saved on server. You can safely retry.',
         );
       }
     } catch (_) {
@@ -644,11 +707,14 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
       final uncertainMessages = List<AiMessage>.from(state.messages);
       final idx = uncertainMessages.indexWhere((m) => m.id == messageId);
       if (idx != -1) {
-        uncertainMessages[idx] = uncertainMessages[idx].copyWith(actionStatus: 'UNCERTAIN');
+        uncertainMessages[idx] = uncertainMessages[idx].copyWith(
+          actionStatus: 'UNCERTAIN',
+        );
       }
       state = state.copyWith(
         messages: uncertainMessages,
-        error: 'Network connection issue. Persistence outcome is temporarily unknown. Tap "Reconcile Status" to verify.',
+        error:
+            'Network connection issue. Persistence outcome is temporarily unknown. Tap "Reconcile Status" to verify.',
       );
     }
   }
@@ -658,7 +724,8 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
     if (messageIndex == -1) return;
 
     final currentMsg = state.messages[messageIndex];
-    if (currentMsg.actionStatus == 'CANCELLED' || currentMsg.actionStatus == 'EXECUTED') {
+    if (currentMsg.actionStatus == 'CANCELLED' ||
+        currentMsg.actionStatus == 'EXECUTED') {
       return;
     }
 
@@ -671,7 +738,9 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
       final updatedMessages = List<AiMessage>.from(state.messages);
       final idx = updatedMessages.indexWhere((m) => m.id == messageId);
       if (idx != -1) {
-        updatedMessages[idx] = updatedMessages[idx].copyWith(actionStatus: 'CANCELLED');
+        updatedMessages[idx] = updatedMessages[idx].copyWith(
+          actionStatus: 'CANCELLED',
+        );
       }
 
       state = state.copyWith(messages: updatedMessages, error: null);
@@ -680,9 +749,14 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
       final updatedMessages = List<AiMessage>.from(state.messages);
       final idx = updatedMessages.indexWhere((m) => m.id == messageId);
       if (idx != -1) {
-        updatedMessages[idx] = updatedMessages[idx].copyWith(actionStatus: 'CANCELLED');
+        updatedMessages[idx] = updatedMessages[idx].copyWith(
+          actionStatus: 'CANCELLED',
+        );
       }
-      state = state.copyWith(messages: updatedMessages, error: e.toString().replaceAll('Exception: ', ''));
+      state = state.copyWith(
+        messages: updatedMessages,
+        error: e.toString().replaceAll('Exception: ', ''),
+      );
     }
   }
 
@@ -694,9 +768,12 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
   }
 }
 
-final aiChatProvider = StateNotifierProvider<AiChatNotifier, AiChatState>((ref) {
+final aiChatProvider = StateNotifierProvider<AiChatNotifier, AiChatState>((
+  ref,
+) {
   ref.listen<AuthState>(authProvider, (previous, next) {
-    if (previous is AuthAuthenticated && (next is! AuthAuthenticated || previous.user.id != next.user.id)) {
+    if (previous is AuthAuthenticated &&
+        (next is! AuthAuthenticated || previous.user.id != next.user.id)) {
       ref.invalidateSelf();
     }
   });

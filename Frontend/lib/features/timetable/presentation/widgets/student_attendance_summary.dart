@@ -18,17 +18,25 @@ class StudentAttendanceCompactSummary extends ConsumerWidget {
       data: (summary) {
         final totalOverall = summary.totalSessions;
         final presentOverall = summary.presentCount;
-        final overallPct = totalOverall > 0 ? (presentOverall / totalOverall).clamp(0.0, 1.0) : 0.0;
+        final overallPct = totalOverall > 0
+            ? (presentOverall / totalOverall).clamp(0.0, 1.0)
+            : 0.0;
 
         final subjects = subjectsAsync.valueOrNull ?? [];
         final primarySubject = subjects.isNotEmpty ? subjects.first : null;
         final totalSub = primarySubject?.totalClasses ?? 0;
         final presentSub = primarySubject?.presentCount ?? 0;
-        final subPct = totalSub > 0 ? (presentSub / totalSub).clamp(0.0, 1.0) : 0.0;
+        final subPct = totalSub > 0
+            ? (presentSub / totalSub).clamp(0.0, 1.0)
+            : 0.0;
         final subName = primarySubject?.subjectName ?? 'Subject';
 
-        final cardColor = isDark ? Theme.of(context).colorScheme.surface : Colors.white;
-        final borderColor = Theme.of(context).dividerColor.withValues(alpha: 0.6);
+        final cardColor = isDark
+            ? Theme.of(context).colorScheme.surface
+            : Colors.white;
+        final borderColor = Theme.of(
+          context,
+        ).dividerColor.withValues(alpha: 0.6);
 
         Widget overallCard = _buildGaugeCard(
           context,
@@ -56,11 +64,7 @@ class StudentAttendanceCompactSummary extends ConsumerWidget {
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Column(
-              children: [
-                overallCard,
-                const SizedBox(height: 8),
-                subjectCard,
-              ],
+              children: [overallCard, const SizedBox(height: 8), subjectCard],
             ),
           );
         }
@@ -138,11 +142,10 @@ class StudentAttendanceCompactSummary extends ConsumerWidget {
                 Text(
                   title,
                   style: AcadexTypography.caption(
-                    color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
-                  ).copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 11,
-                  ),
+                    color:
+                        Theme.of(context).textTheme.bodySmall?.color ??
+                        AcadexColors.inkMuted,
+                  ).copyWith(fontWeight: FontWeight.w600, fontSize: 11),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

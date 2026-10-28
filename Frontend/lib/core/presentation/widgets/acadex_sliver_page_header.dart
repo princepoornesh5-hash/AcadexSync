@@ -5,7 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme/app_theme.dart';
 
 /// Canonical ACADEX scroll-driven transforming header widget.
-/// 
+///
 /// Seamlessly transitions between:
 /// - STATE A (Expanded): Prominent contextual title, subtitle, comfortable top spacing.
 /// - STATE B (Intermediate): Continuous scroll-driven interpolation of height, position, font size, and subtitle opacity.
@@ -93,26 +93,48 @@ class _AcadexTransformingHeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
   double get maxExtent {
     if (customExpandedHeight != null) {
-      return math.max(minExtent + 1.0, customExpandedHeight! + topPadding + _bottomHeight);
+      return math.max(
+        minExtent + 1.0,
+        customExpandedHeight! + topPadding + _bottomHeight,
+      );
     }
     // Content-derived expanded height: top toolbar row + title + optional subtitle/contextual
     final hasSubtitle = subtitle != null && subtitle!.trim().isNotEmpty;
     final hasContextual = contextualWidget != null;
-    final contentHeight = kToolbarHeight + (hasSubtitle ? 84.0 : 54.0) + (hasContextual ? 28.0 : 0.0);
-    return math.max(minExtent + 1.0, topPadding + contentHeight + _bottomHeight);
+    final contentHeight =
+        kToolbarHeight +
+        (hasSubtitle ? 84.0 : 54.0) +
+        (hasContextual ? 28.0 : 0.0);
+    return math.max(
+      minExtent + 1.0,
+      topPadding + contentHeight + _bottomHeight,
+    );
   }
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     final standardTitleColor = isDark ? AcadexColors.darkInk : AcadexColors.ink;
-    final standardSubtitleColor = isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted;
-    final bgColor = backgroundColor ?? (isDark ? AcadexColors.darkSurface : AcadexColors.surface);
+    final standardSubtitleColor = isDark
+        ? AcadexColors.darkInkMuted
+        : AcadexColors.inkMuted;
+    final bgColor =
+        backgroundColor ??
+        (isDark ? AcadexColors.darkSurface : AcadexColors.surface);
 
     final maxShrink = maxExtent - minExtent;
-    final rawProgress = maxShrink > 0 ? (shrinkOffset / maxShrink).clamp(0.0, 1.0) : 1.0;
+    final rawProgress = maxShrink > 0
+        ? (shrinkOffset / maxShrink).clamp(0.0, 1.0)
+        : 1.0;
 
-    final disableAnimations = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    final progress = disableAnimations ? (rawProgress > 0.5 ? 1.0 : 0.0) : rawProgress;
+    final disableAnimations =
+        MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final progress = disableAnimations
+        ? (rawProgress > 0.5 ? 1.0 : 0.0)
+        : rawProgress;
 
     final curvedProgress = Curves.easeInOutCubic.transform(progress);
     final fastOutProgress = Curves.easeOutCubic.transform(progress);
@@ -123,8 +145,16 @@ class _AcadexTransformingHeaderDelegate extends SliverPersistentHeaderDelegate {
     final double compactFontSize = textScaler.scale(17.5).clamp(15.0, 20.0);
 
     // Continuous Typography Interpolation
-    final double currentFontSize = lerpDouble(expandedFontSize, compactFontSize, curvedProgress)!;
-    final FontWeight currentFontWeight = FontWeight.lerp(FontWeight.w700, FontWeight.w600, curvedProgress)!;
+    final double currentFontSize = lerpDouble(
+      expandedFontSize,
+      compactFontSize,
+      curvedProgress,
+    )!;
+    final FontWeight currentFontWeight = FontWeight.lerp(
+      FontWeight.w700,
+      FontWeight.w600,
+      curvedProgress,
+    )!;
     final double currentLetterSpacing = lerpDouble(-0.4, -0.2, curvedProgress)!;
 
     // Leading Widget configuration
@@ -143,46 +173,61 @@ class _AcadexTransformingHeaderDelegate extends SliverPersistentHeaderDelegate {
 
     // Trailing actions bounds
     final actionsCount = actions?.length ?? 0;
-    final double compactRight = actionsCount > 0 ? (actionsCount * 44.0 + 16.0).clamp(44.0, 180.0) : 16.0;
+    final double compactRight = actionsCount > 0
+        ? (actionsCount * 44.0 + 16.0).clamp(44.0, 180.0)
+        : 16.0;
     final double expandedRight = 16.0;
-    final double currentRight = lerpDouble(expandedRight, compactRight, curvedProgress)!;
+    final double currentRight = lerpDouble(
+      expandedRight,
+      compactRight,
+      curvedProgress,
+    )!;
 
     // Continuous Coordinates Interpolation for ONE single title
     final double expandedLeft = 16.0;
     final double compactLeft = leadingWidget != null ? 52.0 : 16.0;
-    final double currentLeft = lerpDouble(expandedLeft, compactLeft, curvedProgress)!;
+    final double currentLeft = lerpDouble(
+      expandedLeft,
+      compactLeft,
+      curvedProgress,
+    )!;
 
     // Expanded title sits cleanly below top toolbar row (kToolbarHeight) to eliminate collisions
     final double expandedTop = topPadding + kToolbarHeight + 4.0;
-    final double compactTop = topPadding + (kToolbarHeight - currentFontSize * 1.25) / 2;
-    final double currentTop = lerpDouble(expandedTop, compactTop, fastOutProgress)!;
+    final double compactTop =
+        topPadding + (kToolbarHeight - currentFontSize * 1.25) / 2;
+    final double currentTop = lerpDouble(
+      expandedTop,
+      compactTop,
+      fastOutProgress,
+    )!;
 
     // Subtitle fade and upward glide
     final hasSubtitle = subtitle != null && subtitle!.trim().isNotEmpty;
     final double subtitleFade = (progress * 2.2).clamp(0.0, 1.0);
     final double subtitleOpacity = 1.0 - subtitleFade;
     final double subtitleSlide = lerpDouble(0.0, -8.0, subtitleFade)!;
-    final double subtitleTop = expandedTop + expandedFontSize * 1.25 + 4.0 + subtitleSlide;
+    final double subtitleTop =
+        expandedTop + expandedFontSize * 1.25 + 4.0 + subtitleSlide;
 
     // Border and elevation as content scrolls underneath
     final double borderAlpha = (progress * 1.5).clamp(0.0, 1.0);
-    final borderColor = (isDark ? AcadexColors.darkHairline : AcadexColors.hairline)
-        .withValues(alpha: borderAlpha);
+    final borderColor =
+        (isDark ? AcadexColors.darkHairline : AcadexColors.hairline).withValues(
+          alpha: borderAlpha,
+        );
 
     return ClipRect(
       child: Container(
         decoration: BoxDecoration(
           color: bgColor,
-          border: Border(
-            bottom: BorderSide(
-              color: borderColor,
-              width: 1.0,
-            ),
-          ),
+          border: Border(bottom: BorderSide(color: borderColor, width: 1.0)),
           boxShadow: progress > 0.6
               ? [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.25 * progress : 0.03 * progress),
+                    color: Colors.black.withValues(
+                      alpha: isDark ? 0.25 * progress : 0.03 * progress,
+                    ),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -225,7 +270,9 @@ class _AcadexTransformingHeaderDelegate extends SliverPersistentHeaderDelegate {
                   opacity: subtitleOpacity,
                   child: Text(
                     subtitle!,
-                    style: AcadexTypography.bodySmall(color: standardSubtitleColor),
+                    style: AcadexTypography.bodySmall(
+                      color: standardSubtitleColor,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -251,12 +298,13 @@ class _AcadexTransformingHeaderDelegate extends SliverPersistentHeaderDelegate {
               right: currentRight,
               child: Text(
                 title,
-                style: AcadexTypography.heading2(color: standardTitleColor).copyWith(
-                  fontSize: currentFontSize,
-                  fontWeight: currentFontWeight,
-                  letterSpacing: currentLetterSpacing,
-                  height: 1.2,
-                ),
+                style: AcadexTypography.heading2(color: standardTitleColor)
+                    .copyWith(
+                      fontSize: currentFontSize,
+                      fontWeight: currentFontWeight,
+                      letterSpacing: currentLetterSpacing,
+                      height: 1.2,
+                    ),
                 maxLines: progress > 0.7 ? 1 : 2,
                 overflow: TextOverflow.ellipsis,
               ),

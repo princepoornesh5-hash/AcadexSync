@@ -178,7 +178,8 @@ class PracticalSessionModel {
 
     DateTime schedDate = DateTime.now();
     if (json['scheduledDate'] != null) {
-      schedDate = DateTime.tryParse(json['scheduledDate'].toString()) ?? DateTime.now();
+      schedDate =
+          DateTime.tryParse(json['scheduledDate'].toString()) ?? DateTime.now();
     }
 
     DateTime? actDate;
@@ -209,11 +210,17 @@ class PracticalSessionModel {
       semesterId: json['semesterId']?.toString() ?? '',
       sectionId: json['sectionId']?.toString(),
       subjectId: subjId,
-      subjectName: subName.isNotEmpty ? subName : json['subjectName']?.toString(),
-      subjectCode: subCode.isNotEmpty ? subCode : json['subjectCode']?.toString(),
+      subjectName: subName.isNotEmpty
+          ? subName
+          : json['subjectName']?.toString(),
+      subjectCode: subCode.isNotEmpty
+          ? subCode
+          : json['subjectCode']?.toString(),
       facultyAssignmentId: json['facultyAssignmentId']?.toString() ?? '',
       facultyId: facId,
-      facultyName: facName.isNotEmpty ? facName : json['facultyName']?.toString(),
+      facultyName: facName.isNotEmpty
+          ? facName
+          : json['facultyName']?.toString(),
       timetableEntryId: json['timetableEntryId']?.toString(),
       roomId: rId,
       roomNumber: rNum.isNotEmpty ? rNum : null,
@@ -366,11 +373,17 @@ class PracticalParticipationModel {
     }
 
     return PracticalParticipationModel(
-      participationId: json['participationId']?.toString() ?? json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      participationId:
+          json['participationId']?.toString() ??
+          json['id']?.toString() ??
+          json['_id']?.toString() ??
+          '',
       studentId: json['studentId']?.toString() ?? '',
       studentName: json['studentName']?.toString() ?? 'Student',
       rollNumber: json['rollNumber']?.toString(),
-      status: PracticalParticipationStatus.fromString(json['status']?.toString()),
+      status: PracticalParticipationStatus.fromString(
+        json['status']?.toString(),
+      ),
       notes: json['notes']?.toString(),
       startedAt: started,
       completedAt: completed,
@@ -441,7 +454,8 @@ class StudentPracticalHistoryModel {
   factory StudentPracticalHistoryModel.fromJson(Map<String, dynamic> json) {
     DateTime schedDate = DateTime.now();
     if (json['scheduledDate'] != null) {
-      schedDate = DateTime.tryParse(json['scheduledDate'].toString()) ?? DateTime.now();
+      schedDate =
+          DateTime.tryParse(json['scheduledDate'].toString()) ?? DateTime.now();
     }
 
     DateTime? compDate;
@@ -456,8 +470,12 @@ class StudentPracticalHistoryModel {
       scheduledDate: schedDate,
       subjectName: json['subjectName']?.toString() ?? 'Subject',
       subjectCode: json['subjectCode']?.toString() ?? '',
-      sessionStatus: PracticalSessionStatus.fromString(json['sessionStatus']?.toString()),
-      participationStatus: PracticalParticipationStatus.fromString(json['participationStatus']?.toString()),
+      sessionStatus: PracticalSessionStatus.fromString(
+        json['sessionStatus']?.toString(),
+      ),
+      participationStatus: PracticalParticipationStatus.fromString(
+        json['participationStatus']?.toString(),
+      ),
       notes: json['notes']?.toString(),
       completedAt: compDate,
       roomNumber: json['roomNumber']?.toString(),

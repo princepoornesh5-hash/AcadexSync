@@ -24,10 +24,12 @@ class StudentProfileScreen extends ConsumerStatefulWidget {
   const StudentProfileScreen({super.key, required this.studentId});
 
   @override
-  ConsumerState<StudentProfileScreen> createState() => _StudentProfileScreenState();
+  ConsumerState<StudentProfileScreen> createState() =>
+      _StudentProfileScreenState();
 }
 
-class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> with SingleTickerProviderStateMixin {
+class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -67,10 +69,11 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
       builder: (ctx) => StudentStatusChangeDialog(student: student),
     );
     if (result != null && mounted) {
-      await ref.read(studentsProvider((sectionId: null, departmentId: null)).notifier).updateLifecycleState(
-        studentId: student.id,
-        newState: result,
-      );
+      await ref
+          .read(
+            studentsProvider((sectionId: null, departmentId: null)).notifier,
+          )
+          .updateLifecycleState(studentId: student.id, newState: result);
       ref.invalidate(studentAcademicProfileProvider(widget.studentId));
     }
   }
@@ -97,10 +100,15 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
 
   void _showDepartmentTransferDialog(Student student) async {
     final deptsAsync = await ref.read(departmentsProvider.future);
-    final activeDepts = deptsAsync.where((d) => d.id != student.departmentId && d.isActive).toList();
+    final activeDepts = deptsAsync
+        .where((d) => d.id != student.departmentId && d.isActive)
+        .toList();
     if (!mounted) return;
     if (activeDepts.isEmpty) {
-      AcadexSnackBar.showWarning(context, "No other active departments available for transfer");
+      AcadexSnackBar.showWarning(
+        context,
+        "No other active departments available for transfer",
+      );
       return;
     }
 
@@ -119,17 +127,29 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: selectedDeptId,
-                items: activeDepts.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name))).toList(),
+                items: activeDepts
+                    .map(
+                      (d) => DropdownMenuItem(value: d.id, child: Text(d.name)),
+                    )
+                    .toList(),
                 onChanged: (val) => setDialogState(() => selectedDeptId = val),
-                decoration: const InputDecoration(labelText: "Destination Department"),
+                decoration: const InputDecoration(
+                  labelText: "Destination Department",
+                ),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text("Cancel")),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text("Cancel"),
+            ),
             ElevatedButton(
               onPressed: () => Navigator.of(ctx).pop(true),
-              style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary, foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AcadexColors.primary,
+                foregroundColor: Colors.white,
+              ),
               child: const Text("Transfer"),
             ),
           ],
@@ -139,11 +159,16 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
 
     if (result == true && selectedDeptId != null && mounted) {
       try {
-        await ref.read(academicRepositoryProvider).transferStudentDepartment(student.id, selectedDeptId!);
+        await ref
+            .read(academicRepositoryProvider)
+            .transferStudentDepartment(student.id, selectedDeptId!);
         ref.invalidate(studentAcademicProfileProvider(widget.studentId));
         ref.invalidate(studentsProvider);
         if (mounted) {
-          AcadexSnackBar.showSuccess(context, "Student transferred to new department successfully");
+          AcadexSnackBar.showSuccess(
+            context,
+            "Student transferred to new department successfully",
+          );
         }
       } catch (e) {
         if (mounted) {
@@ -164,22 +189,29 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
 
     final authState = ref.watch(authProvider);
     final currentUser = authState is AuthAuthenticated ? authState.user : null;
-    final isStaff = currentUser?.role == AppRole.superAdmin ||
+    final isStaff =
+        currentUser?.role == AppRole.superAdmin ||
         currentUser?.role == AppRole.collegeAdmin ||
         currentUser?.role == AppRole.hod;
-    final isCollegeAdmin = currentUser?.role == AppRole.superAdmin ||
+    final isCollegeAdmin =
+        currentUser?.role == AppRole.superAdmin ||
         currentUser?.role == AppRole.collegeAdmin;
 
-    final profileAsync = ref.watch(studentAcademicProfileProvider(widget.studentId));
+    final profileAsync = ref.watch(
+      studentAcademicProfileProvider(widget.studentId),
+    );
     final hasEnclosingScaffold = Scaffold.maybeOf(context) != null;
 
     final bodyContent = profileAsync.when(
-      loading: () => const Center(child: AcadexLoadingState(message: "Loading academic profile...")),
+      loading: () => const Center(
+        child: AcadexLoadingState(message: "Loading academic profile..."),
+      ),
       error: (err, _) => Center(
         child: AcadexErrorState.fromError(
           error: err,
           title: "Unable to load student profile",
-          onRetry: () => ref.invalidate(studentAcademicProfileProvider(widget.studentId)),
+          onRetry: () =>
+              ref.invalidate(studentAcademicProfileProvider(widget.studentId)),
         ),
       ),
       data: (profile) {
@@ -197,181 +229,254 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-                // Header Card
-                AcadexCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          CircleAvatar(
-                            radius: 36,
-                            backgroundColor: AcadexColors.primary.withValues(alpha: 0.12),
-                            child: Text(
-                              student.name.isNotEmpty ? student.name[0].toUpperCase() : 'S',
-                              style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: AcadexColors.primary,
-                              ),
+              // Header Card
+              AcadexCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
+                          radius: 36,
+                          backgroundColor: AcadexColors.primary.withValues(
+                            alpha: 0.12,
+                          ),
+                          child: Text(
+                            student.name.isNotEmpty
+                                ? student.name[0].toUpperCase()
+                                : 'S',
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: AcadexColors.primary,
                             ),
                           ),
-                          const SizedBox(width: 20),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        student.name,
-                                        style: AcadexTypography.heading2(color: theme.colorScheme.onSurface),
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      student.name,
+                                      style: AcadexTypography.heading2(
+                                        color: theme.colorScheme.onSurface,
                                       ),
                                     ),
-                                    AcadexBadge(
-                                      label: student.lifecycleState.displayName,
-                                      variant: _getBadgeVariant(student.lifecycleState),
+                                  ),
+                                  AcadexBadge(
+                                    label: student.lifecycleState.displayName,
+                                    variant: _getBadgeVariant(
+                                      student.lifecycleState,
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Wrap(
-                                  spacing: 12,
-                                  runSpacing: 6,
-                                  children: [
-                                    Text(
-                                      "Roll No: ${student.rollNumber}",
-                                      style: const TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.primary),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Wrap(
+                                spacing: 12,
+                                runSpacing: 6,
+                                children: [
+                                  Text(
+                                    "Roll No: ${student.rollNumber}",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: AcadexColors.primary,
                                     ),
-                                    Text("•", style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.4))),
-                                    Text(dept?.name ?? "Department"),
-                                    Text("•", style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.4))),
-                                    Text("${crs?.code ?? 'Course'} (${sem?.name ?? 'Sem'} - Sec ${sec?.name ?? 'Sec'} • ${yr?.name ?? ''})"),
-                                  ],
+                                  ),
+                                  Text(
+                                    "•",
+                                    style: TextStyle(
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.4),
+                                    ),
+                                  ),
+                                  Text(dept?.name ?? "Department"),
+                                  Text(
+                                    "•",
+                                    style: TextStyle(
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.4),
+                                    ),
+                                  ),
+                                  Text(
+                                    "${crs?.code ?? 'Course'} (${sem?.name ?? 'Sem'} - Sec ${sec?.name ?? 'Sec'} • ${yr?.name ?? ''})",
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "${student.email} • ${student.phone}",
+                                style: AcadexTypography.caption(
+                                  color: theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.7,
+                                  ),
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  "${student.email} • ${student.phone}",
-                                  style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
-                                ),
-                              ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (isStaff) ...[
+                      const SizedBox(height: 16),
+                      const Divider(height: 1),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () => _showStatusDialog(student),
+                            icon: const Icon(LucideIcons.userCog, size: 15),
+                            label: const Text("Change Status"),
+                          ),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AcadexColors.primary,
+                              foregroundColor: Colors.white,
                             ),
+                            onPressed: student.isActive
+                                ? () => _showPromotionDialog(student)
+                                : null,
+                            icon: const Icon(
+                              LucideIcons.arrowUpRight,
+                              size: 15,
+                            ),
+                            label: const Text("Promote Student"),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: student.isActive
+                                ? () => _showTransferDialog(student)
+                                : null,
+                            icon: const Icon(
+                              LucideIcons.arrowRightLeft,
+                              size: 15,
+                            ),
+                            label: const Text("Transfer Section"),
+                          ),
+                          if (isCollegeAdmin)
+                            OutlinedButton.icon(
+                              onPressed: () =>
+                                  _showDepartmentTransferDialog(student),
+                              icon: const Icon(LucideIcons.building, size: 15),
+                              label: const Text("Transfer Department"),
+                            ),
+                          OutlinedButton.icon(
+                            onPressed: () => context.push(
+                              '/academics/students/edit/${student.id}',
+                            ),
+                            icon: const Icon(LucideIcons.edit, size: 15),
+                            label: const Text("Edit Student"),
                           ),
                         ],
                       ),
-                      if (isStaff) ...[
-                        const SizedBox(height: 16),
-                        const Divider(height: 1),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            OutlinedButton.icon(
-                              onPressed: () => _showStatusDialog(student),
-                              icon: const Icon(LucideIcons.userCog, size: 15),
-                              label: const Text("Change Status"),
-                            ),
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AcadexColors.primary,
-                                foregroundColor: Colors.white,
-                              ),
-                              onPressed: student.isActive ? () => _showPromotionDialog(student) : null,
-                              icon: const Icon(LucideIcons.arrowUpRight, size: 15),
-                              label: const Text("Promote Student"),
-                            ),
-                            OutlinedButton.icon(
-                              onPressed: student.isActive ? () => _showTransferDialog(student) : null,
-                              icon: const Icon(LucideIcons.arrowRightLeft, size: 15),
-                              label: const Text("Transfer Section"),
-                            ),
-                            if (isCollegeAdmin)
-                              OutlinedButton.icon(
-                                onPressed: () => _showDepartmentTransferDialog(student),
-                                icon: const Icon(LucideIcons.building, size: 15),
-                                label: const Text("Transfer Department"),
-                              ),
-                            OutlinedButton.icon(
-                              onPressed: () => context.push('/academics/students/edit/${student.id}'),
-                              icon: const Icon(LucideIcons.edit, size: 15),
-                              label: const Text("Edit Student"),
-                            ),
-                          ],
-                        ),
-                      ],
                     ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                if (profile.facultyPriorityContext != null)
-                  _buildFacultyPriorityContextCard(profile.facultyPriorityContext!, isDark, theme),
-
-                // Tab Bar
-                TabBar(
-                  controller: _tabController,
-                  isScrollable: true,
-                  tabAlignment: TabAlignment.start,
-                  indicatorColor: AcadexColors.primary,
-                  labelColor: AcadexColors.primary,
-                  unselectedLabelColor: AcadexColors.inkMuted,
-                  tabs: const [
-                    Tab(icon: Icon(LucideIcons.layoutDashboard, size: 16), text: "Overview"),
-                    Tab(icon: Icon(LucideIcons.clipboardCheck, size: 16), text: "Attendance"),
-                    Tab(icon: Icon(LucideIcons.award, size: 16), text: "Assessments"),
-                    Tab(icon: Icon(LucideIcons.fileText, size: 16), text: "Assignments"),
-                    Tab(icon: Icon(LucideIcons.bookOpen, size: 16), text: "Subjects"),
-                    Tab(icon: Icon(LucideIcons.stickyNote, size: 16), text: "Notes"),
-                    Tab(icon: Icon(LucideIcons.inbox, size: 16), text: "Requests"),
-                    Tab(icon: Icon(LucideIcons.graduationCap, size: 16), text: "Academic Records"),
-                    Tab(icon: Icon(LucideIcons.history, size: 16), text: "Activity & History"),
                   ],
                 ),
-                const SizedBox(height: 20),
+              ),
+              const SizedBox(height: 20),
 
-                // Tab Views
-                SizedBox(
-                  height: 650,
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      // Tab 1: Overview
-                      _buildAcademicOverviewTab(context, profile, isDark, theme),
-
-                      // Tab 2: Attendance
-                      _buildAttendanceTab(context, profile, isDark, theme),
-
-                      // Tab 3: Assessments & Performance
-                      _buildAssessmentsTab(context, profile, isDark, theme),
-
-                      // Tab 4: Assignments
-                      _buildAssignmentsTab(context, profile, isDark, theme),
-
-                      // Tab 5: Subjects
-                      _buildSubjectsTab(profile, isDark, theme),
-
-                      // Tab 6: Notes
-                      _buildNotesTab(profile, isDark, theme),
-
-                      // Tab 7: Requests
-                      _buildRequestsTab(profile, isDark, theme),
-
-                      // Tab 8: Academic Records & Results
-                      _buildAcademicRecordsTab(profile, isDark, theme),
-
-                      // Tab 9: Timeline & History
-                      _buildTimelineTab(student, profile, isDark, theme),
-                    ],
-                  ),
+              if (profile.facultyPriorityContext != null)
+                _buildFacultyPriorityContextCard(
+                  profile.facultyPriorityContext!,
+                  isDark,
+                  theme,
                 ),
-              ],
-            ),
-          );
-        },
-      );
+
+              // Tab Bar
+              TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                indicatorColor: AcadexColors.primary,
+                labelColor: AcadexColors.primary,
+                unselectedLabelColor: AcadexColors.inkMuted,
+                tabs: const [
+                  Tab(
+                    icon: Icon(LucideIcons.layoutDashboard, size: 16),
+                    text: "Overview",
+                  ),
+                  Tab(
+                    icon: Icon(LucideIcons.clipboardCheck, size: 16),
+                    text: "Attendance",
+                  ),
+                  Tab(
+                    icon: Icon(LucideIcons.award, size: 16),
+                    text: "Assessments",
+                  ),
+                  Tab(
+                    icon: Icon(LucideIcons.fileText, size: 16),
+                    text: "Assignments",
+                  ),
+                  Tab(
+                    icon: Icon(LucideIcons.bookOpen, size: 16),
+                    text: "Subjects",
+                  ),
+                  Tab(
+                    icon: Icon(LucideIcons.stickyNote, size: 16),
+                    text: "Notes",
+                  ),
+                  Tab(
+                    icon: Icon(LucideIcons.inbox, size: 16),
+                    text: "Requests",
+                  ),
+                  Tab(
+                    icon: Icon(LucideIcons.graduationCap, size: 16),
+                    text: "Academic Records",
+                  ),
+                  Tab(
+                    icon: Icon(LucideIcons.history, size: 16),
+                    text: "Activity & History",
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Tab Views
+              SizedBox(
+                height: 650,
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    // Tab 1: Overview
+                    _buildAcademicOverviewTab(context, profile, isDark, theme),
+
+                    // Tab 2: Attendance
+                    _buildAttendanceTab(context, profile, isDark, theme),
+
+                    // Tab 3: Assessments & Performance
+                    _buildAssessmentsTab(context, profile, isDark, theme),
+
+                    // Tab 4: Assignments
+                    _buildAssignmentsTab(context, profile, isDark, theme),
+
+                    // Tab 5: Subjects
+                    _buildSubjectsTab(profile, isDark, theme),
+
+                    // Tab 6: Notes
+                    _buildNotesTab(profile, isDark, theme),
+
+                    // Tab 7: Requests
+                    _buildRequestsTab(profile, isDark, theme),
+
+                    // Tab 8: Academic Records & Results
+                    _buildAcademicRecordsTab(profile, isDark, theme),
+
+                    // Tab 9: Timeline & History
+                    _buildTimelineTab(student, profile, isDark, theme),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
 
     if (hasEnclosingScaffold) {
       return bodyContent;
@@ -384,7 +489,8 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
         backgroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
-          onPressed: () => context.safePop(fallbackRoute: '/academics/students'),
+          onPressed: () =>
+              context.safePop(fallbackRoute: '/academics/students'),
         ),
         title: Text(
           "Student Academic Profile",
@@ -395,7 +501,12 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
     );
   }
 
-  Widget _buildAcademicOverviewTab(BuildContext context, StudentAcademicProfile profile, bool isDark, ThemeData theme) {
+  Widget _buildAcademicOverviewTab(
+    BuildContext context,
+    StudentAcademicProfile profile,
+    bool isDark,
+    ThemeData theme,
+  ) {
     final student = profile.student;
     final isMobile = AcadexBreakpoints.isMobile(context);
 
@@ -416,9 +527,13 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
     final attCard = AcadexStatCard(
       title: "Attendance Average",
       value: "${profile.overallAttendancePercentage.toStringAsFixed(1)}%",
-      subtitle: profile.overallAttendancePercentage >= 75.0 ? "Good standing" : "Low attendance",
+      subtitle: profile.overallAttendancePercentage >= 75.0
+          ? "Good standing"
+          : "Low attendance",
       icon: LucideIcons.clipboardCheck,
-      iconColor: profile.overallAttendancePercentage >= 75.0 ? AcadexColors.success : AcadexColors.warning,
+      iconColor: profile.overallAttendancePercentage >= 75.0
+          ? AcadexColors.success
+          : AcadexColors.warning,
     );
 
     return SingleChildScrollView(
@@ -450,17 +565,59 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Academic Structure Mapping", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
+                Text(
+                  "Academic Structure Mapping",
+                  style: AcadexTypography.title(
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 _buildDetailRow("College ID", student.collegeId),
-                _buildDetailRow("Department", AcadexEntityFormatters.formatDepartmentLabel(profile.department?.name, rawId: student.departmentId)),
-                _buildDetailRow("Course", "${AcadexEntityFormatters.formatCourseLabel(profile.course?.name, rawId: student.courseId)}${profile.course?.code != null && !AcadexEntityFormatters.isRawIdentifier(profile.course!.code) ? ' (${profile.course!.code})' : ''}"),
-                _buildDetailRow("Academic Year", AcadexEntityFormatters.formatAcademicYearLabel(profile.academicYear?.name, rawId: student.academicYearId)),
-                _buildDetailRow("Semester", AcadexEntityFormatters.formatSemesterLabel(profile.semester?.name, semesterNumber: profile.semester?.semesterNumber, rawId: student.semesterId)),
-                _buildDetailRow("Section", AcadexEntityFormatters.formatSectionLabel(profile.section?.name, rawId: student.sectionId, fallback: 'Section Not Assigned')),
-                _buildDetailRow("Admission Date", student.admissionDate != null ? "${student.admissionDate!.day}/${student.admissionDate!.month}/${student.admissionDate!.year}" : "—"),
+                _buildDetailRow(
+                  "Department",
+                  AcadexEntityFormatters.formatDepartmentLabel(
+                    profile.department?.name,
+                    rawId: student.departmentId,
+                  ),
+                ),
+                _buildDetailRow(
+                  "Course",
+                  "${AcadexEntityFormatters.formatCourseLabel(profile.course?.name, rawId: student.courseId)}${profile.course?.code != null && !AcadexEntityFormatters.isRawIdentifier(profile.course!.code) ? ' (${profile.course!.code})' : ''}",
+                ),
+                _buildDetailRow(
+                  "Academic Year",
+                  AcadexEntityFormatters.formatAcademicYearLabel(
+                    profile.academicYear?.name,
+                    rawId: student.academicYearId,
+                  ),
+                ),
+                _buildDetailRow(
+                  "Semester",
+                  AcadexEntityFormatters.formatSemesterLabel(
+                    profile.semester?.name,
+                    semesterNumber: profile.semester?.semesterNumber,
+                    rawId: student.semesterId,
+                  ),
+                ),
+                _buildDetailRow(
+                  "Section",
+                  AcadexEntityFormatters.formatSectionLabel(
+                    profile.section?.name,
+                    rawId: student.sectionId,
+                    fallback: 'Section Not Assigned',
+                  ),
+                ),
+                _buildDetailRow(
+                  "Admission Date",
+                  student.admissionDate != null
+                      ? "${student.admissionDate!.day}/${student.admissionDate!.month}/${student.admissionDate!.year}"
+                      : "—",
+                ),
                 if (student.graduationDate != null)
-                  _buildDetailRow("Graduation Date", "${student.graduationDate!.day}/${student.graduationDate!.month}/${student.graduationDate!.year}"),
+                  _buildDetailRow(
+                    "Graduation Date",
+                    "${student.graduationDate!.day}/${student.graduationDate!.month}/${student.graduationDate!.year}",
+                  ),
               ],
             ),
           ),
@@ -469,7 +626,12 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Connected Academic Modules", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
+                Text(
+                  "Connected Academic Modules",
+                  style: AcadexTypography.title(
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 12,
@@ -500,7 +662,12 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
     );
   }
 
-  Widget _buildAttendanceTab(BuildContext context, StudentAcademicProfile profile, bool isDark, ThemeData theme) {
+  Widget _buildAttendanceTab(
+    BuildContext context,
+    StudentAcademicProfile profile,
+    bool isDark,
+    ThemeData theme,
+  ) {
     final metrics = profile.attendanceMetrics;
     final hasDetailed = profile.hasDetailedAttendance;
     final hasPctOnly = profile.hasPercentageOnlyAttendance;
@@ -510,19 +677,36 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
       return const Center(
         child: AcadexEmptyState(
           title: "No Attendance Records",
-          subtitle: "No attendance sessions or historical summaries recorded for this student.",
+          subtitle:
+              "No attendance sessions or historical summaries recorded for this student.",
           icon: LucideIcons.clipboardCheck,
         ),
       );
     }
 
-    final int totalHeld = metrics != null && metrics['totalHeld'] != null ? (metrics['totalHeld'] as num).toInt() : 0;
-    final int totalPresent = metrics != null && metrics['totalPresent'] != null ? (metrics['totalPresent'] as num).toInt() : 0;
-    final int liveHeld = metrics != null && metrics['liveHeld'] != null ? (metrics['liveHeld'] as num).toInt() : 0;
-    final int livePresent = metrics != null && metrics['livePresent'] != null ? (metrics['livePresent'] as num).toInt() : 0;
-    final int histDetailedHeld = metrics != null && metrics['historicalDetailedHeld'] != null ? (metrics['historicalDetailedHeld'] as num).toInt() : 0;
-    final int histDetailedPresent = metrics != null && metrics['historicalDetailedPresent'] != null ? (metrics['historicalDetailedPresent'] as num).toInt() : 0;
-    final double pct = metrics != null && metrics['percentage'] != null ? (metrics['percentage'] as num).toDouble() : 0.0;
+    final int totalHeld = metrics != null && metrics['totalHeld'] != null
+        ? (metrics['totalHeld'] as num).toInt()
+        : 0;
+    final int totalPresent = metrics != null && metrics['totalPresent'] != null
+        ? (metrics['totalPresent'] as num).toInt()
+        : 0;
+    final int liveHeld = metrics != null && metrics['liveHeld'] != null
+        ? (metrics['liveHeld'] as num).toInt()
+        : 0;
+    final int livePresent = metrics != null && metrics['livePresent'] != null
+        ? (metrics['livePresent'] as num).toInt()
+        : 0;
+    final int histDetailedHeld =
+        metrics != null && metrics['historicalDetailedHeld'] != null
+        ? (metrics['historicalDetailedHeld'] as num).toInt()
+        : 0;
+    final int histDetailedPresent =
+        metrics != null && metrics['historicalDetailedPresent'] != null
+        ? (metrics['historicalDetailedPresent'] as num).toInt()
+        : 0;
+    final double pct = metrics != null && metrics['percentage'] != null
+        ? (metrics['percentage'] as num).toDouble()
+        : 0.0;
 
     return SingleChildScrollView(
       child: Column(
@@ -537,7 +721,9 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                     value: "$pct%",
                     subtitle: "$totalPresent / $totalHeld sessions attended",
                     icon: LucideIcons.clipboardCheck,
-                    iconColor: pct >= 75 ? AcadexColors.success : AcadexColors.warning,
+                    iconColor: pct >= 75
+                        ? AcadexColors.success
+                        : AcadexColors.warning,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -554,7 +740,9 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                 Expanded(
                   child: AcadexStatCard(
                     title: "Imported Detailed",
-                    value: histDetailedHeld > 0 ? "$histDetailedPresent / $histDetailedHeld" : "None",
+                    value: histDetailedHeld > 0
+                        ? "$histDetailedPresent / $histDetailedHeld"
+                        : "None",
                     subtitle: "Ingested historical sessions",
                     icon: LucideIcons.fileSpreadsheet,
                     iconColor: AcadexColors.accentTeal,
@@ -571,15 +759,26 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                 children: [
                   Row(
                     children: [
-                      const Icon(LucideIcons.history, size: 18, color: AcadexColors.inkMuted),
+                      const Icon(
+                        LucideIcons.history,
+                        size: 18,
+                        color: AcadexColors.inkMuted,
+                      ),
                       const SizedBox(width: 8),
-                      Text("Historical Percentage Records (Non-denominator)", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
+                      Text(
+                        "Historical Percentage Records (Non-denominator)",
+                        style: AcadexTypography.title(
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Text(
                     "These records represent historical percentage metrics that lack total session denominators. Per academic data integrity policy, they are kept distinct from calculated session totals.",
-                    style: AcadexTypography.caption(color: AcadexColors.inkMuted),
+                    style: AcadexTypography.caption(
+                      color: AcadexColors.inkMuted,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   ...pctMetrics.map((pm) {
@@ -590,14 +789,33 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text("$label", style: AcadexTypography.body(color: theme.colorScheme.onSurface)),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AcadexColors.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                          Text(
+                            "$label",
+                            style: AcadexTypography.body(
+                              color: theme.colorScheme.onSurface,
                             ),
-                            child: Text("$percentage% (Imported Metric)", style: const TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.primary, fontSize: 13)),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AcadexColors.primary.withValues(
+                                alpha: 0.1,
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                AcadexRadius.xs,
+                              ),
+                            ),
+                            child: Text(
+                              "$percentage% (Imported Metric)",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AcadexColors.primary,
+                                fontSize: 13,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -612,12 +830,18 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
     );
   }
 
-  Widget _buildAssessmentsTab(BuildContext context, StudentAcademicProfile profile, bool isDark, ThemeData theme) {
+  Widget _buildAssessmentsTab(
+    BuildContext context,
+    StudentAcademicProfile profile,
+    bool isDark,
+    ThemeData theme,
+  ) {
     if (profile.assessments.isEmpty) {
       return const Center(
         child: AcadexEmptyState(
           title: "No Assessments Available",
-          subtitle: "No published assessment marks or evaluation history found for this student.",
+          subtitle:
+              "No published assessment marks or evaluation history found for this student.",
           icon: LucideIcons.award,
         ),
       );
@@ -642,8 +866,10 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
               Expanded(
                 child: AcadexStatCard(
                   title: "Pass / Standing",
-                  value: "${profile.assessments.where((a) => a['isPassed'] == true).length} Passed",
-                  subtitle: "${profile.assessments.where((a) => a['status'] == 'ABSENT').length} Absent",
+                  value:
+                      "${profile.assessments.where((a) => a['isPassed'] == true).length} Passed",
+                  subtitle:
+                      "${profile.assessments.where((a) => a['status'] == 'ABSENT').length} Absent",
                   icon: LucideIcons.checkCircle2,
                   iconColor: AcadexColors.success,
                 ),
@@ -666,29 +892,44 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                 final maxMarks = a['maximumMarks'] ?? 0;
                 final isPassed = a['isPassed'];
                 final isImported = a['sourceType'] == 'IMPORTED';
-                final isHistoricalManual = a['sourceType'] == 'HISTORICAL_MANUAL';
+                final isHistoricalManual =
+                    a['sourceType'] == 'HISTORICAL_MANUAL';
                 final importBatch = a['importBatchId'];
 
                 Widget marksDisplay;
                 if (status == 'ABSENT') {
-                  marksDisplay = const AcadexBadge(label: "ABSENT", variant: AcadexBadgeVariant.danger);
+                  marksDisplay = const AcadexBadge(
+                    label: "ABSENT",
+                    variant: AcadexBadgeVariant.danger,
+                  );
                 } else if (status == 'EXEMPTED') {
-                  marksDisplay = const AcadexBadge(label: "EXEMPTED", variant: AcadexBadgeVariant.neutral);
+                  marksDisplay = const AcadexBadge(
+                    label: "EXEMPTED",
+                    variant: AcadexBadgeVariant.neutral,
+                  );
                 } else if (status == 'NOT_ENTERED') {
-                  marksDisplay = const AcadexBadge(label: "PENDING", variant: AcadexBadgeVariant.warning);
+                  marksDisplay = const AcadexBadge(
+                    label: "PENDING",
+                    variant: AcadexBadgeVariant.warning,
+                  );
                 } else {
                   marksDisplay = Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         "$rawScore / $maxMarks",
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
                       ),
                       if (isPassed != null) ...[
                         const SizedBox(width: 8),
                         AcadexBadge(
                           label: isPassed == true ? "PASS" : "FAIL",
-                          variant: isPassed == true ? AcadexBadgeVariant.success : AcadexBadgeVariant.danger,
+                          variant: isPassed == true
+                              ? AcadexBadgeVariant.success
+                              : AcadexBadgeVariant.danger,
                         ),
                       ],
                     ],
@@ -705,31 +946,61 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                           children: [
                             Row(
                               children: [
-                                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                Text(
+                                  title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
                                 if (isImported) ...[
                                   const SizedBox(width: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: AcadexColors.inkMuted.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                                      color: AcadexColors.inkMuted.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(
+                                        AcadexRadius.xs,
+                                      ),
                                     ),
                                     child: Text(
-                                      importBatch != null ? "Imported ($importBatch)" : "Imported",
-                                      style: const TextStyle(fontSize: 10, color: AcadexColors.inkMuted, fontWeight: FontWeight.w600),
+                                      importBatch != null
+                                          ? "Imported ($importBatch)"
+                                          : "Imported",
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        color: AcadexColors.inkMuted,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
                                 ] else if (isHistoricalManual) ...[
                                   const SizedBox(width: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: AcadexColors.warning.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                                      color: AcadexColors.warning.withValues(
+                                        alpha: 0.15,
+                                      ),
+                                      borderRadius: BorderRadius.circular(
+                                        AcadexRadius.xs,
+                                      ),
                                     ),
                                     child: const Text(
                                       "Historical Manual",
-                                      style: TextStyle(fontSize: 10, color: AcadexColors.warning, fontWeight: FontWeight.w600),
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: AcadexColors.warning,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -738,7 +1009,9 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                             const SizedBox(height: 3),
                             Text(
                               "$subjectName • ${a['assessmentType'] ?? 'Internal'}",
-                              style: AcadexTypography.caption(color: AcadexColors.inkMuted),
+                              style: AcadexTypography.caption(
+                                color: AcadexColors.inkMuted,
+                              ),
                             ),
                           ],
                         ),
@@ -755,7 +1028,12 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
     );
   }
 
-  Widget _buildAssignmentsTab(BuildContext context, StudentAcademicProfile profile, bool isDark, ThemeData theme) {
+  Widget _buildAssignmentsTab(
+    BuildContext context,
+    StudentAcademicProfile profile,
+    bool isDark,
+    ThemeData theme,
+  ) {
     if (profile.assignments.isEmpty) {
       return const Center(
         child: AcadexEmptyState(
@@ -784,15 +1062,28 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
             return ListTile(
               leading: Icon(
                 isSubmitted ? LucideIcons.fileCheck : LucideIcons.fileClock,
-                color: isSubmitted ? AcadexColors.success : AcadexColors.warning,
+                color: isSubmitted
+                    ? AcadexColors.success
+                    : AcadexColors.warning,
               ),
-              title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+              title: Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               subtitle: Text("Due: $dueDate • Max Marks: $maxMarks"),
               trailing: marks != null
-                  ? Text("Score: $marks / $maxMarks", style: const TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.primary))
+                  ? Text(
+                      "Score: $marks / $maxMarks",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AcadexColors.primary,
+                      ),
+                    )
                   : AcadexBadge(
                       label: isSubmitted ? "SUBMITTED" : "PENDING",
-                      variant: isSubmitted ? AcadexBadgeVariant.success : AcadexBadgeVariant.warning,
+                      variant: isSubmitted
+                          ? AcadexBadgeVariant.success
+                          : AcadexBadgeVariant.warning,
                     ),
             );
           },
@@ -801,10 +1092,23 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
     );
   }
 
-  Widget _buildSubjectsTab(StudentAcademicProfile profile, bool isDark, ThemeData theme) {
+  Widget _buildSubjectsTab(
+    StudentAcademicProfile profile,
+    bool isDark,
+    ThemeData theme,
+  ) {
     final subjects = profile.subjectsWithFaculty.isNotEmpty
         ? profile.subjectsWithFaculty
-        : profile.enrolledSubjects.map((s) => {'name': s.name, 'code': s.code, 'credits': s.credits, 'facultyName': null}).toList();
+        : profile.enrolledSubjects
+              .map(
+                (s) => {
+                  'name': s.name,
+                  'code': s.code,
+                  'credits': s.credits,
+                  'facultyName': null,
+                },
+              )
+              .toList();
 
     if (subjects.isEmpty) {
       return const Center(
@@ -837,10 +1141,23 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                   color: AcadexColors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(AcadexRadius.xs),
                 ),
-                child: Text("$code", style: const TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.primary)),
+                child: Text(
+                  "$code",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AcadexColors.primary,
+                  ),
+                ),
               ),
-              title: Text("$name", style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text(faculty != null ? "$credits Credits • Instructor: $faculty" : "$credits Credits"),
+              title: Text(
+                "$name",
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(
+                faculty != null
+                    ? "$credits Credits • Instructor: $faculty"
+                    : "$credits Credits",
+              ),
             );
           },
         ),
@@ -848,12 +1165,17 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
     );
   }
 
-  Widget _buildNotesTab(StudentAcademicProfile profile, bool isDark, ThemeData theme) {
+  Widget _buildNotesTab(
+    StudentAcademicProfile profile,
+    bool isDark,
+    ThemeData theme,
+  ) {
     if (profile.notesCount == 0) {
       return const Center(
         child: AcadexEmptyState(
           title: "No Notes Available",
-          subtitle: "No course notes or lecture slides uploaded for enrolled subjects.",
+          subtitle:
+              "No course notes or lecture slides uploaded for enrolled subjects.",
           icon: LucideIcons.stickyNote,
         ),
       );
@@ -868,7 +1190,12 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
               children: [
                 const Icon(LucideIcons.stickyNote, color: AcadexColors.primary),
                 const SizedBox(width: 8),
-                Text("Subject Notes & Materials", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
+                Text(
+                  "Subject Notes & Materials",
+                  style: AcadexTypography.title(
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -888,7 +1215,11 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
     );
   }
 
-  Widget _buildRequestsTab(StudentAcademicProfile profile, bool isDark, ThemeData theme) {
+  Widget _buildRequestsTab(
+    StudentAcademicProfile profile,
+    bool isDark,
+    ThemeData theme,
+  ) {
     if (profile.contactRequests.isEmpty) {
       return const Center(
         child: AcadexEmptyState(
@@ -917,8 +1248,14 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
             if (status == 'REJECTED') variant = AcadexBadgeVariant.danger;
 
             return ListTile(
-              leading: const Icon(LucideIcons.phoneCall, color: AcadexColors.primary),
-              title: Text("Requested Phone: $phone", style: const TextStyle(fontWeight: FontWeight.bold)),
+              leading: const Icon(
+                LucideIcons.phoneCall,
+                color: AcadexColors.primary,
+              ),
+              title: Text(
+                "Requested Phone: $phone",
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               subtitle: Text(reason),
               trailing: AcadexBadge(label: status, variant: variant),
             );
@@ -928,14 +1265,21 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
     );
   }
 
-  Widget _buildAcademicRecordsTab(StudentAcademicProfile profile, bool isDark, ThemeData theme) {
-    final hasRecords = profile.academicRecords.isNotEmpty || profile.officialResults.isNotEmpty;
+  Widget _buildAcademicRecordsTab(
+    StudentAcademicProfile profile,
+    bool isDark,
+    ThemeData theme,
+  ) {
+    final hasRecords =
+        profile.academicRecords.isNotEmpty ||
+        profile.officialResults.isNotEmpty;
 
     if (!hasRecords) {
       return const Center(
         child: AcadexEmptyState(
           title: "No Certified Academic Records",
-          subtitle: "No semester records or official certified results published yet.",
+          subtitle:
+              "No semester records or official certified results published yet.",
           icon: LucideIcons.graduationCap,
         ),
       );
@@ -950,16 +1294,27 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Official Published Results", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
+                  Text(
+                    "Official Published Results",
+                    style: AcadexTypography.title(
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   ...profile.officialResults.map((r) {
                     final sem = r['semester'] ?? 'Semester';
                     final sgpa = r['sgpa'] ?? '—';
                     final resultStatus = r['resultStatus'] ?? 'PUBLISHED';
                     return ListTile(
-                      title: Text("$sem", style: const TextStyle(fontWeight: FontWeight.bold)),
+                      title: Text(
+                        "$sem",
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       subtitle: Text("SGPA: $sgpa"),
-                      trailing: AcadexBadge(label: "$resultStatus", variant: AcadexBadgeVariant.success),
+                      trailing: AcadexBadge(
+                        label: "$resultStatus",
+                        variant: AcadexBadgeVariant.success,
+                      ),
                     );
                   }),
                 ],
@@ -972,13 +1327,26 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Academic Records Registry", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
+                  Text(
+                    "Academic Records Registry",
+                    style: AcadexTypography.title(
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   ...profile.academicRecords.map((ar) {
                     return ListTile(
-                      leading: const Icon(LucideIcons.award, color: AcadexColors.primary),
-                      title: Text("${ar['recordType'] ?? 'Term Record'}", style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text("${ar['details'] ?? 'Academic Registry Entry'}"),
+                      leading: const Icon(
+                        LucideIcons.award,
+                        color: AcadexColors.primary,
+                      ),
+                      title: Text(
+                        "${ar['recordType'] ?? 'Term Record'}",
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        "${ar['details'] ?? 'Academic Registry Entry'}",
+                      ),
                     );
                   }),
                 ],
@@ -990,7 +1358,12 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
     );
   }
 
-  Widget _buildTimelineTab(Student student, StudentAcademicProfile profile, bool isDark, ThemeData theme) {
+  Widget _buildTimelineTab(
+    Student student,
+    StudentAcademicProfile profile,
+    bool isDark,
+    ThemeData theme,
+  ) {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1000,19 +1373,38 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Enrollment History", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
+                  Text(
+                    "Enrollment History",
+                    style: AcadexTypography.title(
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   ...profile.enrollmentHistory.map((eh) {
-                    final sem = eh['semesterId'] != null ? "Semester ${eh['semesterId']['number'] ?? ''}" : "Term";
-                    final yr = eh['academicYearId'] != null ? "${eh['academicYearId']['name'] ?? ''}" : "";
+                    final sem = eh['semesterId'] != null
+                        ? "Semester ${eh['semesterId']['number'] ?? ''}"
+                        : "Term";
+                    final yr = eh['academicYearId'] != null
+                        ? "${eh['academicYearId']['name'] ?? ''}"
+                        : "";
                     final status = eh['status'] ?? 'active';
                     return ListTile(
-                      leading: const Icon(LucideIcons.milestone, color: AcadexColors.primary),
-                      title: Text("$sem • $yr", style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text("Section: ${eh['sectionId']?['name'] ?? '—'}"),
+                      leading: const Icon(
+                        LucideIcons.milestone,
+                        color: AcadexColors.primary,
+                      ),
+                      title: Text(
+                        "$sem • $yr",
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        "Section: ${eh['sectionId']?['name'] ?? '—'}",
+                      ),
                       trailing: AcadexBadge(
                         label: status.toUpperCase(),
-                        variant: status == 'active' ? AcadexBadgeVariant.success : AcadexBadgeVariant.neutral,
+                        variant: status == 'active'
+                            ? AcadexBadgeVariant.success
+                            : AcadexBadgeVariant.neutral,
                       ),
                     );
                   }),
@@ -1039,7 +1431,11 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                           color: AcadexColors.primary.withValues(alpha: 0.12),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(LucideIcons.milestone, size: 20, color: AcadexColors.primary),
+                        child: const Icon(
+                          LucideIcons.milestone,
+                          size: 20,
+                          color: AcadexColors.primary,
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -1051,24 +1447,41 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                               children: [
                                 Text(
                                   item.status,
-                                  style: AcadexTypography.title(color: theme.colorScheme.onSurface).copyWith(fontSize: 15),
+                                  style: AcadexTypography.title(
+                                    color: theme.colorScheme.onSurface,
+                                  ).copyWith(fontSize: 15),
                                 ),
-                                if (item.termEndDate != null || item.termStartDate != null)
+                                if (item.termEndDate != null ||
+                                    item.termStartDate != null)
                                   Text(
                                     item.termEndDate != null
                                         ? "${item.termEndDate!.day}/${item.termEndDate!.month}/${item.termEndDate!.year}"
                                         : "${item.termStartDate!.day}/${item.termStartDate!.month}/${item.termStartDate!.year}",
-                                    style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                                    style: AcadexTypography.caption(
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.6),
+                                    ),
                                   ),
                               ],
                             ),
                             const SizedBox(height: 4),
                             Text(
                               AcadexEntityFormatters.formatAcademicContext(
-                                semester: AcadexEntityFormatters.formatSemesterLabel(item.semesterName, rawId: item.semesterId),
-                                section: AcadexEntityFormatters.formatSectionLabel(item.sectionName, rawId: item.sectionId, fallback: 'Section Not Assigned'),
+                                semester:
+                                    AcadexEntityFormatters.formatSemesterLabel(
+                                      item.semesterName,
+                                      rawId: item.semesterId,
+                                    ),
+                                section:
+                                    AcadexEntityFormatters.formatSectionLabel(
+                                      item.sectionName,
+                                      rawId: item.sectionId,
+                                      fallback: 'Section Not Assigned',
+                                    ),
                               ),
-                              style: AcadexTypography.body(color: theme.colorScheme.onSurface),
+                              style: AcadexTypography.body(
+                                color: theme.colorScheme.onSurface,
+                              ),
                             ),
                           ],
                         ),
@@ -1086,7 +1499,11 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
     );
   }
 
-  Widget _buildTransferHistoryCard(Student student, bool isDark, ThemeData theme) {
+  Widget _buildTransferHistoryCard(
+    Student student,
+    bool isDark,
+    ThemeData theme,
+  ) {
     final transfersAsync = ref.watch(studentTransfersProvider(student.id));
     final creditsAsync = ref.watch(transferCreditsProvider(student.id));
 
@@ -1099,22 +1516,35 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
             children: [
               Row(
                 children: [
-                  const Icon(LucideIcons.arrowRightLeft, size: 16, color: AcadexColors.primary),
+                  const Icon(
+                    LucideIcons.arrowRightLeft,
+                    size: 16,
+                    color: AcadexColors.primary,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     "Inter-College Transfers",
-                    style: AcadexTypography.title(color: theme.colorScheme.onSurface),
+                    style: AcadexTypography.title(
+                      color: theme.colorScheme.onSurface,
+                    ),
                   ),
                   const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: AcadexColors.primary.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: const Text(
                       "CROSS-COLLEGE ISOLATION",
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AcadexColors.primary),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: AcadexColors.primary,
+                      ),
                     ),
                   ),
                 ],
@@ -1122,19 +1552,38 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
               const SizedBox(height: 4),
               Text(
                 "Student identity is preserved across institutions with distinct college PIN numbers and independent academic records.",
-                style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                style: AcadexTypography.caption(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
               ),
               const SizedBox(height: 12),
               transfersAsync.when(
-                loading: () => const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator())),
-                error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error, fontSize: 12)),
+                loading: () => const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(8),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+                error: (e, _) => Text(
+                  AcadexException.sanitizedMessage(e),
+                  style: const TextStyle(
+                    color: AcadexColors.error,
+                    fontSize: 12,
+                  ),
+                ),
                 data: (transfers) {
                   if (transfers.isEmpty) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Text(
                         "No inter-college transfer history on record.",
-                        style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
+                        ),
                       ),
                     );
                   }
@@ -1150,13 +1599,27 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                         leading: const CircleAvatar(
                           radius: 14,
                           backgroundColor: AcadexColors.canvasSoft,
-                          child: Icon(LucideIcons.building, size: 14, color: AcadexColors.primary),
+                          child: Icon(
+                            LucideIcons.building,
+                            size: 14,
+                            color: AcadexColors.primary,
+                          ),
                         ),
-                        title: Text("Transfer: ${t.sourcePin} → ${t.destinationPin}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        subtitle: Text("Effective: ${t.effectiveDate.day}/${t.effectiveDate.month}/${t.effectiveDate.year} • ${t.reason ?? 'Academic transfer'}"),
+                        title: Text(
+                          "Transfer: ${t.sourcePin} → ${t.destinationPin}",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        subtitle: Text(
+                          "Effective: ${t.effectiveDate.day}/${t.effectiveDate.month}/${t.effectiveDate.year} • ${t.reason ?? 'Academic transfer'}",
+                        ),
                         trailing: AcadexBadge(
                           label: t.status,
-                          variant: t.isApproved ? AcadexBadgeVariant.success : AcadexBadgeVariant.warning,
+                          variant: t.isApproved
+                              ? AcadexBadgeVariant.success
+                              : AcadexBadgeVariant.warning,
                         ),
                       );
                     },
@@ -1173,22 +1636,35 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
             children: [
               Row(
                 children: [
-                  const Icon(LucideIcons.fileCheck2, size: 16, color: AcadexColors.accentPurple),
+                  const Icon(
+                    LucideIcons.fileCheck2,
+                    size: 16,
+                    color: AcadexColors.accentPurple,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     "Transfer Credits",
-                    style: AcadexTypography.title(color: theme.colorScheme.onSurface),
+                    style: AcadexTypography.title(
+                      color: theme.colorScheme.onSurface,
+                    ),
                   ),
                   const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: AcadexColors.accentPurple.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: const Text(
                       "VERIFIED CREDITS",
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AcadexColors.accentPurple),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: AcadexColors.accentPurple,
+                      ),
                     ),
                   ),
                 ],
@@ -1196,19 +1672,38 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
               const SizedBox(height: 4),
               Text(
                 "Prior credits accepted through authorised administrative verification with immutable source college attribution.",
-                style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                style: AcadexTypography.caption(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
               ),
               const SizedBox(height: 12),
               creditsAsync.when(
-                loading: () => const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator())),
-                error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error, fontSize: 12)),
+                loading: () => const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(8),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+                error: (e, _) => Text(
+                  AcadexException.sanitizedMessage(e),
+                  style: const TextStyle(
+                    color: AcadexColors.error,
+                    fontSize: 12,
+                  ),
+                ),
                 data: (credits) {
                   if (credits.isEmpty) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Text(
                         "No external transfer credits registered.",
-                        style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
+                        ),
                       ),
                     );
                   }
@@ -1224,13 +1719,27 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                         leading: const CircleAvatar(
                           radius: 14,
                           backgroundColor: AcadexColors.canvasSoft,
-                          child: Icon(LucideIcons.award, size: 14, color: AcadexColors.accentPurple),
+                          child: Icon(
+                            LucideIcons.award,
+                            size: 14,
+                            color: AcadexColors.accentPurple,
+                          ),
                         ),
-                        title: Text("${c.sourceSubjectCode} - ${c.sourceSubjectName}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        subtitle: Text("Origin: ${c.sourceCollegeName} • ${c.creditsEarned} Credits • Grade: ${c.gradeObtained ?? '—'}"),
+                        title: Text(
+                          "${c.sourceSubjectCode} - ${c.sourceSubjectName}",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        subtitle: Text(
+                          "Origin: ${c.sourceCollegeName} • ${c.creditsEarned} Credits • Grade: ${c.gradeObtained ?? '—'}",
+                        ),
                         trailing: AcadexBadge(
                           label: c.status,
-                          variant: c.isApproved ? AcadexBadgeVariant.success : AcadexBadgeVariant.warning,
+                          variant: c.isApproved
+                              ? AcadexBadgeVariant.success
+                              : AcadexBadgeVariant.warning,
                         ),
                       );
                     },
@@ -1243,7 +1752,6 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
       ],
     );
   }
-
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
@@ -1258,7 +1766,11 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
     );
   }
 
-  Widget _buildFacultyPriorityContextCard(FacultyPriorityContext ctx, bool isDark, ThemeData theme) {
+  Widget _buildFacultyPriorityContextCard(
+    FacultyPriorityContext ctx,
+    bool isDark,
+    ThemeData theme,
+  ) {
     final borderColor = isDark
         ? const Color(0xFF3B82F6).withValues(alpha: 0.45)
         : const Color(0xFF2563EB).withValues(alpha: 0.35);
@@ -1280,7 +1792,9 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF2563EB).withValues(alpha: 0.25) : const Color(0xFFDBEAFE),
+                  color: isDark
+                      ? const Color(0xFF2563EB).withValues(alpha: 0.25)
+                      : const Color(0xFFDBEAFE),
                   borderRadius: BorderRadius.circular(AcadexRadius.xs),
                 ),
                 child: Row(
@@ -1289,7 +1803,9 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                     Icon(
                       LucideIcons.sparkles,
                       size: 13,
-                      color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8),
+                      color: isDark
+                          ? const Color(0xFF93C5FD)
+                          : const Color(0xFF1D4ED8),
                     ),
                     const SizedBox(width: 5),
                     Text(
@@ -1298,7 +1814,9 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.8,
-                        color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8),
+                        color: isDark
+                            ? const Color(0xFF93C5FD)
+                            : const Color(0xFF1D4ED8),
                       ),
                     ),
                   ],
@@ -1308,14 +1826,17 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: (ctx.attendancePercentage >= 75
-                          ? AcadexColors.success
-                          : AcadexColors.warning)
-                      .withValues(alpha: 0.15),
+                  color:
+                      (ctx.attendancePercentage >= 75
+                              ? AcadexColors.success
+                              : AcadexColors.warning)
+                          .withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(AcadexRadius.xs),
                 ),
                 child: Text(
-                  ctx.attendancePercentage >= 75 ? "Good Attendance" : "Attention Needed",
+                  ctx.attendancePercentage >= 75
+                      ? "Good Attendance"
+                      : "Attention Needed",
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -1337,15 +1858,18 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                   children: [
                     Text(
                       "${ctx.subjectName} • ${ctx.subjectCode}",
-                      style: AcadexTypography.title(color: theme.colorScheme.onSurface).copyWith(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AcadexTypography.title(
+                        color: theme.colorScheme.onSurface,
+                      ).copyWith(fontSize: 17, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       "Section ${ctx.sectionName}",
-                      style: AcadexTypography.body(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+                      style: AcadexTypography.body(
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.7,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -1364,7 +1888,9 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                 value: "${ctx.attendedSessions} / ${ctx.totalSessions}",
                 percentage: "${ctx.attendancePercentage.toStringAsFixed(0)}%",
                 icon: LucideIcons.clipboardCheck,
-                color: ctx.attendancePercentage >= 75 ? AcadexColors.success : AcadexColors.warning,
+                color: ctx.attendancePercentage >= 75
+                    ? AcadexColors.success
+                    : AcadexColors.warning,
               ),
               _buildPriorityMetric(
                 label: "Assignments",
@@ -1406,19 +1932,30 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
           children: [
             Text(
               label,
-              style: const TextStyle(fontSize: 11, color: AcadexColors.inkMuted, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                fontSize: 11,
+                color: AcadexColors.inkMuted,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 2),
             Row(
               children: [
                 Text(
                   value,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 ),
                 const SizedBox(width: 6),
                 Text(
                   "•  $percentage",
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: color),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                    color: color,
+                  ),
                 ),
               ],
             ),

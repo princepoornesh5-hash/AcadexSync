@@ -32,11 +32,7 @@ class AppSettings {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'themeMode': 'light',
-      'language': language,
-      'fontScale': fontScale,
-    };
+    return {'themeMode': 'light', 'language': language, 'fontScale': fontScale};
   }
 
   // Factory for default settings
@@ -139,7 +135,8 @@ class NotificationPreferences {
       notesUploaded: json['notes'] ?? json['notesUploaded'] ?? true,
       timetable: json['timetable'] ?? true,
       certificateUpdates: json['certificateUpdates'] ?? true,
-      generalNotifications: json['system'] ?? json['generalNotifications'] ?? true,
+      generalNotifications:
+          json['system'] ?? json['generalNotifications'] ?? true,
       academicResults: true,
       system: true,
     );

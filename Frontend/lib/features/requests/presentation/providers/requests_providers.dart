@@ -40,7 +40,9 @@ final requestsFilterProvider = StateProvider<RequestsFilterState>((ref) {
   return const RequestsFilterState();
 });
 
-final myRequestsProvider = FutureProvider.autoDispose<List<RequestModel>>((ref) async {
+final myRequestsProvider = FutureProvider.autoDispose<List<RequestModel>>((
+  ref,
+) async {
   final authState = ref.watch(authProvider);
   if (authState is! AuthAuthenticated) return [];
 
@@ -65,43 +67,47 @@ final myRequestsProvider = FutureProvider.autoDispose<List<RequestModel>>((ref) 
   return requests;
 });
 
-final incomingRequestsProvider = FutureProvider.autoDispose<List<RequestModel>>((ref) async {
-  final authState = ref.watch(authProvider);
-  if (authState is! AuthAuthenticated) return [];
+final incomingRequestsProvider = FutureProvider.autoDispose<List<RequestModel>>(
+  (ref) async {
+    final authState = ref.watch(authProvider);
+    if (authState is! AuthAuthenticated) return [];
 
-  final repo = ref.watch(requestsRepositoryProvider);
-  final filter = ref.watch(requestsFilterProvider);
+    final repo = ref.watch(requestsRepositoryProvider);
+    final filter = ref.watch(requestsFilterProvider);
 
-  final requests = await repo.getIncomingRequests(
-    status: filter.status,
-    requestType: filter.requestType,
-  );
+    final requests = await repo.getIncomingRequests(
+      status: filter.status,
+      requestType: filter.requestType,
+    );
 
-  if (filter.searchQuery.isNotEmpty) {
-    final q = filter.searchQuery.toLowerCase();
-    return requests.where((r) {
-      return r.title.toLowerCase().contains(q) ||
-          r.description.toLowerCase().contains(q) ||
-          r.requestId.toLowerCase().contains(q) ||
-          r.requesterName.toLowerCase().contains(q);
-    }).toList();
-  }
+    if (filter.searchQuery.isNotEmpty) {
+      final q = filter.searchQuery.toLowerCase();
+      return requests.where((r) {
+        return r.title.toLowerCase().contains(q) ||
+            r.description.toLowerCase().contains(q) ||
+            r.requestId.toLowerCase().contains(q) ||
+            r.requesterName.toLowerCase().contains(q);
+      }).toList();
+    }
 
-  return requests;
-});
+    return requests;
+  },
+);
 
-final requestSummaryCountsProvider = FutureProvider.autoDispose<RequestSummaryCounts>((ref) async {
-  final authState = ref.watch(authProvider);
-  if (authState is! AuthAuthenticated) return const RequestSummaryCounts();
+final requestSummaryCountsProvider =
+    FutureProvider.autoDispose<RequestSummaryCounts>((ref) async {
+      final authState = ref.watch(authProvider);
+      if (authState is! AuthAuthenticated) return const RequestSummaryCounts();
 
-  final repo = ref.watch(requestsRepositoryProvider);
-  return await repo.getSummaryCounts();
-});
+      final repo = ref.watch(requestsRepositoryProvider);
+      return await repo.getSummaryCounts();
+    });
 
-final requestDetailProvider = FutureProvider.family.autoDispose<RequestModel?, String>((ref, id) async {
-  final repo = ref.watch(requestsRepositoryProvider);
-  return await repo.getRequestById(id);
-});
+final requestDetailProvider = FutureProvider.family
+    .autoDispose<RequestModel?, String>((ref, id) async {
+      final repo = ref.watch(requestsRepositoryProvider);
+      return await repo.getRequestById(id);
+    });
 
 class RequestActionNotifier extends AsyncNotifier<void> {
   bool _isSubmitting = false;
@@ -266,11 +272,7 @@ class RequestActionNotifier extends AsyncNotifier<void> {
     state = await AsyncValue.guard(() async {
       try {
         final repo = ref.read(requestsRepositoryProvider);
-        result = await repo.updateStatus(
-          id: id,
-          status: status,
-          note: note,
-        );
+        result = await repo.updateStatus(id: id, status: status, note: note);
         ref.invalidate(incomingRequestsProvider);
         ref.invalidate(myRequestsProvider);
         ref.invalidate(requestDetailProvider(id));
@@ -286,6 +288,7 @@ class RequestActionNotifier extends AsyncNotifier<void> {
   }
 }
 
-final requestActionProvider = AsyncNotifierProvider<RequestActionNotifier, void>(() {
-  return RequestActionNotifier();
-});
+final requestActionProvider =
+    AsyncNotifierProvider<RequestActionNotifier, void>(() {
+      return RequestActionNotifier();
+    });

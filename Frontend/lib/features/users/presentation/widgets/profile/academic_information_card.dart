@@ -47,7 +47,11 @@ class AcademicInformationCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          _buildDetailRow('College / Institution', collegeName, LucideIcons.school),
+          _buildDetailRow(
+            'College / Institution',
+            collegeName,
+            LucideIcons.school,
+          ),
           if (profile.role != AppRole.superAdmin) ...[
             const Divider(height: 24),
             _buildDetailRow('Department', departmentName, LucideIcons.building),
@@ -60,11 +64,20 @@ class AcademicInformationCard extends StatelessWidget {
             const Divider(height: 24),
             _buildDetailRow('Section', sectionName, LucideIcons.users),
             const Divider(height: 24),
-            _buildDetailRow('Student ID / Roll Number', rollNumber, LucideIcons.hash),
+            _buildDetailRow(
+              'Student ID / Roll Number',
+              rollNumber,
+              LucideIcons.hash,
+            ),
           ],
-          if (profile.role == AppRole.faculty || profile.role == AppRole.hod) ...[
+          if (profile.role == AppRole.faculty ||
+              profile.role == AppRole.hod) ...[
             const Divider(height: 24),
-            _buildDetailRow('Employee / Faculty ID', employeeId, LucideIcons.creditCard),
+            _buildDetailRow(
+              'Employee / Faculty ID',
+              employeeId,
+              LucideIcons.creditCard,
+            ),
           ],
         ],
       ),

@@ -12,7 +12,12 @@ abstract class CertificateRepository {
   Future<void> deleteCertificate(String certificateId, String requestingUid);
 
   // Search & filter — within caller's authorized scope
-  Future<List<Certificate>> searchCertificates(String query, {String? scopeStudentUid, String? scopeCollegeId, String? scopeDepartmentId});
+  Future<List<Certificate>> searchCertificates(
+    String query, {
+    String? scopeStudentUid,
+    String? scopeCollegeId,
+    String? scopeDepartmentId,
+  });
   Future<List<Certificate>> filterCertificates({
     String? studentUid,
     String? collegeId,

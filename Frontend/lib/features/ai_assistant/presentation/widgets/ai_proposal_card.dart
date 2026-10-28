@@ -33,17 +33,17 @@ class AiProposalCard extends StatelessWidget {
     final accentColor = isAssignment
         ? const Color(0xFF0052CC)
         : isRequest
-            ? const Color(0xFF0D9488)
-            : isRespond
-                ? const Color(0xFFD97706)
-                : const Color(0xFF7C3AED);
+        ? const Color(0xFF0D9488)
+        : isRespond
+        ? const Color(0xFFD97706)
+        : const Color(0xFF7C3AED);
     final badgeBg = isAssignment
         ? (isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF))
         : isRequest
-            ? (isDark ? const Color(0xFF134E4A) : const Color(0xFFF0FDFA))
-            : isRespond
-                ? (isDark ? const Color(0xFF451A03) : const Color(0xFFFFFBEB))
-                : (isDark ? const Color(0xFF2E1065) : const Color(0xFFF5F3FF));
+        ? (isDark ? const Color(0xFF134E4A) : const Color(0xFFF0FDFA))
+        : isRespond
+        ? (isDark ? const Color(0xFF451A03) : const Color(0xFFFFFBEB))
+        : (isDark ? const Color(0xFF2E1065) : const Color(0xFFF5F3FF));
 
     return Container(
       margin: const EdgeInsets.only(top: 12),
@@ -81,10 +81,10 @@ class AiProposalCard extends StatelessWidget {
                   isAssignment
                       ? LucideIcons.bookOpen
                       : isRequest
-                          ? LucideIcons.fileText
-                          : isRespond
-                              ? LucideIcons.checkSquare
-                              : LucideIcons.calendar,
+                      ? LucideIcons.fileText
+                      : isRespond
+                      ? LucideIcons.checkSquare
+                      : LucideIcons.calendar,
                   size: 18,
                   color: accentColor,
                 ),
@@ -94,10 +94,10 @@ class AiProposalCard extends StatelessWidget {
                     isAssignment
                         ? 'Assignment Draft Proposal'
                         : isRequest
-                            ? 'Request Draft Proposal'
-                            : isRespond
-                                ? 'Request Review Decision'
-                                : 'Calendar Event Proposal',
+                        ? 'Request Draft Proposal'
+                        : isRespond
+                        ? 'Request Review Decision'
+                        : 'Calendar Event Proposal',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -150,7 +150,8 @@ class AiProposalCard extends StatelessWidget {
                     context,
                     icon: LucideIcons.clock,
                     label: 'Due Date & Time',
-                    value: '${preview['dueDate'] ?? 'Upcoming'} at ${preview['dueTime'] ?? '11:59 PM'}',
+                    value:
+                        '${preview['dueDate'] ?? 'Upcoming'} at ${preview['dueTime'] ?? '11:59 PM'}',
                     isDark: isDark,
                   ),
                   if (preview['maximumMarks'] != null) ...[
@@ -189,7 +190,8 @@ class AiProposalCard extends StatelessWidget {
                       context,
                       icon: LucideIcons.calendar,
                       label: 'Requested Date',
-                      value: '${preview['startDate']}${preview['endDate'] != null && preview['endDate'] != preview['startDate'] ? ' to ' + preview['endDate'] : ''}',
+                      value:
+                          '${preview['startDate']}${preview['endDate'] != null && preview['endDate'] != preview['startDate'] ? ' to ' + preview['endDate'] : ''}',
                       isDark: isDark,
                     ),
                     const SizedBox(height: 8),
@@ -296,7 +298,11 @@ class AiProposalCard extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(LucideIcons.alertTriangle, size: 16, color: Color(0xFFD97706)),
+                        const Icon(
+                          LucideIcons.alertTriangle,
+                          size: 16,
+                          color: Color(0xFFD97706),
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -321,14 +327,17 @@ class AiProposalCard extends StatelessWidget {
                     preview['description'] as String,
                     style: TextStyle(
                       fontSize: 13,
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF64748B),
                       height: 1.4,
                     ),
                   ),
                 ],
 
                 // Success execution note
-                if (status == 'EXECUTED' && message.executionResultSummary != null) ...[
+                if (status == 'EXECUTED' &&
+                    message.executionResultSummary != null) ...[
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(10),
@@ -339,7 +348,11 @@ class AiProposalCard extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        const Icon(LucideIcons.checkCircle2, size: 16, color: Color(0xFF059669)),
+                        const Icon(
+                          LucideIcons.checkCircle2,
+                          size: 16,
+                          color: Color(0xFF059669),
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -564,7 +577,7 @@ class AiProposalCard extends StatelessWidget {
             Text(
               status == 'RECONCILING'
                   ? 'Reconciling persistence state with server...'
-                  : 'Persisting to official ACADEX records...',
+                  : 'Persisting to official ACADEXSYNC records...',
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
             ),
           ],
@@ -602,9 +615,13 @@ class AiProposalCard extends StatelessWidget {
               icon: const Icon(LucideIcons.x, size: 16),
               label: const Text('Cancel'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF475569),
+                foregroundColor: isDark
+                    ? const Color(0xFFE2E8F0)
+                    : const Color(0xFF475569),
                 side: BorderSide(
-                  color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                  color: isDark
+                      ? const Color(0xFF475569)
+                      : const Color(0xFFCBD5E1),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -627,7 +644,9 @@ class AiProposalCard extends StatelessWidget {
             key: const Key('ai_proposal_confirm_button'),
             onPressed: onConfirm,
             icon: const Icon(LucideIcons.check, size: 16),
-            label: Text(status == 'FAILED' ? 'Retry Confirm' : 'Confirm & Save'),
+            label: Text(
+              status == 'FAILED' ? 'Retry Confirm' : 'Confirm & Save',
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0052CC),
               foregroundColor: Colors.white,
@@ -649,9 +668,13 @@ class AiProposalCard extends StatelessWidget {
             icon: const Icon(LucideIcons.x, size: 16),
             label: const Text('Cancel'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF475569),
+              foregroundColor: isDark
+                  ? const Color(0xFFE2E8F0)
+                  : const Color(0xFF475569),
               side: BorderSide(
-                color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                color: isDark
+                    ? const Color(0xFF475569)
+                    : const Color(0xFFCBD5E1),
               ),
               padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(
@@ -681,7 +704,9 @@ class AiProposalCard extends StatelessWidget {
         return isDark ? const Color(0xFF475569) : const Color(0xFF94A3B8);
       case 'PENDING':
       default:
-        return isDark ? const Color(0xFF334155) : defaultAccent.withValues(alpha: 0.35);
+        return isDark
+            ? const Color(0xFF334155)
+            : defaultAccent.withValues(alpha: 0.35);
     }
   }
 }

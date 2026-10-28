@@ -28,40 +28,46 @@ class NotesDashboardScreen extends ConsumerWidget {
     final user = authState.user;
     final isFaculty = user.role == AppRole.faculty;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final hasEnclosingScaffold = Scaffold.maybeOf(context) != null;
+    final notesAsync = ref.watch(filteredNotesProvider);
+    final hasNotes = notesAsync.valueOrNull?.isNotEmpty == true;
 
     final bodyContent = AcadexSliverPageContainer(
       header: AcadexSliverPageHeader(
         title: isFaculty ? 'My Notes' : 'Academic Resources',
-        subtitle: 'Browse, manage, and share subject notes and reference materials.',
-        actions: [
-          if (isFaculty)
-            AcadexButton(
-              label: 'Create Note',
-              icon: LucideIcons.plus,
-              variant: AcadexButtonVariant.primary,
-              onPressed: () => context.go('/notes/new'),
-            ),
-        ],
+        subtitle:
+            'Browse, manage, and share subject notes and reference materials.',
       ),
       slivers: [
-        SliverToBoxAdapter(child: _buildFilters(context, ref, user.role, isDark)),
+        SliverToBoxAdapter(
+          child: _buildFilters(context, ref, user.role, isDark),
+        ),
         const SliverToBoxAdapter(child: SizedBox(height: 12)),
         _NotesList(role: user.role),
       ],
     );
 
-    if (hasEnclosingScaffold) {
-      return bodyContent;
-    }
-
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(child: bodyContent),
+      backgroundColor: Colors.transparent,
+      body: bodyContent,
+      floatingActionButton: (isFaculty && hasNotes)
+          ? FloatingActionButton.extended(
+              heroTag: 'create_note_fab',
+              onPressed: () => context.go('/notes/new'),
+              icon: const Icon(LucideIcons.plus, size: 20),
+              label: const Text('Create Note'),
+              backgroundColor: AcadexColors.primary,
+              foregroundColor: Colors.white,
+            )
+          : null,
     );
   }
 
-  Widget _buildFilters(BuildContext context, WidgetRef ref, AppRole role, bool isDark) {
+  Widget _buildFilters(
+    BuildContext context,
+    WidgetRef ref,
+    AppRole role,
+    bool isDark,
+  ) {
     final filters = ref.watch(notesFilterProvider);
     final isStudent = role == AppRole.student;
 
@@ -83,7 +89,9 @@ class NotesDashboardScreen extends ConsumerWidget {
               prefixIcon: Icon(
                 LucideIcons.search,
                 size: 20,
-                color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                color:
+                    (Theme.of(context).textTheme.bodySmall?.color ??
+                    AcadexColors.inkMuted),
               ),
               filled: true,
               fillColor: Theme.of(context).scaffoldBackgroundColor,
@@ -95,10 +103,15 @@ class NotesDashboardScreen extends ConsumerWidget {
                 borderRadius: AcadexRadius.borderRadiusMd,
                 borderSide: BorderSide(color: Theme.of(context).dividerColor),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
             onChanged: (val) {
-              ref.read(notesFilterProvider.notifier).state = filters.copyWith(searchQuery: val);
+              ref.read(notesFilterProvider.notifier).state = filters.copyWith(
+                searchQuery: val,
+              );
             },
           ),
           const SizedBox(height: 12),
@@ -111,12 +124,23 @@ class NotesDashboardScreen extends ConsumerWidget {
                   label: 'All Types',
                   value: filters.resourceType,
                   items: [
-                    const DropdownMenuItem(value: null, child: Text('All Types')),
-                    ...ResourceType.values.map((t) => DropdownMenuItem(value: t, child: Text(t.displayName))),
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text('All Types'),
+                    ),
+                    ...ResourceType.values.map(
+                      (t) => DropdownMenuItem(
+                        value: t,
+                        child: Text(t.displayName),
+                      ),
+                    ),
                   ],
                   onChanged: (val) {
-                    ref.read(notesFilterProvider.notifier).state =
-                        filters.copyWith(resourceType: val, clearResourceType: val == null);
+                    ref.read(notesFilterProvider.notifier).state = filters
+                        .copyWith(
+                          resourceType: val,
+                          clearResourceType: val == null,
+                        );
                   },
                 ),
                 const SizedBox(width: 8),
@@ -127,36 +151,57 @@ class NotesDashboardScreen extends ConsumerWidget {
                     label: 'All Statuses',
                     value: filters.status,
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('All Statuses')),
-                      ...NoteStatus.values.map((s) => DropdownMenuItem(value: s, child: Text(s.displayName))),
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('All Statuses'),
+                      ),
+                      ...NoteStatus.values.map(
+                        (s) => DropdownMenuItem(
+                          value: s,
+                          child: Text(s.displayName),
+                        ),
+                      ),
                     ],
                     onChanged: (val) {
-                      ref.read(notesFilterProvider.notifier).state =
-                          filters.copyWith(status: val, clearStatus: val == null);
+                      ref.read(notesFilterProvider.notifier).state = filters
+                          .copyWith(status: val, clearStatus: val == null);
                     },
                   ),
                   const SizedBox(width: 8),
                 ],
 
                 // Subject Filter using memoized subject list
-                Consumer(builder: (context, ref, _) {
-                  final subjectsAsync = ref.watch(subjectsProvider);
-                  return subjectsAsync.maybeWhen(
-                    data: (subjects) => _FilterChip<String?>(
-                      label: 'All Subjects',
-                      value: filters.subjectId,
-                      items: [
-                        const DropdownMenuItem(value: null, child: Text('All Subjects')),
-                        ...subjects.map((s) => DropdownMenuItem(value: s.id, child: Text('${s.code} - ${s.name}'))),
-                      ],
-                      onChanged: (val) {
-                        ref.read(notesFilterProvider.notifier).state =
-                            filters.copyWith(subjectId: val, clearSubject: val == null);
-                      },
-                    ),
-                    orElse: () => const SizedBox.shrink(),
-                  );
-                }),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final subjectsAsync = ref.watch(subjectsProvider);
+                    return subjectsAsync.maybeWhen(
+                      data: (subjects) => _FilterChip<String?>(
+                        label: 'All Subjects',
+                        value: filters.subjectId,
+                        items: [
+                          const DropdownMenuItem(
+                            value: null,
+                            child: Text('All Subjects'),
+                          ),
+                          ...subjects.map(
+                            (s) => DropdownMenuItem(
+                              value: s.id,
+                              child: Text('${s.code} - ${s.name}'),
+                            ),
+                          ),
+                        ],
+                        onChanged: (val) {
+                          ref.read(notesFilterProvider.notifier).state = filters
+                              .copyWith(
+                                subjectId: val,
+                                clearSubject: val == null,
+                              );
+                        },
+                      ),
+                      orElse: () => const SizedBox.shrink(),
+                    );
+                  },
+                ),
               ],
             ),
           ),
@@ -195,7 +240,9 @@ class _FilterChip<T> extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 13,
-              color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+              color:
+                  (Theme.of(context).textTheme.bodySmall?.color ??
+                  AcadexColors.inkMuted),
             ),
           ),
           items: items,
@@ -203,9 +250,14 @@ class _FilterChip<T> extends StatelessWidget {
           icon: Icon(
             LucideIcons.chevronDown,
             size: 16,
-            color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+            color:
+                (Theme.of(context).textTheme.bodySmall?.color ??
+                AcadexColors.inkMuted),
           ),
-          style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface),
+          style: TextStyle(
+            fontSize: 13,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           isDense: true,
           padding: const EdgeInsets.symmetric(vertical: 8),
         ),
@@ -237,56 +289,67 @@ class _NotesList extends ConsumerWidget {
         if (notes.isEmpty) {
           return SliverToBoxAdapter(
             child: AcadexEmptyState(
-            title: 'No Notes Found',
-            subtitle: role == AppRole.student
-                ? 'Check back later for newly published academic resources.'
-                : 'Get started by creating your first note or chapter resource.',
-            icon: LucideIcons.fileSearch,
-            actionLabel: role == AppRole.faculty ? 'Create Note' : null,
-            onActionTap: role == AppRole.faculty ? () => context.go('/notes/new') : null,
-          ),
-        );
-      }
+              title: 'No Notes Found',
+              subtitle: role == AppRole.student
+                  ? 'Check back later for newly published academic resources.'
+                  : 'Get started by creating your first note or chapter resource.',
+              icon: LucideIcons.fileSearch,
+              actionLabel: role == AppRole.faculty ? 'Create Note' : null,
+              onActionTap: role == AppRole.faculty
+                  ? () => context.go('/notes/new')
+                  : null,
+            ),
+          );
+        }
 
         return SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final note = notes[index];
-              final subject = subjectMap[note.subjectId];
-              
-              Widget? trailing;
-              if (role == AppRole.faculty || role == AppRole.hod || role == AppRole.collegeAdmin || role == AppRole.superAdmin) {
-                trailing = Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(LucideIcons.edit, size: 18, color: Theme.of(context).primaryColor),
-                      tooltip: 'Edit Note',
-                      onPressed: () => context.go('/notes/edit/${note.id}', extra: note),
-                    ),
-                    IconButton(
-                      icon: const Icon(LucideIcons.trash2, size: 18, color: AcadexColors.error),
-                      tooltip: 'Delete Note',
-                      onPressed: () => _confirmDelete(context, ref, note.id),
-                    ),
-                  ],
-                );
-              }
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final note = notes[index];
+            final subject = subjectMap[note.subjectId];
 
-              return AcadexFadeSlide(
-                delay: Duration(milliseconds: (index * 25).clamp(0, 400)),
-                child: NoteCard(
-                  note: note,
-                  subject: subject,
-                  trailing: trailing,
-                  onTap: () {
-                    context.go('/notes/${note.id}', extra: note);
-                  },
-                ),
+            Widget? trailing;
+            if (role == AppRole.faculty ||
+                role == AppRole.hod ||
+                role == AppRole.collegeAdmin ||
+                role == AppRole.superAdmin) {
+              trailing = Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      LucideIcons.edit,
+                      size: 18,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    tooltip: 'Edit Note',
+                    onPressed: () =>
+                        context.go('/notes/edit/${note.id}', extra: note),
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      LucideIcons.trash2,
+                      size: 18,
+                      color: AcadexColors.error,
+                    ),
+                    tooltip: 'Delete Note',
+                    onPressed: () => _confirmDelete(context, ref, note.id),
+                  ),
+                ],
               );
-            },
-            childCount: notes.length,
-          ),
+            }
+
+            return AcadexFadeSlide(
+              delay: Duration(milliseconds: (index * 25).clamp(0, 400)),
+              child: NoteCard(
+                note: note,
+                subject: subject,
+                trailing: trailing,
+                onTap: () {
+                  context.go('/notes/${note.id}', extra: note);
+                },
+              ),
+            );
+          }, childCount: notes.length),
         );
       },
     );
@@ -297,7 +360,9 @@ class _NotesList extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Note'),
-        content: const Text('Are you sure you want to delete this note and its associated attachments? This action cannot be undone.'),
+        content: const Text(
+          'Are you sure you want to delete this note and its associated attachments? This action cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),

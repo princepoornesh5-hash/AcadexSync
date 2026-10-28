@@ -5,10 +5,7 @@ import 'academic_metric_pill.dart';
 class SubjectAcademicTile extends StatelessWidget {
   final SubjectRecordSummary subject;
 
-  const SubjectAcademicTile({
-    super.key,
-    required this.subject,
-  });
+  const SubjectAcademicTile({super.key, required this.subject});
 
   Color _getStatusColor(SubjectAcademicStatus status) {
     switch (status) {
@@ -64,14 +61,21 @@ class SubjectAcademicTile extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
+                            color: isDark
+                                ? Colors.grey.shade800
+                                : Colors.grey.shade100,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             '${subject.credits} Credits • ${subject.type}',
-                            style: theme.textTheme.labelSmall?.copyWith(fontSize: 10),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontSize: 10,
+                            ),
                           ),
                         ),
                       ],
@@ -106,7 +110,8 @@ class SubjectAcademicTile extends StatelessWidget {
             ],
           ),
 
-          if (subject.facultyName != null && subject.facultyName!.isNotEmpty) ...[
+          if (subject.facultyName != null &&
+              subject.facultyName!.isNotEmpty) ...[
             const SizedBox(height: 6),
             Row(
               children: [
@@ -133,25 +138,31 @@ class SubjectAcademicTile extends StatelessWidget {
             spacing: 6,
             runSpacing: 6,
             children: [
-              if (subject.attendance != null && subject.attendance!.totalClasses > 0)
+              if (subject.attendance != null &&
+                  subject.attendance!.totalClasses > 0)
                 AcademicMetricPill(
                   icon: Icons.how_to_reg_rounded,
                   label: 'Att',
-                  value: '${subject.attendance!.presentCount}/${subject.attendance!.totalClasses} (${subject.attendance!.percentage}%)',
+                  value:
+                      '${subject.attendance!.presentCount}/${subject.attendance!.totalClasses} (${subject.attendance!.percentage}%)',
                   percentage: subject.attendance!.percentage,
                 ),
-              if (subject.practical != null && subject.practical!.totalSessions > 0)
+              if (subject.practical != null &&
+                  subject.practical!.totalSessions > 0)
                 AcademicMetricPill(
                   icon: Icons.science_outlined,
                   label: 'Lab',
-                  value: '${subject.practical!.completedCount}/${subject.practical!.totalSessions} (${subject.practical!.completionRate}%)',
+                  value:
+                      '${subject.practical!.completedCount}/${subject.practical!.totalSessions} (${subject.practical!.completionRate}%)',
                   percentage: subject.practical!.completionRate,
                 ),
-              if (subject.assignment != null && subject.assignment!.totalAssignments > 0)
+              if (subject.assignment != null &&
+                  subject.assignment!.totalAssignments > 0)
                 AcademicMetricPill(
                   icon: Icons.assignment_outlined,
                   label: 'Tasks',
-                  value: '${subject.assignment!.submittedCount}/${subject.assignment!.totalAssignments} (${subject.assignment!.completionRate}%)',
+                  value:
+                      '${subject.assignment!.submittedCount}/${subject.assignment!.totalAssignments} (${subject.assignment!.completionRate}%)',
                   percentage: subject.assignment!.completionRate,
                 ),
               if (subject.assessment != null && subject.assessment!.isPublished)

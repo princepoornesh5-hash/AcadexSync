@@ -37,7 +37,10 @@ class NetworkErrorDiagnostic {
   });
 
   /// Analyzes a [DioException] and returns a detailed [NetworkErrorDiagnostic].
-  static NetworkErrorDiagnostic diagnose(DioException e, {String fallback = 'Operation failed'}) {
+  static NetworkErrorDiagnostic diagnose(
+    DioException e, {
+    String fallback = 'Operation failed',
+  }) {
     final status = e.response?.statusCode;
     final uri = e.requestOptions.uri;
     final rawMessage = e.message ?? '';
@@ -64,8 +67,10 @@ class NetworkErrorDiagnostic {
           combined.contains('bad certificate')) {
         return NetworkErrorDiagnostic(
           kind: NetworkFailureKind.tlsCertificateError,
-          userMessage: 'Secure connection failed (TLS certificate error). Please check your device date and security settings.',
-          technicalMessage: 'TLS Handshake / Certificate failure: $innerErrorString',
+          userMessage:
+              'Secure connection failed (TLS certificate error). Please check your device date and security settings.',
+          technicalMessage:
+              'TLS Handshake / Certificate failure: $innerErrorString',
           statusCode: status,
           requestUri: uri,
         );
@@ -77,7 +82,8 @@ class NetworkErrorDiagnostic {
           combined.contains('cleartext communication')) {
         return NetworkErrorDiagnostic(
           kind: NetworkFailureKind.androidCleartextRestricted,
-          userMessage: 'Cleartext HTTP communication is blocked by device security policy. Please use HTTPS or permit cleartext traffic.',
+          userMessage:
+              'Cleartext HTTP communication is blocked by device security policy. Please use HTTPS or permit cleartext traffic.',
           technicalMessage: 'Cleartext HTTP blocked: $rawMessage',
           statusCode: status,
           requestUri: uri,
@@ -87,12 +93,15 @@ class NetworkErrorDiagnostic {
       // C. DNS / Host Resolution Failure
       if (innerError is SocketException &&
               (innerError.osError?.errorCode == 7 ||
-                  innerError.message.toLowerCase().contains('failed host lookup')) ||
+                  innerError.message.toLowerCase().contains(
+                    'failed host lookup',
+                  )) ||
           combined.contains('failed host lookup') ||
           combined.contains('nodename nor servname provided')) {
         return NetworkErrorDiagnostic(
           kind: NetworkFailureKind.dnsResolutionError,
-          userMessage: 'Unable to resolve ACADEX server address. Please verify your internet connection or host settings.',
+          userMessage:
+              'Unable to resolve ACADEX server address. Please verify your internet connection or host settings.',
           technicalMessage: 'DNS resolution failure: $innerErrorString',
           statusCode: status,
           requestUri: uri,
@@ -103,11 +112,14 @@ class NetworkErrorDiagnostic {
       if ((innerError is SocketException &&
               (innerError.osError?.errorCode == 111 ||
                   innerError.osError?.errorCode == 61 ||
-                  innerError.message.toLowerCase().contains('connection refused'))) ||
+                  innerError.message.toLowerCase().contains(
+                    'connection refused',
+                  ))) ||
           combined.contains('connection refused')) {
         return NetworkErrorDiagnostic(
           kind: NetworkFailureKind.connectionRefused,
-          userMessage: 'Connection refused by server. The ACADEX backend service may not be running or the port is inaccessible.',
+          userMessage:
+              'Connection refused by server. The ACADEX backend service may not be running or the port is inaccessible.',
           technicalMessage: 'Connection refused: $innerErrorString',
           statusCode: status,
           requestUri: uri,
@@ -122,7 +134,8 @@ class NetworkErrorDiagnostic {
           combined.contains('timeout')) {
         return NetworkErrorDiagnostic(
           kind: NetworkFailureKind.timeout,
-          userMessage: 'Connection timed out while reaching ACADEX server. Please check your connection and try again.',
+          userMessage:
+              'Connection timed out while reaching ACADEX server. Please check your connection and try again.',
           technicalMessage: 'Timeout (${e.type}): $rawMessage',
           statusCode: status,
           requestUri: uri,
@@ -136,7 +149,8 @@ class NetworkErrorDiagnostic {
           combined.contains('no route to host')) {
         return NetworkErrorDiagnostic(
           kind: NetworkFailureKind.offlineOrUnreachable,
-          userMessage: 'Unable to reach ACADEX server. Please check your network or verify backend service connectivity.',
+          userMessage:
+              'Unable to reach ACADEX server. Please check your network or verify backend service connectivity.',
           technicalMessage: 'Connection error: $rawMessage ($innerErrorString)',
           statusCode: status,
           requestUri: uri,
@@ -147,13 +161,16 @@ class NetworkErrorDiagnostic {
     // 2. HTTP Status Codes with Response
     if (status != null) {
       final backendMsg = e.response?.data is Map
-          ? (e.response?.data['error']?['message'] ?? e.response?.data['message'])
+          ? (e.response?.data['error']?['message'] ??
+                e.response?.data['message'])
           : null;
 
       if (status == 401) {
         return NetworkErrorDiagnostic(
           kind: NetworkFailureKind.authenticationFailed,
-          userMessage: backendMsg?.toString() ?? 'Invalid credentials. Please verify your identifier and password.',
+          userMessage:
+              backendMsg?.toString() ??
+              'Invalid credentials. Please verify your identifier and password.',
           technicalMessage: 'HTTP 401: $backendMsg',
           statusCode: status,
           requestUri: uri,
@@ -163,7 +180,9 @@ class NetworkErrorDiagnostic {
       if (status == 403) {
         return NetworkErrorDiagnostic(
           kind: NetworkFailureKind.forbidden,
-          userMessage: backendMsg?.toString() ?? 'Access denied. Your account may be inactive, pending activation, or suspended.',
+          userMessage:
+              backendMsg?.toString() ??
+              'Access denied. Your account may be inactive, pending activation, or suspended.',
           technicalMessage: 'HTTP 403: $backendMsg',
           statusCode: status,
           requestUri: uri,
@@ -173,7 +192,8 @@ class NetworkErrorDiagnostic {
       if (status == 404) {
         return NetworkErrorDiagnostic(
           kind: NetworkFailureKind.routeNotFound,
-          userMessage: 'ACADEX API route not found ($uri). Please verify backend versioning.',
+          userMessage:
+              'ACADEXSYNC API route not found ($uri). Please verify backend versioning.',
           technicalMessage: 'HTTP 404 Route Not Found: $uri',
           statusCode: status,
           requestUri: uri,
@@ -181,15 +201,18 @@ class NetworkErrorDiagnostic {
       }
 
       if (status >= 500) {
-        final isDbError = backendMsg != null &&
+        final isDbError =
+            backendMsg != null &&
             (backendMsg.toString().toLowerCase().contains('database') ||
                 backendMsg.toString().toLowerCase().contains('mongo'));
 
         return NetworkErrorDiagnostic(
-          kind: isDbError ? NetworkFailureKind.databaseUnavailable : NetworkFailureKind.backendServerError,
+          kind: isDbError
+              ? NetworkFailureKind.databaseUnavailable
+              : NetworkFailureKind.backendServerError,
           userMessage: isDbError
-              ? 'ACADEX database connection is unavailable. Please try again in a moment.'
-              : 'ACADEX server encountered an internal error. Please try again shortly.',
+              ? 'ACADEXSYNC database connection is unavailable. Please try again in a moment.'
+              : 'ACADEXSYNC server encountered an internal error. Please try again shortly.',
           technicalMessage: 'HTTP $status Server Error: $backendMsg',
           statusCode: status,
           requestUri: uri,
@@ -198,10 +221,14 @@ class NetworkErrorDiagnostic {
     }
 
     // Default fallback
-    final message = (e.response?.data is Map
-            ? (e.response?.data['error']?['message'] ?? e.response?.data['message'])
+    final message =
+        (e.response?.data is Map
+            ? (e.response?.data['error']?['message'] ??
+                  e.response?.data['message'])
             : null) ??
-        (rawMessage.isNotEmpty && !rawMessage.contains('XMLHttpRequest') ? rawMessage : fallback);
+        (rawMessage.isNotEmpty && !rawMessage.contains('XMLHttpRequest')
+            ? rawMessage
+            : fallback);
 
     return NetworkErrorDiagnostic(
       kind: NetworkFailureKind.unknown,

@@ -18,14 +18,26 @@ const router = Router();
 
 // Public Authentication Endpoints
 router.post('/login', loginRateLimiter, AuthController.login);
+router.post('/login/request-otp', forgotPasswordRateLimiter, AuthController.requestLoginOtp);
+router.post('/login/verify-otp', otpVerifyRateLimiter, AuthController.loginWithOtp);
 router.post('/refresh', AuthController.refresh);
 router.post('/dev-login', AuthController.devLogin);
+
+// Public Self-Registration Endpoints (Email OTP)
+router.post('/register/request-otp', forgotPasswordRateLimiter, AuthController.registerRequestOtp);
+router.post('/register/verify-otp', otpVerifyRateLimiter, AuthController.registerVerifyOtp);
+router.post('/register/complete', loginRateLimiter, AuthController.registerComplete);
 
 // Public Multi-Step Account Activation Endpoints
 router.post('/activate/validate-code', activationRateLimiter, ActivationController.validateCode);
 router.post('/activate/send-otp', forgotPasswordRateLimiter, ActivationController.sendOtp);
 router.post('/activate/verify-otp', otpVerifyRateLimiter, ActivationController.verifyOtp);
 router.post('/activate/complete', activationRateLimiter, ActivationController.complete);
+
+// Institutional Account Activation Endpoints (Verified Email + Activation Code)
+router.post('/institutional-activate/request-otp', forgotPasswordRateLimiter, ActivationController.requestInstitutionalActivationOtp);
+router.post('/institutional-activate/verify-otp', otpVerifyRateLimiter, ActivationController.verifyInstitutionalActivationOtp);
+router.post('/institutional-activate/complete', activationRateLimiter, ActivationController.completeInstitutionalActivation);
 
 // Backward-Compatible Legacy Activation Endpoint
 router.post('/activate', activationRateLimiter, InvitationController.activate);

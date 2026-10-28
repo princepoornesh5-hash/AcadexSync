@@ -29,12 +29,12 @@ class StudentAttendanceCard extends StatelessWidget {
           color: status == null
               ? (isDark ? AcadexColors.darkHairline : AcadexColors.hairline)
               : (status == AttendanceStatus.present
-                  ? AcadexColors.success.withValues(alpha: 0.4)
-                  : status == AttendanceStatus.late
-                      ? AcadexColors.warning.withValues(alpha: 0.4)
-                      : status == AttendanceStatus.excused
-                          ? const Color(0xFF6366F1).withValues(alpha: 0.4)
-                          : AcadexColors.error.withValues(alpha: 0.4)),
+                    ? AcadexColors.success.withValues(alpha: 0.4)
+                    : status == AttendanceStatus.late
+                    ? AcadexColors.warning.withValues(alpha: 0.4)
+                    : status == AttendanceStatus.excused
+                    ? const Color(0xFF6366F1).withValues(alpha: 0.4)
+                    : AcadexColors.error.withValues(alpha: 0.4)),
           width: status != null ? 1.5 : 1,
         ),
         boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
@@ -52,10 +52,7 @@ class StudentAttendanceCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      AcadexAvatar(
-                        name: record.studentName,
-                        size: 34,
-                      ),
+                      AcadexAvatar(name: record.studentName, size: 34),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(
@@ -63,9 +60,15 @@ class StudentAttendanceCard extends StatelessWidget {
                           children: [
                             Text(
                               record.studentName,
-                              style: AcadexTypography.body(
-                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                              ).copyWith(fontWeight: FontWeight.w600, fontSize: 13.5),
+                              style:
+                                  AcadexTypography.body(
+                                    color: isDark
+                                        ? AcadexColors.darkInk
+                                        : AcadexColors.ink,
+                                  ).copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13.5,
+                                  ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -73,7 +76,9 @@ class StudentAttendanceCard extends StatelessWidget {
                             Text(
                               record.rollNumber,
                               style: AcadexTypography.caption(
-                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
                               ).copyWith(fontSize: 11),
                             ),
                           ],
@@ -90,10 +95,7 @@ class StudentAttendanceCard extends StatelessWidget {
 
             return Row(
               children: [
-                AcadexAvatar(
-                  name: record.studentName,
-                  size: 36,
-                ),
+                AcadexAvatar(name: record.studentName, size: 36),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -102,7 +104,9 @@ class StudentAttendanceCard extends StatelessWidget {
                       Text(
                         record.studentName,
                         style: AcadexTypography.body(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ).copyWith(fontWeight: FontWeight.w600, fontSize: 14),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -111,7 +115,9 @@ class StudentAttendanceCard extends StatelessWidget {
                       Text(
                         record.rollNumber,
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ).copyWith(fontSize: 12),
                       ),
                     ],
@@ -134,7 +140,9 @@ class StudentAttendanceCard extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
         decoration: BoxDecoration(
-          color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+          color: isDark
+              ? AcadexColors.darkSurfaceHover
+              : AcadexColors.canvasSoft,
           borderRadius: AcadexRadius.borderRadiusFull,
         ),
         child: Text(
@@ -149,10 +157,10 @@ class StudentAttendanceCard extends StatelessWidget {
     final color = status == AttendanceStatus.present
         ? AcadexColors.success
         : status == AttendanceStatus.late
-            ? AcadexColors.warning
-            : status == AttendanceStatus.excused
-                ? const Color(0xFF6366F1)
-                : AcadexColors.error;
+        ? AcadexColors.warning
+        : status == AttendanceStatus.excused
+        ? const Color(0xFF6366F1)
+        : AcadexColors.error;
 
     return Semantics(
       label: 'Status: ${status.name}',
@@ -160,10 +168,10 @@ class StudentAttendanceCard extends StatelessWidget {
         status == AttendanceStatus.present
             ? LucideIcons.checkCircle2
             : status == AttendanceStatus.late
-                ? LucideIcons.clock
-                : status == AttendanceStatus.excused
-                    ? LucideIcons.shieldCheck
-                    : LucideIcons.xCircle,
+            ? LucideIcons.clock
+            : status == AttendanceStatus.excused
+            ? LucideIcons.shieldCheck
+            : LucideIcons.xCircle,
         color: color,
         size: 17,
       ),
@@ -189,7 +197,9 @@ class StudentAttendanceCard extends StatelessWidget {
               shortLabel: '✓ P',
               icon: LucideIcons.check,
               status: AttendanceStatus.present,
-              activeBg: isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight,
+              activeBg: isDark
+                  ? AcadexColors.successDarkContainer
+                  : AcadexColors.successLight,
               activeBorder: AcadexColors.success,
               activeFg: AcadexColors.success,
               isDark: isDark,
@@ -202,7 +212,9 @@ class StudentAttendanceCard extends StatelessWidget {
               shortLabel: '⏱ L',
               icon: LucideIcons.clock,
               status: AttendanceStatus.late,
-              activeBg: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
+              activeBg: isDark
+                  ? AcadexColors.warningDarkContainer
+                  : AcadexColors.warningLight,
               activeBorder: AcadexColors.warning,
               activeFg: AcadexColors.warning,
               isDark: isDark,
@@ -215,7 +227,9 @@ class StudentAttendanceCard extends StatelessWidget {
               shortLabel: '✕ A',
               icon: LucideIcons.x,
               status: AttendanceStatus.absent,
-              activeBg: isDark ? AcadexColors.errorDarkContainer : AcadexColors.errorLight,
+              activeBg: isDark
+                  ? AcadexColors.errorDarkContainer
+                  : AcadexColors.errorLight,
               activeBorder: AcadexColors.error,
               activeFg: AcadexColors.error,
               isDark: isDark,
@@ -228,7 +242,9 @@ class StudentAttendanceCard extends StatelessWidget {
               shortLabel: '🛡 E',
               icon: LucideIcons.shieldCheck,
               status: AttendanceStatus.excused,
-              activeBg: isDark ? const Color(0xFF312E81) : const Color(0xFFEEF2FF),
+              activeBg: isDark
+                  ? const Color(0xFF312E81)
+                  : const Color(0xFFEEF2FF),
               activeBorder: const Color(0xFF6366F1),
               activeFg: const Color(0xFF6366F1),
               isDark: isDark,
@@ -281,20 +297,29 @@ class StudentAttendanceCard extends StatelessWidget {
               Icon(
                 icon,
                 size: 12,
-                color: isSelected ? activeFg : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                color: isSelected
+                    ? activeFg
+                    : (isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted),
               ),
               const SizedBox(width: 2.5),
               Flexible(
                 child: Text(
                   label,
-                  style: AcadexTypography.caption(
-                    color: isSelected
-                        ? activeFg
-                        : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
-                  ).copyWith(
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    fontSize: 10.5,
-                  ),
+                  style:
+                      AcadexTypography.caption(
+                        color: isSelected
+                            ? activeFg
+                            : (isDark
+                                  ? AcadexColors.darkInkSecondary
+                                  : AcadexColors.inkSecondary),
+                      ).copyWith(
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        fontSize: 10.5,
+                      ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

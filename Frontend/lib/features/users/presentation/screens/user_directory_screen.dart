@@ -28,7 +28,8 @@ class UserDirectoryScreen extends ConsumerStatefulWidget {
   const UserDirectoryScreen({super.key});
 
   @override
-  ConsumerState<UserDirectoryScreen> createState() => _UserDirectoryScreenState();
+  ConsumerState<UserDirectoryScreen> createState() =>
+      _UserDirectoryScreenState();
 }
 
 class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
@@ -40,7 +41,10 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
     super.dispose();
   }
 
-  Future<void> _confirmDeleteUser(BuildContext context, UserProfileModel user) async {
+  Future<void> _confirmDeleteUser(
+    BuildContext context,
+    UserProfileModel user,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -70,7 +74,9 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
 
     if (confirmed == true && mounted) {
       try {
-        await ref.read(userManagementProvider.notifier).deleteUserPermanently(user.id);
+        await ref
+            .read(userManagementProvider.notifier)
+            .deleteUserPermanently(user.id);
         ref.invalidate(usersListProvider);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -98,7 +104,9 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
     final authState = ref.watch(authProvider);
     if (authState is! AuthAuthenticated) {
       return const AcadexPageContainer(
-        child: Center(child: Text('Please log in to access the user directory.')),
+        child: Center(
+          child: Text('Please log in to access the user directory.'),
+        ),
       );
     }
 
@@ -118,10 +126,13 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
     final isDesktop = AcadexBreakpoints.isDesktop(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    if (isHod && currentUser.departmentId != null && currentUser.departmentId!.isNotEmpty) {
+    if (isHod &&
+        currentUser.departmentId != null &&
+        currentUser.departmentId!.isNotEmpty) {
       if (selectedDept != currentUser.departmentId) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          ref.read(userDeptFilterProvider.notifier).state = currentUser.departmentId;
+          ref.read(userDeptFilterProvider.notifier).state =
+              currentUser.departmentId;
         });
       }
     }
@@ -136,7 +147,9 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
       roleFilterNames.addAll(['Faculty', 'Student']);
     }
 
-    final roleFilterOptions = roleFilterNames.map((name) => AcadexFilterOption<String>(label: name, value: name)).toList();
+    final roleFilterOptions = roleFilterNames
+        .map((name) => AcadexFilterOption<String>(label: name, value: name))
+        .toList();
 
     String currentRoleFilterLabel = 'All';
     if (selectedRole != null) {
@@ -146,10 +159,10 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
     final pageSubtitle = isSuperAdmin
         ? 'Global platform user directory and administrative accounts'
         : isCollegeAdmin
-            ? 'Campus people hub: manage HODs, faculty, and enrolled students'
-            : isHod
-                ? 'Department directory: faculty and students'
-                : 'Campus Directory';
+        ? 'Campus people hub: manage HODs, faculty, and enrolled students'
+        : isHod
+        ? 'Department directory: faculty and students'
+        : 'Campus Directory';
 
     return AcadexPageContainer(
       onRefresh: () async {
@@ -194,13 +207,16 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
               if (val == 'All') {
                 ref.read(userRoleFilterProvider.notifier).state = null;
               } else if (val == 'College Admin') {
-                ref.read(userRoleFilterProvider.notifier).state = AppRole.collegeAdmin;
+                ref.read(userRoleFilterProvider.notifier).state =
+                    AppRole.collegeAdmin;
               } else if (val == 'HOD') {
                 ref.read(userRoleFilterProvider.notifier).state = AppRole.hod;
               } else if (val == 'Faculty') {
-                ref.read(userRoleFilterProvider.notifier).state = AppRole.faculty;
+                ref.read(userRoleFilterProvider.notifier).state =
+                    AppRole.faculty;
               } else if (val == 'Student') {
-                ref.read(userRoleFilterProvider.notifier).state = AppRole.student;
+                ref.read(userRoleFilterProvider.notifier).state =
+                    AppRole.student;
               }
             },
           ),
@@ -216,15 +232,39 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
                 constraints: const BoxConstraints(maxWidth: 160),
                 child: DropdownButton<UserStatus?>(
                   value: selectedStatus,
-                  hint: const Text('All Statuses', overflow: TextOverflow.ellipsis),
+                  hint: const Text(
+                    'All Statuses',
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   underline: const SizedBox.shrink(),
                   isDense: true,
                   isExpanded: true,
                   items: const [
-                    DropdownMenuItem(value: null, child: Text('All Statuses', overflow: TextOverflow.ellipsis)),
-                    DropdownMenuItem(value: UserStatus.active, child: Text('Active', overflow: TextOverflow.ellipsis)),
-                    DropdownMenuItem(value: UserStatus.pending, child: Text('Pending Activation', overflow: TextOverflow.ellipsis)),
-                    DropdownMenuItem(value: UserStatus.deactivated, child: Text('Deactivated', overflow: TextOverflow.ellipsis)),
+                    DropdownMenuItem(
+                      value: null,
+                      child: Text(
+                        'All Statuses',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: UserStatus.active,
+                      child: Text('Active', overflow: TextOverflow.ellipsis),
+                    ),
+                    DropdownMenuItem(
+                      value: UserStatus.pending,
+                      child: Text(
+                        'Pending Activation',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: UserStatus.deactivated,
+                      child: Text(
+                        'Deactivated',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ],
                   onChanged: (val) {
                     ref.read(userStatusFilterProvider.notifier).state = val;
@@ -233,51 +273,94 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
               ),
               if (isHod && currentUser.departmentId != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark ? AcadexColors.surfaceDark : AcadexColors.surface,
+                    color: isDark
+                        ? AcadexColors.surfaceDark
+                        : AcadexColors.surface,
                     borderRadius: BorderRadius.circular(AcadexRadius.md),
-                    border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: AcadexColors.primary.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(LucideIcons.building2, size: 14, color: AcadexColors.primary),
-                      const SizedBox(width: 6),
-                      Text(
-                        departmentsAsync.value?.firstWhere(
-                              (d) => d.id == currentUser.departmentId,
-                              orElse: () => Department(id: '', name: 'Your Department', code: '', collegeId: '', hodId: '', description: '', isActive: true),
-                            ).name ?? 'Your Department',
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                      const Icon(
+                        LucideIcons.building2,
+                        size: 14,
+                        color: AcadexColors.primary,
                       ),
                       const SizedBox(width: 6),
-                      const AcadexBadge(label: "YOUR DEPT", variant: AcadexBadgeVariant.primary),
+                      Text(
+                        departmentsAsync.value
+                                ?.firstWhere(
+                                  (d) => d.id == currentUser.departmentId,
+                                  orElse: () => Department(
+                                    id: '',
+                                    name: 'Your Department',
+                                    code: '',
+                                    collegeId: '',
+                                    hodId: '',
+                                    description: '',
+                                    isActive: true,
+                                  ),
+                                )
+                                .name ??
+                            'Your Department',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const AcadexBadge(
+                        label: "YOUR DEPT",
+                        variant: AcadexBadgeVariant.primary,
+                      ),
                     ],
                   ),
                 )
-              else if (departmentsAsync.value != null && departmentsAsync.value!.isNotEmpty)
+              else if (departmentsAsync.value != null &&
+                  departmentsAsync.value!.isNotEmpty)
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 160),
                   child: DropdownButton<String?>(
                     value: selectedDept,
-                    hint: const Text('All Departments', overflow: TextOverflow.ellipsis),
+                    hint: const Text(
+                      'All Departments',
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     underline: const SizedBox.shrink(),
                     isDense: true,
                     isExpanded: true,
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('All Departments', overflow: TextOverflow.ellipsis)),
-                      ...departmentsAsync.value!.map((d) => DropdownMenuItem(
-                            value: d.id,
-                            child: Text(d.name, overflow: TextOverflow.ellipsis),
-                          )),
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text(
+                          'All Departments',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      ...departmentsAsync.value!.map(
+                        (d) => DropdownMenuItem(
+                          value: d.id,
+                          child: Text(d.name, overflow: TextOverflow.ellipsis),
+                        ),
+                      ),
                     ],
                     onChanged: (val) {
                       ref.read(userDeptFilterProvider.notifier).state = val;
                     },
                   ),
                 ),
-              if (selectedRole != null || selectedStatus != null || selectedDept != null || _searchController.text.isNotEmpty)
+              if (selectedRole != null ||
+                  selectedStatus != null ||
+                  selectedDept != null ||
+                  _searchController.text.isNotEmpty)
                 TextButton.icon(
                   icon: const Icon(Icons.clear_all, size: 16),
                   label: const Text('Reset Filters'),
@@ -286,7 +369,9 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
                     ref.read(userSearchQueryProvider.notifier).state = '';
                     ref.read(userRoleFilterProvider.notifier).state = null;
                     ref.read(userStatusFilterProvider.notifier).state = null;
-                    ref.read(userDeptFilterProvider.notifier).state = isHod ? currentUser.departmentId : null;
+                    ref.read(userDeptFilterProvider.notifier).state = isHod
+                        ? currentUser.departmentId
+                        : null;
                   },
                 ),
             ],
@@ -295,7 +380,8 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
 
           // User List Content
           usersAsync.when(
-            loading: () => const AcadexLoadingState(message: 'Loading users...'),
+            loading: () =>
+                const AcadexLoadingState(message: 'Loading users...'),
             error: (err, _) => AcadexErrorState(
               title: 'Failed to load users',
               message: err.toString(),
@@ -305,18 +391,23 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
               if (users.isEmpty) {
                 return AcadexEmptyState(
                   title: 'No users found',
-                  subtitle: _searchController.text.isNotEmpty || selectedRole != null || selectedStatus != null
+                  subtitle:
+                      _searchController.text.isNotEmpty ||
+                          selectedRole != null ||
+                          selectedStatus != null
                       ? 'No matching users found for the selected filters. Try resetting your search query.'
                       : 'There are currently no registered users in this directory.',
                   icon: Icons.people_outline,
                   actionLabel: canManageUsers ? 'Add User' : null,
-                  onActionTap: canManageUsers ? () => context.go('/users/new') : null,
+                  onActionTap: canManageUsers
+                      ? () => context.go('/users/new')
+                      : null,
                 );
               }
 
               // Resolve department names helper
               final Map<String, String> deptMap = {
-                for (var d in departmentsAsync.value ?? []) d.id: d.name
+                for (var d in departmentsAsync.value ?? []) d.id: d.name,
               };
 
               return Column(
@@ -330,19 +421,28 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
 
                   // Desktop Table View
                   if (isDesktop)
-                    _buildDesktopTable(context, users, deptMap, isSuperAdmin, currentUser.id)
+                    _buildDesktopTable(
+                      context,
+                      users,
+                      deptMap,
+                      isSuperAdmin,
+                      currentUser.id,
+                    )
                   else
                     // Mobile & Tablet List
                     ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: users.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: AcadexSpacing.sm),
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: AcadexSpacing.sm),
                       itemBuilder: (context, index) {
                         final u = users[index];
                         return UserListItem(
                           user: u,
-                          departmentName: u.departmentId != null ? deptMap[u.departmentId] : null,
+                          departmentName: u.departmentId != null
+                              ? deptMap[u.departmentId]
+                              : null,
                           onTap: () => context.go('/users/${u.id}'),
                           onDelete: (isSuperAdmin && u.id != currentUser.id)
                               ? () => _confirmDeleteUser(context, u)
@@ -384,9 +484,7 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
             return SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minWidth: constraints.maxWidth,
-                ),
+                constraints: BoxConstraints(minWidth: constraints.maxWidth),
                 child: DataTable(
                   showCheckboxColumn: false,
                   dataRowMinHeight: 64,
@@ -394,19 +492,53 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
                   horizontalMargin: 24,
                   columnSpacing: 28,
                   headingRowColor: WidgetStateProperty.all(
-                    isDark ? AcadexColors.surfaceDarkElevated : AcadexColors.surfaceLightMuted,
+                    isDark
+                        ? AcadexColors.surfaceDarkElevated
+                        : AcadexColors.surfaceLightMuted,
                   ),
                   columns: const [
-                    DataColumn(label: Text('Name & ID', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Role', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Email', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Department', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(
+                      label: Text(
+                        'Name & ID',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Role',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Email',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Department',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Status',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Actions',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ],
                   rows: users.map((u) {
                     final idLabel = u.employeeId ?? u.rollNumber ?? '';
-                    final deptName = u.departmentId != null ? (deptMap[u.departmentId] ?? '') : '—';
+                    final deptName = u.departmentId != null
+                        ? (deptMap[u.departmentId] ?? '')
+                        : '—';
 
                     return DataRow(
                       cells: [
@@ -414,8 +546,13 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
                           InkWell(
                             onTap: () => context.go('/users/${u.id}'),
                             child: Text(
-                              idLabel.isNotEmpty ? '${u.name}\n$idLabel' : u.name,
-                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                              idLabel.isNotEmpty
+                                  ? '${u.name}\n$idLabel'
+                                  : u.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
                             ),
                           ),
                         ),
@@ -434,9 +571,14 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
                               ),
                               if (isSuperAdmin && u.id != currentUserId)
                                 IconButton(
-                                  icon: const Icon(Icons.delete_forever, size: 18, color: AcadexColors.error),
+                                  icon: const Icon(
+                                    Icons.delete_forever,
+                                    size: 18,
+                                    color: AcadexColors.error,
+                                  ),
                                   tooltip: 'Delete Permanently',
-                                  onPressed: () => _confirmDeleteUser(context, u),
+                                  onPressed: () =>
+                                      _confirmDeleteUser(context, u),
                                 ),
                             ],
                           ),

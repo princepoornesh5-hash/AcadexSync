@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'firebase_config.dart';
 
 class FirebaseOptionsPlaceholder {
@@ -14,7 +15,7 @@ class FirebaseOptionsPlaceholder {
         storageBucket: config.storageBucket,
       );
     }
-    
+
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return FirebaseOptions(

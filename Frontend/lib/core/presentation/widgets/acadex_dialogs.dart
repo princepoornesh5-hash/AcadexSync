@@ -50,10 +50,7 @@ class AcadexDialog extends StatelessWidget {
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       shape: RoundedRectangleBorder(
         borderRadius: AcadexRadius.borderRadiusXl,
-        side: const BorderSide(
-          color: AcadexColors.hairline,
-          width: 1,
-        ),
+        side: const BorderSide(color: AcadexColors.hairline, width: 1),
       ),
       elevation: 4,
       child: ConstrainedBox(
@@ -92,10 +89,17 @@ class AcadexDialog extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(LucideIcons.x, size: 18, color: AcadexColors.inkSecondary),
+                    icon: const Icon(
+                      LucideIcons.x,
+                      size: 18,
+                      color: AcadexColors.inkSecondary,
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
                   ),
                 ],
               ),
@@ -171,9 +175,7 @@ class AcadexConfirmationDialog extends StatelessWidget {
       maxWidth: 420,
       content: Text(
         message,
-        style: AcadexTypography.body(
-          color: AcadexColors.inkSecondary,
-        ),
+        style: AcadexTypography.body(color: AcadexColors.inkSecondary),
       ),
       actions: [
         AcadexButton(
@@ -183,7 +185,9 @@ class AcadexConfirmationDialog extends StatelessWidget {
         ),
         AcadexButton(
           label: confirmLabel,
-          variant: isDestructive ? AcadexButtonVariant.danger : AcadexButtonVariant.primary,
+          variant: isDestructive
+              ? AcadexButtonVariant.danger
+              : AcadexButtonVariant.primary,
           onPressed: onConfirm,
         ),
       ],
@@ -233,13 +237,10 @@ class AcadexBottomSheet extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: AcadexColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AcadexRadius.xl)),
-        border: Border(
-          top: BorderSide(
-            color: AcadexColors.hairline,
-            width: 1,
-          ),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AcadexRadius.xl),
         ),
+        border: Border(top: BorderSide(color: AcadexColors.hairline, width: 1)),
       ),
       padding: EdgeInsets.fromLTRB(
         AcadexSpacing.space16,
@@ -271,9 +272,7 @@ class AcadexBottomSheet extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: AcadexTypography.heading2(
-                        color: AcadexColors.ink,
-                      ),
+                      style: AcadexTypography.heading2(color: AcadexColors.ink),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -290,7 +289,11 @@ class AcadexBottomSheet extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(LucideIcons.x, size: 18, color: AcadexColors.inkSecondary),
+                icon: const Icon(
+                  LucideIcons.x,
+                  size: 18,
+                  color: AcadexColors.inkSecondary,
+                ),
                 onPressed: () => Navigator.of(context).pop(),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 36, minHeight: 36),

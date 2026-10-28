@@ -23,15 +23,13 @@ class FirebaseAiRepository implements AiRepository {
   }) async {
     try {
       final callable = _functions.httpsCallable('askAssistant');
-      
-      final result = await callable.call({
-        'query': query,
-        'context': context,
-      });
+
+      final result = await callable.call({'query': query, 'context': context});
 
       if (result.data != null && result.data is Map) {
         final data = result.data as Map;
-        final answer = data['answer'] as String? ?? 'No answer received from AI Service.';
+        final answer =
+            data['answer'] as String? ?? 'No answer received from AI Service.';
         final proposal = data['proposal'] as Map<String, dynamic>?;
         return AiResponse(answer: answer, proposal: proposal);
       }
@@ -42,9 +40,9 @@ class FirebaseAiRepository implements AiRepository {
       } else if (e.code == 'permission-denied') {
         throw Exception('Access denied. Missing context.');
       }
-      throw Exception(e.message ?? 'Acadex AI is temporarily unavailable.');
+      throw Exception(e.message ?? 'ACADEXSYNC AI is temporarily unavailable.');
     } catch (_) {
-      throw Exception('Acadex AI is temporarily unavailable.');
+      throw Exception('ACADEXSYNC AI is temporarily unavailable.');
     }
   }
 
@@ -54,7 +52,10 @@ class FirebaseAiRepository implements AiRepository {
     required Map<String, dynamic> context,
     List<Map<String, String>>? history,
   }) async* {
-    yield const AiStreamStartEvent(model: 'firebase-functions', correlationId: 'fb-stream-1');
+    yield const AiStreamStartEvent(
+      model: 'firebase-functions',
+      correlationId: 'fb-stream-1',
+    );
     final response = await sendChatMessage(
       query: query,
       context: context,
@@ -67,7 +68,8 @@ class FirebaseAiRepository implements AiRepository {
 
     final words = response.answer.split(' ');
     for (int i = 0; i < words.length; i += 3) {
-      final chunk = words.skip(i).take(3).join(' ') + (i + 3 < words.length ? ' ' : '');
+      final chunk =
+          words.skip(i).take(3).join(' ') + (i + 3 < words.length ? ' ' : '');
       yield AiStreamDeltaEvent(text: chunk);
     }
 
@@ -99,14 +101,10 @@ class FirebaseAiRepository implements AiRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> cancelAction({
-    required String actionId,
-  }) async {
+  Future<Map<String, dynamic>> cancelAction({required String actionId}) async {
     try {
       final callable = _functions.httpsCallable('cancelAiAction');
-      final result = await callable.call({
-        'actionId': actionId,
-      });
+      final result = await callable.call({'actionId': actionId});
       if (result.data != null && result.data is Map) {
         return Map<String, dynamic>.from(result.data as Map);
       }
@@ -122,9 +120,7 @@ class FirebaseAiRepository implements AiRepository {
   }) async {
     try {
       final callable = _functions.httpsCallable('getAiActionStatus');
-      final result = await callable.call({
-        'actionId': actionId,
-      });
+      final result = await callable.call({'actionId': actionId});
       if (result.data != null && result.data is Map) {
         return Map<String, dynamic>.from(result.data as Map);
       }

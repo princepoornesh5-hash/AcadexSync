@@ -53,20 +53,25 @@ class NotificationNavigationCoordinator {
     final targetRoute = _resolveNavigationRoute(notification);
     if (targetRoute == null || targetRoute.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No destination available for this notification.')),
+        const SnackBar(
+          content: Text('No destination available for this notification.'),
+        ),
       );
       return;
     }
 
     final targetCollegeId = notification.collegeId;
-    final currentCollegeId = _ref.read(activeWorkspaceIdProvider) ?? authState.user.collegeId;
+    final currentCollegeId =
+        _ref.read(activeWorkspaceIdProvider) ?? authState.user.collegeId;
 
     // 2. Cross-workspace handling
     if (targetCollegeId != null &&
         targetCollegeId.isNotEmpty &&
         targetCollegeId != currentCollegeId) {
       try {
-        final availableWorkspaces = await _ref.read(userWorkspacesProvider.future);
+        final availableWorkspaces = await _ref.read(
+          userWorkspacesProvider.future,
+        );
         final hasEligibleMembership = availableWorkspaces.any(
           (m) => m.collegeId == targetCollegeId && m.isActive,
         );
@@ -78,7 +83,9 @@ class NotificationNavigationCoordinator {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Access Denied: You do not have an active membership in this college workspace.'),
+                content: Text(
+                  'Access Denied: You do not have an active membership in this college workspace.',
+                ),
                 backgroundColor: Colors.redAccent,
               ),
             );
@@ -101,9 +108,9 @@ class NotificationNavigationCoordinator {
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Workspace access error: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Workspace access error: $e')));
         }
         return;
       }
@@ -116,14 +123,17 @@ class NotificationNavigationCoordinator {
     } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('This resource is no longer available.')),
+          const SnackBar(
+            content: Text('This resource is no longer available.'),
+          ),
         );
       }
     }
   }
 
   String? _resolveNavigationRoute(NotificationModel notification) {
-    if (notification.navigationTarget != null && notification.navigationTarget!.isNotEmpty) {
+    if (notification.navigationTarget != null &&
+        notification.navigationTarget!.isNotEmpty) {
       return notification.navigationTarget;
     }
 
@@ -139,10 +149,12 @@ class NotificationNavigationCoordinator {
     if (entityType == 'ASSESSMENT' && entityId != null) {
       return '/assessments/$entityId';
     }
-    if ((entityType == 'PRACTICAL' || entityType == 'PRACTICALSESSION') && entityId != null) {
+    if ((entityType == 'PRACTICAL' || entityType == 'PRACTICALSESSION') &&
+        entityId != null) {
       return '/practicals/$entityId';
     }
-    if ((entityType == 'CALENDAR' || entityType == 'CALENDAREVENT') && entityId != null) {
+    if ((entityType == 'CALENDAR' || entityType == 'CALENDAREVENT') &&
+        entityId != null) {
       return '/calendar/event/$entityId';
     }
     if (entityType == 'ACADEMICRESULT') {
@@ -156,6 +168,7 @@ class NotificationNavigationCoordinator {
   }
 }
 
-final notificationNavigationCoordinatorProvider = Provider<NotificationNavigationCoordinator>((ref) {
-  return NotificationNavigationCoordinator(ref);
-});
+final notificationNavigationCoordinatorProvider =
+    Provider<NotificationNavigationCoordinator>((ref) {
+      return NotificationNavigationCoordinator(ref);
+    });

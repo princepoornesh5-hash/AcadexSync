@@ -63,130 +63,151 @@ class AcadexAttendanceGuardCard extends StatelessWidget {
       isFlat: true,
       padding: const EdgeInsets.all(14),
       child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top Row: Eyebrow + Status Badge
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 6,
             children: [
-              // Top Row: Eyebrow + Status Badge
-              Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                runSpacing: 6,
+              Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? AcadexColors.primary.withValues(alpha: 0.2)
-                              : AcadexColors.primaryLight,
-                          borderRadius: AcadexRadius.borderRadiusSm,
-                        ),
-                        child: const Icon(
-                          LucideIcons.shieldCheck,
-                          size: 14,
-                          color: AcadexColors.primary,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'ATTENDANCE GUARD',
-                        style: AcadexTypography.eyebrow(
-                          color: isDark ? AcadexColors.primaryMuted : AcadexColors.primary,
-                        ).copyWith(fontSize: 10, letterSpacing: 0.8),
-                      ),
-                    ],
-                  ),
-                  _buildStatusBadge(),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Subject Title
-              Text(
-                activeClass.subjectName,
-                style: AcadexTypography.title(
-                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                ).copyWith(fontWeight: FontWeight.w700),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-
-              if (breadcrumbsText.isNotEmpty) ...[
-                const SizedBox(height: 2),
-                Text(
-                  breadcrumbsText,
-                  style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                  ).copyWith(fontWeight: FontWeight.w500),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-              const SizedBox(height: 10),
-              const Divider(height: 1),
-              const SizedBox(height: 10),
-
-              // Context Details Responsive Wrap
-              Wrap(
-                spacing: 16,
-                runSpacing: 8,
-                children: [
-                  _buildInfoRow(LucideIcons.calendar, dateStr, isDark),
-                  _buildInfoRow(LucideIcons.clock, activeClass.timeSlot, isDark),
-                  _buildInfoRow(
-                    LucideIcons.users,
-                    '$totalStudents Enrolled',
-                    isDark,
-                    action: onRefreshRoster != null
-                        ? InkWell(
-                            onTap: onRefreshRoster,
-                            borderRadius: BorderRadius.circular(4),
-                            child: const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                              child: Icon(LucideIcons.refreshCw, size: 13, color: AcadexColors.primary),
-                            ),
-                          )
-                        : null,
-                  ),
-                ],
-              ),
-
-              // Optional Previous Submission Summary
-              if (isMarked && statusCounts != null && statusCounts!.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
-                    borderRadius: AcadexRadius.borderRadiusSm,
-                    border: Border.all(
-                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AcadexColors.primary.withValues(alpha: 0.2)
+                          : AcadexColors.primaryLight,
+                      borderRadius: AcadexRadius.borderRadiusSm,
+                    ),
+                    child: const Icon(
+                      LucideIcons.shieldCheck,
+                      size: 14,
+                      color: AcadexColors.primary,
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(LucideIcons.info, size: 13, color: AcadexColors.primary),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          'Recorded: ${statusCounts!['present'] ?? 0} Present · ${statusCounts!['absent'] ?? 0} Absent · ${statusCounts!['late'] ?? 0} Late',
-                          style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                          ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(width: 8),
+                  Text(
+                    'ATTENDANCE GUARD',
+                    style: AcadexTypography.eyebrow(
+                      color: isDark
+                          ? AcadexColors.primaryMuted
+                          : AcadexColors.primary,
+                    ).copyWith(fontSize: 10, letterSpacing: 0.8),
                   ),
-                ),
-              ],
+                ],
+              ),
+              _buildStatusBadge(),
             ],
           ),
-        );
+          const SizedBox(height: 8),
+
+          // Subject Title
+          Text(
+            activeClass.subjectName,
+            style: AcadexTypography.title(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ).copyWith(fontWeight: FontWeight.w700),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+
+          if (breadcrumbsText.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              breadcrumbsText,
+              style: AcadexTypography.caption(
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ).copyWith(fontWeight: FontWeight.w500),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+          const SizedBox(height: 10),
+          const Divider(height: 1),
+          const SizedBox(height: 10),
+
+          // Context Details Responsive Wrap
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
+            children: [
+              _buildInfoRow(LucideIcons.calendar, dateStr, isDark),
+              _buildInfoRow(LucideIcons.clock, activeClass.timeSlot, isDark),
+              _buildInfoRow(
+                LucideIcons.users,
+                '$totalStudents Enrolled',
+                isDark,
+                action: onRefreshRoster != null
+                    ? InkWell(
+                        onTap: onRefreshRoster,
+                        borderRadius: BorderRadius.circular(4),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 2,
+                          ),
+                          child: Icon(
+                            LucideIcons.refreshCw,
+                            size: 13,
+                            color: AcadexColors.primary,
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
+            ],
+          ),
+
+          // Optional Previous Submission Summary
+          if (isMarked && statusCounts != null && statusCounts!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AcadexColors.darkSurfaceHover
+                    : AcadexColors.canvasSoft,
+                borderRadius: AcadexRadius.borderRadiusSm,
+                border: Border.all(
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    LucideIcons.info,
+                    size: 13,
+                    color: AcadexColors.primary,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Recorded: ${statusCounts!['present'] ?? 0} Present · ${statusCounts!['absent'] ?? 0} Absent · ${statusCounts!['late'] ?? 0} Late',
+                      style: AcadexTypography.caption(
+                        color: isDark
+                            ? AcadexColors.darkInkSecondary
+                            : AcadexColors.inkSecondary,
+                      ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   Widget _buildStatusBadge() {
@@ -214,7 +235,12 @@ class AcadexAttendanceGuardCard extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String text, bool isDark, {Widget? action}) {
+  Widget _buildInfoRow(
+    IconData icon,
+    String text,
+    bool isDark, {
+    Widget? action,
+  }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -228,16 +254,15 @@ class AcadexAttendanceGuardCard extends StatelessWidget {
           child: Text(
             text,
             style: AcadexTypography.caption(
-              color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+              color: isDark
+                  ? AcadexColors.darkInkSecondary
+                  : AcadexColors.inkSecondary,
             ).copyWith(fontSize: 11.5, fontWeight: FontWeight.w600),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        if (action != null) ...[
-          const SizedBox(width: 4),
-          action,
-        ],
+        if (action != null) ...[const SizedBox(width: 4), action],
       ],
     );
   }

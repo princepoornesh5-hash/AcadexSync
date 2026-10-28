@@ -1,7 +1,5 @@
 class StudentAttendanceOverview {
   final double overallPercentage;
 
-  StudentAttendanceOverview({
-    required this.overallPercentage,
-  });
+  StudentAttendanceOverview({required this.overallPercentage});
 }

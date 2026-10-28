@@ -28,11 +28,7 @@ class RequestStatusChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (showIcon) ...[
-            Icon(
-              status.icon,
-              size: 13,
-              color: status.color,
-            ),
+            Icon(status.icon, size: 13, color: status.color),
             const SizedBox(width: 4),
           ],
           Text(

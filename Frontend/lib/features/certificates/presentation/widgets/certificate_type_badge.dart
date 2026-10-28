@@ -38,10 +38,14 @@ class CertificateTypeBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: isDark ? baseColor.withValues(alpha: 0.2) : baseColor.withValues(alpha: 0.1),
+        color: isDark
+            ? baseColor.withValues(alpha: 0.2)
+            : baseColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AcadexRadius.full),
         border: Border.all(
-          color: isDark ? baseColor.withValues(alpha: 0.4) : baseColor.withValues(alpha: 0.25),
+          color: isDark
+              ? baseColor.withValues(alpha: 0.4)
+              : baseColor.withValues(alpha: 0.25),
           width: 1,
         ),
       ),

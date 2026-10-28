@@ -100,12 +100,16 @@ class SearchResultCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                    color: isDark
+                        ? AcadexColors.primaryHover.withValues(alpha: 0.2)
+                        : AcadexColors.primaryLight,
                     borderRadius: AcadexRadius.borderRadiusMd,
                   ),
                   child: Icon(
                     _getIconForType(result.type),
-                    color: isDark ? AcadexColors.primaryMuted : AcadexColors.primary,
+                    color: isDark
+                        ? AcadexColors.primaryMuted
+                        : AcadexColors.primary,
                     size: 20,
                   ),
                 ),
@@ -117,14 +121,18 @@ class SearchResultCard extends StatelessWidget {
                       Text(
                         result.title,
                         style: AcadexTypography.body(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ).copyWith(fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         result.subtitle,
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                       ),
                     ],
@@ -138,7 +146,9 @@ class SearchResultCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Icon(
                   LucideIcons.chevronRight,
-                  color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                  color: isDark
+                      ? AcadexColors.darkInkFaint
+                      : AcadexColors.inkFaint,
                   size: 18,
                 ),
               ],

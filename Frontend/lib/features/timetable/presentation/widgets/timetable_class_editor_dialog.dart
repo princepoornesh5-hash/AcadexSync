@@ -30,10 +30,12 @@ class TimetableClassEditorDialog extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<TimetableClassEditorDialog> createState() => _TimetableClassEditorDialogState();
+  ConsumerState<TimetableClassEditorDialog> createState() =>
+      _TimetableClassEditorDialogState();
 }
 
-class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEditorDialog> {
+class _TimetableClassEditorDialogState
+    extends ConsumerState<TimetableClassEditorDialog> {
   late String _subjectId;
   late String _facultyId;
   String? _facultyAssignmentId;
@@ -75,7 +77,9 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    final authoringState = ref.watch(timetableAuthoringProvider(widget.timetableId));
+    final authoringState = ref.watch(
+      timetableAuthoringProvider(widget.timetableId),
+    );
     final container = authoringState.container;
     final periods = authoringState.getPeriodsForDay(_day);
 
@@ -85,21 +89,30 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
 
     // Section-scoped or semester-scoped active faculty assignments
     final sectionAssignments = container != null
-        ? ref.watch(facultyAssignmentsForTimetableProvider((
-            sectionId: container.sectionId,
-            semesterId: container.semesterId,
-          )))
+        ? ref.watch(
+            facultyAssignmentsForTimetableProvider((
+              sectionId: container.sectionId,
+              semesterId: container.semesterId,
+            )),
+          )
         : <FacultyAssignment>[];
 
     // Auto-resolve faculty assignment ID if not explicitly set
-    if (_facultyAssignmentId == null && _subjectId.isNotEmpty && _facultyId.isNotEmpty && sectionAssignments.isNotEmpty) {
-      final match = sectionAssignments.where((a) => a.subjectId == _subjectId && a.facultyId == _facultyId).firstOrNull;
+    if (_facultyAssignmentId == null &&
+        _subjectId.isNotEmpty &&
+        _facultyId.isNotEmpty &&
+        sectionAssignments.isNotEmpty) {
+      final match = sectionAssignments
+          .where((a) => a.subjectId == _subjectId && a.facultyId == _facultyId)
+          .firstOrNull;
       if (match != null) {
         _facultyAssignmentId = match.id;
       }
     }
 
-    final selectedAssignment = sectionAssignments.where((a) => a.id == _facultyAssignmentId).firstOrNull;
+    final selectedAssignment = sectionAssignments
+        .where((a) => a.id == _facultyAssignmentId)
+        .firstOrNull;
     if (selectedAssignment != null) {
       _subjectId = selectedAssignment.subjectId;
       _facultyId = selectedAssignment.facultyId;
@@ -115,15 +128,22 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
     final semMap = ref.watch(timetableSemesterMapProvider);
 
     // Calculate max available span
-    final maxAvailableSpan = (periods.length - _startPeriodIndex + 1).clamp(1, 12);
+    final maxAvailableSpan = (periods.length - _startPeriodIndex + 1).clamp(
+      1,
+      12,
+    );
     if (_periodSpan > maxAvailableSpan) {
       _periodSpan = maxAvailableSpan;
     }
 
     // Calculate start & end times based on span
-    final startPeriod = periods.where((p) => p.index == _startPeriodIndex).firstOrNull;
+    final startPeriod = periods
+        .where((p) => p.index == _startPeriodIndex)
+        .firstOrNull;
     final endPeriodIndex = _startPeriodIndex + _periodSpan - 1;
-    final endPeriod = periods.where((p) => p.index == endPeriodIndex).firstOrNull;
+    final endPeriod = periods
+        .where((p) => p.index == endPeriodIndex)
+        .firstOrNull;
 
     final startTime = startPeriod?.startTime ?? '00:00';
     final endTime = endPeriod?.endTime ?? '00:00';
@@ -133,8 +153,16 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
     final activeRooms = allRooms.where((r) => r.isActive).toList();
 
     // Auto-resolve roomId from roomNumber text if not yet selected
-    if (_selectedRoomId == null && _roomController.text.trim().isNotEmpty && activeRooms.isNotEmpty) {
-      final match = activeRooms.where((r) => r.code.toUpperCase() == _roomController.text.trim().toUpperCase()).firstOrNull;
+    if (_selectedRoomId == null &&
+        _roomController.text.trim().isNotEmpty &&
+        activeRooms.isNotEmpty) {
+      final match = activeRooms
+          .where(
+            (r) =>
+                r.code.toUpperCase() ==
+                _roomController.text.trim().toUpperCase(),
+          )
+          .firstOrNull;
       if (match != null) {
         _selectedRoomId = match.id;
       }
@@ -160,9 +188,15 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
     );
 
     // Resolve context names
-    final deptName = container != null ? (deptMap[container.departmentId]?.name ?? container.departmentId) : '';
-    final courseName = container != null ? (courseMap[container.courseId]?.name ?? container.courseId) : '';
-    final sectionName = container != null ? (sectionMap[container.sectionId]?.name ?? container.sectionId) : '';
+    final deptName = container != null
+        ? (deptMap[container.departmentId]?.name ?? container.departmentId)
+        : '';
+    final courseName = container != null
+        ? (courseMap[container.courseId]?.name ?? container.courseId)
+        : '';
+    final sectionName = container != null
+        ? (sectionMap[container.sectionId]?.name ?? container.sectionId)
+        : '';
 
     final content = SingleChildScrollView(
       child: Padding(
@@ -180,7 +214,9 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                    color: isDark
+                        ? AcadexColors.primary.withValues(alpha: 0.2)
+                        : AcadexColors.primaryLight,
                     borderRadius: AcadexRadius.borderRadiusMd,
                   ),
                   child: Icon(
@@ -197,7 +233,9 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
                       Text(
                         _isEditing ? 'Edit Class' : 'Add Class',
                         style: AcadexTypography.heading2(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -212,7 +250,9 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
                         Text(
                           '$deptName • $courseName • Sem ${container.semesterId}${sectionName.isNotEmpty ? ' • Sec $sectionName' : ''}',
                           style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                         ),
                       ],
@@ -223,7 +263,9 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
                   icon: Icon(
                     LucideIcons.x,
                     size: 20,
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                   onPressed: () => Navigator.of(context).pop(),
                   tooltip: 'Close',
@@ -247,7 +289,9 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
+                  color: isDark
+                      ? AcadexColors.warningDarkContainer
+                      : AcadexColors.warningLight,
                   borderRadius: AcadexRadius.borderRadiusSm,
                   border: Border.all(
                     color: AcadexColors.warning.withValues(alpha: 0.5),
@@ -255,13 +299,19 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
                 ),
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.alertTriangle, size: 18, color: AcadexColors.warning),
+                    const Icon(
+                      LucideIcons.alertTriangle,
+                      size: 18,
+                      color: AcadexColors.warning,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'No active faculty assignments found for this section. Please assign faculty to subjects in Academic Structure first.',
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.warning : AcadexColors.warningDark,
+                          color: isDark
+                              ? AcadexColors.warning
+                              : AcadexColors.warningDark,
                         ),
                       ),
                     ),
@@ -272,7 +322,11 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
             ] else ...[
               DropdownButtonFormField<String>(
                 isExpanded: true,
-                value: _facultyAssignmentId != null && sectionAssignments.any((a) => a.id == _facultyAssignmentId)
+                value:
+                    _facultyAssignmentId != null &&
+                        sectionAssignments.any(
+                          (a) => a.id == _facultyAssignmentId,
+                        )
                     ? _facultyAssignmentId
                     : null,
                 decoration: _buildInputDecoration(
@@ -280,11 +334,14 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
                   prefixIcon: LucideIcons.badgeCheck,
                   isDark: isDark,
                 ),
-                dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                dropdownColor: isDark
+                    ? AcadexColors.darkSurfaceCard
+                    : AcadexColors.surface,
                 items: sectionAssignments.map((a) {
                   final subName = subjectMap[a.subjectId]?.name ?? a.subjectId;
                   final subCode = subjectMap[a.subjectId]?.code ?? '';
-                  final facName = facultyMap[a.facultyId]?.name ?? a.facultyName;
+                  final facName =
+                      facultyMap[a.facultyId]?.name ?? a.facultyName;
                   final codeText = subCode.isNotEmpty ? ' ($subCode)' : '';
                   return DropdownMenuItem<String>(
                     value: a.id,
@@ -301,7 +358,9 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
                   setState(() {
                     _facultyAssignmentId = val;
                     if (val != null) {
-                      final match = sectionAssignments.where((a) => a.id == val).firstOrNull;
+                      final match = sectionAssignments
+                          .where((a) => a.id == val)
+                          .firstOrNull;
                       if (match != null) {
                         _subjectId = match.subjectId;
                         _facultyId = match.facultyId;
@@ -317,10 +376,14 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
+                    color: isDark
+                        ? AcadexColors.darkSurfaceCard
+                        : AcadexColors.canvasSoft,
                     borderRadius: AcadexRadius.borderRadiusMd,
                     border: Border.all(
-                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                      color: isDark
+                          ? AcadexColors.darkHairline
+                          : AcadexColors.hairline,
                     ),
                   ),
                   child: Column(
@@ -328,18 +391,25 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
                     children: [
                       Row(
                         children: [
-                          const Icon(LucideIcons.info, size: 14, color: AcadexColors.primary),
+                          const Icon(
+                            LucideIcons.info,
+                            size: 14,
+                            color: AcadexColors.primary,
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             'Authoritative Assignment Summary',
-                            style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(fontWeight: FontWeight.w700),
+                            style: AcadexTypography.caption(
+                              color: AcadexColors.primary,
+                            ).copyWith(fontWeight: FontWeight.w700),
                           ),
                         ],
                       ),
                       const SizedBox(height: 8),
                       _buildSummaryRow(
                         'Faculty:',
-                        facultyMap[selectedAssignment.facultyId]?.name ?? selectedAssignment.facultyName,
+                        facultyMap[selectedAssignment.facultyId]?.name ??
+                            selectedAssignment.facultyName,
                         isDark,
                       ),
                       _buildSummaryRow(
@@ -349,20 +419,24 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
                       ),
                       _buildSummaryRow(
                         'Section:',
-                        sectionMap[selectedAssignment.sectionId]?.name ?? (container?.sectionId ?? ''),
+                        sectionMap[selectedAssignment.sectionId]?.name ??
+                            (container?.sectionId ?? ''),
                         isDark,
                       ),
                       _buildSummaryRow(
                         'Course:',
-                        courseMap[selectedAssignment.courseId]?.name ?? (container?.courseId ?? ''),
+                        courseMap[selectedAssignment.courseId]?.name ??
+                            (container?.courseId ?? ''),
                         isDark,
                       ),
                       _buildSummaryRow(
                         'Academic Year:',
-                        yearMap[selectedAssignment.academicYearId]?.name ?? (container?.academicYearId ?? ''),
+                        yearMap[selectedAssignment.academicYearId]?.name ??
+                            (container?.academicYearId ?? ''),
                         isDark,
                       ),
-                      if (selectedAssignment.cohort != null && selectedAssignment.cohort!.isNotEmpty)
+                      if (selectedAssignment.cohort != null &&
+                          selectedAssignment.cohort!.isNotEmpty)
                         _buildSummaryRow(
                           'Cohort / Batch:',
                           selectedAssignment.cohort!,
@@ -370,7 +444,10 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
                         ),
                       _buildSummaryRow(
                         'Semester:',
-                        semMap[selectedAssignment.semesterId]?.name ?? (container != null ? 'Semester ${container.semesterId}' : ''),
+                        semMap[selectedAssignment.semesterId]?.name ??
+                            (container != null
+                                ? 'Semester ${container.semesterId}'
+                                : ''),
                         isDark,
                       ),
                     ],
@@ -380,447 +457,554 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
               ],
             ],
 
-                // =============================================================
-                // 4. SESSION TYPE SELECTION
-                // =============================================================
-                _buildFieldLabel('Session Type', isDark),
-                const SizedBox(height: 6),
-                DropdownButtonFormField<TimetableSessionType>(
-                  isExpanded: true,
-                  value: _sessionType,
-                  decoration: _buildInputDecoration(
-                    hintText: 'Select session type',
-                    prefixIcon: getSessionTypeIcon(_sessionType),
-                    isDark: isDark,
-                  ),
-                  dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                  items: TimetableSessionType.values.map((type) {
-                    return DropdownMenuItem<TimetableSessionType>(
-                      value: type,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                              color: getSessionTypeColor(type),
-                              shape: BoxShape.circle,
-                            ),
+            // =============================================================
+            // 4. SESSION TYPE SELECTION
+            // =============================================================
+            _buildFieldLabel('Session Type', isDark),
+            const SizedBox(height: 6),
+            DropdownButtonFormField<TimetableSessionType>(
+              isExpanded: true,
+              value: _sessionType,
+              decoration: _buildInputDecoration(
+                hintText: 'Select session type',
+                prefixIcon: getSessionTypeIcon(_sessionType),
+                isDark: isDark,
+              ),
+              dropdownColor: isDark
+                  ? AcadexColors.darkSurfaceCard
+                  : AcadexColors.surface,
+              items: TimetableSessionType.values.map((type) {
+                return DropdownMenuItem<TimetableSessionType>(
+                  value: type,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: getSessionTypeColor(type),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          type.displayName,
+                          style: AcadexTypography.bodyMedium(
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              type.displayName,
-                              style: AcadexTypography.bodyMedium(
-                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() {
+                    _sessionType = val;
+                  });
+                }
+              },
+            ),
+
+            const SizedBox(height: 16),
+
+            // =============================================================
+            // 5. DURATION & MULTI-PERIOD MERGE SELECTOR
+            // =============================================================
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildFieldLabel(
+                        'Duration (Consecutive Periods)',
+                        isDark,
+                      ),
+                      const SizedBox(height: 6),
+                      DropdownButtonFormField<int>(
+                        isExpanded: true,
+                        value: _periodSpan,
+                        decoration: _buildInputDecoration(
+                          hintText: 'Select duration',
+                          prefixIcon: LucideIcons.clock,
+                          isDark: isDark,
+                        ),
+                        dropdownColor: isDark
+                            ? AcadexColors.darkSurfaceCard
+                            : AcadexColors.surface,
+                        items: List.generate(maxAvailableSpan, (i) => i + 1).map(
+                          (span) {
+                            final endIdx = widget.startPeriodIndex + span - 1;
+                            final endP = periods
+                                .where((p) => p.index == endIdx)
+                                .firstOrNull;
+                            final endT = endP?.endTime ?? '';
+                            final label = span == 1
+                                ? '1 Period ($startTime - $endT)'
+                                : '$span Periods ($startTime - $endT) [Merged]';
+                            return DropdownMenuItem<int>(
+                              value: span,
+                              child: Text(
+                                label,
+                                style: AcadexTypography.bodyMedium(
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
+                            );
+                          },
+                        ).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() {
+                              _periodSpan = val;
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            // Multi-Period Live Calculation Preview
+            if (_periodSpan > 1) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AcadexColors.primary.withValues(alpha: 0.15)
+                      : AcadexColors.primaryLight,
+                  borderRadius: AcadexRadius.borderRadiusSm,
+                  border: Border.all(
+                    color: AcadexColors.primary.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      LucideIcons.arrowRightLeft,
+                      size: 14,
+                      color: AcadexColors.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Merged Entry: Spans Period ${widget.startPeriodIndex} to $endPeriodIndex ($startTime – $endTime)',
+                        style: AcadexTypography.caption(
+                          color: AcadexColors.primary,
+                        ).copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            if (isRoomEnabled || isBuildingEnabled) ...[
+              const SizedBox(height: 16),
+
+              // =============================================================
+              // 6. LOCATION DETAILS (ROOM & BUILDING)
+              // =============================================================
+              if (isMobile) ...[
+                if (isRoomEnabled) ...[
+                  _buildFieldLabel('Room Number', isDark),
+                  const SizedBox(height: 6),
+                  if (activeRooms.isNotEmpty) ...[
+                    DropdownButtonFormField<String?>(
+                      isExpanded: true,
+                      value:
+                          _selectedRoomId != null &&
+                              activeRooms.any((r) => r.id == _selectedRoomId)
+                          ? _selectedRoomId
+                          : null,
+                      decoration: _buildInputDecoration(
+                        hintText: 'Select Room',
+                        prefixIcon: LucideIcons.doorOpen,
+                        isDark: isDark,
+                      ),
+                      dropdownColor: isDark
+                          ? AcadexColors.darkSurfaceCard
+                          : AcadexColors.surface,
+                      items: [
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text(
+                            'Custom / Manual Entry',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        ...activeRooms.map(
+                          (r) => DropdownMenuItem(
+                            value: r.id,
+                            child: Text(
+                              '${r.code} — ${r.name} (${r.capacity} seats)',
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() {
-                        _sessionType = val;
-                      });
-                    }
-                  },
-                ),
-
-                const SizedBox(height: 16),
-
-                // =============================================================
-                // 5. DURATION & MULTI-PERIOD MERGE SELECTOR
-                // =============================================================
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildFieldLabel('Duration (Consecutive Periods)', isDark),
-                          const SizedBox(height: 6),
-                          DropdownButtonFormField<int>(
-                            isExpanded: true,
-                            value: _periodSpan,
-                            decoration: _buildInputDecoration(
-                              hintText: 'Select duration',
-                              prefixIcon: LucideIcons.clock,
-                              isDark: isDark,
-                            ),
-                            dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                            items: List.generate(maxAvailableSpan, (i) => i + 1).map((span) {
-                              final endIdx = widget.startPeriodIndex + span - 1;
-                              final endP = periods.where((p) => p.index == endIdx).firstOrNull;
-                              final endT = endP?.endTime ?? '';
-                              final label = span == 1
-                                  ? '1 Period ($startTime - $endT)'
-                                  : '$span Periods ($startTime - $endT) [Merged]';
-                              return DropdownMenuItem<int>(
-                                value: span,
-                                child: Text(
-                                  label,
-                                  style: AcadexTypography.bodyMedium(
-                                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              if (val != null) {
-                                setState(() {
-                                  _periodSpan = val;
-                                });
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Multi-Period Live Calculation Preview
-                if (_periodSpan > 1) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.primary.withValues(alpha: 0.15) : AcadexColors.primaryLight,
-                      borderRadius: AcadexRadius.borderRadiusSm,
-                      border: Border.all(
-                        color: AcadexColors.primary.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(LucideIcons.arrowRightLeft, size: 14, color: AcadexColors.primary),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Merged Entry: Spans Period ${widget.startPeriodIndex} to $endPeriodIndex ($startTime – $endTime)',
-                            style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(fontWeight: FontWeight.w600),
-                          ),
                         ),
                       ],
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedRoomId = val;
+                          if (val != null) {
+                            final picked = activeRooms.firstWhere(
+                              (r) => r.id == val,
+                            );
+                            _roomController.text = picked.code;
+                          }
+                        });
+                      },
                     ),
-                  ),
-                ],
-
-                if (isRoomEnabled || isBuildingEnabled) ...[
-                  const SizedBox(height: 16),
-
-                  // =============================================================
-                  // 6. LOCATION DETAILS (ROOM & BUILDING)
-                  // =============================================================
-                  if (isMobile) ...[
-                    if (isRoomEnabled) ...[
-                      _buildFieldLabel('Room Number', isDark),
-                      const SizedBox(height: 6),
-                      if (activeRooms.isNotEmpty) ...[
-                        DropdownButtonFormField<String?>(
-                          isExpanded: true,
-                          value: _selectedRoomId != null && activeRooms.any((r) => r.id == _selectedRoomId)
-                              ? _selectedRoomId
-                              : null,
-                          decoration: _buildInputDecoration(
-                            hintText: 'Select Room',
-                            prefixIcon: LucideIcons.doorOpen,
-                            isDark: isDark,
-                          ),
-                          dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                          items: [
-                            const DropdownMenuItem(value: null, child: Text('Custom / Manual Entry', overflow: TextOverflow.ellipsis)),
-                            ...activeRooms.map((r) => DropdownMenuItem(
-                                  value: r.id,
-                                  child: Text('${r.code} — ${r.name} (${r.capacity} seats)', overflow: TextOverflow.ellipsis),
-                                )),
-                          ],
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedRoomId = val;
-                              if (val != null) {
-                                final picked = activeRooms.firstWhere((r) => r.id == val);
-                                _roomController.text = picked.code;
-                              }
-                            });
-                          },
-                        ),
-                        if (_selectedRoomId == null) ...[
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _roomController,
-                            decoration: _buildInputDecoration(
-                              hintText: 'e.g. LH-101, Lab-2',
-                              prefixIcon: LucideIcons.hash,
-                              isDark: isDark,
-                            ),
-                            style: AcadexTypography.bodyMedium(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                            ),
-                            onChanged: (_) => setState(() {}),
-                          ),
-                        ],
-                      ] else ...[
-                        TextFormField(
-                          controller: _roomController,
-                          decoration: _buildInputDecoration(
-                            hintText: 'e.g. LH-101, Lab-2',
-                            prefixIcon: LucideIcons.doorOpen,
-                            isDark: isDark,
-                          ),
-                          style: AcadexTypography.bodyMedium(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                          ),
-                          onChanged: (_) => setState(() {}),
-                        ),
-                      ],
-                      if (isBuildingEnabled) const SizedBox(height: 16),
-                    ],
-                    if (isBuildingEnabled) ...[
-                      _buildFieldLabel('Building (Optional)', isDark),
-                      const SizedBox(height: 6),
+                    if (_selectedRoomId == null) ...[
+                      const SizedBox(height: 8),
                       TextFormField(
-                        controller: _buildingController,
+                        controller: _roomController,
                         decoration: _buildInputDecoration(
-                          hintText: 'e.g. Main Block',
-                          prefixIcon: LucideIcons.building,
+                          hintText: 'e.g. LH-101, Lab-2',
+                          prefixIcon: LucideIcons.hash,
                           isDark: isDark,
                         ),
                         style: AcadexTypography.bodyMedium(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
+                        onChanged: (_) => setState(() {}),
                       ),
                     ],
                   ] else ...[
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (isRoomEnabled)
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildFieldLabel('Room Number', isDark),
-                                const SizedBox(height: 6),
-                                if (activeRooms.isNotEmpty) ...[
-                                  DropdownButtonFormField<String?>(
-                                    isExpanded: true,
-                                    value: _selectedRoomId != null && activeRooms.any((r) => r.id == _selectedRoomId)
-                                        ? _selectedRoomId
-                                        : null,
-                                    decoration: _buildInputDecoration(
-                                      hintText: 'Select Room',
-                                      prefixIcon: LucideIcons.doorOpen,
-                                      isDark: isDark,
-                                    ),
-                                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                                    items: [
-                                      const DropdownMenuItem(value: null, child: Text('Custom / Manual Entry', overflow: TextOverflow.ellipsis)),
-                                      ...activeRooms.map((r) => DropdownMenuItem(
-                                            value: r.id,
-                                            child: Text('${r.code} — ${r.name} (${r.capacity} seats)', overflow: TextOverflow.ellipsis),
-                                          )),
-                                    ],
-                                    onChanged: (val) {
-                                      setState(() {
-                                        _selectedRoomId = val;
-                                        if (val != null) {
-                                          final picked = activeRooms.firstWhere((r) => r.id == val);
-                                          _roomController.text = picked.code;
-                                        }
-                                      });
-                                    },
-                                  ),
-                                  if (_selectedRoomId == null) ...[
-                                    const SizedBox(height: 8),
-                                    TextFormField(
-                                      controller: _roomController,
-                                      decoration: _buildInputDecoration(
-                                        hintText: 'e.g. LH-101, Lab-2',
-                                        prefixIcon: LucideIcons.hash,
-                                        isDark: isDark,
-                                      ),
-                                      style: AcadexTypography.bodyMedium(
-                                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                                      ),
-                                      onChanged: (_) => setState(() {}),
-                                    ),
-                                  ],
-                                ] else ...[
-                                  TextFormField(
-                                    controller: _roomController,
-                                    decoration: _buildInputDecoration(
-                                      hintText: 'e.g. LH-101, Lab-2',
-                                      prefixIcon: LucideIcons.doorOpen,
-                                      isDark: isDark,
-                                    ),
-                                    style: AcadexTypography.bodyMedium(
-                                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                                    ),
-                                    onChanged: (_) => setState(() {}),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        if (isRoomEnabled && isBuildingEnabled) const SizedBox(width: 12),
-                        if (isBuildingEnabled)
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildFieldLabel('Building (Optional)', isDark),
-                                const SizedBox(height: 6),
-                                TextFormField(
-                                  controller: _buildingController,
-                                  decoration: _buildInputDecoration(
-                                    hintText: 'e.g. Main Block',
-                                    prefixIcon: LucideIcons.building,
-                                    isDark: isDark,
-                                  ),
-                                  style: AcadexTypography.bodyMedium(
-                                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
+                    TextFormField(
+                      controller: _roomController,
+                      decoration: _buildInputDecoration(
+                        hintText: 'e.g. LH-101, Lab-2',
+                        prefixIcon: LucideIcons.doorOpen,
+                        isDark: isDark,
+                      ),
+                      style: AcadexTypography.bodyMedium(
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ),
+                      onChanged: (_) => setState(() {}),
                     ),
                   ],
+                  if (isBuildingEnabled) const SizedBox(height: 16),
                 ],
-
-                // =============================================================
-                // 7. REAL-TIME LOCAL CONFLICT VALIDATION BANNER
-                // =============================================================
-                if (validationErrors.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.errorDarkContainer : AcadexColors.errorLight,
-                      borderRadius: AcadexRadius.borderRadiusMd,
-                      border: Border.all(
-                        color: AcadexColors.error.withValues(alpha: 0.5),
-                      ),
+                if (isBuildingEnabled) ...[
+                  _buildFieldLabel('Building (Optional)', isDark),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    controller: _buildingController,
+                    decoration: _buildInputDecoration(
+                      hintText: 'e.g. Main Block',
+                      prefixIcon: LucideIcons.building,
+                      isDark: isDark,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(LucideIcons.alertTriangle, size: 16, color: AcadexColors.error),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Validation Conflicts (${validationErrors.length})',
-                              style: AcadexTypography.bodySmall(color: AcadexColors.error).copyWith(fontWeight: FontWeight.w700),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        for (final err in validationErrors) ...[
-                          Padding(
-                            padding: const EdgeInsets.only(left: 4, top: 2),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('• ', style: TextStyle(color: AcadexColors.error, fontWeight: FontWeight.bold)),
-                                Expanded(
-                                  child: Text(
-                                    err,
-                                    style: AcadexTypography.caption(
-                                      color: isDark ? Colors.red.shade200 : AcadexColors.error,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ],
+                    style: AcadexTypography.bodyMedium(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
                     ),
                   ),
                 ],
-
-                const SizedBox(height: 24),
-                Divider(
-                  height: 1,
-                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-                ),
-                const SizedBox(height: 20),
-
-                Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 12,
-                  runSpacing: 12,
+              ] else ...[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (_isEditing)
-                      OutlinedButton.icon(
-                        onPressed: () => _confirmDelete(context),
-                        icon: const Icon(LucideIcons.trash2, size: 16, color: AcadexColors.error),
-                        label: Text(
-                          'Delete Class',
-                          style: AcadexTypography.bodySmall(color: AcadexColors.error).copyWith(fontWeight: FontWeight.w600),
+                    if (isRoomEnabled)
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildFieldLabel('Room Number', isDark),
+                            const SizedBox(height: 6),
+                            if (activeRooms.isNotEmpty) ...[
+                              DropdownButtonFormField<String?>(
+                                isExpanded: true,
+                                value:
+                                    _selectedRoomId != null &&
+                                        activeRooms.any(
+                                          (r) => r.id == _selectedRoomId,
+                                        )
+                                    ? _selectedRoomId
+                                    : null,
+                                decoration: _buildInputDecoration(
+                                  hintText: 'Select Room',
+                                  prefixIcon: LucideIcons.doorOpen,
+                                  isDark: isDark,
+                                ),
+                                dropdownColor: isDark
+                                    ? AcadexColors.darkSurfaceCard
+                                    : AcadexColors.surface,
+                                items: [
+                                  const DropdownMenuItem(
+                                    value: null,
+                                    child: Text(
+                                      'Custom / Manual Entry',
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  ...activeRooms.map(
+                                    (r) => DropdownMenuItem(
+                                      value: r.id,
+                                      child: Text(
+                                        '${r.code} — ${r.name} (${r.capacity} seats)',
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                                onChanged: (val) {
+                                  setState(() {
+                                    _selectedRoomId = val;
+                                    if (val != null) {
+                                      final picked = activeRooms.firstWhere(
+                                        (r) => r.id == val,
+                                      );
+                                      _roomController.text = picked.code;
+                                    }
+                                  });
+                                },
+                              ),
+                              if (_selectedRoomId == null) ...[
+                                const SizedBox(height: 8),
+                                TextFormField(
+                                  controller: _roomController,
+                                  decoration: _buildInputDecoration(
+                                    hintText: 'e.g. LH-101, Lab-2',
+                                    prefixIcon: LucideIcons.hash,
+                                    isDark: isDark,
+                                  ),
+                                  style: AcadexTypography.bodyMedium(
+                                    color: isDark
+                                        ? AcadexColors.darkInk
+                                        : AcadexColors.ink,
+                                  ),
+                                  onChanged: (_) => setState(() {}),
+                                ),
+                              ],
+                            ] else ...[
+                              TextFormField(
+                                controller: _roomController,
+                                decoration: _buildInputDecoration(
+                                  hintText: 'e.g. LH-101, Lab-2',
+                                  prefixIcon: LucideIcons.doorOpen,
+                                  isDark: isDark,
+                                ),
+                                style: AcadexTypography.bodyMedium(
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
+                                ),
+                                onChanged: (_) => setState(() {}),
+                              ),
+                            ],
+                          ],
                         ),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AcadexColors.error),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusSm),
-                        ),
-                      )
-                    else
-                      const SizedBox.shrink(),
-
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: Text(
-                            'Cancel',
-                            style: AcadexTypography.bodySmall(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      ),
+                    if (isRoomEnabled && isBuildingEnabled)
+                      const SizedBox(width: 12),
+                    if (isBuildingEnabled)
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildFieldLabel('Building (Optional)', isDark),
+                            const SizedBox(height: 6),
+                            TextFormField(
+                              controller: _buildingController,
+                              decoration: _buildInputDecoration(
+                                hintText: 'e.g. Main Block',
+                                prefixIcon: LucideIcons.building,
+                                isDark: isDark,
+                              ),
+                              style: AcadexTypography.bodyMedium(
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        ElevatedButton.icon(
-                          onPressed: validationErrors.isEmpty
-                              ? () => _saveClass(context, startTime, endTime)
-                              : null,
-                          icon: Icon(
-                            _isEditing ? LucideIcons.check : LucideIcons.plus,
-                            size: 16,
-                            color: Colors.white,
-                          ),
-                          label: Text(
-                            _isEditing ? 'Update Class' : 'Add Class',
-                            style: AcadexTypography.bodySmall(color: Colors.white).copyWith(fontWeight: FontWeight.w600),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AcadexColors.primary,
-                            disabledBackgroundColor: isDark
-                                ? AcadexColors.darkHairline
-                                : AcadexColors.inkFaint.withValues(alpha: 0.3),
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusSm),
-                          ),
+                      ),
+                  ],
+                ),
+              ],
+            ],
+
+            // =============================================================
+            // 7. REAL-TIME LOCAL CONFLICT VALIDATION BANNER
+            // =============================================================
+            if (validationErrors.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AcadexColors.errorDarkContainer
+                      : AcadexColors.errorLight,
+                  borderRadius: AcadexRadius.borderRadiusMd,
+                  border: Border.all(
+                    color: AcadexColors.error.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          LucideIcons.alertTriangle,
+                          size: 16,
+                          color: AcadexColors.error,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Validation Conflicts (${validationErrors.length})',
+                          style: AcadexTypography.bodySmall(
+                            color: AcadexColors.error,
+                          ).copyWith(fontWeight: FontWeight.w700),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 6),
+                    for (final err in validationErrors) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4, top: 2),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '• ',
+                              style: TextStyle(
+                                color: AcadexColors.error,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                err,
+                                style: AcadexTypography.caption(
+                                  color: isDark
+                                      ? Colors.red.shade200
+                                      : AcadexColors.error,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 24),
+            Divider(
+              height: 1,
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+            ),
+            const SizedBox(height: 20),
+
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                if (_isEditing)
+                  OutlinedButton.icon(
+                    onPressed: () => _confirmDelete(context),
+                    icon: const Icon(
+                      LucideIcons.trash2,
+                      size: 16,
+                      color: AcadexColors.error,
+                    ),
+                    label: Text(
+                      'Delete Class',
+                      style: AcadexTypography.bodySmall(
+                        color: AcadexColors.error,
+                      ).copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AcadexColors.error),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AcadexRadius.borderRadiusSm,
+                      ),
+                    ),
+                  )
+                else
+                  const SizedBox.shrink(),
+
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(
+                        'Cancel',
+                        style: AcadexTypography.bodySmall(
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      onPressed: validationErrors.isEmpty
+                          ? () => _saveClass(context, startTime, endTime)
+                          : null,
+                      icon: Icon(
+                        _isEditing ? LucideIcons.check : LucideIcons.plus,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                      label: Text(
+                        _isEditing ? 'Update Class' : 'Add Class',
+                        style: AcadexTypography.bodySmall(
+                          color: Colors.white,
+                        ).copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AcadexColors.primary,
+                        disabledBackgroundColor: isDark
+                            ? AcadexColors.darkHairline
+                            : AcadexColors.inkFaint.withValues(alpha: 0.3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AcadexRadius.borderRadiusSm,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ],
             ),
-          ),
-        );
+          ],
+        ),
+      ),
+    );
 
     if (widget.isBottomSheet) {
       return Container(
@@ -871,14 +1055,19 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
     // 1. Authoritative Faculty Assignment Check
     if (facultyAssignmentId == null || facultyAssignmentId.trim().isEmpty) {
       errors.add('Please select an authoritative Faculty Assignment.');
-    } else if (sectionAssignments.isNotEmpty && !sectionAssignments.any((a) => a.id == facultyAssignmentId)) {
-      errors.add('Selected faculty assignment is not valid for this section context.');
+    } else if (sectionAssignments.isNotEmpty &&
+        !sectionAssignments.any((a) => a.id == facultyAssignmentId)) {
+      errors.add(
+        'Selected faculty assignment is not valid for this section context.',
+      );
     }
 
     // 2. Check Break Conflicts
     for (final b in authoringState.breaks) {
       if (b.appliesTo(day) && b.overlapsWithTime(startTime, endTime)) {
-        errors.add('Break Conflict: Timeslot ($startTime - $endTime) overlaps with ${b.name} (${b.startTime} - ${b.endTime}).');
+        errors.add(
+          'Break Conflict: Timeslot ($startTime - $endTime) overlaps with ${b.name} (${b.startTime} - ${b.endTime}).',
+        );
       }
     }
 
@@ -889,29 +1078,45 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
       if (other.id == existingEntryId) continue; // Skip self when editing
       if (other.dayOfWeek != day) continue;
 
-      final isPeriodOverlap = startPeriodIndex <= other.endPeriodIndex && endPeriodIndex >= other.startPeriodIndex;
-      final isTimeOverlap = startTime.compareTo(other.endTime) < 0 && endTime.compareTo(other.startTime) > 0;
+      final isPeriodOverlap =
+          startPeriodIndex <= other.endPeriodIndex &&
+          endPeriodIndex >= other.startPeriodIndex;
+      final isTimeOverlap =
+          startTime.compareTo(other.endTime) < 0 &&
+          endTime.compareTo(other.startTime) > 0;
 
       if (isPeriodOverlap || isTimeOverlap) {
-        final otherSubject = subjectMap[other.subjectId]?.name ?? other.subjectId;
-        errors.add('Section Conflict: Timeslot overlaps with existing class ($otherSubject, ${other.startTime} - ${other.endTime}).');
+        final otherSubject =
+            subjectMap[other.subjectId]?.name ?? other.subjectId;
+        errors.add(
+          'Section Conflict: Timeslot overlaps with existing class ($otherSubject, ${other.startTime} - ${other.endTime}).',
+        );
       }
 
       // Faculty Conflict (same faculty booked at overlapping time on the same day)
       if (facultyId.isNotEmpty && other.facultyId == facultyId) {
         if (isPeriodOverlap || isTimeOverlap) {
           final facName = facultyMap[facultyId]?.name ?? 'Selected Faculty';
-          errors.add('Faculty Conflict: $facName is already scheduled on ${day.displayName} (${other.startTime} - ${other.endTime}).');
+          errors.add(
+            'Faculty Conflict: $facName is already scheduled on ${day.displayName} (${other.startTime} - ${other.endTime}).',
+          );
         }
       }
 
       // Room Conflict (same room booked at overlapping time on the same day)
-      final sameRoom = (roomId != null && other.roomId != null && other.roomId == roomId) ||
-          (roomNumber.trim().isNotEmpty && other.roomNumber.trim().toLowerCase() == roomNumber.trim().toLowerCase());
+      final sameRoom =
+          (roomId != null && other.roomId != null && other.roomId == roomId) ||
+          (roomNumber.trim().isNotEmpty &&
+              other.roomNumber.trim().toLowerCase() ==
+                  roomNumber.trim().toLowerCase());
       if (sameRoom) {
         if (isPeriodOverlap || isTimeOverlap) {
-          final displayRoom = roomNumber.trim().isNotEmpty ? roomNumber.trim() : 'Selected Room';
-          errors.add('Room Conflict: Room $displayRoom is already booked on ${day.displayName} (${other.startTime} - ${other.endTime}).');
+          final displayRoom = roomNumber.trim().isNotEmpty
+              ? roomNumber.trim()
+              : 'Selected Room';
+          errors.add(
+            'Room Conflict: Room $displayRoom is already booked on ${day.displayName} (${other.startTime} - ${other.endTime}).',
+          );
         }
       }
     }
@@ -923,7 +1128,9 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
   // HELPER: SAVE CLASS TO LOCAL RIVERPOD AUTHORING STATE
   // =========================================================================
   void _saveClass(BuildContext context, String startTime, String endTime) {
-    final notifier = ref.read(timetableAuthoringProvider(widget.timetableId).notifier);
+    final notifier = ref.read(
+      timetableAuthoringProvider(widget.timetableId).notifier,
+    );
 
     if (_isEditing) {
       final updated = widget.existingEntry!.copyWith(
@@ -937,7 +1144,9 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
         facultyAssignmentId: _facultyAssignmentId,
         roomId: _selectedRoomId,
         roomNumber: _roomController.text.trim(),
-        building: _buildingController.text.trim().isEmpty ? null : _buildingController.text.trim(),
+        building: _buildingController.text.trim().isEmpty
+            ? null
+            : _buildingController.text.trim(),
         sessionType: _sessionType,
       );
       notifier.updateEntry(updated);
@@ -954,7 +1163,9 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
         facultyAssignmentId: _facultyAssignmentId,
         roomId: _selectedRoomId,
         roomNumber: _roomController.text.trim(),
-        building: _buildingController.text.trim().isEmpty ? null : _buildingController.text.trim(),
+        building: _buildingController.text.trim().isEmpty
+            ? null
+            : _buildingController.text.trim(),
         sessionType: _sessionType,
       );
       notifier.createEntry(newEntry);
@@ -974,7 +1185,9 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
             child: Text(
               label,
               style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ).copyWith(fontWeight: FontWeight.w600),
             ),
           ),
@@ -998,8 +1211,12 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
   void _confirmDelete(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final subjectMap = ref.read(timetableSubjectMapProvider);
-    final subjectName = subjectMap[widget.existingEntry?.subjectId]?.name ?? widget.existingEntry?.subjectId ?? 'this class';
-    final spanText = widget.existingEntry != null && widget.existingEntry!.periodSpan > 1
+    final subjectName =
+        subjectMap[widget.existingEntry?.subjectId]?.name ??
+        widget.existingEntry?.subjectId ??
+        'this class';
+    final spanText =
+        widget.existingEntry != null && widget.existingEntry!.periodSpan > 1
         ? 'P${widget.startPeriodIndex}–P${widget.existingEntry!.endPeriodIndex}'
         : 'P${widget.startPeriodIndex}';
 
@@ -1007,21 +1224,31 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          backgroundColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+          backgroundColor: isDark
+              ? AcadexColors.darkSurfaceCard
+              : AcadexColors.surface,
           title: Text(
             'Delete Class',
-            style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+            style: AcadexTypography.heading3(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ),
           ),
           content: Text(
             'Remove $subjectName from ${widget.day.displayName} $spanText? This change will take effect locally in your draft.',
-            style: AcadexTypography.bodyMedium(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+            style: AcadexTypography.bodyMedium(
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
               child: Text(
                 'Cancel',
-                style: AcadexTypography.bodySmall(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                style: AcadexTypography.bodySmall(
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
+                ),
               ),
             ),
             ElevatedButton(
@@ -1029,14 +1256,19 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
               style: ElevatedButton.styleFrom(
                 backgroundColor: AcadexColors.error,
               ),
-              child: const Text('Delete', style: TextStyle(color: Colors.white)),
+              child: const Text(
+                'Delete',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         );
       },
     ).then((confirmed) {
       if (confirmed == true && mounted) {
-        final notifier = ref.read(timetableAuthoringProvider(widget.timetableId).notifier);
+        final notifier = ref.read(
+          timetableAuthoringProvider(widget.timetableId).notifier,
+        );
         notifier.deleteEntry(widget.existingEntry!.id);
         Navigator.of(context).pop();
       }
@@ -1087,10 +1319,7 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: AcadexRadius.borderRadiusSm,
-        borderSide: const BorderSide(
-          color: AcadexColors.primary,
-          width: 1.5,
-        ),
+        borderSide: const BorderSide(color: AcadexColors.primary, width: 1.5),
       ),
     );
   }

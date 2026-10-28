@@ -13,7 +13,7 @@ class ApiNotificationRepository implements NotificationRepository {
   final _updateStreamController = StreamController<void>.broadcast();
 
   ApiNotificationRepository({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient();
+    : _apiClient = apiClient ?? ApiClient();
 
   AcadexException _extractError(DioException e, String fallback) {
     return AcadexException.fromDio(e, context: fallback);
@@ -27,12 +27,10 @@ class ApiNotificationRepository implements NotificationRepository {
     String? category,
   }) async {
     try {
-      final queryParams = <String, dynamic>{
-        'page': page,
-        'limit': limit,
-      };
+      final queryParams = <String, dynamic>{'page': page, 'limit': limit};
       if (isRead != null) queryParams['isRead'] = isRead;
-      if (category != null && category.isNotEmpty) queryParams['category'] = category;
+      if (category != null && category.isNotEmpty)
+        queryParams['category'] = category;
 
       final response = await _apiClient.dio.get(
         '/notifications',
@@ -43,7 +41,10 @@ class ApiNotificationRepository implements NotificationRepository {
       if (data != null && data['success'] == true && data['data'] != null) {
         final items = data['data']['items'] as List<dynamic>? ?? [];
         return items
-            .map((item) => NotificationModel.fromJson(item as Map<String, dynamic>))
+            .map(
+              (item) =>
+                  NotificationModel.fromJson(item as Map<String, dynamic>),
+            )
             .toList();
       }
       return [];
@@ -135,14 +136,23 @@ class ApiNotificationRepository implements NotificationRepository {
     Future<void> loadAndEmit() async {
       try {
         final notifications = await fetchNotifications(page: 1, limit: 50);
-        
+
         // Filter by user preferences locally as secondary check
         final filtered = notifications.where((n) {
-          if (n.category == NotificationCategory.attendance && !prefs.attendanceAlerts) return false;
-          if (n.category == NotificationCategory.academic && !prefs.academicUpdates) return false;
-          if (n.category == NotificationCategory.notes && !prefs.notesUploaded) return false;
-          if (n.category == NotificationCategory.certificates && !prefs.certificateUpdates) return false;
-          if (n.category == NotificationCategory.system && !prefs.generalNotifications) return false;
+          if (n.category == NotificationCategory.attendance &&
+              !prefs.attendanceAlerts)
+            return false;
+          if (n.category == NotificationCategory.academic &&
+              !prefs.academicUpdates)
+            return false;
+          if (n.category == NotificationCategory.notes && !prefs.notesUploaded)
+            return false;
+          if (n.category == NotificationCategory.certificates &&
+              !prefs.certificateUpdates)
+            return false;
+          if (n.category == NotificationCategory.system &&
+              !prefs.generalNotifications)
+            return false;
           return true;
         }).toList();
 
@@ -237,14 +247,13 @@ class ApiNotificationRepository implements NotificationRepository {
     int limit = 50,
   }) async {
     try {
-      final queryParams = <String, dynamic>{
-        'page': page,
-        'limit': limit,
-      };
+      final queryParams = <String, dynamic>{'page': page, 'limit': limit};
       if (manage) queryParams['manage'] = 'true';
       if (status != null && status.isNotEmpty) queryParams['status'] = status;
-      if (audienceScope != null && audienceScope.isNotEmpty) queryParams['audienceScope'] = audienceScope;
-      if (departmentId != null && departmentId.isNotEmpty) queryParams['departmentId'] = departmentId;
+      if (audienceScope != null && audienceScope.isNotEmpty)
+        queryParams['audienceScope'] = audienceScope;
+      if (departmentId != null && departmentId.isNotEmpty)
+        queryParams['departmentId'] = departmentId;
 
       final response = await _apiClient.dio.get(
         '/announcements',
@@ -255,7 +264,10 @@ class ApiNotificationRepository implements NotificationRepository {
       if (data != null && data['success'] == true && data['data'] != null) {
         final items = data['data']['items'] as List<dynamic>? ?? [];
         return items
-            .map((item) => AnnouncementModel.fromJson(item as Map<String, dynamic>))
+            .map(
+              (item) =>
+                  AnnouncementModel.fromJson(item as Map<String, dynamic>),
+            )
             .toList();
       }
       return [];
@@ -279,9 +291,14 @@ class ApiNotificationRepository implements NotificationRepository {
   }
 
   /// Creates a new announcement
-  Future<AnnouncementModel> createAnnouncementApi(Map<String, dynamic> payload) async {
+  Future<AnnouncementModel> createAnnouncementApi(
+    Map<String, dynamic> payload,
+  ) async {
     try {
-      final response = await _apiClient.dio.post('/announcements', data: payload);
+      final response = await _apiClient.dio.post(
+        '/announcements',
+        data: payload,
+      );
       final data = response.data;
       if (data != null && data['success'] == true && data['data'] != null) {
         _updateStreamController.add(null);
@@ -354,18 +371,23 @@ class ApiNotificationRepository implements NotificationRepository {
   }
 
   @override
-  Future<NotificationModel> createPersonalNotification(NotificationModel notification) async {
+  Future<NotificationModel> createPersonalNotification(
+    NotificationModel notification,
+  ) async {
     // Creation is handled server-side upon events
     return notification;
   }
 
   @override
-  Future<NotificationModel> createAnnouncement(NotificationModel notification) async {
+  Future<NotificationModel> createAnnouncement(
+    NotificationModel notification,
+  ) async {
     final payload = {
       'title': notification.title,
       'body': notification.message,
       'audienceScope': notification.audienceType.name.toUpperCase(),
-      if (notification.departmentId != null) 'departmentId': notification.departmentId,
+      if (notification.departmentId != null)
+        'departmentId': notification.departmentId,
       'priority': notification.priority.name.toUpperCase(),
       'publishNow': true,
     };

@@ -17,7 +17,9 @@ class StudentOfficialCertificatesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final asyncReqWithSubs = ref.watch(studentOfficialRequirementsWithSubmissionsProvider);
+    final asyncReqWithSubs = ref.watch(
+      studentOfficialRequirementsWithSubmissionsProvider,
+    );
     final metrics = ref.watch(studentOfficialCertificateMetricsProvider);
 
     return Scaffold(
@@ -43,25 +45,78 @@ class StudentOfficialCertificatesScreen extends ConsumerWidget {
                     spacing: AcadexSpacing.space12,
                     runSpacing: AcadexSpacing.space12,
                     children: [
-                      _metricBox('Required', '${metrics.totalRequired}', AcadexColors.primary, isDark),
-                      _metricBox('Submitted', '${metrics.totalSubmitted}', AcadexColors.info, isDark),
-                      _metricBox('Verified', '${metrics.totalVerified}', AcadexColors.success, isDark),
-                      _metricBox('Pending', '${metrics.totalPending}', AcadexColors.warning, isDark),
+                      _metricBox(
+                        'Required',
+                        '${metrics.totalRequired}',
+                        AcadexColors.primary,
+                        isDark,
+                      ),
+                      _metricBox(
+                        'Submitted',
+                        '${metrics.totalSubmitted}',
+                        AcadexColors.info,
+                        isDark,
+                      ),
+                      _metricBox(
+                        'Verified',
+                        '${metrics.totalVerified}',
+                        AcadexColors.success,
+                        isDark,
+                      ),
+                      _metricBox(
+                        'Pending',
+                        '${metrics.totalPending}',
+                        AcadexColors.warning,
+                        isDark,
+                      ),
                       if (metrics.totalResubmissionRequired > 0)
-                        _metricBox('Resubmit', '${metrics.totalResubmissionRequired}', AcadexColors.error, isDark),
+                        _metricBox(
+                          'Resubmit',
+                          '${metrics.totalResubmissionRequired}',
+                          AcadexColors.error,
+                          isDark,
+                        ),
                     ],
                   );
                 }
 
                 return Row(
                   children: [
-                    Expanded(child: _metricBox('Required Documents', '${metrics.totalRequired}', AcadexColors.primary, isDark)),
+                    Expanded(
+                      child: _metricBox(
+                        'Required Documents',
+                        '${metrics.totalRequired}',
+                        AcadexColors.primary,
+                        isDark,
+                      ),
+                    ),
                     const SizedBox(width: AcadexSpacing.space12),
-                    Expanded(child: _metricBox('Submitted', '${metrics.totalSubmitted}', AcadexColors.info, isDark)),
+                    Expanded(
+                      child: _metricBox(
+                        'Submitted',
+                        '${metrics.totalSubmitted}',
+                        AcadexColors.info,
+                        isDark,
+                      ),
+                    ),
                     const SizedBox(width: AcadexSpacing.space12),
-                    Expanded(child: _metricBox('Verified', '${metrics.totalVerified}', AcadexColors.success, isDark)),
+                    Expanded(
+                      child: _metricBox(
+                        'Verified',
+                        '${metrics.totalVerified}',
+                        AcadexColors.success,
+                        isDark,
+                      ),
+                    ),
                     const SizedBox(width: AcadexSpacing.space12),
-                    Expanded(child: _metricBox('Pending Verification', '${metrics.totalPending}', AcadexColors.warning, isDark)),
+                    Expanded(
+                      child: _metricBox(
+                        'Pending Verification',
+                        '${metrics.totalPending}',
+                        AcadexColors.warning,
+                        isDark,
+                      ),
+                    ),
                     if (metrics.totalResubmissionRequired > 0) ...[
                       const SizedBox(width: AcadexSpacing.space12),
                       Expanded(
@@ -87,7 +142,9 @@ class StudentOfficialCertificatesScreen extends ConsumerWidget {
                   child: AcadexErrorState(
                     title: 'Failed to load official certificates',
                     message: err.toString(),
-                    onRetry: () => ref.invalidate(studentOfficialRequirementsWithSubmissionsProvider),
+                    onRetry: () => ref.invalidate(
+                      studentOfficialRequirementsWithSubmissionsProvider,
+                    ),
                   ),
                 ),
                 data: (items) {
@@ -95,29 +152,43 @@ class StudentOfficialCertificatesScreen extends ConsumerWidget {
                     return const Center(
                       child: AcadexEmptyState(
                         title: 'No Required Documents',
-                        subtitle: 'Your college or department has not requested any official certificates at this time.',
+                        subtitle:
+                            'Your college or department has not requested any official certificates at this time.',
                         icon: LucideIcons.fileCheck2,
                       ),
                     );
                   }
 
                   return ListView.separated(
-                    padding: const EdgeInsets.only(bottom: AcadexSpacing.space48),
+                    padding: const EdgeInsets.only(
+                      bottom: AcadexSpacing.space48,
+                    ),
                     itemCount: items.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: AcadexSpacing.space16),
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: AcadexSpacing.space16),
                     itemBuilder: (context, index) {
                       final item = items[index];
                       return OfficialRequirementCard(
                         item: item,
                         onUpload: () {
-                          context.push('/official-certificates/upload/${item.requirement.id}', extra: item.requirement);
+                          context.push(
+                            '/official-certificates/upload/${item.requirement.id}',
+                            extra: item.requirement,
+                          );
                         },
                         onUploadAgain: () {
-                          context.push('/official-certificates/upload/${item.requirement.id}', extra: item.requirement);
+                          context.push(
+                            '/official-certificates/upload/${item.requirement.id}',
+                            extra: item.requirement,
+                          );
                         },
                         onView: () {
                           if (item.submission != null) {
-                            _showDocumentDetailsDialog(context, item.submission!, item.requirement);
+                            _showDocumentDetailsDialog(
+                              context,
+                              item.submission!,
+                              item.requirement,
+                            );
                           }
                         },
                       );
@@ -134,11 +205,16 @@ class StudentOfficialCertificatesScreen extends ConsumerWidget {
 
   Widget _metricBox(String label, String value, Color color, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AcadexSpacing.space16, vertical: AcadexSpacing.space12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AcadexSpacing.space16,
+        vertical: AcadexSpacing.space12,
+      ),
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: BorderRadius.circular(AcadexRadius.md),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -162,7 +238,9 @@ class StudentOfficialCertificatesScreen extends ConsumerWidget {
               Text(
                 label,
                 style: AcadexTypography.caption(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
             ],
@@ -182,7 +260,9 @@ class StudentOfficialCertificatesScreen extends ConsumerWidget {
       builder: (ctx) {
         final isDark = Theme.of(ctx).brightness == Brightness.dark;
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.lg)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AcadexRadius.lg),
+          ),
           title: Row(
             children: [
               const Icon(LucideIcons.fileCheck2, color: AcadexColors.primary),
@@ -198,14 +278,27 @@ class StudentOfficialCertificatesScreen extends ConsumerWidget {
               children: [
                 _detailRow('File Name', submission.fileName, isDark),
                 _detailRow('File Size', submission.fileSizeDisplay, isDark),
-                _detailRow('Uploaded At', submission.uploadedAt.toString().substring(0, 16), isDark),
+                _detailRow(
+                  'Uploaded At',
+                  submission.uploadedAt.toString().substring(0, 16),
+                  isDark,
+                ),
                 _detailRow('Status', submission.status.displayName, isDark),
                 if (submission.verifiedBy != null) ...[
                   _detailRow('Verified By', submission.verifiedBy!, isDark),
-                  _detailRow('Verified At', submission.verifiedAt?.toString().substring(0, 16) ?? 'N/A', isDark),
+                  _detailRow(
+                    'Verified At',
+                    submission.verifiedAt?.toString().substring(0, 16) ?? 'N/A',
+                    isDark,
+                  ),
                 ],
-                if (submission.rejectionReason != null && submission.rejectionReason!.isNotEmpty)
-                  _detailRow('Feedback / Reason', submission.rejectionReason!, isDark),
+                if (submission.rejectionReason != null &&
+                    submission.rejectionReason!.isNotEmpty)
+                  _detailRow(
+                    'Feedback / Reason',
+                    submission.rejectionReason!,
+                    isDark,
+                  ),
               ],
             ),
           ),
@@ -231,7 +324,9 @@ class StudentOfficialCertificatesScreen extends ConsumerWidget {
             child: Text(
               label,
               style: AcadexTypography.bodySmall(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
             ),
           ),

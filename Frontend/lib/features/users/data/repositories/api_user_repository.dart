@@ -50,7 +50,10 @@ class ApiUserRepository implements UserRepository {
         queryParams['role'] = role.value;
       }
 
-      final response = await _client.dio.get('/users', queryParameters: queryParams);
+      final response = await _client.dio.get(
+        '/users',
+        queryParameters: queryParams,
+      );
       final body = response.data;
       final list = (body is Map<String, dynamic> && body['data'] is List)
           ? body['data'] as List
@@ -97,7 +100,12 @@ class ApiUserRepository implements UserRepository {
           final empMatch = u.employeeId?.toLowerCase().contains(q) ?? false;
           final rollMatch = u.rollNumber?.toLowerCase().contains(q) ?? false;
           final instMatch = u.instituteId?.toLowerCase().contains(q) ?? false;
-          return nameMatch || emailMatch || phoneMatch || empMatch || rollMatch || instMatch;
+          return nameMatch ||
+              emailMatch ||
+              phoneMatch ||
+              empMatch ||
+              rollMatch ||
+              instMatch;
         }).toList();
       }
 
@@ -122,23 +130,34 @@ class ApiUserRepository implements UserRepository {
   /// Provision User via backend invitation service: creates user in PENDING_ACTIVATION
   /// and returns authoritative single-use activation code.
   @override
-  Future<CreateUserResult> createUserWithInvitation(UserProfileModel user) async {
+  Future<CreateUserResult> createUserWithInvitation(
+    UserProfileModel user,
+  ) async {
     try {
-      final instituteId = user.employeeId ?? user.rollNumber ?? user.instituteId ?? user.id;
+      final instituteId =
+          user.employeeId ?? user.rollNumber ?? user.instituteId ?? user.id;
       final payload = <String, dynamic>{
         'name': user.name.trim(),
         'instituteId': instituteId.trim().toUpperCase(),
         'role': user.role.value,
         if (user.email.isNotEmpty) 'email': user.email.trim().toLowerCase(),
         if (user.phone.isNotEmpty) 'phone': user.phone.trim(),
-        if (user.collegeId != null && user.collegeId!.isNotEmpty) 'collegeId': user.collegeId,
-        if (user.departmentId != null && user.departmentId!.isNotEmpty) 'departmentId': user.departmentId,
-        if (user.courseId != null && user.courseId!.isNotEmpty) 'courseId': user.courseId,
-        if (user.sectionId != null && user.sectionId!.isNotEmpty) 'sectionId': user.sectionId,
-        if (user.semesterId != null && user.semesterId!.isNotEmpty) 'semesterId': user.semesterId,
+        if (user.collegeId != null && user.collegeId!.isNotEmpty)
+          'collegeId': user.collegeId,
+        if (user.departmentId != null && user.departmentId!.isNotEmpty)
+          'departmentId': user.departmentId,
+        if (user.courseId != null && user.courseId!.isNotEmpty)
+          'courseId': user.courseId,
+        if (user.sectionId != null && user.sectionId!.isNotEmpty)
+          'sectionId': user.sectionId,
+        if (user.semesterId != null && user.semesterId!.isNotEmpty)
+          'semesterId': user.semesterId,
       };
 
-      final response = await _client.dio.post('/auth/invitations', data: payload);
+      final response = await _client.dio.post(
+        '/auth/invitations',
+        data: payload,
+      );
       final body = response.data as Map<String, dynamic>;
       final data = (body['data'] as Map<String, dynamic>?) ?? body;
 
@@ -146,10 +165,14 @@ class ApiUserRepository implements UserRepository {
       final createdUser = UserProfileModel.fromJson(userData);
       final activationCode = data['activationCode']?.toString() ?? '';
       final invitationData = data['invitation'] as Map<String, dynamic>?;
-      final invitationId = (invitationData?['id'] ?? invitationData?['_id'])?.toString();
+      final invitationId = (invitationData?['id'] ?? invitationData?['_id'])
+          ?.toString();
       final expiresAtRaw = invitationData?['expiresAt']?.toString();
-      final expiresAt = expiresAtRaw != null ? DateTime.tryParse(expiresAtRaw) : null;
-      final collegeCode = data['collegeCode']?.toString() ??
+      final expiresAt = expiresAtRaw != null
+          ? DateTime.tryParse(expiresAtRaw)
+          : null;
+      final collegeCode =
+          data['collegeCode']?.toString() ??
           userData['collegeCode']?.toString();
 
       return CreateUserResult(
@@ -178,20 +201,28 @@ class ApiUserRepository implements UserRepository {
   @override
   Future<UserProfileModel> updateUser(UserProfileModel user) async {
     try {
-      final instituteId = user.employeeId ?? user.rollNumber ?? user.instituteId;
-      final response = await _client.dio.put('/users/${user.id}', data: {
-        'name': user.name.trim(),
-        'phone': user.phone.trim(),
-        if (user.email.isNotEmpty) 'email': user.email.trim().toLowerCase(),
-        'role': user.role.value,
-        'accountStatus': user.accountStatus.value, // Exact backend lowercase: active, pending_activation, deactivated, etc.
-        if (instituteId != null && instituteId.isNotEmpty) 'instituteId': instituteId.trim().toUpperCase(),
-        if (user.departmentId != null) 'departmentId': user.departmentId,
-        if (user.courseId != null) 'courseId': user.courseId,
-        if (user.sectionId != null) 'sectionId': user.sectionId,
-        if (user.semesterId != null) 'semesterId': user.semesterId,
-        if (user.profilePictureUrl != null) 'profilePictureUrl': user.profilePictureUrl,
-      });
+      final instituteId =
+          user.employeeId ?? user.rollNumber ?? user.instituteId;
+      final response = await _client.dio.put(
+        '/users/${user.id}',
+        data: {
+          'name': user.name.trim(),
+          'phone': user.phone.trim(),
+          if (user.email.isNotEmpty) 'email': user.email.trim().toLowerCase(),
+          'role': user.role.value,
+          'accountStatus': user
+              .accountStatus
+              .value, // Exact backend lowercase: active, pending_activation, deactivated, etc.
+          if (instituteId != null && instituteId.isNotEmpty)
+            'instituteId': instituteId.trim().toUpperCase(),
+          if (user.departmentId != null) 'departmentId': user.departmentId,
+          if (user.courseId != null) 'courseId': user.courseId,
+          if (user.sectionId != null) 'sectionId': user.sectionId,
+          if (user.semesterId != null) 'semesterId': user.semesterId,
+          if (user.profilePictureUrl != null)
+            'profilePictureUrl': user.profilePictureUrl,
+        },
+      );
 
       final body = response.data as Map<String, dynamic>;
       final data = body['data'] as Map<String, dynamic>? ?? body;
@@ -204,9 +235,12 @@ class ApiUserRepository implements UserRepository {
   @override
   Future<void> deleteUser(String id) async {
     try {
-      await _client.dio.put('/users/$id', data: {
-        'accountStatus': 'deactivated', // Backend AccountStatus.DEACTIVATED
-      });
+      await _client.dio.put(
+        '/users/$id',
+        data: {
+          'accountStatus': 'deactivated', // Backend AccountStatus.DEACTIVATED
+        },
+      );
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to deactivate user account');
     }
@@ -215,9 +249,12 @@ class ApiUserRepository implements UserRepository {
   @override
   Future<void> reactivateUser(String id) async {
     try {
-      await _client.dio.put('/users/$id', data: {
-        'accountStatus': 'active', // Backend AccountStatus.ACTIVE
-      });
+      await _client.dio.put(
+        '/users/$id',
+        data: {
+          'accountStatus': 'active', // Backend AccountStatus.ACTIVE
+        },
+      );
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to reactivate user account');
     }
@@ -237,11 +274,13 @@ class ApiUserRepository implements UserRepository {
   Future<String> reissueActivationCodeForUser(String userId) async {
     try {
       // 1. Fetch pending invitations to find the active invitation record for this user
-      final invitationsResponse = await _client.dio.get('/auth/invitations', queryParameters: {
-        'status': 'pending',
-      });
+      final invitationsResponse = await _client.dio.get(
+        '/auth/invitations',
+        queryParameters: {'status': 'pending'},
+      );
       final invBody = invitationsResponse.data;
-      final invList = (invBody is Map<String, dynamic> && invBody['data'] is List)
+      final invList =
+          (invBody is Map<String, dynamic> && invBody['data'] is List)
           ? invBody['data'] as List
           : (invBody is List ? invBody : []);
 
@@ -260,7 +299,8 @@ class ApiUserRepository implements UserRepository {
         // If not found in pending list, search all invitations
         final allInvResponse = await _client.dio.get('/auth/invitations');
         final allBody = allInvResponse.data;
-        final allList = (allBody is Map<String, dynamic> && allBody['data'] is List)
+        final allList =
+            (allBody is Map<String, dynamic> && allBody['data'] is List)
             ? allBody['data'] as List
             : (allBody is List ? allBody : []);
 
@@ -276,7 +316,9 @@ class ApiUserRepository implements UserRepository {
       }
 
       if (invitationId != null) {
-        final reissueResponse = await _client.dio.post('/auth/invitations/$invitationId/reissue');
+        final reissueResponse = await _client.dio.post(
+          '/auth/invitations/$invitationId/reissue',
+        );
         final rBody = reissueResponse.data as Map<String, dynamic>;
         final rData = (rBody['data'] as Map<String, dynamic>?) ?? rBody;
         final code = rData['activationCode']?.toString();
@@ -285,7 +327,9 @@ class ApiUserRepository implements UserRepository {
         }
       }
 
-      throw Exception('No valid pending invitation found to reissue for this user.');
+      throw Exception(
+        'No valid pending invitation found to reissue for this user.',
+      );
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to reissue activation code');
     }
@@ -303,11 +347,14 @@ class ApiUserRepository implements UserRepository {
           ? '/users/$userId/profile-image/upload-url'
           : '/users/me/profile-image/upload-url';
 
-      final response = await _client.dio.post(endpoint, data: {
-        'fileName': fileName,
-        'fileSize': fileSize,
-        'mimeType': mimeType,
-      });
+      final response = await _client.dio.post(
+        endpoint,
+        data: {
+          'fileName': fileName,
+          'fileSize': fileSize,
+          'mimeType': mimeType,
+        },
+      );
 
       final body = response.data as Map<String, dynamic>;
       return (body['data'] as Map<String, dynamic>?) ?? body;
@@ -326,10 +373,10 @@ class ApiUserRepository implements UserRepository {
           ? '/users/$userId/profile-image/complete'
           : '/users/me/profile-image/complete';
 
-      final response = await _client.dio.post(endpoint, data: {
-        'fileId': fileId,
-        'fileUrl': fileUrl,
-      });
+      final response = await _client.dio.post(
+        endpoint,
+        data: {'fileId': fileId, 'fileUrl': fileUrl},
+      );
 
       final body = response.data as Map<String, dynamic>;
       final data = (body['data'] as Map<String, dynamic>?) ?? body;

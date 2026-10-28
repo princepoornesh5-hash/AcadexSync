@@ -65,7 +65,9 @@ class FirebaseAchievementRepository implements AchievementRepository {
     String? finalStoragePath = achievement.storagePath;
 
     // 2. Storage upload if bytes provided
-    if (fileBytes != null && _fileStorageRepository != null && achievement.fileName != null) {
+    if (fileBytes != null &&
+        _fileStorageRepository != null &&
+        achievement.fileName != null) {
       try {
         final stored = await _fileStorageRepository.uploadFile(
           bytes: fileBytes,
@@ -98,7 +100,11 @@ class FirebaseAchievementRepository implements AchievementRepository {
 
     // 3. Write Firestore metadata with rollback
     try {
-      await _firestoreService.setDocument(_collection, prepared.id, prepared.toJson());
+      await _firestoreService.setDocument(
+        _collection,
+        prepared.id,
+        prepared.toJson(),
+      );
     } catch (e) {
       if (finalStoragePath != null && _fileStorageRepository != null) {
         try {
@@ -122,7 +128,9 @@ class FirebaseAchievementRepository implements AchievementRepository {
     String? finalFileUrl = achievement.fileUrl;
     String? finalStoragePath = achievement.storagePath;
 
-    if (newFileBytes != null && _fileStorageRepository != null && achievement.fileName != null) {
+    if (newFileBytes != null &&
+        _fileStorageRepository != null &&
+        achievement.fileName != null) {
       try {
         final stored = await _fileStorageRepository.uploadFile(
           bytes: newFileBytes,
@@ -148,9 +156,15 @@ class FirebaseAchievementRepository implements AchievementRepository {
     );
 
     try {
-      await _firestoreService.setDocument(_collection, updated.id, updated.toJson());
+      await _firestoreService.setDocument(
+        _collection,
+        updated.id,
+        updated.toJson(),
+      );
     } catch (e) {
-      if (newFileBytes != null && finalStoragePath != null && _fileStorageRepository != null) {
+      if (newFileBytes != null &&
+          finalStoragePath != null &&
+          _fileStorageRepository != null) {
         try {
           await _fileStorageRepository.deleteFile(finalStoragePath);
         } catch (_) {}
@@ -176,7 +190,9 @@ class FirebaseAchievementRepository implements AchievementRepository {
   }) async {
     await _firestoreService.deleteDocument(_collection, achievementId);
 
-    if (storagePath != null && storagePath.isNotEmpty && _fileStorageRepository != null) {
+    if (storagePath != null &&
+        storagePath.isNotEmpty &&
+        _fileStorageRepository != null) {
       try {
         await _fileStorageRepository.deleteFile(storagePath);
       } catch (_) {}
@@ -193,7 +209,9 @@ class FirebaseAchievementRepository implements AchievementRepository {
   }) async {
     if (status == AchievementVerificationStatus.rejected) {
       if (verificationNote == null || verificationNote.trim().isEmpty) {
-        throw const BackendValidationException('Verification note is mandatory when rejecting.');
+        throw const BackendValidationException(
+          'Verification note is mandatory when rejecting.',
+        );
       }
     }
 
@@ -210,7 +228,11 @@ class FirebaseAchievementRepository implements AchievementRepository {
       updatedAt: DateTime.now(),
     );
 
-    await _firestoreService.setDocument(_collection, achievementId, updated.toJson());
+    await _firestoreService.setDocument(
+      _collection,
+      achievementId,
+      updated.toJson(),
+    );
   }
 
   @override
@@ -233,11 +255,14 @@ class FirebaseAchievementRepository implements AchievementRepository {
         filters['studentUid'] = requester.id;
         break;
       case AppRole.faculty:
-        if (requester.departmentId != null) filters['departmentId'] = requester.departmentId;
-        if (requester.sectionId != null) filters['sectionId'] = requester.sectionId;
+        if (requester.departmentId != null)
+          filters['departmentId'] = requester.departmentId;
+        if (requester.sectionId != null)
+          filters['sectionId'] = requester.sectionId;
         break;
       case AppRole.hod:
-        if (requester.departmentId != null) filters['departmentId'] = requester.departmentId;
+        if (requester.departmentId != null)
+          filters['departmentId'] = requester.departmentId;
         break;
       case AppRole.collegeAdmin:
       case AppRole.superAdmin:
@@ -249,7 +274,8 @@ class FirebaseAchievementRepository implements AchievementRepository {
     if (semesterId != null) filters['semesterId'] = semesterId;
     if (sectionId != null) filters['sectionId'] = sectionId;
     if (category != null) filters['category'] = category.name;
-    if (verificationStatus != null) filters['verificationStatus'] = verificationStatus.name;
+    if (verificationStatus != null)
+      filters['verificationStatus'] = verificationStatus.name;
 
     final result = await _firestoreService.queryCollectionPaginated(
       _collection,
@@ -267,12 +293,14 @@ class FirebaseAchievementRepository implements AchievementRepository {
     required String studentUid,
     required String collegeId,
   }) {
-    return _firestoreService.watchQuery(
-      _collection,
-      {'studentUid': studentUid, 'collegeId': collegeId},
-      orderBy: 'achievementDate',
-      descending: true,
-    ).map((docs) => docs.map((d) => Achievement.fromJson(d)).toList());
+    return _firestoreService
+        .watchQuery(
+          _collection,
+          {'studentUid': studentUid, 'collegeId': collegeId},
+          orderBy: 'achievementDate',
+          descending: true,
+        )
+        .map((docs) => docs.map((d) => Achievement.fromJson(d)).toList());
   }
 
   @override
@@ -282,15 +310,18 @@ class FirebaseAchievementRepository implements AchievementRepository {
     final filters = <String, dynamic>{};
     if (requester.collegeId != null) filters['collegeId'] = requester.collegeId;
     if (requester.role == AppRole.hod || requester.role == AppRole.faculty) {
-      if (requester.departmentId != null) filters['departmentId'] = requester.departmentId;
+      if (requester.departmentId != null)
+        filters['departmentId'] = requester.departmentId;
     }
 
-    return _firestoreService.watchQuery(
-      _collection,
-      filters,
-      orderBy: 'achievementDate',
-      descending: true,
-    ).map((docs) => docs.map((d) => Achievement.fromJson(d)).toList());
+    return _firestoreService
+        .watchQuery(
+          _collection,
+          filters,
+          orderBy: 'achievementDate',
+          descending: true,
+        )
+        .map((docs) => docs.map((d) => Achievement.fromJson(d)).toList());
   }
 
   @override
@@ -298,7 +329,10 @@ class FirebaseAchievementRepository implements AchievementRepository {
     required String studentUid,
     required String collegeId,
   }) async {
-    final list = await getStudentAchievements(studentUid: studentUid, collegeId: collegeId);
+    final list = await getStudentAchievements(
+      studentUid: studentUid,
+      collegeId: collegeId,
+    );
     final currentYear = DateTime.now().year;
 
     return AchievementMetrics(

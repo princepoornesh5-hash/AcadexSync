@@ -7,10 +7,7 @@ import '../../domain/models/user_status_enum.dart';
 class UserStatusBadge extends StatelessWidget {
   final dynamic status; // AccountStatus, UserStatus, or String
 
-  const UserStatusBadge({
-    super.key,
-    required this.status,
-  });
+  const UserStatusBadge({super.key, required this.status});
 
   @override
   Widget build(BuildContext context) {
@@ -21,8 +18,8 @@ class UserStatusBadge extends StatelessWidget {
     final str = (status is AccountStatus)
         ? (status as AccountStatus).name.toLowerCase()
         : (status is UserStatus)
-            ? (status as UserStatus).name.toLowerCase()
-            : status.toString().toLowerCase();
+        ? (status as UserStatus).name.toLowerCase()
+        : status.toString().toLowerCase();
 
     if (str.contains('pending') || str.contains('invited')) {
       label = 'Pending Activation';

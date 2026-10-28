@@ -26,13 +26,15 @@ TimetableEntryStatus getEntryStatus(TimetableModel entry) {
   try {
     final startParts = entry.startTime.split(':');
     final endParts = entry.endTime.split(':');
-    final startMinutes = int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
+    final startMinutes =
+        int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
     final endMinutes = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
     final currentMinutes = now.hour * 60 + now.minute;
 
     if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) {
       return TimetableEntryStatus.now;
-    } else if (currentMinutes < startMinutes && (startMinutes - currentMinutes) <= 120) {
+    } else if (currentMinutes < startMinutes &&
+        (startMinutes - currentMinutes) <= 120) {
       return TimetableEntryStatus.upNext;
     } else if (currentMinutes > endMinutes) {
       return TimetableEntryStatus.completed;
@@ -144,16 +146,23 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
     final baseBorderColor = isLive
         ? sessionColor
         : (isUpNext
-            ? AcadexColors.info.withValues(alpha: 0.7)
-            : (_isHovered ? sessionColor.withValues(alpha: 0.5) : Theme.of(context).dividerColor.withValues(alpha: 0.6)));
+              ? AcadexColors.info.withValues(alpha: 0.7)
+              : (_isHovered
+                    ? sessionColor.withValues(alpha: 0.5)
+                    : Theme.of(context).dividerColor.withValues(alpha: 0.6)));
 
     final baseShadow = isLive
         ? (_isHovered
-            ? (isDark ? AcadexShadows.darkMd : AcadexShadows.lightMd)
-            : (isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm))
-        : (_isHovered ? (isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm) : null);
+              ? (isDark ? AcadexShadows.darkMd : AcadexShadows.lightMd)
+              : (isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm))
+        : (_isHovered
+              ? (isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm)
+              : null);
 
-    final animDuration = AcadexMotion.resolveDuration(context, AcadexMotion.micro);
+    final animDuration = AcadexMotion.resolveDuration(
+      context,
+      AcadexMotion.micro,
+    );
 
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0.0, end: 1.0),
@@ -180,11 +189,17 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
           decoration: BoxDecoration(
             color: isDark
                 ? (isLive
-                    ? sessionColor.withValues(alpha: _isHovered ? 0.16 : 0.12)
-                    : (_isHovered ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.95) : Theme.of(context).colorScheme.surface))
+                      ? sessionColor.withValues(alpha: _isHovered ? 0.16 : 0.12)
+                      : (_isHovered
+                            ? Theme.of(
+                                context,
+                              ).colorScheme.surface.withValues(alpha: 0.95)
+                            : Theme.of(context).colorScheme.surface))
                 : (isLive
-                    ? sessionColor.withValues(alpha: _isHovered ? 0.09 : 0.06)
-                    : (_isHovered ? Colors.white : Theme.of(context).colorScheme.surface)),
+                      ? sessionColor.withValues(alpha: _isHovered ? 0.09 : 0.06)
+                      : (_isHovered
+                            ? Colors.white
+                            : Theme.of(context).colorScheme.surface)),
             borderRadius: AcadexRadius.borderRadiusLg,
             border: Border.all(
               color: baseBorderColor,
@@ -213,29 +228,47 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(LucideIcons.clock, size: 13, color: sessionColor),
+                            Icon(
+                              LucideIcons.clock,
+                              size: 13,
+                              color: sessionColor,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               '${entry.startTime} – ${entry.endTime}',
-                              style: AcadexTypography.bodySmall(color: Theme.of(context).colorScheme.onSurface).copyWith(
-                                fontWeight: FontWeight.w700,
-                                fontSize: isCompact ? 12 : 13,
-                              ),
+                              style:
+                                  AcadexTypography.bodySmall(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                  ).copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: isCompact ? 12 : 13,
+                                  ),
                             ),
                           ],
                         ),
-                        
+
                         // Status & Session Type Badge
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             if (isLive) ...[
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AcadexColors.error.withValues(alpha: 0.15),
+                                  color: AcadexColors.error.withValues(
+                                    alpha: 0.15,
+                                  ),
                                   borderRadius: AcadexRadius.borderRadiusXs,
-                                  border: Border.all(color: AcadexColors.error.withValues(alpha: 0.4)),
+                                  border: Border.all(
+                                    color: AcadexColors.error.withValues(
+                                      alpha: 0.4,
+                                    ),
+                                  ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -251,7 +284,13 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
                                     const SizedBox(width: 4),
                                     Text(
                                       'NOW',
-                                      style: AcadexTypography.eyebrow(color: AcadexColors.error).copyWith(fontSize: 9, fontWeight: FontWeight.bold),
+                                      style:
+                                          AcadexTypography.eyebrow(
+                                            color: AcadexColors.error,
+                                          ).copyWith(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -259,21 +298,39 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
                               const SizedBox(width: 4),
                             ] else if (isUpNext) ...[
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AcadexColors.info.withValues(alpha: 0.15),
+                                  color: AcadexColors.info.withValues(
+                                    alpha: 0.15,
+                                  ),
                                   borderRadius: AcadexRadius.borderRadiusXs,
-                                  border: Border.all(color: AcadexColors.info.withValues(alpha: 0.4)),
+                                  border: Border.all(
+                                    color: AcadexColors.info.withValues(
+                                      alpha: 0.4,
+                                    ),
+                                  ),
                                 ),
                                 child: Text(
                                   'UP NEXT',
-                                  style: AcadexTypography.eyebrow(color: AcadexColors.info).copyWith(fontSize: 9, fontWeight: FontWeight.bold),
+                                  style:
+                                      AcadexTypography.eyebrow(
+                                        color: AcadexColors.info,
+                                      ).copyWith(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                 ),
                               ),
                               const SizedBox(width: 4),
                             ],
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: sessionColor.withValues(alpha: 0.12),
                                 borderRadius: AcadexRadius.borderRadiusXs,
@@ -281,14 +338,21 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(getSessionTypeIcon(entry.sessionType), size: 10, color: sessionColor),
+                                  Icon(
+                                    getSessionTypeIcon(entry.sessionType),
+                                    size: 10,
+                                    color: sessionColor,
+                                  ),
                                   const SizedBox(width: 3),
                                   Text(
                                     entry.sessionType.displayName,
-                                    style: AcadexTypography.eyebrow(color: sessionColor).copyWith(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                    style:
+                                        AcadexTypography.eyebrow(
+                                          color: sessionColor,
+                                        ).copyWith(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                   ),
                                 ],
                               ),
@@ -302,10 +366,13 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
                     // Middle: Subject Title & Code
                     Text(
                       subjectName,
-                      style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface).copyWith(
-                        fontSize: isCompact ? 13 : 15,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style:
+                          AcadexTypography.title(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ).copyWith(
+                            fontSize: isCompact ? 13 : 15,
+                            fontWeight: FontWeight.w700,
+                          ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -313,10 +380,9 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
                       const SizedBox(height: 2),
                       Text(
                         subjectCode,
-                        style: AcadexTypography.caption(color: sessionColor).copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 11,
-                        ),
+                        style: AcadexTypography.caption(
+                          color: sessionColor,
+                        ).copyWith(fontWeight: FontWeight.w600, fontSize: 11),
                       ),
                     ],
                     const SizedBox(height: 8),
@@ -329,16 +395,32 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
                       children: [
                         // Faculty
                         ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: isCompact ? 180 : 300),
+                          constraints: BoxConstraints(
+                            maxWidth: isCompact ? 180 : 300,
+                          ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(LucideIcons.user, size: 13, color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                              Icon(
+                                LucideIcons.user,
+                                size: 13,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall?.color ??
+                                    AcadexColors.inkMuted,
+                              ),
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
                                   facultyName,
-                                  style: AcadexTypography.caption(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                                  style: AcadexTypography.caption(
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall?.color ??
+                                        AcadexColors.inkMuted,
+                                  ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -349,16 +431,32 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
                         // Room & Building
                         if (entry.roomNumber.isNotEmpty)
                           ConstrainedBox(
-                            constraints: BoxConstraints(maxWidth: isCompact ? 180 : 300),
+                            constraints: BoxConstraints(
+                              maxWidth: isCompact ? 180 : 300,
+                            ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(LucideIcons.mapPin, size: 13, color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                                Icon(
+                                  LucideIcons.mapPin,
+                                  size: 13,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall?.color ??
+                                      AcadexColors.inkMuted,
+                                ),
                                 const SizedBox(width: 4),
                                 Flexible(
                                   child: Text(
                                     'Room ${entry.roomNumber}${entry.building != null && entry.building!.isNotEmpty ? ' · ${entry.building}' : ''}',
-                                    style: AcadexTypography.caption(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                                    style: AcadexTypography.caption(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall?.color ??
+                                          AcadexColors.inkMuted,
+                                    ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -369,14 +467,25 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
                         // Section
                         if (sectionName.isNotEmpty)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                              color: Theme.of(
+                                context,
+                              ).dividerColor.withValues(alpha: 0.1),
                               borderRadius: AcadexRadius.borderRadiusXs,
                             ),
                             child: Text(
                               'Sec: $sectionName',
-                              style: AcadexTypography.caption(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted).copyWith(fontSize: 10),
+                              style: AcadexTypography.caption(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall?.color ??
+                                    AcadexColors.inkMuted,
+                              ).copyWith(fontSize: 10),
                             ),
                           ),
                       ],
@@ -387,7 +496,9 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
                         alignment: Alignment.centerLeft,
                         child: InkWell(
                           onTap: () {
-                            final selectedDate = ref.read(timetableSelectedDateProvider);
+                            final selectedDate = ref.read(
+                              timetableSelectedDateProvider,
+                            );
                             final assignedClass = AssignedClass(
                               id: entry.id,
                               timetableId: entry.timetableId,
@@ -406,28 +517,45 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
                               building: entry.building,
                               date: selectedDate,
                             );
-                            ref.read(activeClassProvider.notifier).state = assignedClass;
+                            ref.read(activeClassProvider.notifier).state =
+                                assignedClass;
                             context.push('/attendance/mark');
                           },
                           borderRadius: AcadexRadius.borderRadiusSm,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
                             decoration: BoxDecoration(
-                              color: AcadexColors.primary.withValues(alpha: 0.1),
+                              color: AcadexColors.primary.withValues(
+                                alpha: 0.1,
+                              ),
                               borderRadius: AcadexRadius.borderRadiusSm,
-                              border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.3)),
+                              border: Border.all(
+                                color: AcadexColors.primary.withValues(
+                                  alpha: 0.3,
+                                ),
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(LucideIcons.clipboardCheck, size: 13, color: AcadexColors.primary),
+                                const Icon(
+                                  LucideIcons.clipboardCheck,
+                                  size: 13,
+                                  color: AcadexColors.primary,
+                                ),
                                 const SizedBox(width: 5),
                                 Text(
                                   'Mark Attendance',
-                                  style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 11,
-                                  ),
+                                  style:
+                                      AcadexTypography.caption(
+                                        color: AcadexColors.primary,
+                                      ).copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 11,
+                                      ),
                                 ),
                               ],
                             ),
@@ -464,10 +592,12 @@ class TimetableManagementCard extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<TimetableManagementCard> createState() => _TimetableManagementCardState();
+  ConsumerState<TimetableManagementCard> createState() =>
+      _TimetableManagementCardState();
 }
 
-class _TimetableManagementCardState extends ConsumerState<TimetableManagementCard> {
+class _TimetableManagementCardState
+    extends ConsumerState<TimetableManagementCard> {
   bool _isHovered = false;
 
   @override
@@ -484,12 +614,16 @@ class _TimetableManagementCardState extends ConsumerState<TimetableManagementCar
     final subjectName = subject?.name ?? entry.subjectId;
     final subjectCode = subject?.code ?? '';
     final facultyName = faculty?.name ?? entry.facultyId;
-    final sectionName = section?.name ?? (entry.sectionId.isNotEmpty ? entry.sectionId : '—');
+    final sectionName =
+        section?.name ?? (entry.sectionId.isNotEmpty ? entry.sectionId : '—');
 
     final sessionColor = getSessionTypeColor(entry.sessionType);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final animDuration = AcadexMotion.resolveDuration(context, AcadexMotion.micro);
+    final animDuration = AcadexMotion.resolveDuration(
+      context,
+      AcadexMotion.micro,
+    );
 
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0.0, end: 1.0),
@@ -515,11 +649,19 @@ class _TimetableManagementCardState extends ConsumerState<TimetableManagementCar
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isDark
-                ? (_isHovered ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.95) : Theme.of(context).colorScheme.surface)
-                : (_isHovered ? Colors.white : Theme.of(context).colorScheme.surface),
+                ? (_isHovered
+                      ? Theme.of(
+                          context,
+                        ).colorScheme.surface.withValues(alpha: 0.95)
+                      : Theme.of(context).colorScheme.surface)
+                : (_isHovered
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.surface),
             borderRadius: AcadexRadius.borderRadiusLg,
             border: Border.all(
-              color: _isHovered ? sessionColor.withValues(alpha: 0.4) : Theme.of(context).dividerColor,
+              color: _isHovered
+                  ? sessionColor.withValues(alpha: 0.4)
+                  : Theme.of(context).dividerColor,
               width: _isHovered ? 1.5 : 1,
             ),
             boxShadow: _isHovered
@@ -531,11 +673,16 @@ class _TimetableManagementCardState extends ConsumerState<TimetableManagementCar
             children: [
               // Left: Day and Time pill
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: sessionColor.withValues(alpha: 0.1),
                   borderRadius: AcadexRadius.borderRadiusMd,
-                  border: Border.all(color: sessionColor.withValues(alpha: 0.25)),
+                  border: Border.all(
+                    color: sessionColor.withValues(alpha: 0.25),
+                  ),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -562,7 +709,9 @@ class _TimetableManagementCardState extends ConsumerState<TimetableManagementCar
                       entry.endTime,
                       style: TextStyle(
                         fontSize: 11,
-                        color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                        color:
+                            Theme.of(context).textTheme.bodySmall?.color ??
+                            AcadexColors.inkMuted,
                       ),
                     ),
                   ],
@@ -580,23 +729,33 @@ class _TimetableManagementCardState extends ConsumerState<TimetableManagementCar
                         Expanded(
                           child: Text(
                             subjectName,
-                            style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                            ),
+                            style:
+                                AcadexTypography.body(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ).copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: sessionColor.withValues(alpha: 0.1),
                             borderRadius: AcadexRadius.borderRadiusXs,
                           ),
                           child: Text(
                             entry.sessionType.displayName,
-                            style: AcadexTypography.eyebrow(color: sessionColor).copyWith(fontSize: 10),
+                            style: AcadexTypography.eyebrow(
+                              color: sessionColor,
+                            ).copyWith(fontSize: 10),
                           ),
                         ),
                       ],
@@ -605,7 +764,9 @@ class _TimetableManagementCardState extends ConsumerState<TimetableManagementCar
                       const SizedBox(height: 2),
                       Text(
                         subjectCode,
-                        style: AcadexTypography.caption(color: sessionColor).copyWith(fontWeight: FontWeight.w600),
+                        style: AcadexTypography.caption(
+                          color: sessionColor,
+                        ).copyWith(fontWeight: FontWeight.w600),
                       ),
                     ],
                     const SizedBox(height: 8),
@@ -616,22 +777,50 @@ class _TimetableManagementCardState extends ConsumerState<TimetableManagementCar
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(LucideIcons.user, size: 13, color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                            Icon(
+                              LucideIcons.user,
+                              size: 13,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.bodySmall?.color ??
+                                  AcadexColors.inkMuted,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               facultyName,
-                              style: AcadexTypography.caption(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                              style: AcadexTypography.caption(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall?.color ??
+                                    AcadexColors.inkMuted,
+                              ),
                             ),
                           ],
                         ),
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(LucideIcons.layoutGrid, size: 13, color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                            Icon(
+                              LucideIcons.layoutGrid,
+                              size: 13,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.bodySmall?.color ??
+                                  AcadexColors.inkMuted,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               'Sec: $sectionName',
-                              style: AcadexTypography.caption(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                              style: AcadexTypography.caption(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall?.color ??
+                                    AcadexColors.inkMuted,
+                              ),
                             ),
                           ],
                         ),
@@ -639,11 +828,25 @@ class _TimetableManagementCardState extends ConsumerState<TimetableManagementCar
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(LucideIcons.mapPin, size: 13, color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                              Icon(
+                                LucideIcons.mapPin,
+                                size: 13,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall?.color ??
+                                    AcadexColors.inkMuted,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 'Room ${entry.roomNumber}${entry.building != null && entry.building!.isNotEmpty ? ' · ${entry.building}' : ''}',
-                                style: AcadexTypography.caption(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                                style: AcadexTypography.caption(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall?.color ??
+                                      AcadexColors.inkMuted,
+                                ),
                               ),
                             ],
                           ),
@@ -660,23 +863,41 @@ class _TimetableManagementCardState extends ConsumerState<TimetableManagementCar
                 children: [
                   if (widget.onSubstitute != null)
                     IconButton(
-                      icon: Icon(Icons.swap_horiz_rounded, size: 20, color: Theme.of(context).primaryColor),
+                      icon: Icon(
+                        Icons.swap_horiz_rounded,
+                        size: 20,
+                        color: Theme.of(context).primaryColor,
+                      ),
                       tooltip: 'Assign Substitute',
                       onPressed: widget.onSubstitute,
                     ),
                   IconButton(
-                    icon: Icon(LucideIcons.edit2, size: 18, color: Theme.of(context).primaryColor),
+                    icon: Icon(
+                      LucideIcons.edit2,
+                      size: 18,
+                      color: Theme.of(context).primaryColor,
+                    ),
                     tooltip: 'Edit Schedule',
                     onPressed: widget.onEdit,
                   ),
                   if (widget.onDuplicate != null)
                     IconButton(
-                      icon: Icon(LucideIcons.copy, size: 18, color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                      icon: Icon(
+                        LucideIcons.copy,
+                        size: 18,
+                        color:
+                            Theme.of(context).textTheme.bodySmall?.color ??
+                            AcadexColors.inkMuted,
+                      ),
                       tooltip: 'Duplicate Schedule',
                       onPressed: widget.onDuplicate,
                     ),
                   IconButton(
-                    icon: const Icon(LucideIcons.trash2, size: 18, color: AcadexColors.error),
+                    icon: const Icon(
+                      LucideIcons.trash2,
+                      size: 18,
+                      color: AcadexColors.error,
+                    ),
                     tooltip: 'Delete Schedule',
                     onPressed: widget.onDelete,
                   ),
@@ -715,17 +936,30 @@ class WeeklyTimetableGrid extends StatelessWidget {
               final isToday = day == TimetableDay.values[now.weekday - 1];
 
               return AnimatedContainer(
-                duration: AcadexMotion.resolveDuration(context, AcadexMotion.micro),
+                duration: AcadexMotion.resolveDuration(
+                  context,
+                  AcadexMotion.micro,
+                ),
                 curve: AcadexMotion.curveStandard,
                 width: 240,
                 margin: const EdgeInsets.only(right: 14),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? (isToday ? Theme.of(context).primaryColor.withValues(alpha: 0.05) : Theme.of(context).colorScheme.surface)
-                      : (isToday ? Theme.of(context).primaryColor.withValues(alpha: 0.03) : Theme.of(context).colorScheme.surface),
+                      ? (isToday
+                            ? Theme.of(
+                                context,
+                              ).primaryColor.withValues(alpha: 0.05)
+                            : Theme.of(context).colorScheme.surface)
+                      : (isToday
+                            ? Theme.of(
+                                context,
+                              ).primaryColor.withValues(alpha: 0.03)
+                            : Theme.of(context).colorScheme.surface),
                   borderRadius: AcadexRadius.borderRadiusXl,
                   border: Border.all(
-                    color: isToday ? Theme.of(context).primaryColor.withValues(alpha: 0.4) : Theme.of(context).dividerColor,
+                    color: isToday
+                        ? Theme.of(context).primaryColor.withValues(alpha: 0.4)
+                        : Theme.of(context).dividerColor,
                     width: isToday ? 1.5 : 1,
                   ),
                 ),
@@ -734,13 +968,26 @@ class WeeklyTimetableGrid extends StatelessWidget {
                   children: [
                     // Column Header
                     Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: isToday
-                            ? Theme.of(context).primaryColor.withValues(alpha: 0.12)
-                            : (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02)),
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
+                            ? Theme.of(
+                                context,
+                              ).primaryColor.withValues(alpha: 0.12)
+                            : (isDark
+                                  ? Colors.white.withValues(alpha: 0.03)
+                                  : Colors.black.withValues(alpha: 0.02)),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(16),
+                        ),
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Theme.of(context).dividerColor,
+                          ),
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -754,7 +1001,11 @@ class WeeklyTimetableGrid extends StatelessWidget {
                                     style: TextStyle(
                                       fontWeight: FontWeight.w700,
                                       fontSize: 13,
-                                      color: isToday ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.onSurface,
+                                      color: isToday
+                                          ? Theme.of(context).primaryColor
+                                          : Theme.of(
+                                              context,
+                                            ).colorScheme.onSurface,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -762,14 +1013,21 @@ class WeeklyTimetableGrid extends StatelessWidget {
                                 if (isToday) ...[
                                   const SizedBox(width: 4),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 1,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: Theme.of(context).primaryColor,
                                       borderRadius: AcadexRadius.borderRadiusXs,
                                     ),
                                     child: const Text(
                                       'TODAY',
-                                      style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -778,9 +1036,14 @@ class WeeklyTimetableGrid extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 1,
+                            ),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).dividerColor.withValues(alpha: 0.15),
+                              color: Theme.of(
+                                context,
+                              ).dividerColor.withValues(alpha: 0.15),
                               borderRadius: AcadexRadius.borderRadiusSm,
                             ),
                             child: Text(
@@ -788,7 +1051,11 @@ class WeeklyTimetableGrid extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
-                                color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall?.color ??
+                                    AcadexColors.inkMuted,
                               ),
                             ),
                           ),
@@ -809,13 +1076,25 @@ class WeeklyTimetableGrid extends StatelessWidget {
                                     Icon(
                                       LucideIcons.calendarCheck,
                                       size: 32,
-                                      color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted).withValues(alpha: 0.3),
+                                      color:
+                                          (Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall
+                                                      ?.color ??
+                                                  AcadexColors.inkMuted)
+                                              .withValues(alpha: 0.3),
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
                                       'No Classes',
                                       style: TextStyle(
-                                        color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted).withValues(alpha: 0.7),
+                                        color:
+                                            (Theme.of(context)
+                                                        .textTheme
+                                                        .bodySmall
+                                                        ?.color ??
+                                                    AcadexColors.inkMuted)
+                                                .withValues(alpha: 0.7),
                                         fontSize: 12,
                                       ),
                                     ),
@@ -824,7 +1103,14 @@ class WeeklyTimetableGrid extends StatelessWidget {
                               ),
                             )
                           : Column(
-                              children: entries.map((entry) => TimetableCard(entry: entry, isCompact: true)).toList(),
+                              children: entries
+                                  .map(
+                                    (entry) => TimetableCard(
+                                      entry: entry,
+                                      isCompact: true,
+                                    ),
+                                  )
+                                  .toList(),
                             ),
                     ),
                   ],
@@ -865,10 +1151,7 @@ class TimetableDayView extends ConsumerWidget {
         children: [
           AcadexTimetableCalendar(role: user?.role),
           const SizedBox(height: 16),
-          DailyTimelineView(
-            entries: entries,
-            selectedDate: selectedDate,
-          ),
+          DailyTimelineView(entries: entries, selectedDate: selectedDate),
         ],
       ),
     );
@@ -883,7 +1166,9 @@ class TimetableListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeDays = TimetableDay.values.where((day) => (weeklyData[day] ?? []).isNotEmpty).toList();
+    final activeDays = TimetableDay.values
+        .where((day) => (weeklyData[day] ?? []).isNotEmpty)
+        .toList();
 
     if (activeDays.isEmpty) {
       return Center(
@@ -893,12 +1178,19 @@ class TimetableListView extends StatelessWidget {
             Icon(
               LucideIcons.calendarX,
               size: 56,
-              color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted).withValues(alpha: 0.3),
+              color:
+                  (Theme.of(context).textTheme.bodySmall?.color ??
+                          AcadexColors.inkMuted)
+                      .withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
             Text(
               'No classes scheduled for the week',
-              style: AcadexTypography.heading3(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+              style: AcadexTypography.heading3(
+                color:
+                    Theme.of(context).textTheme.bodySmall?.color ??
+                    AcadexColors.inkMuted,
+              ),
             ),
           ],
         ),
@@ -930,9 +1222,14 @@ class TimetableListView extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                      color: Theme.of(
+                        context,
+                      ).primaryColor.withValues(alpha: 0.1),
                       borderRadius: AcadexRadius.borderRadiusSm,
                     ),
                     child: Text(
@@ -1007,12 +1304,15 @@ class TodayScheduleWidget extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 emptyTitle ?? 'No classes scheduled for today',
-                style: AcadexTypography.title().copyWith(fontWeight: FontWeight.w700),
+                style: AcadexTypography.title().copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 4),
               Text(
-                emptySubtitle ?? 'There are no active timetable sessions or lectures planned for today.',
+                emptySubtitle ??
+                    'There are no active timetable sessions or lectures planned for today.',
                 textAlign: TextAlign.center,
                 style: AcadexTypography.caption(),
               ),
@@ -1025,8 +1325,13 @@ class TodayScheduleWidget extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AcadexColors.primary,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                   ),
                 ),
               ],
@@ -1041,7 +1346,8 @@ class TodayScheduleWidget extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       itemCount: todayEntries.length,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (context, index) => TimetableCard(entry: todayEntries[index], isCompact: true),
+      itemBuilder: (context, index) =>
+          TimetableCard(entry: todayEntries[index], isCompact: true),
     );
   }
 }

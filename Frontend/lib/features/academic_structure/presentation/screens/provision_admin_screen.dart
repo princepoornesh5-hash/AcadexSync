@@ -17,7 +17,8 @@ class ProvisionAdminScreen extends ConsumerStatefulWidget {
   const ProvisionAdminScreen({super.key, required this.collegeId});
 
   @override
-  ConsumerState<ProvisionAdminScreen> createState() => _ProvisionAdminScreenState();
+  ConsumerState<ProvisionAdminScreen> createState() =>
+      _ProvisionAdminScreenState();
 }
 
 class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
@@ -49,8 +50,7 @@ class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
         'instituteId': _instituteIdCtrl.text.trim().toUpperCase(),
         if (_emailCtrl.text.trim().isNotEmpty)
           'email': _emailCtrl.text.trim().toLowerCase(),
-        if (_phoneCtrl.text.trim().isNotEmpty)
-          'phone': _phoneCtrl.text.trim(),
+        if (_phoneCtrl.text.trim().isNotEmpty) 'phone': _phoneCtrl.text.trim(),
       };
 
       final result = await ref
@@ -94,8 +94,13 @@ class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-          onPressed: () => context.safePop(fallbackRoute: '/academics/colleges/${widget.collegeId}'),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
+          onPressed: () => context.safePop(
+            fallbackRoute: '/academics/colleges/${widget.collegeId}',
+          ),
         ),
         title: Text(
           'Provision College Admin',
@@ -107,7 +112,10 @@ class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
       body: collegeAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(
-          child: Text('Failed to load college: $err', style: const TextStyle(color: AcadexColors.error)),
+          child: Text(
+            'Failed to load college: $err',
+            style: const TextStyle(color: AcadexColors.error),
+          ),
         ),
         data: (college) {
           return AcadexPageContainer(
@@ -136,7 +144,11 @@ class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
                             color: AcadexColors.primary,
                             borderRadius: AcadexRadius.borderRadiusSm,
                           ),
-                          child: const Icon(LucideIcons.building, color: Colors.white, size: 18),
+                          child: const Icon(
+                            LucideIcons.building,
+                            color: Colors.white,
+                            size: 18,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -146,7 +158,9 @@ class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
                               Text(
                                 college.name,
                                 style: AcadexTypography.body(
-                                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
                                 ).copyWith(fontWeight: FontWeight.w700),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -154,7 +168,9 @@ class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
                               Text(
                                 'Code: ${college.code} • Principal: ${college.principal}',
                                 style: AcadexTypography.caption(
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
                                 ),
                               ),
                             ],
@@ -174,14 +190,18 @@ class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
                         Text(
                           'Administrator Account Details',
                           style: AcadexTypography.body(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ).copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'A single-use activation code will be generated. The administrator uses this code to set their password at /activate.',
                           style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -192,12 +212,16 @@ class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
                           child: TextFormField(
                             controller: _nameCtrl,
                             validator: (v) {
-                              if (v == null || v.trim().isEmpty) return 'Full Name is required';
-                              if (v.trim().length < 2) return 'Name must be at least 2 characters';
+                              if (v == null || v.trim().isEmpty)
+                                return 'Full Name is required';
+                              if (v.trim().length < 2)
+                                return 'Name must be at least 2 characters';
                               return null;
                             },
                             style: AcadexTypography.body(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ),
                             decoration: const InputDecoration(
                               hintText: 'e.g. Dr. Rajesh Kumar',
@@ -213,17 +237,22 @@ class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
                           child: TextFormField(
                             controller: _instituteIdCtrl,
                             validator: (v) {
-                              if (v == null || v.trim().isEmpty) return 'PIN Number is required';
-                              if (v.trim().length < 2) return 'PIN Number must be at least 2 characters';
+                              if (v == null || v.trim().isEmpty)
+                                return 'PIN Number is required';
+                              if (v.trim().length < 2)
+                                return 'PIN Number must be at least 2 characters';
                               return null;
                             },
                             style: AcadexTypography.body(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ),
                             decoration: const InputDecoration(
                               hintText: 'e.g. GIT-ADMIN-01',
                               prefixIcon: Icon(LucideIcons.idCard, size: 18),
-                              helperText: 'Official institutional PIN Number used by administrator to log in.',
+                              helperText:
+                                  'Official institutional PIN Number used by administrator to log in.',
                             ),
                           ),
                         ),
@@ -237,7 +266,9 @@ class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
                             keyboardType: TextInputType.emailAddress,
                             validator: (v) {
                               if (v != null && v.trim().isNotEmpty) {
-                                final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                                final emailRegex = RegExp(
+                                  r'^[^@]+@[^@]+\.[^@]+',
+                                );
                                 if (!emailRegex.hasMatch(v.trim())) {
                                   return 'Enter a valid email address';
                                 }
@@ -245,7 +276,9 @@ class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
                               return null;
                             },
                             style: AcadexTypography.body(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ),
                             decoration: const InputDecoration(
                               hintText: 'e.g. admin@git.edu',
@@ -262,13 +295,17 @@ class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
                             controller: _phoneCtrl,
                             keyboardType: TextInputType.phone,
                             validator: (v) {
-                              if (v != null && v.trim().isNotEmpty && v.trim().length < 7) {
+                              if (v != null &&
+                                  v.trim().isNotEmpty &&
+                                  v.trim().length < 7) {
                                 return 'Phone must be at least 7 digits';
                               }
                               return null;
                             },
                             style: AcadexTypography.body(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ),
                             decoration: const InputDecoration(
                               hintText: 'e.g. 9876543210',
@@ -288,18 +325,26 @@ class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
                         child: AcadexButton(
                           label: 'Cancel',
                           variant: AcadexButtonVariant.secondary,
-                          onPressed: _isSubmitting ? null : () => context.safePop(fallbackRoute: '/academics/colleges'),
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => context.safePop(
+                                  fallbackRoute: '/academics/colleges',
+                                ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         flex: 2,
                         child: AcadexButton(
-                          label: _isSubmitting ? 'Provisioning...' : 'Provision Administrator',
+                          label: _isSubmitting
+                              ? 'Provisioning...'
+                              : 'Provision Administrator',
                           icon: _isSubmitting ? null : LucideIcons.userPlus,
                           variant: AcadexButtonVariant.primary,
                           isLoading: _isSubmitting,
-                          onPressed: _isSubmitting ? null : () => _submit(college.name, college.code),
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => _submit(college.name, college.code),
                         ),
                       ),
                     ],

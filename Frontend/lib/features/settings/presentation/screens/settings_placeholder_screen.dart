@@ -12,7 +12,10 @@ class SettingsPlaceholderScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: DashboardColors.background,
       appBar: AppBar(
-        title: const Text('Settings', style: TextStyle(color: DashboardColors.textPrimary)),
+        title: const Text(
+          'Settings',
+          style: TextStyle(color: DashboardColors.textPrimary),
+        ),
         backgroundColor: DashboardColors.surface,
         iconTheme: const IconThemeData(color: DashboardColors.textPrimary),
         elevation: 0,
@@ -29,12 +32,20 @@ class SettingsPlaceholderScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           ListTile(
             leading: const Icon(Icons.logout, color: DashboardColors.error),
-            title: const Text('Logout', style: TextStyle(color: DashboardColors.error, fontWeight: FontWeight.bold)),
+            title: const Text(
+              'Logout',
+              style: TextStyle(
+                color: DashboardColors.error,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             onTap: () {
               ref.read(authProvider.notifier).logout();
               context.go('/login');
             },
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             tileColor: DashboardColors.surface,
           ),
         ],
@@ -52,9 +63,21 @@ class SettingsPlaceholderScreen extends ConsumerWidget {
       ),
       child: ListTile(
         leading: Icon(icon, color: DashboardColors.primary),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: DashboardColors.textPrimary)),
-        subtitle: Text(subtitle, style: const TextStyle(color: DashboardColors.textSecondary)),
-        trailing: const Icon(Icons.chevron_right, color: DashboardColors.textMuted),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: DashboardColors.textPrimary,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(color: DashboardColors.textSecondary),
+        ),
+        trailing: const Icon(
+          Icons.chevron_right,
+          color: DashboardColors.textMuted,
+        ),
         onTap: () {},
       ),
     );

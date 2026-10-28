@@ -70,8 +70,9 @@ class DepartmentAcademicRecordsScreen extends ConsumerWidget {
                       label: Text(status.displayName),
                       selected: isSelected,
                       onSelected: (selected) {
-                        ref.read(departmentRecordsFilterProvider.notifier).state =
-                            filter.copyWith(
+                        ref
+                            .read(departmentRecordsFilterProvider.notifier)
+                            .state = filter.copyWith(
                           progressionStatus: selected ? status.value : null,
                           page: 1,
                         );
@@ -112,7 +113,8 @@ class DepartmentAcademicRecordsScreen extends ConsumerWidget {
                             'No student academic records match the current filter selection.',
                             textAlign: TextAlign.center,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+                              color: theme.textTheme.bodyMedium?.color
+                                  ?.withOpacity(0.7),
                             ),
                           ),
                         ],
@@ -124,30 +126,43 @@ class DepartmentAcademicRecordsScreen extends ConsumerWidget {
                 return RefreshIndicator(
                   onRefresh: () async {
                     ref.invalidate(departmentAcademicRecordsProvider(filter));
-                    await ref.read(departmentAcademicRecordsProvider(filter).future);
+                    await ref.read(
+                      departmentAcademicRecordsProvider(filter).future,
+                    );
                   },
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     itemCount: paginated.records.length,
                     itemBuilder: (context, index) {
                       final record = paginated.records[index];
-                      final statusColor = _getStatusColor(record.progressionStatus);
+                      final statusColor = _getStatusColor(
+                        record.progressionStatus,
+                      );
 
                       return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                           side: BorderSide(
-                            color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                            color: isDark
+                                ? Colors.grey.shade800
+                                : Colors.grey.shade200,
                             width: 1,
                           ),
                         ),
                         color: isDark ? const Color(0xFF1E222A) : Colors.white,
                         child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                           leading: CircleAvatar(
-                            backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
+                            backgroundColor: theme.colorScheme.primary
+                                .withOpacity(0.12),
                             child: Icon(
                               Icons.person_rounded,
                               color: theme.colorScheme.primary,
@@ -165,11 +180,16 @@ class DepartmentAcademicRecordsScreen extends ConsumerWidget {
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: statusColor.withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: statusColor.withOpacity(0.3)),
+                                  border: Border.all(
+                                    color: statusColor.withOpacity(0.3),
+                                  ),
                                 ),
                                 child: Text(
                                   record.progressionStatus.displayName,
@@ -189,14 +209,16 @@ class DepartmentAcademicRecordsScreen extends ConsumerWidget {
                               Text(
                                 '${record.rollNumber != null ? "Roll: ${record.rollNumber} • " : ""}${record.academicStage}',
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                                  color: theme.textTheme.bodySmall?.color
+                                      ?.withOpacity(0.7),
                                 ),
                               ),
                               if (record.cohort.isNotEmpty)
                                 Text(
                                   'Cohort: ${record.cohort}',
                                   style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
+                                    color: theme.textTheme.bodySmall?.color
+                                        ?.withOpacity(0.6),
                                     fontSize: 11,
                                   ),
                                 ),
@@ -212,9 +234,7 @@ class DepartmentAcademicRecordsScreen extends ConsumerWidget {
                   ),
                 );
               },
-              loading: () => const Center(
-                child: CircularProgressIndicator(),
-              ),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, stack) => Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
@@ -237,12 +257,16 @@ class DepartmentAcademicRecordsScreen extends ConsumerWidget {
                       Text(
                         err.toString(),
                         textAlign: TextAlign.center,
-                        style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.grey,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
                         onPressed: () {
-                          ref.invalidate(departmentAcademicRecordsProvider(filter));
+                          ref.invalidate(
+                            departmentAcademicRecordsProvider(filter),
+                          );
                         },
                         icon: const Icon(Icons.refresh_rounded, size: 18),
                         label: const Text('Try Again'),

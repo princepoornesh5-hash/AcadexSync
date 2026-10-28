@@ -1,7 +1,6 @@
 import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 
-
 /// Temporary development identity registry.
 /// Bridge between Firebase Auth UIDs and Acadex User Identities
 /// until Prompt 23 implements the complete Firestore users/{uid} collection.
@@ -15,7 +14,7 @@ class DevIdentityRegistry {
       'name': 'Super Admin',
       'email': 'superadmin.test@acadex.com',
       'role': 'superAdmin',
-      'accountStatus': 'active'
+      'accountStatus': 'active',
     },
     'mock-college-admin-uid': {
       'id': '2',
@@ -24,7 +23,7 @@ class DevIdentityRegistry {
       'email': 'admin.test@acadex.com',
       'role': 'collegeAdmin',
       'collegeId': 'mock-college-1',
-      'accountStatus': 'active'
+      'accountStatus': 'active',
     },
     'mock-hod-uid': {
       'id': '3',
@@ -34,7 +33,7 @@ class DevIdentityRegistry {
       'role': 'hod',
       'collegeId': 'mock-college-1',
       'departmentId': 'mock-dept-1',
-      'accountStatus': 'active'
+      'accountStatus': 'active',
     },
     'mock-faculty-uid': {
       'id': '4',
@@ -44,7 +43,7 @@ class DevIdentityRegistry {
       'role': 'faculty',
       'collegeId': 'mock-college-1',
       'departmentId': 'mock-dept-1',
-      'accountStatus': 'active'
+      'accountStatus': 'active',
     },
     'mock-student-uid': {
       'id': '5',
@@ -54,7 +53,7 @@ class DevIdentityRegistry {
       'role': 'student',
       'collegeId': 'mock-college-1',
       'departmentId': 'mock-dept-1',
-      'accountStatus': 'active'
+      'accountStatus': 'active',
     },
     'mock-suspended-uid': {
       'id': '6',
@@ -64,23 +63,31 @@ class DevIdentityRegistry {
       'role': 'student',
       'collegeId': 'mock-college-1',
       'departmentId': 'mock-dept-1',
-      'accountStatus': 'suspended'
+      'accountStatus': 'suspended',
     },
   };
 
   /// Register a specific Firebase UID with a given development identity
   static void registerUidProfile(String uid, Map<String, dynamic> profile) {
     if (!kDebugMode) {
-      throw StateError('CRITICAL: DevIdentityRegistry must not be accessed in release builds.');
+      throw StateError(
+        'CRITICAL: DevIdentityRegistry must not be accessed in release builds.',
+      );
     }
     _profilesByUid[uid] = profile;
     developer.log('Registered DevIdentity for UID: $uid', name: 'Acadex.Auth');
   }
 
   /// Get the Acadex user profile map for a given Firebase UID
-  static Map<String, dynamic>? getProfile(String uid, {String? email, String? displayName}) {
+  static Map<String, dynamic>? getProfile(
+    String uid, {
+    String? email,
+    String? displayName,
+  }) {
     if (!kDebugMode) {
-      throw StateError('CRITICAL: DevIdentityRegistry must not be accessed in release builds.');
+      throw StateError(
+        'CRITICAL: DevIdentityRegistry must not be accessed in release builds.',
+      );
     }
     // 1. Check direct mock UID map
     if (_mockProfiles.containsKey(uid)) {
@@ -96,16 +103,28 @@ class DevIdentityRegistry {
     if (email != null && email.isNotEmpty) {
       final normEmail = email.toLowerCase().trim();
       String? role;
-      
-      if (normEmail == 'superadmin.test@acadex.com' || normEmail.startsWith('superadmin.') || normEmail.startsWith('superadmin@')) {
+
+      if (normEmail == 'superadmin.test@acadex.com' ||
+          normEmail.startsWith('superadmin.') ||
+          normEmail.startsWith('superadmin@')) {
         role = 'superAdmin';
-      } else if (normEmail == 'admin.test@acadex.com' || normEmail.startsWith('admin.') || normEmail.startsWith('admin@') || normEmail.startsWith('college.')) {
+      } else if (normEmail == 'admin.test@acadex.com' ||
+          normEmail.startsWith('admin.') ||
+          normEmail.startsWith('admin@') ||
+          normEmail.startsWith('college.')) {
         role = 'collegeAdmin';
-      } else if (normEmail == 'hod.test@acadex.com' || normEmail.startsWith('hod.') || normEmail.startsWith('hod@')) {
+      } else if (normEmail == 'hod.test@acadex.com' ||
+          normEmail.startsWith('hod.') ||
+          normEmail.startsWith('hod@')) {
         role = 'hod';
-      } else if (normEmail == 'faculty.test@acadex.com' || normEmail.startsWith('faculty.') || normEmail.startsWith('faculty@') || normEmail.startsWith('teacher.')) {
+      } else if (normEmail == 'faculty.test@acadex.com' ||
+          normEmail.startsWith('faculty.') ||
+          normEmail.startsWith('faculty@') ||
+          normEmail.startsWith('teacher.')) {
         role = 'faculty';
-      } else if (normEmail == 'student.test@acadex.com' || normEmail.startsWith('student.') || normEmail.startsWith('student@')) {
+      } else if (normEmail == 'student.test@acadex.com' ||
+          normEmail.startsWith('student.') ||
+          normEmail.startsWith('student@')) {
         role = 'student';
       }
 
@@ -113,7 +132,9 @@ class DevIdentityRegistry {
         final profile = {
           'id': uid,
           'firebaseUid': uid,
-          'name': (displayName != null && displayName.isNotEmpty) ? displayName : email.split('@').first,
+          'name': (displayName != null && displayName.isNotEmpty)
+              ? displayName
+              : email.split('@').first,
           'email': email,
           'role': role,
           'accountStatus': 'active',
@@ -121,13 +142,19 @@ class DevIdentityRegistry {
           'lastLoginAt': DateTime.now().toIso8601String(),
         };
         _profilesByUid[uid] = profile;
-        developer.log('Resolved temporary dev identity for UID: $uid ($email) -> Role: $role', name: 'Acadex.Auth');
+        developer.log(
+          'Resolved temporary dev identity for UID: $uid ($email) -> Role: $role',
+          name: 'Acadex.Auth',
+        );
         return profile;
       }
     }
 
     // 4. Return null if no identity matches — NO DEFAULT STUDENT FALLBACK!
-    developer.log('DevIdentityRegistry: Profile resolution returning NULL for UID: $uid', name: 'Acadex.Auth');
+    developer.log(
+      'DevIdentityRegistry: Profile resolution returning NULL for UID: $uid',
+      name: 'Acadex.Auth',
+    );
     return null;
   }
 }

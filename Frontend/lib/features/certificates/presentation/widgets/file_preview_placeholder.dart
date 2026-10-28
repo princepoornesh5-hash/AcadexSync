@@ -61,10 +61,14 @@ class FilePreviewPlaceholder extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: isDark ? color.withValues(alpha: 0.12) : color.withValues(alpha: 0.05),
+        color: isDark
+            ? color.withValues(alpha: 0.12)
+            : color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(AcadexRadius.lg),
         border: Border.all(
-          color: isDark ? color.withValues(alpha: 0.3) : color.withValues(alpha: 0.2),
+          color: isDark
+              ? color.withValues(alpha: 0.3)
+              : color.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -74,7 +78,9 @@ class FilePreviewPlaceholder extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? color.withValues(alpha: 0.2) : color.withValues(alpha: 0.1),
+              color: isDark
+                  ? color.withValues(alpha: 0.2)
+                  : color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(_icon(fileType), size: 36, color: color),
@@ -104,13 +110,21 @@ class FilePreviewPlaceholder extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: isPreviewable
-                  ? (isDark ? AcadexColors.success.withValues(alpha: 0.2) : AcadexColors.successLight)
-                  : (isDark ? AcadexColors.warning.withValues(alpha: 0.2) : AcadexColors.warningLight),
+                  ? (isDark
+                        ? AcadexColors.success.withValues(alpha: 0.2)
+                        : AcadexColors.successLight)
+                  : (isDark
+                        ? AcadexColors.warning.withValues(alpha: 0.2)
+                        : AcadexColors.warningLight),
               borderRadius: BorderRadius.circular(AcadexRadius.full),
               border: Border.all(
                 color: isPreviewable
-                    ? (isDark ? AcadexColors.success.withValues(alpha: 0.4) : AcadexColors.success.withValues(alpha: 0.3))
-                    : (isDark ? AcadexColors.warning.withValues(alpha: 0.4) : AcadexColors.warning.withValues(alpha: 0.3)),
+                    ? (isDark
+                          ? AcadexColors.success.withValues(alpha: 0.4)
+                          : AcadexColors.success.withValues(alpha: 0.3))
+                    : (isDark
+                          ? AcadexColors.warning.withValues(alpha: 0.4)
+                          : AcadexColors.warning.withValues(alpha: 0.3)),
               ),
             ),
             child: Row(
@@ -120,18 +134,28 @@ class FilePreviewPlaceholder extends StatelessWidget {
                   isPreviewable ? LucideIcons.eye : LucideIcons.download,
                   size: 13,
                   color: isPreviewable
-                      ? (isDark ? AcadexColors.success : AcadexColors.successDark)
-                      : (isDark ? AcadexColors.warning : AcadexColors.warningDark),
+                      ? (isDark
+                            ? AcadexColors.success
+                            : AcadexColors.successDark)
+                      : (isDark
+                            ? AcadexColors.warning
+                            : AcadexColors.warningDark),
                 ),
                 const SizedBox(width: 5),
                 Text(
-                  isPreviewable ? 'In-App Preview Ready' : 'Download Required to View',
+                  isPreviewable
+                      ? 'In-App Preview Ready'
+                      : 'Download Required to View',
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: isPreviewable
-                        ? (isDark ? AcadexColors.success : AcadexColors.successDark)
-                        : (isDark ? AcadexColors.warning : AcadexColors.warningDark),
+                        ? (isDark
+                              ? AcadexColors.success
+                              : AcadexColors.successDark)
+                        : (isDark
+                              ? AcadexColors.warning
+                              : AcadexColors.warningDark),
                   ),
                 ),
               ],

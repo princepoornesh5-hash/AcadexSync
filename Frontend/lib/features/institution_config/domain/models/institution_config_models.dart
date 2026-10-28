@@ -33,12 +33,13 @@ class ConceptTerm {
   final String singular;
   final String plural;
 
-  const ConceptTerm({
-    required this.singular,
-    required this.plural,
-  });
+  const ConceptTerm({required this.singular, required this.plural});
 
-  factory ConceptTerm.fromJson(Map<String, dynamic>? json, {required String defaultSingular, required String defaultPlural}) {
+  factory ConceptTerm.fromJson(
+    Map<String, dynamic>? json, {
+    required String defaultSingular,
+    required String defaultPlural,
+  }) {
     if (json == null) {
       return ConceptTerm(singular: defaultSingular, plural: defaultPlural);
     }
@@ -48,10 +49,7 @@ class ConceptTerm {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    'singular': singular,
-    'plural': plural,
-  };
+  Map<String, dynamic> toJson() => {'singular': singular, 'plural': plural};
 
   ConceptTerm copyWith({String? singular, String? plural}) {
     return ConceptTerm(
@@ -135,27 +133,71 @@ class TerminologyConfig {
   final ConceptTerm room;
 
   const TerminologyConfig({
-    this.department = const ConceptTerm(singular: 'Department', plural: 'Departments'),
+    this.department = const ConceptTerm(
+      singular: 'Department',
+      plural: 'Departments',
+    ),
     this.program = const ConceptTerm(singular: 'Course', plural: 'Courses'),
-    this.academicYear = const ConceptTerm(singular: 'Academic Year', plural: 'Academic Years'),
-    this.semester = const ConceptTerm(singular: 'Semester', plural: 'Semesters'),
+    this.academicYear = const ConceptTerm(
+      singular: 'Academic Year',
+      plural: 'Academic Years',
+    ),
+    this.semester = const ConceptTerm(
+      singular: 'Semester',
+      plural: 'Semesters',
+    ),
     this.section = const ConceptTerm(singular: 'Section', plural: 'Sections'),
     this.subject = const ConceptTerm(singular: 'Subject', plural: 'Subjects'),
-    this.building = const ConceptTerm(singular: 'Building', plural: 'Buildings'),
+    this.building = const ConceptTerm(
+      singular: 'Building',
+      plural: 'Buildings',
+    ),
     this.room = const ConceptTerm(singular: 'Room', plural: 'Rooms'),
   });
 
   factory TerminologyConfig.fromJson(Map<String, dynamic>? json) {
     if (json == null) return const TerminologyConfig();
     return TerminologyConfig(
-      department: ConceptTerm.fromJson(json['department'] as Map<String, dynamic>?, defaultSingular: 'Department', defaultPlural: 'Departments'),
-      program: ConceptTerm.fromJson(json['program'] as Map<String, dynamic>?, defaultSingular: 'Course', defaultPlural: 'Courses'),
-      academicYear: ConceptTerm.fromJson(json['academicYear'] as Map<String, dynamic>?, defaultSingular: 'Academic Year', defaultPlural: 'Academic Years'),
-      semester: ConceptTerm.fromJson(json['semester'] as Map<String, dynamic>?, defaultSingular: 'Semester', defaultPlural: 'Semesters'),
-      section: ConceptTerm.fromJson(json['section'] as Map<String, dynamic>?, defaultSingular: 'Section', defaultPlural: 'Sections'),
-      subject: ConceptTerm.fromJson(json['subject'] as Map<String, dynamic>?, defaultSingular: 'Subject', defaultPlural: 'Subjects'),
-      building: ConceptTerm.fromJson(json['building'] as Map<String, dynamic>?, defaultSingular: 'Building', defaultPlural: 'Buildings'),
-      room: ConceptTerm.fromJson(json['room'] as Map<String, dynamic>?, defaultSingular: 'Room', defaultPlural: 'Rooms'),
+      department: ConceptTerm.fromJson(
+        json['department'] as Map<String, dynamic>?,
+        defaultSingular: 'Department',
+        defaultPlural: 'Departments',
+      ),
+      program: ConceptTerm.fromJson(
+        json['program'] as Map<String, dynamic>?,
+        defaultSingular: 'Course',
+        defaultPlural: 'Courses',
+      ),
+      academicYear: ConceptTerm.fromJson(
+        json['academicYear'] as Map<String, dynamic>?,
+        defaultSingular: 'Academic Year',
+        defaultPlural: 'Academic Years',
+      ),
+      semester: ConceptTerm.fromJson(
+        json['semester'] as Map<String, dynamic>?,
+        defaultSingular: 'Semester',
+        defaultPlural: 'Semesters',
+      ),
+      section: ConceptTerm.fromJson(
+        json['section'] as Map<String, dynamic>?,
+        defaultSingular: 'Section',
+        defaultPlural: 'Sections',
+      ),
+      subject: ConceptTerm.fromJson(
+        json['subject'] as Map<String, dynamic>?,
+        defaultSingular: 'Subject',
+        defaultPlural: 'Subjects',
+      ),
+      building: ConceptTerm.fromJson(
+        json['building'] as Map<String, dynamic>?,
+        defaultSingular: 'Building',
+        defaultPlural: 'Buildings',
+      ),
+      room: ConceptTerm.fromJson(
+        json['room'] as Map<String, dynamic>?,
+        defaultSingular: 'Room',
+        defaultPlural: 'Rooms',
+      ),
     );
   }
 
@@ -231,8 +273,10 @@ class AttendanceAlertsConfig {
     if (json == null) return const AttendanceAlertsConfig();
     return AttendanceAlertsConfig(
       enabled: json['enabled'] as bool? ?? true,
-      warningPercentage: (json['warningPercentage'] as num?)?.toDouble() ?? 75.0,
-      criticalPercentage: (json['criticalPercentage'] as num?)?.toDouble() ?? 65.0,
+      warningPercentage:
+          (json['warningPercentage'] as num?)?.toDouble() ?? 75.0,
+      criticalPercentage:
+          (json['criticalPercentage'] as num?)?.toDouble() ?? 65.0,
       absenceAlertsEnabled: json['absenceAlertsEnabled'] as bool? ?? true,
     );
   }
@@ -334,11 +378,46 @@ class AssessmentConfig {
     this.allowDecimals = false,
     this.requireHodApproval = false,
     this.components = const [
-      AssessmentComponentConfig(key: 'internalTest', name: 'Internal Test', maxMarks: 20, weightage: 40, enabled: true, appliesTo: 'all'),
-      AssessmentComponentConfig(key: 'assignment', name: 'Assignment', maxMarks: 10, weightage: 20, enabled: true, appliesTo: 'all'),
-      AssessmentComponentConfig(key: 'lab', name: 'Lab / Practical', maxMarks: 10, weightage: 20, enabled: true, appliesTo: 'practical'),
-      AssessmentComponentConfig(key: 'record', name: 'Record Book', maxMarks: 5, weightage: 10, enabled: true, appliesTo: 'practical'),
-      AssessmentComponentConfig(key: 'viva', name: 'Viva Voce', maxMarks: 5, weightage: 10, enabled: true, appliesTo: 'practical'),
+      AssessmentComponentConfig(
+        key: 'internalTest',
+        name: 'Internal Test',
+        maxMarks: 20,
+        weightage: 40,
+        enabled: true,
+        appliesTo: 'all',
+      ),
+      AssessmentComponentConfig(
+        key: 'assignment',
+        name: 'Assignment',
+        maxMarks: 10,
+        weightage: 20,
+        enabled: true,
+        appliesTo: 'all',
+      ),
+      AssessmentComponentConfig(
+        key: 'lab',
+        name: 'Lab / Practical',
+        maxMarks: 10,
+        weightage: 20,
+        enabled: true,
+        appliesTo: 'practical',
+      ),
+      AssessmentComponentConfig(
+        key: 'record',
+        name: 'Record Book',
+        maxMarks: 5,
+        weightage: 10,
+        enabled: true,
+        appliesTo: 'practical',
+      ),
+      AssessmentComponentConfig(
+        key: 'viva',
+        name: 'Viva Voce',
+        maxMarks: 5,
+        weightage: 10,
+        enabled: true,
+        appliesTo: 'practical',
+      ),
     ],
   });
 
@@ -351,7 +430,13 @@ class AssessmentConfig {
       allowDecimals: json['allowDecimals'] as bool? ?? false,
       requireHodApproval: json['requireHodApproval'] as bool? ?? false,
       components: rawComponents.isNotEmpty
-          ? rawComponents.map((c) => AssessmentComponentConfig.fromJson(c as Map<String, dynamic>)).toList()
+          ? rawComponents
+                .map(
+                  (c) => AssessmentComponentConfig.fromJson(
+                    c as Map<String, dynamic>,
+                  ),
+                )
+                .toList()
           : const AssessmentConfig().components,
     );
   }
@@ -403,7 +488,9 @@ class InstitutionConfigModel {
   factory InstitutionConfigModel.fromJson(Map<String, dynamic> json) {
     return InstitutionConfigModel(
       collegeId: json['collegeId']?.toString() ?? '',
-      institutionType: InstitutionType.fromValue(json['institutionType']?.toString()),
+      institutionType: InstitutionType.fromValue(
+        json['institutionType']?.toString(),
+      ),
       academicStructure: AcademicStructureConfig.fromJson(
         json['academicStructure'] as Map<String, dynamic>?,
       ),

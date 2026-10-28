@@ -41,7 +41,10 @@ class ActivityFeed extends StatelessWidget {
         itemBuilder: (context, index) {
           final item = items[index];
           return ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
             leading: Container(
               width: 40,
               height: 40,
@@ -60,13 +63,17 @@ class ActivityFeed extends StatelessWidget {
             subtitle: Text(
               item.subtitle,
               style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
             ),
             trailing: Text(
               item.timeAgo,
               style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                color: isDark
+                    ? AcadexColors.darkInkFaint
+                    : AcadexColors.inkFaint,
               ),
             ),
           );

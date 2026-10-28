@@ -1,12 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 /// Preset date range options for attendance analytics
-enum AttendanceDateRangePreset {
-  today,
-  thisWeek,
-  thisMonth,
-  custom,
-}
+enum AttendanceDateRangePreset { today, thisWeek, thisMonth, custom }
 
 /// Normalized date range abstraction for analytics queries
 @immutable
@@ -40,7 +35,15 @@ class AttendanceDateRange {
     final monday = now.subtract(Duration(days: now.weekday - 1));
     final sunday = monday.add(const Duration(days: 6));
     final start = DateTime(monday.year, monday.month, monday.day, 0, 0, 0, 0);
-    final end = DateTime(sunday.year, sunday.month, sunday.day, 23, 59, 59, 999);
+    final end = DateTime(
+      sunday.year,
+      sunday.month,
+      sunday.day,
+      23,
+      59,
+      59,
+      999,
+    );
     return AttendanceDateRange(
       startDate: start,
       endDate: end,
@@ -67,8 +70,24 @@ class AttendanceDateRange {
     required DateTime startDate,
     required DateTime endDate,
   }) {
-    final start = DateTime(startDate.year, startDate.month, startDate.day, 0, 0, 0, 0);
-    final end = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59, 999);
+    final start = DateTime(
+      startDate.year,
+      startDate.month,
+      startDate.day,
+      0,
+      0,
+      0,
+      0,
+    );
+    final end = DateTime(
+      endDate.year,
+      endDate.month,
+      endDate.day,
+      23,
+      59,
+      59,
+      999,
+    );
     return AttendanceDateRange(
       startDate: start,
       endDate: end,
@@ -95,10 +114,10 @@ class AttendanceDateRange {
   }
 
   Map<String, dynamic> toJson() => {
-        'startDate': startDate.toIso8601String(),
-        'endDate': endDate.toIso8601String(),
-        'preset': preset.name,
-      };
+    'startDate': startDate.toIso8601String(),
+    'endDate': endDate.toIso8601String(),
+    'preset': preset.name,
+  };
 
   factory AttendanceDateRange.fromJson(Map<String, dynamic> json) {
     return AttendanceDateRange(
@@ -131,8 +150,8 @@ class AttendanceDateRange {
 /// Institutional Risk Levels for Attendance Classification
 enum AttendanceRiskLevel {
   healthy, // >= 85.0%
-  watch,   // 75.0% - 84.99%
-  critical // < 75.0%
+  watch, // 75.0% - 84.99%
+  critical, // < 75.0%
 }
 
 /// Centralized analytics calculations and configuration constants
@@ -202,7 +221,8 @@ class AttendanceAnalyticsConstants {
     final currentPct = (presentCount / totalSessions) * 100.0;
     if (currentPct >= targetThreshold) return 0;
 
-    final numerator = (targetThreshold * totalSessions) - (100.0 * presentCount);
+    final numerator =
+        (targetThreshold * totalSessions) - (100.0 * presentCount);
     final denominator = 100.0 - targetThreshold;
     if (denominator <= 0) return 0;
 
@@ -277,7 +297,10 @@ class StudentAttendanceAnalytics {
       excusedCount: excusedCount,
       unmarkedCount: unmarkedCount,
     );
-    final isLow = AttendanceAnalyticsConstants.isLowAttendance(percentage, threshold);
+    final isLow = AttendanceAnalyticsConstants.isLowAttendance(
+      percentage,
+      threshold,
+    );
 
     return StudentAttendanceAnalytics(
       studentId: studentId,
@@ -329,20 +352,20 @@ class StudentAttendanceAnalytics {
   }
 
   Map<String, dynamic> toJson() => {
-        'studentId': studentId,
-        'studentName': studentName,
-        'rollNumber': rollNumber,
-        'sectionId': sectionId,
-        'totalSessions': totalSessions,
-        'presentCount': presentCount,
-        'absentCount': absentCount,
-        'lateCount': lateCount,
-        'excusedCount': excusedCount,
-        'unmarkedCount': unmarkedCount,
-        'attendancePercentage': attendancePercentage,
-        'isLowAttendance': isLowAttendance,
-        if (dateRange != null) 'dateRange': dateRange!.toJson(),
-      };
+    'studentId': studentId,
+    'studentName': studentName,
+    'rollNumber': rollNumber,
+    'sectionId': sectionId,
+    'totalSessions': totalSessions,
+    'presentCount': presentCount,
+    'absentCount': absentCount,
+    'lateCount': lateCount,
+    'excusedCount': excusedCount,
+    'unmarkedCount': unmarkedCount,
+    'attendancePercentage': attendancePercentage,
+    'isLowAttendance': isLowAttendance,
+    if (dateRange != null) 'dateRange': dateRange!.toJson(),
+  };
 
   factory StudentAttendanceAnalytics.fromJson(Map<String, dynamic> json) {
     return StudentAttendanceAnalytics(
@@ -356,10 +379,13 @@ class StudentAttendanceAnalytics {
       lateCount: (json['lateCount'] as num?)?.toInt() ?? 0,
       excusedCount: (json['excusedCount'] as num?)?.toInt() ?? 0,
       unmarkedCount: (json['unmarkedCount'] as num?)?.toInt() ?? 0,
-      attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      attendancePercentage:
+          (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
       isLowAttendance: json['isLowAttendance'] as bool? ?? false,
       dateRange: json['dateRange'] != null
-          ? AttendanceDateRange.fromJson(json['dateRange'] as Map<String, dynamic>)
+          ? AttendanceDateRange.fromJson(
+              json['dateRange'] as Map<String, dynamic>,
+            )
           : null,
     );
   }
@@ -381,16 +407,16 @@ class StudentAttendanceAnalytics {
 
   @override
   int get hashCode => Object.hash(
-        studentId,
-        totalSessions,
-        presentCount,
-        absentCount,
-        lateCount,
-        excusedCount,
-        unmarkedCount,
-        attendancePercentage,
-        isLowAttendance,
-      );
+    studentId,
+    totalSessions,
+    presentCount,
+    absentCount,
+    lateCount,
+    excusedCount,
+    unmarkedCount,
+    attendancePercentage,
+    isLowAttendance,
+  );
 }
 
 /// Subject Attendance Analytics Domain Model
@@ -503,20 +529,20 @@ class SubjectAttendanceAnalytics {
   }
 
   Map<String, dynamic> toJson() => {
-        'subjectId': subjectId,
-        'subjectName': subjectName,
-        'sectionId': sectionId,
-        'facultyId': facultyId,
-        'totalSessions': totalSessions,
-        'totalStudentRecords': totalStudentRecords,
-        'presentCount': presentCount,
-        'absentCount': absentCount,
-        'lateCount': lateCount,
-        'excusedCount': excusedCount,
-        'unmarkedCount': unmarkedCount,
-        'attendancePercentage': attendancePercentage,
-        if (dateRange != null) 'dateRange': dateRange!.toJson(),
-      };
+    'subjectId': subjectId,
+    'subjectName': subjectName,
+    'sectionId': sectionId,
+    'facultyId': facultyId,
+    'totalSessions': totalSessions,
+    'totalStudentRecords': totalStudentRecords,
+    'presentCount': presentCount,
+    'absentCount': absentCount,
+    'lateCount': lateCount,
+    'excusedCount': excusedCount,
+    'unmarkedCount': unmarkedCount,
+    'attendancePercentage': attendancePercentage,
+    if (dateRange != null) 'dateRange': dateRange!.toJson(),
+  };
 
   factory SubjectAttendanceAnalytics.fromJson(Map<String, dynamic> json) {
     return SubjectAttendanceAnalytics(
@@ -531,9 +557,12 @@ class SubjectAttendanceAnalytics {
       lateCount: (json['lateCount'] as num?)?.toInt() ?? 0,
       excusedCount: (json['excusedCount'] as num?)?.toInt() ?? 0,
       unmarkedCount: (json['unmarkedCount'] as num?)?.toInt() ?? 0,
-      attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      attendancePercentage:
+          (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
       dateRange: json['dateRange'] != null
-          ? AttendanceDateRange.fromJson(json['dateRange'] as Map<String, dynamic>)
+          ? AttendanceDateRange.fromJson(
+              json['dateRange'] as Map<String, dynamic>,
+            )
           : null,
     );
   }
@@ -557,18 +586,18 @@ class SubjectAttendanceAnalytics {
 
   @override
   int get hashCode => Object.hash(
-        subjectId,
-        sectionId,
-        facultyId,
-        totalSessions,
-        totalStudentRecords,
-        presentCount,
-        absentCount,
-        lateCount,
-        excusedCount,
-        unmarkedCount,
-        attendancePercentage,
-      );
+    subjectId,
+    sectionId,
+    facultyId,
+    totalSessions,
+    totalStudentRecords,
+    presentCount,
+    absentCount,
+    lateCount,
+    excusedCount,
+    unmarkedCount,
+    attendancePercentage,
+  );
 }
 
 /// Section Attendance Analytics Domain Model
@@ -639,7 +668,9 @@ class SectionAttendanceAnalytics {
       sectionId: sectionId,
       sectionName: sectionName,
       totalSessions: totalSessions,
-      totalStudents: totalStudents > 0 ? totalStudents : studentAnalytics.length,
+      totalStudents: totalStudents > 0
+          ? totalStudents
+          : studentAnalytics.length,
       presentCount: presentCount,
       absentCount: absentCount,
       lateCount: lateCount,
@@ -678,27 +709,28 @@ class SectionAttendanceAnalytics {
       excusedCount: excusedCount ?? this.excusedCount,
       unmarkedCount: unmarkedCount ?? this.unmarkedCount,
       attendancePercentage: attendancePercentage ?? this.attendancePercentage,
-      lowAttendanceStudentCount: lowAttendanceStudentCount ?? this.lowAttendanceStudentCount,
+      lowAttendanceStudentCount:
+          lowAttendanceStudentCount ?? this.lowAttendanceStudentCount,
       studentAnalytics: studentAnalytics ?? this.studentAnalytics,
       dateRange: dateRange ?? this.dateRange,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'sectionId': sectionId,
-        'sectionName': sectionName,
-        'totalSessions': totalSessions,
-        'totalStudents': totalStudents,
-        'presentCount': presentCount,
-        'absentCount': absentCount,
-        'lateCount': lateCount,
-        'excusedCount': excusedCount,
-        'unmarkedCount': unmarkedCount,
-        'attendancePercentage': attendancePercentage,
-        'lowAttendanceStudentCount': lowAttendanceStudentCount,
-        'studentAnalytics': studentAnalytics.map((s) => s.toJson()).toList(),
-        if (dateRange != null) 'dateRange': dateRange!.toJson(),
-      };
+    'sectionId': sectionId,
+    'sectionName': sectionName,
+    'totalSessions': totalSessions,
+    'totalStudents': totalStudents,
+    'presentCount': presentCount,
+    'absentCount': absentCount,
+    'lateCount': lateCount,
+    'excusedCount': excusedCount,
+    'unmarkedCount': unmarkedCount,
+    'attendancePercentage': attendancePercentage,
+    'lowAttendanceStudentCount': lowAttendanceStudentCount,
+    'studentAnalytics': studentAnalytics.map((s) => s.toJson()).toList(),
+    if (dateRange != null) 'dateRange': dateRange!.toJson(),
+  };
 
   factory SectionAttendanceAnalytics.fromJson(Map<String, dynamic> json) {
     return SectionAttendanceAnalytics(
@@ -711,14 +743,23 @@ class SectionAttendanceAnalytics {
       lateCount: (json['lateCount'] as num?)?.toInt() ?? 0,
       excusedCount: (json['excusedCount'] as num?)?.toInt() ?? 0,
       unmarkedCount: (json['unmarkedCount'] as num?)?.toInt() ?? 0,
-      attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
-      lowAttendanceStudentCount: (json['lowAttendanceStudentCount'] as num?)?.toInt() ?? 0,
-      studentAnalytics: (json['studentAnalytics'] as List<dynamic>?)
-              ?.map((e) => StudentAttendanceAnalytics.fromJson(e as Map<String, dynamic>))
+      attendancePercentage:
+          (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      lowAttendanceStudentCount:
+          (json['lowAttendanceStudentCount'] as num?)?.toInt() ?? 0,
+      studentAnalytics:
+          (json['studentAnalytics'] as List<dynamic>?)
+              ?.map(
+                (e) => StudentAttendanceAnalytics.fromJson(
+                  e as Map<String, dynamic>,
+                ),
+              )
               .toList() ??
           const [],
       dateRange: json['dateRange'] != null
-          ? AttendanceDateRange.fromJson(json['dateRange'] as Map<String, dynamic>)
+          ? AttendanceDateRange.fromJson(
+              json['dateRange'] as Map<String, dynamic>,
+            )
           : null,
     );
   }
@@ -742,18 +783,18 @@ class SectionAttendanceAnalytics {
 
   @override
   int get hashCode => Object.hash(
-        sectionId,
-        totalSessions,
-        totalStudents,
-        presentCount,
-        absentCount,
-        lateCount,
-        excusedCount,
-        unmarkedCount,
-        attendancePercentage,
-        lowAttendanceStudentCount,
-        Object.hashAll(studentAnalytics),
-      );
+    sectionId,
+    totalSessions,
+    totalStudents,
+    presentCount,
+    absentCount,
+    lateCount,
+    excusedCount,
+    unmarkedCount,
+    attendancePercentage,
+    lowAttendanceStudentCount,
+    Object.hashAll(studentAnalytics),
+  );
 }
 
 /// Faculty Attendance Activity Analytics Domain Model
@@ -837,7 +878,8 @@ class FacultyAttendanceAnalytics {
     return FacultyAttendanceAnalytics(
       facultyId: facultyId ?? this.facultyId,
       facultyName: facultyName ?? this.facultyName,
-      totalSessionsConducted: totalSessionsConducted ?? this.totalSessionsConducted,
+      totalSessionsConducted:
+          totalSessionsConducted ?? this.totalSessionsConducted,
       totalStudentRecords: totalStudentRecords ?? this.totalStudentRecords,
       presentCount: presentCount ?? this.presentCount,
       absentCount: absentCount ?? this.absentCount,
@@ -850,33 +892,37 @@ class FacultyAttendanceAnalytics {
   }
 
   Map<String, dynamic> toJson() => {
-        'facultyId': facultyId,
-        'facultyName': facultyName,
-        'totalSessionsConducted': totalSessionsConducted,
-        'totalStudentRecords': totalStudentRecords,
-        'presentCount': presentCount,
-        'absentCount': absentCount,
-        'lateCount': lateCount,
-        'excusedCount': excusedCount,
-        'unmarkedCount': unmarkedCount,
-        'attendancePercentage': attendancePercentage,
-        if (dateRange != null) 'dateRange': dateRange!.toJson(),
-      };
+    'facultyId': facultyId,
+    'facultyName': facultyName,
+    'totalSessionsConducted': totalSessionsConducted,
+    'totalStudentRecords': totalStudentRecords,
+    'presentCount': presentCount,
+    'absentCount': absentCount,
+    'lateCount': lateCount,
+    'excusedCount': excusedCount,
+    'unmarkedCount': unmarkedCount,
+    'attendancePercentage': attendancePercentage,
+    if (dateRange != null) 'dateRange': dateRange!.toJson(),
+  };
 
   factory FacultyAttendanceAnalytics.fromJson(Map<String, dynamic> json) {
     return FacultyAttendanceAnalytics(
       facultyId: json['facultyId'] as String? ?? '',
       facultyName: json['facultyName'] as String? ?? '',
-      totalSessionsConducted: (json['totalSessionsConducted'] as num?)?.toInt() ?? 0,
+      totalSessionsConducted:
+          (json['totalSessionsConducted'] as num?)?.toInt() ?? 0,
       totalStudentRecords: (json['totalStudentRecords'] as num?)?.toInt() ?? 0,
       presentCount: (json['presentCount'] as num?)?.toInt() ?? 0,
       absentCount: (json['absentCount'] as num?)?.toInt() ?? 0,
       lateCount: (json['lateCount'] as num?)?.toInt() ?? 0,
       excusedCount: (json['excusedCount'] as num?)?.toInt() ?? 0,
       unmarkedCount: (json['unmarkedCount'] as num?)?.toInt() ?? 0,
-      attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      attendancePercentage:
+          (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
       dateRange: json['dateRange'] != null
-          ? AttendanceDateRange.fromJson(json['dateRange'] as Map<String, dynamic>)
+          ? AttendanceDateRange.fromJson(
+              json['dateRange'] as Map<String, dynamic>,
+            )
           : null,
     );
   }
@@ -898,16 +944,16 @@ class FacultyAttendanceAnalytics {
 
   @override
   int get hashCode => Object.hash(
-        facultyId,
-        totalSessionsConducted,
-        totalStudentRecords,
-        presentCount,
-        absentCount,
-        lateCount,
-        excusedCount,
-        unmarkedCount,
-        attendancePercentage,
-      );
+    facultyId,
+    totalSessionsConducted,
+    totalStudentRecords,
+    presentCount,
+    absentCount,
+    lateCount,
+    excusedCount,
+    unmarkedCount,
+    attendancePercentage,
+  );
 }
 
 /// Date Range Summary Domain Model
@@ -998,17 +1044,17 @@ class AttendanceDateRangeSummary {
   }
 
   Map<String, dynamic> toJson() => {
-        'startDate': startDate.toIso8601String(),
-        'endDate': endDate.toIso8601String(),
-        'totalSessions': totalSessions,
-        'totalStudentRecords': totalStudentRecords,
-        'presentCount': presentCount,
-        'absentCount': absentCount,
-        'lateCount': lateCount,
-        'excusedCount': excusedCount,
-        'unmarkedCount': unmarkedCount,
-        'attendancePercentage': attendancePercentage,
-      };
+    'startDate': startDate.toIso8601String(),
+    'endDate': endDate.toIso8601String(),
+    'totalSessions': totalSessions,
+    'totalStudentRecords': totalStudentRecords,
+    'presentCount': presentCount,
+    'absentCount': absentCount,
+    'lateCount': lateCount,
+    'excusedCount': excusedCount,
+    'unmarkedCount': unmarkedCount,
+    'attendancePercentage': attendancePercentage,
+  };
 
   factory AttendanceDateRangeSummary.fromJson(Map<String, dynamic> json) {
     return AttendanceDateRangeSummary(
@@ -1021,7 +1067,8 @@ class AttendanceDateRangeSummary {
       lateCount: (json['lateCount'] as num?)?.toInt() ?? 0,
       excusedCount: (json['excusedCount'] as num?)?.toInt() ?? 0,
       unmarkedCount: (json['unmarkedCount'] as num?)?.toInt() ?? 0,
-      attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      attendancePercentage:
+          (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -1043,15 +1090,15 @@ class AttendanceDateRangeSummary {
 
   @override
   int get hashCode => Object.hash(
-        startDate,
-        endDate,
-        totalSessions,
-        totalStudentRecords,
-        presentCount,
-        absentCount,
-        lateCount,
-        excusedCount,
-        unmarkedCount,
-        attendancePercentage,
-      );
+    startDate,
+    endDate,
+    totalSessions,
+    totalStudentRecords,
+    presentCount,
+    absentCount,
+    lateCount,
+    excusedCount,
+    unmarkedCount,
+    attendancePercentage,
+  );
 }

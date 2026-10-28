@@ -22,7 +22,8 @@ final currentMonthProvider = StateProvider<DateTime>((ref) {
 /// Optional event filter: null ('All'), 'HOLIDAY', 'EXAM', 'DEADLINE', 'EVENT'
 final calendarFilterProvider = StateProvider<String?>((ref) => null);
 
-class CalendarEventsNotifier extends StateNotifier<AsyncValue<List<CalendarEventModel>>> {
+class CalendarEventsNotifier
+    extends StateNotifier<AsyncValue<List<CalendarEventModel>>> {
   final CalendarRepository _repository;
   DateTime? _lastLoadedMonth;
 
@@ -32,7 +33,8 @@ class CalendarEventsNotifier extends StateNotifier<AsyncValue<List<CalendarEvent
   }
 
   Future<void> loadEvents(DateTime month, {bool force = false}) async {
-    if (!force && _lastLoadedMonth != null &&
+    if (!force &&
+        _lastLoadedMonth != null &&
         _lastLoadedMonth!.year == month.year &&
         _lastLoadedMonth!.month == month.month &&
         state.hasValue) {
@@ -47,10 +49,15 @@ class CalendarEventsNotifier extends StateNotifier<AsyncValue<List<CalendarEvent
       final startDate = DateTime(month.year, month.month - 1, 20);
       final endDate = DateTime(month.year, month.month + 1, 15);
 
-      final startStr = '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
-      final endStr = '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
+      final startStr =
+          '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
+      final endStr =
+          '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
 
-      final events = await _repository.getCalendar(startDate: startStr, endDate: endStr);
+      final events = await _repository.getCalendar(
+        startDate: startStr,
+        endDate: endStr,
+      );
       state = AsyncValue.data(events);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -65,7 +72,10 @@ class CalendarEventsNotifier extends StateNotifier<AsyncValue<List<CalendarEvent
     return newEvent;
   }
 
-  Future<CalendarEventModel> updateEvent(String id, Map<String, dynamic> data) async {
+  Future<CalendarEventModel> updateEvent(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
     final updated = await _repository.updateEvent(id, data);
     if (_lastLoadedMonth != null) {
       await loadEvents(_lastLoadedMonth!, force: true);
@@ -91,17 +101,21 @@ class CalendarEventsNotifier extends StateNotifier<AsyncValue<List<CalendarEvent
 }
 
 final calendarEventsProvider =
-    StateNotifierProvider<CalendarEventsNotifier, AsyncValue<List<CalendarEventModel>>>((ref) {
-  final repo = ref.watch(calendarRepositoryProvider);
-  return CalendarEventsNotifier(repo);
-});
+    StateNotifierProvider<
+      CalendarEventsNotifier,
+      AsyncValue<List<CalendarEventModel>>
+    >((ref) {
+      final repo = ref.watch(calendarRepositoryProvider);
+      return CalendarEventsNotifier(repo);
+    });
 
 /// Authoritative calendar events provider:
 /// Displays explicitly created calendar events and derived assignment deadlines.
 /// Routine timetable periods are strictly excluded to maintain canonical separation.
-final combinedCalendarEventsProvider = Provider<AsyncValue<List<CalendarEventModel>>>((ref) {
-  return ref.watch(calendarEventsProvider);
-});
+final combinedCalendarEventsProvider =
+    Provider<AsyncValue<List<CalendarEventModel>>>((ref) {
+      return ref.watch(calendarEventsProvider);
+    });
 
 /// Events matching the selected date
 bool _matchesFilter(CalendarEventModel e, String? filter) {
@@ -159,7 +173,8 @@ final selectedDayEventsProvider = Provider<List<CalendarEventModel>>((ref) {
       return events.where((e) {
         if (!_matchesFilter(e, filter)) return false;
         // Check if selectedDate is within [startDate, endDate]
-        return dateStr.compareTo(e.startDate) >= 0 && dateStr.compareTo(e.endDate) <= 0;
+        return dateStr.compareTo(e.startDate) >= 0 &&
+            dateStr.compareTo(e.endDate) <= 0;
       }).toList();
     },
     orElse: () => [],
@@ -188,13 +203,13 @@ final upcomingEventsProvider = Provider<List<CalendarEventModel>>((ref) {
 /// Academic Calendars list provider
 final academicCalendarsProvider =
     FutureProvider.autoDispose<List<AcademicCalendarModel>>((ref) async {
-  final repo = ref.watch(calendarRepositoryProvider);
-  return repo.getAcademicCalendars();
-});
+      final repo = ref.watch(calendarRepositoryProvider);
+      return repo.getAcademicCalendars();
+    });
 
 /// Working day resolution provider for a given date string (YYYY-MM-DD)
-final workingDayResolutionProvider =
-    FutureProvider.autoDispose.family<WorkingDayResolution, String>((ref, date) async {
-  final repo = ref.watch(calendarRepositoryProvider);
-  return repo.resolveWorkingDay(date);
-});
+final workingDayResolutionProvider = FutureProvider.autoDispose
+    .family<WorkingDayResolution, String>((ref, date) async {
+      final repo = ref.watch(calendarRepositoryProvider);
+      return repo.resolveWorkingDay(date);
+    });

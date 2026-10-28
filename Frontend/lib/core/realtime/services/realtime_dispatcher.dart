@@ -45,7 +45,9 @@ class RealtimeDispatcher {
   }
 
   void _dispatch(RealtimeEvent event) {
-    debugPrint('[Realtime Dispatcher] Processing event: ${event.eventType} (${event.eventId})');
+    debugPrint(
+      '[Realtime Dispatcher] Processing event: ${event.eventType} (${event.eventId})',
+    );
 
     final domain = event.eventType.split('.').first;
 
@@ -149,7 +151,8 @@ class RealtimeDispatcher {
         _debounceAndExecute('submission', () {
           _ref.invalidate(studentAssignmentsProvider);
           _ref.invalidate(facultyCourseAssignmentsProvider);
-          final assignmentId = (event.payload['assignmentId'] as String?) ?? event.aggregateId;
+          final assignmentId =
+              (event.payload['assignmentId'] as String?) ?? event.aggregateId;
           if (assignmentId.isNotEmpty) {
             _ref.invalidate(assignmentDetailProvider(assignmentId));
             _ref.invalidate(assignmentActivityProvider(assignmentId));
@@ -242,11 +245,13 @@ class RealtimeDispatcher {
           final updatedAvatar = event.payload['avatarUrl'] as String?;
           final authState = _ref.read(authProvider);
           if (authState is AuthAuthenticated) {
-            final targetUserId = event.payload['userId'] as String? ?? event.aggregateId;
+            final targetUserId =
+                event.payload['userId'] as String? ?? event.aggregateId;
             if (targetUserId == authState.user.id) {
               final updatedUser = authState.user.copyWith(
                 name: updatedName ?? authState.user.name,
-                profilePictureUrl: updatedAvatar ?? authState.user.profilePictureUrl,
+                profilePictureUrl:
+                    updatedAvatar ?? authState.user.profilePictureUrl,
               );
               _ref.read(authProvider.notifier).updateCurrentUser(updatedUser);
             }
@@ -262,7 +267,9 @@ class RealtimeDispatcher {
 
       default:
         // Safely ignore unknown event without crashing
-        debugPrint('[Realtime Dispatcher] Unhandled or unknown event type: ${event.eventType}. Ignored safely.');
+        debugPrint(
+          '[Realtime Dispatcher] Unhandled or unknown event type: ${event.eventType}. Ignored safely.',
+        );
         break;
     }
   }
@@ -276,16 +283,22 @@ class RealtimeDispatcher {
       _debounceTimers.remove(domain);
       try {
         action();
-        debugPrint('[Realtime Dispatcher] Invalidation executed for domain: $domain');
+        debugPrint(
+          '[Realtime Dispatcher] Invalidation executed for domain: $domain',
+        );
       } catch (err) {
-        debugPrint('[Realtime Dispatcher] Error during provider invalidation for $domain: $err');
+        debugPrint(
+          '[Realtime Dispatcher] Error during provider invalidation for $domain: $err',
+        );
       }
     });
   }
 
   /// Triggers authoritative resynchronization across primary providers (e.g. after socket reconnect).
   void triggerAuthoritativeResync() {
-    debugPrint('[Realtime Dispatcher] Performing authoritative resync on reconnect...');
+    debugPrint(
+      '[Realtime Dispatcher] Performing authoritative resync on reconnect...',
+    );
     _ref.invalidate(profileProvider);
     _ref.invalidate(notificationsProvider);
     _ref.invalidate(unreadNotificationCountProvider);

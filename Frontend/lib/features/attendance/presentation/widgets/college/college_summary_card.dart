@@ -37,7 +37,9 @@ class CollegeSummaryCard extends StatelessWidget {
               _buildMetricCard(
                 "Campus Attendance",
                 "${summary.todayAttendancePercentage}%",
-                summary.todayAttendancePercentage >= 75 ? AcadexColors.success : AcadexColors.error,
+                summary.todayAttendancePercentage >= 75
+                    ? AcadexColors.success
+                    : AcadexColors.error,
                 isDark,
               ),
               const SizedBox(width: 12),
@@ -72,12 +74,19 @@ class CollegeSummaryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricCard(String title, String value, Color valueColor, bool isDark) {
+  Widget _buildMetricCard(
+    String title,
+    String value,
+    Color valueColor,
+    bool isDark,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+          color: isDark
+              ? AcadexColors.darkSurfaceHover
+              : AcadexColors.canvasSoft,
           borderRadius: AcadexRadius.borderRadiusMd,
         ),
         child: Column(
@@ -86,14 +95,13 @@ class CollegeSummaryCard extends StatelessWidget {
             Text(
               title,
               style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              value,
-              style: AcadexTypography.heading2(color: valueColor),
-            ),
+            Text(value, style: AcadexTypography.heading2(color: valueColor)),
           ],
         ),
       ),

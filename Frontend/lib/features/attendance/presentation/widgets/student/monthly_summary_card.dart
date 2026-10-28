@@ -5,16 +5,17 @@ import '../../../domain/models/monthly_attendance_summary.dart';
 class MonthlySummaryCard extends StatelessWidget {
   final MonthlyAttendanceSummary summary;
 
-  const MonthlySummaryCard({
-    super.key,
-    required this.summary,
-  });
+  const MonthlySummaryCard({super.key, required this.summary});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final perc = summary.percentage;
-    final color = perc >= 75 ? AcadexColors.success : perc >= 60 ? AcadexColors.warning : AcadexColors.error;
+    final color = perc >= 75
+        ? AcadexColors.success
+        : perc >= 60
+        ? AcadexColors.warning
+        : AcadexColors.error;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -49,9 +50,24 @@ class MonthlySummaryCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStat("Conducted", summary.classesConducted.toString(), AcadexColors.primary, isDark),
-              _buildStat("Attended", summary.classesAttended.toString(), AcadexColors.success, isDark),
-              _buildStat("Missed", summary.classesMissed.toString(), AcadexColors.error, isDark),
+              _buildStat(
+                "Conducted",
+                summary.classesConducted.toString(),
+                AcadexColors.primary,
+                isDark,
+              ),
+              _buildStat(
+                "Attended",
+                summary.classesAttended.toString(),
+                AcadexColors.success,
+                isDark,
+              ),
+              _buildStat(
+                "Missed",
+                summary.classesMissed.toString(),
+                AcadexColors.error,
+                isDark,
+              ),
             ],
           ),
         ],
@@ -62,10 +78,7 @@ class MonthlySummaryCard extends StatelessWidget {
   Widget _buildStat(String label, String val, Color color, bool isDark) {
     return Column(
       children: [
-        Text(
-          val,
-          style: AcadexTypography.heading2(color: color),
-        ),
+        Text(val, style: AcadexTypography.heading2(color: color)),
         const SizedBox(height: 2),
         Text(
           label,

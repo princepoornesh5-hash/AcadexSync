@@ -5,7 +5,7 @@ class DashboardRepository {
   final ApiClient _apiClient;
 
   DashboardRepository({ApiClient? apiClient})
-      : _apiClient = apiClient ?? apiClientInstance;
+    : _apiClient = apiClient ?? apiClientInstance;
 
   static ApiClient get apiClientInstance => apiClient;
 

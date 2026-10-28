@@ -22,7 +22,9 @@ class StudentDashboard extends ConsumerWidget {
       },
       child: dashboardAsync.when(
         loading: () => const Center(
-          child: AcadexLoadingState.spinner(message: 'Loading your dashboard...'),
+          child: AcadexLoadingState.spinner(
+            message: 'Loading your dashboard...',
+          ),
         ),
         error: (err, _) => AcadexErrorState(
           title: 'Unable to load dashboard',
@@ -45,9 +47,7 @@ class StudentDashboard extends ConsumerWidget {
 
               // 3. Quick Shortcuts Grid (Immediate 8px gap below hero, matching HOD standard)
               const SizedBox(height: 8),
-              DashboardQuickActionsGrid(
-                quickActions: dashboard.quickActions,
-              ),
+              DashboardQuickActionsGrid(quickActions: dashboard.quickActions),
 
               // 4. Important Alerts & Pending Actions
               if (dashboard.alerts.isNotEmpty)
@@ -95,8 +95,8 @@ class StudentDashboard extends ConsumerWidget {
     final resultText = summary.latestResultStatus == 'AVAILABLE'
         ? 'Available'
         : (summary.latestResultStatus == 'NOT_YET_PUBLISHED'
-            ? 'Not yet published'
-            : 'Not available');
+              ? 'Not yet published'
+              : 'Not available');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,7 +119,9 @@ class StudentDashboard extends ConsumerWidget {
             Text(
               'Personal Academic Status',
               style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
             ),
           ],
@@ -132,7 +134,10 @@ class StudentDashboard extends ConsumerWidget {
             final itemWidth = (w - (crossAxisCount - 1) * 8) / crossAxisCount;
             final textScale = MediaQuery.textScalerOf(context).scale(1.0);
             final targetCardHeight = 80.0 * textScale.clamp(1.0, 1.6);
-            final childAspectRatio = (itemWidth / targetCardHeight).clamp(0.85, 1.45);
+            final childAspectRatio = (itemWidth / targetCardHeight).clamp(
+              0.85,
+              1.45,
+            );
 
             return GridView.count(
               shrinkWrap: true,
@@ -145,15 +150,19 @@ class StudentDashboard extends ConsumerWidget {
                 DashboardCompactTile(
                   title: 'Attendance',
                   value: attendanceText,
-                  subtitle: summary.attendancePercentage != null ? 'Semester Average' : 'No records yet',
+                  subtitle: summary.attendancePercentage != null
+                      ? 'Semester Average'
+                      : 'No records yet',
                   icon: LucideIcons.checkSquare,
                   color: AcadexColors.primary,
                   onTap: () => context.push('/attendance'),
                 ),
                 DashboardCompactTile(
                   title: 'Assignments',
-                  value: '${summary.assignmentsCompleted} / ${summary.assignmentsCompleted + summary.assignmentsPending}',
-                  subtitle: '${summary.assignmentsPending} pending task${summary.assignmentsPending == 1 ? '' : 's'}',
+                  value:
+                      '${summary.assignmentsCompleted} / ${summary.assignmentsCompleted + summary.assignmentsPending}',
+                  subtitle:
+                      '${summary.assignmentsPending} pending task${summary.assignmentsPending == 1 ? '' : 's'}',
                   icon: LucideIcons.fileSpreadsheet,
                   color: Colors.teal,
                   onTap: () => context.push('/assignments'),
@@ -161,7 +170,8 @@ class StudentDashboard extends ConsumerWidget {
                 DashboardCompactTile(
                   title: 'Practicals',
                   value: '${summary.practicalsCompleted}',
-                  subtitle: '${summary.practicalsScheduled} upcoming session${summary.practicalsScheduled == 1 ? '' : 's'}',
+                  subtitle:
+                      '${summary.practicalsScheduled} upcoming session${summary.practicalsScheduled == 1 ? '' : 's'}',
                   icon: LucideIcons.flaskConical,
                   color: Colors.purple,
                   onTap: () => context.push('/practicals'),

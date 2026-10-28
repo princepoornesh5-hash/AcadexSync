@@ -17,85 +17,110 @@ export 'timetable_authoring_state.dart';
 // =========================================================================
 
 /// Real-time stream for a single timetable container.
-final timetableContainerStreamProvider = StreamProvider.family<TimetableContainerModel?, String>((ref, timetableId) {
-  final repository = ref.watch(timetableRepositoryProvider);
-  return repository.watchTimetableContainer(timetableId);
-});
+final timetableContainerStreamProvider =
+    StreamProvider.family<TimetableContainerModel?, String>((ref, timetableId) {
+      final repository = ref.watch(timetableRepositoryProvider);
+      return repository.watchTimetableContainer(timetableId);
+    });
 
 /// Real-time stream of period definitions for a timetable container.
-final timetablePeriodsStreamProvider = StreamProvider.family<List<TimetablePeriodModel>, String>((ref, timetableId) {
-  final repository = ref.watch(timetableRepositoryProvider);
-  return repository.watchPeriods(timetableId);
-});
+final timetablePeriodsStreamProvider =
+    StreamProvider.family<List<TimetablePeriodModel>, String>((
+      ref,
+      timetableId,
+    ) {
+      final repository = ref.watch(timetableRepositoryProvider);
+      return repository.watchPeriods(timetableId);
+    });
 
 /// Real-time stream of break definitions for a timetable container.
-final timetableBreaksStreamProvider = StreamProvider.family<List<TimetableBreakModel>, String>((ref, timetableId) {
-  final repository = ref.watch(timetableRepositoryProvider);
-  return repository.watchBreaks(timetableId);
-});
+final timetableBreaksStreamProvider =
+    StreamProvider.family<List<TimetableBreakModel>, String>((
+      ref,
+      timetableId,
+    ) {
+      final repository = ref.watch(timetableRepositoryProvider);
+      return repository.watchBreaks(timetableId);
+    });
 
 /// Real-time stream of grid entries for a timetable container.
-final timetableGridEntriesStreamProvider = StreamProvider.family<List<TimetableGridEntryModel>, String>((ref, timetableId) {
-  final repository = ref.watch(timetableRepositoryProvider);
-  return repository.watchGridEntries(timetableId);
-});
+final timetableGridEntriesStreamProvider =
+    StreamProvider.family<List<TimetableGridEntryModel>, String>((
+      ref,
+      timetableId,
+    ) {
+      final repository = ref.watch(timetableRepositoryProvider);
+      return repository.watchGridEntries(timetableId);
+    });
 
 /// Queries timetable containers matching specific academic filters.
-final timetableContainersListProvider = StreamProvider.family<List<TimetableContainerModel>, Map<String, dynamic>>((ref, filters) {
-  final repository = ref.watch(timetableRepositoryProvider);
-  final collegeId = filters['collegeId'] as String? ?? '';
-  final departmentId = filters['departmentId'] as String?;
-  final sectionId = filters['sectionId'] as String?;
-  final status = filters['status'] as TimetableStatus?;
+final timetableContainersListProvider =
+    StreamProvider.family<List<TimetableContainerModel>, Map<String, dynamic>>((
+      ref,
+      filters,
+    ) {
+      final repository = ref.watch(timetableRepositoryProvider);
+      final collegeId = filters['collegeId'] as String? ?? '';
+      final departmentId = filters['departmentId'] as String?;
+      final sectionId = filters['sectionId'] as String?;
+      final status = filters['status'] as TimetableStatus?;
 
-  return repository.watchTimetableContainers(
-    collegeId: collegeId,
-    departmentId: departmentId,
-    sectionId: sectionId,
-    status: status,
-  );
-});
+      return repository.watchTimetableContainers(
+        collegeId: collegeId,
+        departmentId: departmentId,
+        sectionId: sectionId,
+        status: status,
+      );
+    });
 
 // =========================================================================
 // ROLE-BASED AUTHORING PERMISSIONS PROVIDER
 // =========================================================================
 
 /// Determines the authoring capabilities for the currently authenticated user.
-final timetableAuthoringPermissionsProvider = Provider.family<TimetableAuthoringPermissions, TimetableContainerModel?>((ref, container) {
-  final currentUser = ref.watch(currentUserProvider);
-  if (currentUser == null) return const TimetableAuthoringPermissions.none();
+final timetableAuthoringPermissionsProvider =
+    Provider.family<TimetableAuthoringPermissions, TimetableContainerModel?>((
+      ref,
+      container,
+    ) {
+      final currentUser = ref.watch(currentUserProvider);
+      if (currentUser == null)
+        return const TimetableAuthoringPermissions.none();
 
-  switch (currentUser.role) {
-    case AppRole.superAdmin:
-      return const TimetableAuthoringPermissions.full();
-
-    case AppRole.collegeAdmin:
-      if (container == null || container.collegeId == currentUser.collegeId) {
-        return const TimetableAuthoringPermissions.full();
-      }
-      return const TimetableAuthoringPermissions.none();
-
-    case AppRole.hod:
-      if (container == null ||
-          (container.collegeId == currentUser.collegeId && container.departmentId == currentUser.departmentId)) {
-        return const TimetableAuthoringPermissions.full();
-      }
-      return const TimetableAuthoringPermissions.none();
-
-    case AppRole.faculty:
-      final isDelegated = ref.watch(isFacultyTimetableCoordinatorProvider);
-      if (isDelegated) {
-        if (container == null ||
-            (container.collegeId == currentUser.collegeId && container.departmentId == currentUser.departmentId)) {
+      switch (currentUser.role) {
+        case AppRole.superAdmin:
           return const TimetableAuthoringPermissions.full();
-        }
-      }
-      return const TimetableAuthoringPermissions.readOnly();
 
-    case AppRole.student:
-      return const TimetableAuthoringPermissions.readOnly();
-  }
-});
+        case AppRole.collegeAdmin:
+          if (container == null ||
+              container.collegeId == currentUser.collegeId) {
+            return const TimetableAuthoringPermissions.full();
+          }
+          return const TimetableAuthoringPermissions.none();
+
+        case AppRole.hod:
+          if (container == null ||
+              (container.collegeId == currentUser.collegeId &&
+                  container.departmentId == currentUser.departmentId)) {
+            return const TimetableAuthoringPermissions.full();
+          }
+          return const TimetableAuthoringPermissions.none();
+
+        case AppRole.faculty:
+          final isDelegated = ref.watch(isFacultyTimetableCoordinatorProvider);
+          if (isDelegated) {
+            if (container == null ||
+                (container.collegeId == currentUser.collegeId &&
+                    container.departmentId == currentUser.departmentId)) {
+              return const TimetableAuthoringPermissions.full();
+            }
+          }
+          return const TimetableAuthoringPermissions.readOnly();
+
+        case AppRole.student:
+          return const TimetableAuthoringPermissions.readOnly();
+      }
+    });
 
 /// Helper provider checking whether the current faculty user is authorized as a Timetable Coordinator.
 final isFacultyTimetableCoordinatorProvider = Provider<bool>((ref) {
@@ -109,7 +134,8 @@ final isFacultyTimetableCoordinatorProvider = Provider<bool>((ref) {
 // AUTHORING STATE NOTIFIER & CONTROLLER
 // =========================================================================
 
-class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> {
+class TimetableAuthoringNotifier
+    extends StateNotifier<TimetableAuthoringState> {
   final TimetableRepository repository;
   final UserModel? currentUser;
   final Ref? ref;
@@ -179,7 +205,8 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
       if (container == null) {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: 'Timetable not found. It may have been archived or removed.',
+          errorMessage:
+              'Timetable not found. It may have been archived or removed.',
         );
         return;
       }
@@ -204,11 +231,17 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
         lastSavedAt: container.updatedAt,
       );
     } catch (e, st) {
-      developer.log('[TimetableAuthoring] loadTimetable failed: $e\n$st', name: 'Acadex.Timetable');
+      developer.log(
+        '[TimetableAuthoring] loadTimetable failed: $e\n$st',
+        name: 'Acadex.Timetable',
+      );
       if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
-        errorMessage: AcadexException.sanitizedMessage(e, fallback: 'Failed to load timetable. Please try again.'),
+        errorMessage: AcadexException.sanitizedMessage(
+          e,
+          fallback: 'Failed to load timetable. Please try again.',
+        ),
       );
     }
   }
@@ -227,10 +260,7 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
 
   /// Clears current cell selection.
   void clearSelection() {
-    state = state.copyWith(
-      clearSelectedCell: true,
-      clearSelectedEntryId: true,
-    );
+    state = state.copyWith(clearSelectedCell: true, clearSelectedEntryId: true);
   }
 
   /// Selects an entry explicitly.
@@ -243,7 +273,10 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
       final entry = state.entries.firstWhere((e) => e.id == entryId);
       state = state.copyWith(
         selectedEntryId: entry.id,
-        selectedCell: TimetableCellCoordinate(day: entry.dayOfWeek, periodIndex: entry.startPeriodIndex),
+        selectedCell: TimetableCellCoordinate(
+          day: entry.dayOfWeek,
+          periodIndex: entry.startPeriodIndex,
+        ),
       );
     } catch (_) {
       state = state.copyWith(clearSelectedEntryId: true);
@@ -260,7 +293,8 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
     final newId = entry.id.isNotEmpty ? entry.id : const Uuid().v4();
     final toAdd = entry.copyWith(id: newId);
 
-    final updated = List<TimetableGridEntryModel>.from(state.entries)..add(toAdd);
+    final updated = List<TimetableGridEntryModel>.from(state.entries)
+      ..add(toAdd);
     state = state.copyWith(
       entries: updated,
       selectedEntryId: newId,
@@ -314,7 +348,9 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
       throw StateError('Cannot delete entry: No timetable container loaded.');
     }
     if (container.status == TimetableStatus.published) {
-      throw StateError('Cannot modify entries in a published timetable. Please unpublish or revise first.');
+      throw StateError(
+        'Cannot modify entries in a published timetable. Please unpublish or revise first.',
+      );
     }
 
     state = state.copyWith(isSaving: true, clearErrorMessage: true);
@@ -338,7 +374,10 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
       if (!mounted) rethrow;
       state = state.copyWith(
         isSaving: false,
-        errorMessage: AcadexException.sanitizedMessage(e, fallback: 'Failed to update schedule.'),
+        errorMessage: AcadexException.sanitizedMessage(
+          e,
+          fallback: 'Failed to update schedule.',
+        ),
       );
       rethrow;
     }
@@ -349,7 +388,9 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
     final entry = state.entries.where((e) => e.id == entryId).firstOrNull;
     if (entry == null) return;
     if (!state.canMergeRight(entryId)) {
-      throw StateError('Cannot merge right: Target period is either occupied, a break, or does not exist.');
+      throw StateError(
+        'Cannot merge right: Target period is either occupied, a break, or does not exist.',
+      );
     }
 
     _recordHistory();
@@ -386,12 +427,18 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
     if (entry == null) return;
 
     final targetPeriods = state.getPeriodsForDay(targetDay);
-    final startPeriod = targetPeriods.where((p) => p.index == targetStartPeriodIndex).firstOrNull;
+    final startPeriod = targetPeriods
+        .where((p) => p.index == targetStartPeriodIndex)
+        .firstOrNull;
     final endPeriodIndex = targetStartPeriodIndex + entry.periodSpan - 1;
-    final endPeriod = targetPeriods.where((p) => p.index == endPeriodIndex).firstOrNull;
+    final endPeriod = targetPeriods
+        .where((p) => p.index == endPeriodIndex)
+        .firstOrNull;
 
     if (startPeriod == null || endPeriod == null) {
-      throw ArgumentError('Target period slot does not exist on ${targetDay.displayName}.');
+      throw ArgumentError(
+        'Target period slot does not exist on ${targetDay.displayName}.',
+      );
     }
 
     final newStartTime = startPeriod.startTime;
@@ -426,7 +473,11 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
     }
 
     // Check break overlap
-    final breakAtTarget = state.getBreakAtCell(targetDay, newStartTime, newEndTime);
+    final breakAtTarget = state.getBreakAtCell(
+      targetDay,
+      newStartTime,
+      newEndTime,
+    );
     if (breakAtTarget != null) {
       throw TimetableConflictException(
         'Target slot on ${targetDay.displayName} overlaps with break "${breakAtTarget.name}".',
@@ -449,7 +500,10 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
     state = state.copyWith(
       entries: updated,
       selectedEntryId: entryId,
-      selectedCell: TimetableCellCoordinate(day: targetDay, periodIndex: targetStartPeriodIndex),
+      selectedCell: TimetableCellCoordinate(
+        day: targetDay,
+        periodIndex: targetStartPeriodIndex,
+      ),
       canUndo: canUndo,
       canRedo: canRedo,
       isDirty: true,
@@ -477,10 +531,12 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
     // Remove any existing entries that fall within the merged span
     final endPeriodIndex = startPeriodIndex + periodSpan - 1;
     final updated = List<TimetableGridEntryModel>.from(state.entries)
-      ..removeWhere((e) =>
-          e.dayOfWeek == day &&
-          e.startPeriodIndex <= endPeriodIndex &&
-          e.endPeriodIndex >= startPeriodIndex);
+      ..removeWhere(
+        (e) =>
+            e.dayOfWeek == day &&
+            e.startPeriodIndex <= endPeriodIndex &&
+            e.endPeriodIndex >= startPeriodIndex,
+      );
 
     final mergedEntry = TimetableGridEntryModel(
       id: const Uuid().v4(),
@@ -535,19 +591,21 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
         ),
       );
 
-      updated.add(TimetableGridEntryModel(
-        id: const Uuid().v4(),
-        dayOfWeek: entry.dayOfWeek,
-        startPeriodIndex: pIndex,
-        periodSpan: 1,
-        startTime: matchingPeriod.startTime,
-        endTime: matchingPeriod.endTime,
-        subjectId: entry.subjectId,
-        facultyId: entry.facultyId,
-        roomNumber: entry.roomNumber,
-        building: entry.building,
-        sessionType: entry.sessionType,
-      ));
+      updated.add(
+        TimetableGridEntryModel(
+          id: const Uuid().v4(),
+          dayOfWeek: entry.dayOfWeek,
+          startPeriodIndex: pIndex,
+          periodSpan: 1,
+          startTime: matchingPeriod.startTime,
+          endTime: matchingPeriod.endTime,
+          subjectId: entry.subjectId,
+          facultyId: entry.facultyId,
+          roomNumber: entry.roomNumber,
+          building: entry.building,
+          sessionType: entry.sessionType,
+        ),
+      );
     }
 
     state = state.copyWith(
@@ -600,13 +658,18 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
 
   /// Deletes a period definition if not occupied by classes, and recalculates period indexes.
   void deletePeriod(String periodId) {
-    final periodToDelete = state.periods.where((p) => p.id == periodId).firstOrNull;
+    final periodToDelete = state.periods
+        .where((p) => p.id == periodId)
+        .firstOrNull;
     if (periodToDelete != null && state.isPeriodUsed(periodToDelete)) {
-      throw StateError('Cannot delete period "${periodToDelete.name}" because it is currently occupied by classes.');
+      throw StateError(
+        'Cannot delete period "${periodToDelete.name}" because it is currently occupied by classes.',
+      );
     }
 
     _recordHistory();
-    final remaining = List<TimetablePeriodModel>.from(state.periods)..removeWhere((p) => p.id == periodId);
+    final remaining = List<TimetablePeriodModel>.from(state.periods)
+      ..removeWhere((p) => p.id == periodId);
 
     // Re-index remaining periods to maintain contiguous 1..N indices
     final reindexed = <TimetablePeriodModel>[];
@@ -637,7 +700,9 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
   /// Reorders and updates the indices of periods.
   void reorderPeriods(List<TimetablePeriodModel> newPeriods) {
     final targetDay = newPeriods.isNotEmpty ? newPeriods.first.dayOfWeek : null;
-    final otherPeriods = state.periods.where((p) => p.dayOfWeek != targetDay).toList();
+    final otherPeriods = state.periods
+        .where((p) => p.dayOfWeek != targetDay)
+        .toList();
 
     _recordHistory();
     final reindexed = <TimetablePeriodModel>[];
@@ -663,7 +728,8 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
   void addBreak(TimetableBreakModel breakModel) {
     breakModel.validate();
     _recordHistory();
-    final updated = List<TimetableBreakModel>.from(state.breaks)..add(breakModel);
+    final updated = List<TimetableBreakModel>.from(state.breaks)
+      ..add(breakModel);
 
     state = state.copyWith(
       breaks: updated,
@@ -735,31 +801,33 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
     List<TimetablePeriodModel> updatedPeriods = List.from(state.periods);
 
     if (mode == TimetableTimingMode.differentPerDay) {
-      final sharedPeriods = state.periods.where((p) => p.dayOfWeek == null).toList();
+      final sharedPeriods = state.periods
+          .where((p) => p.dayOfWeek == null)
+          .toList();
       if (sharedPeriods.isNotEmpty) {
         final dayPeriods = <TimetablePeriodModel>[];
         for (final day in updatedContainer.activeDays) {
           for (final p in sharedPeriods) {
-            dayPeriods.add(p.copyWith(
-              id: '${p.id}-${day.name}',
-              dayOfWeek: day,
-            ));
+            dayPeriods.add(
+              p.copyWith(id: '${p.id}-${day.name}', dayOfWeek: day),
+            );
           }
         }
         updatedPeriods = dayPeriods;
       }
     } else if (mode == TimetableTimingMode.sameEveryDay) {
       final activeDays = updatedContainer.activeDays;
-      final firstDay = activeDays.isNotEmpty ? activeDays.first : TimetableDay.monday;
+      final firstDay = activeDays.isNotEmpty
+          ? activeDays.first
+          : TimetableDay.monday;
       final firstDayPeriods = state.getPeriodsForDay(firstDay);
 
       if (firstDayPeriods.isNotEmpty) {
         final sharedPeriods = <TimetablePeriodModel>[];
         for (final p in firstDayPeriods) {
-          sharedPeriods.add(p.copyWith(
-            id: p.id.split('-').first,
-            clearDayOfWeek: true,
-          ));
+          sharedPeriods.add(
+            p.copyWith(id: p.id.split('-').first, clearDayOfWeek: true),
+          );
         }
         updatedPeriods = sharedPeriods;
       }
@@ -805,21 +873,23 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
       await repository.saveGridEntriesBatch(ttId, state.entries);
 
       final now = DateTime.now();
-      state = state.copyWith(
-        isSaving: false,
-        isDirty: false,
-        lastSavedAt: now,
-      );
+      state = state.copyWith(isSaving: false, isDirty: false, lastSavedAt: now);
       final deptId = state.container?.departmentId;
       if (deptId != null && deptId.isNotEmpty) {
         ref?.invalidate(departmentSetupProvider(deptId));
       }
       return true;
     } catch (e, st) {
-      developer.log('[TimetableAuthoring] saveDraft error: $e\n$st', name: 'Acadex.Timetable');
+      developer.log(
+        '[TimetableAuthoring] saveDraft error: $e\n$st',
+        name: 'Acadex.Timetable',
+      );
       state = state.copyWith(
         isSaving: false,
-        errorMessage: AcadexException.sanitizedMessage(e, fallback: 'Failed to save draft timetable.'),
+        errorMessage: AcadexException.sanitizedMessage(
+          e,
+          fallback: 'Failed to save draft timetable.',
+        ),
       );
       return false;
     }
@@ -850,10 +920,16 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
       _invalidateConsumerProviders();
       return true;
     } catch (e, st) {
-      developer.log('[TimetableAuthoring] publish error: $e\n$st', name: 'Acadex.Timetable');
+      developer.log(
+        '[TimetableAuthoring] publish error: $e\n$st',
+        name: 'Acadex.Timetable',
+      );
       state = state.copyWith(
         isPublishing: false,
-        errorMessage: AcadexException.sanitizedMessage(e, fallback: 'Failed to publish timetable.'),
+        errorMessage: AcadexException.sanitizedMessage(
+          e,
+          fallback: 'Failed to publish timetable.',
+        ),
       );
       return false;
     }
@@ -878,10 +954,16 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
       _invalidateConsumerProviders();
       return true;
     } catch (e, st) {
-      developer.log('[TimetableAuthoring] unpublish error: $e\n$st', name: 'Acadex.Timetable');
+      developer.log(
+        '[TimetableAuthoring] unpublish error: $e\n$st',
+        name: 'Acadex.Timetable',
+      );
       state = state.copyWith(
         isLoading: false,
-        errorMessage: AcadexException.sanitizedMessage(e, fallback: 'Failed to unpublish timetable.'),
+        errorMessage: AcadexException.sanitizedMessage(
+          e,
+          fallback: 'Failed to unpublish timetable.',
+        ),
       );
       return false;
     }
@@ -898,17 +980,21 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
 // MAIN AUTHORING CONTROLLER PROVIDER
 // =========================================================
 
-final timetableAuthoringProvider = StateNotifierProvider.autoDispose.family<TimetableAuthoringNotifier, TimetableAuthoringState, String>((ref, timetableId) {
-  final repository = ref.watch(timetableRepositoryProvider);
-  final currentUser = ref.watch(currentUserProvider);
+final timetableAuthoringProvider = StateNotifierProvider.autoDispose
+    .family<TimetableAuthoringNotifier, TimetableAuthoringState, String>((
+      ref,
+      timetableId,
+    ) {
+      final repository = ref.watch(timetableRepositoryProvider);
+      final currentUser = ref.watch(currentUserProvider);
 
-  final notifier = TimetableAuthoringNotifier(
-    repository: repository,
-    currentUser: currentUser,
-    ref: ref,
-  );
+      final notifier = TimetableAuthoringNotifier(
+        repository: repository,
+        currentUser: currentUser,
+        ref: ref,
+      );
 
-  // Trigger initial load
-  notifier.loadTimetable(timetableId);
-  return notifier;
-});
+      // Trigger initial load
+      notifier.loadTimetable(timetableId);
+      return notifier;
+    });

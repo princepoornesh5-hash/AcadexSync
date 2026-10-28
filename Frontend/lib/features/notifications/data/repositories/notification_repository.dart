@@ -4,7 +4,10 @@ import '../../../settings/domain/models/settings_models.dart';
 
 abstract class NotificationRepository {
   /// Watches all relevant notifications for a user based on their identity and preferences.
-  Stream<List<NotificationModel>> watchNotifications(UserModel user, NotificationPreferences prefs);
+  Stream<List<NotificationModel>> watchNotifications(
+    UserModel user,
+    NotificationPreferences prefs,
+  );
 
   /// Marks a specific notification as read.
   Future<void> markAsRead(String id, String userId);
@@ -22,7 +25,9 @@ abstract class NotificationRepository {
   Future<void> clearAll(String userId);
 
   /// Creates a personal notification for a specific user.
-  Future<NotificationModel> createPersonalNotification(NotificationModel notification);
+  Future<NotificationModel> createPersonalNotification(
+    NotificationModel notification,
+  );
 
   /// Creates an announcement for a specific audience (Role, Dept, College, Platform).
   Future<NotificationModel> createAnnouncement(NotificationModel notification);

@@ -77,7 +77,7 @@ class NoteModel {
   final String? content;
   final String? externalUrl;
   final ResourceType resourceType;
-  
+
   // File Attachment Metadata
   final String? chapter;
   final String? fileName;
@@ -89,7 +89,7 @@ class NoteModel {
   final String? fileId;
   final String? mimeType;
   final int version;
-  
+
   // Context
   final String subjectId;
   final String sectionId;
@@ -99,14 +99,14 @@ class NoteModel {
   final String semesterId;
   final String? academicYearId;
   final String? facultyAssignmentId;
-  
+
   // Ownership
   final String facultyId;
   final String authorUserId;
 
   // Status
   final NoteStatus status;
-  
+
   // Timestamps
   final DateTime? publishedAt;
   final DateTime createdAt;
@@ -145,7 +145,8 @@ class NoteModel {
     required this.updatedAt,
   });
 
-  bool get isPreviewable => NoteMimeHelper.isPreviewableFormat(fileType ?? fileName);
+  bool get isPreviewable =>
+      NoteMimeHelper.isPreviewableFormat(fileType ?? fileName);
 
   factory NoteModel.fromJson(Map<String, dynamic> json) {
     return NoteModel(
@@ -159,10 +160,14 @@ class NoteModel {
           : ResourceType.fileAttachment,
       chapter: json['chapter'] as String?,
       fileName: (json['fileName'] ?? json['originalFileName']) as String?,
-      fileType: (json['fileType'] ?? json['fileExtension'] ?? json['mimeType']) as String?,
+      fileType:
+          (json['fileType'] ?? json['fileExtension'] ?? json['mimeType'])
+              as String?,
       fileSize: json['fileSize'] is int
           ? json['fileSize'] as int
-          : (json['fileSize'] != null ? int.tryParse(json['fileSize'].toString()) : null),
+          : (json['fileSize'] != null
+                ? int.tryParse(json['fileSize'].toString())
+                : null),
       fileUrl: json['fileUrl'] as String?,
       thumbnailUrl: json['thumbnailUrl'] as String?,
       storagePath: (json['storagePath'] ?? json['storageKey']) as String?,
@@ -170,7 +175,9 @@ class NoteModel {
       mimeType: json['mimeType'] as String?,
       version: json['version'] is int
           ? json['version'] as int
-          : (json['version'] != null ? int.tryParse(json['version'].toString()) ?? 1 : 1),
+          : (json['version'] != null
+                ? int.tryParse(json['version'].toString()) ?? 1
+                : 1),
       subjectId: (json['subjectId'] ?? '').toString(),
       sectionId: (json['sectionId'] ?? '').toString(),
       courseId: (json['courseId'] ?? '').toString(),
@@ -184,9 +191,15 @@ class NoteModel {
       status: json['status'] != null
           ? NoteStatusExtension.fromString(json['status'].toString())
           : NoteStatus.draft,
-      publishedAt: json['publishedAt'] != null ? _parseDate(json['publishedAt']) : null,
-      createdAt: json['createdAt'] != null ? _parseDate(json['createdAt'])! : DateTime.now(),
-      updatedAt: json['updatedAt'] != null ? _parseDate(json['updatedAt'])! : DateTime.now(),
+      publishedAt: json['publishedAt'] != null
+          ? _parseDate(json['publishedAt'])
+          : null,
+      createdAt: json['createdAt'] != null
+          ? _parseDate(json['createdAt'])!
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? _parseDate(json['updatedAt'])!
+          : DateTime.now(),
     );
   }
 
@@ -215,7 +228,8 @@ class NoteModel {
       'collegeId': collegeId,
       'semesterId': semesterId,
       if (academicYearId != null) 'academicYearId': academicYearId,
-      if (facultyAssignmentId != null) 'facultyAssignmentId': facultyAssignmentId,
+      if (facultyAssignmentId != null)
+        'facultyAssignmentId': facultyAssignmentId,
       'facultyId': facultyId,
       'authorUserId': authorUserId,
       'status': status.value,

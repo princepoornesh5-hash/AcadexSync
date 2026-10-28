@@ -11,7 +11,7 @@ class AttendanceRiskEvaluator {
   final String Function() _idGenerator;
 
   AttendanceRiskEvaluator({String Function()? idGenerator})
-      : _idGenerator = idGenerator ?? (() => const Uuid().v4());
+    : _idGenerator = idGenerator ?? (() => const Uuid().v4());
 
   /// Evaluates student attendance analytics and history to produce actionable alerts.
   List<AttendanceAlert> evaluateStudent({
@@ -38,7 +38,8 @@ class AttendanceRiskEvaluator {
 
     // 1. Evaluate Overall Student Attendance Shortage
     if (studentAnalytics.totalSessions > 0) {
-      final overallKey = 'low_att_${studentAnalytics.studentId}_overall_${studentAnalytics.sectionId}';
+      final overallKey =
+          'low_att_${studentAnalytics.studentId}_overall_${studentAnalytics.sectionId}';
       final existingOverall = existingMap[overallKey];
 
       if (studentAnalytics.attendancePercentage < threshold) {
@@ -63,44 +64,56 @@ class AttendanceRiskEvaluator {
           createdAt: existingOverall?.createdAt,
         );
         // Preserve read/acknowledged status if still active
-        alerts.add(alert.copyWith(
-          isRead: existingOverall?.isRead ?? false,
-          status: existingOverall?.status == AttendanceAlertStatus.acknowledged
-              ? AttendanceAlertStatus.acknowledged
-              : AttendanceAlertStatus.active,
-        ));
-      } else if (existingOverall != null && existingOverall.status != AttendanceAlertStatus.resolved) {
+        alerts.add(
+          alert.copyWith(
+            isRead: existingOverall?.isRead ?? false,
+            status:
+                existingOverall?.status == AttendanceAlertStatus.acknowledged
+                ? AttendanceAlertStatus.acknowledged
+                : AttendanceAlertStatus.active,
+          ),
+        );
+      } else if (existingOverall != null &&
+          existingOverall.status != AttendanceAlertStatus.resolved) {
         // Resolve previous shortage
-        alerts.add(existingOverall.copyWith(
-          status: AttendanceAlertStatus.resolved,
-          resolvedAt: DateTime.now(),
-          title: 'Attendance Recovered: ${studentAnalytics.studentName} (${studentAnalytics.attendancePercentage.toStringAsFixed(1)}%)',
-          message: 'Attendance has improved to ${studentAnalytics.attendancePercentage.toStringAsFixed(1)}%, successfully restoring compliance with the ${threshold.toStringAsFixed(0)}% requirement.',
-        ));
+        alerts.add(
+          existingOverall.copyWith(
+            status: AttendanceAlertStatus.resolved,
+            resolvedAt: DateTime.now(),
+            title:
+                'Attendance Recovered: ${studentAnalytics.studentName} (${studentAnalytics.attendancePercentage.toStringAsFixed(1)}%)',
+            message:
+                'Attendance has improved to ${studentAnalytics.attendancePercentage.toStringAsFixed(1)}%, successfully restoring compliance with the ${threshold.toStringAsFixed(0)}% requirement.',
+          ),
+        );
       }
 
       // Check Overall Attendance Drop
-      if (previousOverallPercentage != null && previousOverallPercentage > studentAnalytics.attendancePercentage) {
-        final drop = previousOverallPercentage - studentAnalytics.attendancePercentage;
+      if (previousOverallPercentage != null &&
+          previousOverallPercentage > studentAnalytics.attendancePercentage) {
+        final drop =
+            previousOverallPercentage - studentAnalytics.attendancePercentage;
         if (drop >= 5.0) {
           final dropKey = 'drop_${studentAnalytics.studentId}_overall';
           final existingDrop = existingMap[dropKey];
-          alerts.add(AttendanceAlert.createAttendanceDrop(
-            id: existingDrop?.id ?? _idGenerator(),
-            collegeId: collegeId,
-            departmentId: departmentId,
-            courseId: courseId,
-            academicYearId: academicYearId,
-            semesterId: semesterId,
-            sectionId: studentAnalytics.sectionId,
-            studentId: studentAnalytics.studentId,
-            studentName: studentAnalytics.studentName,
-            rollNumber: studentAnalytics.rollNumber,
-            previousPercentage: previousOverallPercentage,
-            currentPercentage: studentAnalytics.attendancePercentage,
-            threshold: threshold,
-            createdAt: existingDrop?.createdAt,
-          ));
+          alerts.add(
+            AttendanceAlert.createAttendanceDrop(
+              id: existingDrop?.id ?? _idGenerator(),
+              collegeId: collegeId,
+              departmentId: departmentId,
+              courseId: courseId,
+              academicYearId: academicYearId,
+              semesterId: semesterId,
+              sectionId: studentAnalytics.sectionId,
+              studentId: studentAnalytics.studentId,
+              studentName: studentAnalytics.studentName,
+              rollNumber: studentAnalytics.rollNumber,
+              previousPercentage: previousOverallPercentage,
+              currentPercentage: studentAnalytics.attendancePercentage,
+              threshold: threshold,
+              createdAt: existingDrop?.createdAt,
+            ),
+          );
         }
       }
     }
@@ -110,7 +123,8 @@ class AttendanceRiskEvaluator {
       for (final sub in subjectAnalyticsList) {
         if (sub.totalSessions <= 0) continue;
 
-        final subKey = 'low_att_${studentAnalytics.studentId}_${sub.subjectId}_${studentAnalytics.sectionId}';
+        final subKey =
+            'low_att_${studentAnalytics.studentId}_${sub.subjectId}_${studentAnalytics.sectionId}';
         final existingSubAlert = existingMap[subKey];
 
         if (sub.attendancePercentage < threshold) {
@@ -133,47 +147,59 @@ class AttendanceRiskEvaluator {
             threshold: threshold,
             createdAt: existingSubAlert?.createdAt,
           );
-          alerts.add(alert.copyWith(
-            isRead: existingSubAlert?.isRead ?? false,
-            status: existingSubAlert?.status == AttendanceAlertStatus.acknowledged
-                ? AttendanceAlertStatus.acknowledged
-                : AttendanceAlertStatus.active,
-          ));
-        } else if (existingSubAlert != null && existingSubAlert.status != AttendanceAlertStatus.resolved) {
-          alerts.add(existingSubAlert.copyWith(
-            status: AttendanceAlertStatus.resolved,
-            resolvedAt: DateTime.now(),
-            title: 'Attendance Recovered: ${studentAnalytics.studentName} in ${sub.subjectName} (${sub.attendancePercentage.toStringAsFixed(1)}%)',
-            message: 'Attendance in ${sub.subjectName} has recovered to ${sub.attendancePercentage.toStringAsFixed(1)}%.',
-          ));
+          alerts.add(
+            alert.copyWith(
+              isRead: existingSubAlert?.isRead ?? false,
+              status:
+                  existingSubAlert?.status == AttendanceAlertStatus.acknowledged
+                  ? AttendanceAlertStatus.acknowledged
+                  : AttendanceAlertStatus.active,
+            ),
+          );
+        } else if (existingSubAlert != null &&
+            existingSubAlert.status != AttendanceAlertStatus.resolved) {
+          alerts.add(
+            existingSubAlert.copyWith(
+              status: AttendanceAlertStatus.resolved,
+              resolvedAt: DateTime.now(),
+              title:
+                  'Attendance Recovered: ${studentAnalytics.studentName} in ${sub.subjectName} (${sub.attendancePercentage.toStringAsFixed(1)}%)',
+              message:
+                  'Attendance in ${sub.subjectName} has recovered to ${sub.attendancePercentage.toStringAsFixed(1)}%.',
+            ),
+          );
         }
 
         // Check Subject Drop
-        if (previousPercentagesBySubject != null && previousPercentagesBySubject.containsKey(sub.subjectId)) {
+        if (previousPercentagesBySubject != null &&
+            previousPercentagesBySubject.containsKey(sub.subjectId)) {
           final prev = previousPercentagesBySubject[sub.subjectId]!;
           if (prev > sub.attendancePercentage) {
             final drop = prev - sub.attendancePercentage;
             if (drop >= 5.0) {
-              final dropSubKey = 'drop_${studentAnalytics.studentId}_${sub.subjectId}';
+              final dropSubKey =
+                  'drop_${studentAnalytics.studentId}_${sub.subjectId}';
               final existingSubDrop = existingMap[dropSubKey];
-              alerts.add(AttendanceAlert.createAttendanceDrop(
-                id: existingSubDrop?.id ?? _idGenerator(),
-                collegeId: collegeId,
-                departmentId: departmentId,
-                courseId: courseId,
-                academicYearId: academicYearId,
-                semesterId: semesterId,
-                sectionId: studentAnalytics.sectionId,
-                studentId: studentAnalytics.studentId,
-                studentName: studentAnalytics.studentName,
-                rollNumber: studentAnalytics.rollNumber,
-                subjectId: sub.subjectId,
-                subjectName: sub.subjectName,
-                previousPercentage: prev,
-                currentPercentage: sub.attendancePercentage,
-                threshold: threshold,
-                createdAt: existingSubDrop?.createdAt,
-              ));
+              alerts.add(
+                AttendanceAlert.createAttendanceDrop(
+                  id: existingSubDrop?.id ?? _idGenerator(),
+                  collegeId: collegeId,
+                  departmentId: departmentId,
+                  courseId: courseId,
+                  academicYearId: academicYearId,
+                  semesterId: semesterId,
+                  sectionId: studentAnalytics.sectionId,
+                  studentId: studentAnalytics.studentId,
+                  studentName: studentAnalytics.studentName,
+                  rollNumber: studentAnalytics.rollNumber,
+                  subjectId: sub.subjectId,
+                  subjectName: sub.subjectName,
+                  previousPercentage: prev,
+                  currentPercentage: sub.attendancePercentage,
+                  threshold: threshold,
+                  createdAt: existingSubDrop?.createdAt,
+                ),
+              );
             }
           }
         }
@@ -200,7 +226,8 @@ class AttendanceRiskEvaluator {
             (r) => r?.studentId == studentAnalytics.studentId,
             orElse: () => null,
           );
-          if (studentRecord != null && studentRecord.status == AttendanceStatus.absent) {
+          if (studentRecord != null &&
+              studentRecord.status == AttendanceStatus.absent) {
             consecutiveAbsences++;
           } else {
             break;
@@ -210,23 +237,25 @@ class AttendanceRiskEvaluator {
         if (consecutiveAbsences >= 2) {
           final repKey = 'repeat_abs_${studentAnalytics.studentId}_$subjectId';
           final existingRep = existingMap[repKey];
-          alerts.add(AttendanceAlert.createRepeatedAbsence(
-            id: existingRep?.id ?? _idGenerator(),
-            collegeId: collegeId,
-            departmentId: departmentId,
-            courseId: courseId,
-            academicYearId: academicYearId,
-            semesterId: semesterId,
-            sectionId: studentAnalytics.sectionId,
-            studentId: studentAnalytics.studentId,
-            studentName: studentAnalytics.studentName,
-            rollNumber: studentAnalytics.rollNumber,
-            subjectId: subjectId,
-            subjectName: subjectName,
-            consecutiveAbsences: consecutiveAbsences,
-            currentPercentage: studentAnalytics.attendancePercentage,
-            createdAt: existingRep?.createdAt,
-          ));
+          alerts.add(
+            AttendanceAlert.createRepeatedAbsence(
+              id: existingRep?.id ?? _idGenerator(),
+              collegeId: collegeId,
+              departmentId: departmentId,
+              courseId: courseId,
+              academicYearId: academicYearId,
+              semesterId: semesterId,
+              sectionId: studentAnalytics.sectionId,
+              studentId: studentAnalytics.studentId,
+              studentName: studentAnalytics.studentName,
+              rollNumber: studentAnalytics.rollNumber,
+              subjectId: subjectId,
+              subjectName: subjectName,
+              consecutiveAbsences: consecutiveAbsences,
+              currentPercentage: studentAnalytics.attendancePercentage,
+              createdAt: existingRep?.createdAt,
+            ),
+          );
         }
       }
     }
@@ -257,22 +286,25 @@ class AttendanceRiskEvaluator {
         continue;
       }
 
-      final dedupKey = 'unmarked_${entry.id}_${referenceDate.year}_${referenceDate.month}_${referenceDate.day}';
+      final dedupKey =
+          'unmarked_${entry.id}_${referenceDate.year}_${referenceDate.month}_${referenceDate.day}';
       final existingAlert = existingMap[dedupKey];
 
-      alerts.add(AttendanceAlert.createUnmarkedAttendance(
-        id: existingAlert?.id ?? _idGenerator(),
-        collegeId: collegeId,
-        departmentId: departmentId,
-        sectionId: entry.sectionId,
-        subjectId: entry.subjectId,
-        subjectName: entry.subjectId,
-        facultyId: entry.facultyId,
-        relatedTimetableEntryId: entry.id,
-        slotDate: referenceDate,
-        timeSlot: '${entry.startTime} - ${entry.endTime}',
-        createdAt: existingAlert?.createdAt,
-      ));
+      alerts.add(
+        AttendanceAlert.createUnmarkedAttendance(
+          id: existingAlert?.id ?? _idGenerator(),
+          collegeId: collegeId,
+          departmentId: departmentId,
+          sectionId: entry.sectionId,
+          subjectId: entry.subjectId,
+          subjectName: entry.subjectId,
+          facultyId: entry.facultyId,
+          relatedTimetableEntryId: entry.id,
+          slotDate: referenceDate,
+          timeSlot: '${entry.startTime} - ${entry.endTime}',
+          createdAt: existingAlert?.createdAt,
+        ),
+      );
     }
 
     return alerts;

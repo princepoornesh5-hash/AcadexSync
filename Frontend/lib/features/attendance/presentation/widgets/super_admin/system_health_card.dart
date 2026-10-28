@@ -45,20 +45,54 @@ class SystemHealthCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
-            _buildStatusRow("Server Status", health.serverStatus, AcadexColors.success, isDark),
-            Divider(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline, height: 24),
-            _buildStatusRow("Sync Engine", health.syncStatus, AcadexColors.success, isDark),
-            Divider(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline, height: 24),
-            _buildStatusRow("API Latency", health.apiLatency, AcadexColors.primary, isDark),
-            Divider(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline, height: 24),
-            _buildStatusRow("Active Sessions", health.activeUsers.toString(), isDark ? AcadexColors.darkInk : AcadexColors.ink, isDark),
+            _buildStatusRow(
+              "Server Status",
+              health.serverStatus,
+              AcadexColors.success,
+              isDark,
+            ),
+            Divider(
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+              height: 24,
+            ),
+            _buildStatusRow(
+              "Sync Engine",
+              health.syncStatus,
+              AcadexColors.success,
+              isDark,
+            ),
+            Divider(
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+              height: 24,
+            ),
+            _buildStatusRow(
+              "API Latency",
+              health.apiLatency,
+              AcadexColors.primary,
+              isDark,
+            ),
+            Divider(
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+              height: 24,
+            ),
+            _buildStatusRow(
+              "Active Sessions",
+              health.activeUsers.toString(),
+              isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              isDark,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStatusRow(String label, String value, Color valueColor, bool isDark) {
+  Widget _buildStatusRow(
+    String label,
+    String value,
+    Color valueColor,
+    bool isDark,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [

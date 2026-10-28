@@ -20,7 +20,9 @@ import '../../../reports/presentation/providers/reports_providers.dart';
 import '../../../analytics/presentation/providers/analytics_providers.dart';
 
 // Providers for dependencies
-final secureStorageProvider = Provider<FlutterSecureStorage>((ref) => const FlutterSecureStorage());
+final secureStorageProvider = Provider<FlutterSecureStorage>(
+  (ref) => const FlutterSecureStorage(),
+);
 
 final sessionManagerProvider = Provider<SessionManager>((ref) {
   return SessionManager(ref.watch(secureStorageProvider));
@@ -47,11 +49,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     this._sessionManager, [
     dynamic refOrClient,
     ApiClient? client,
-  ])  : _ref = refOrClient is Ref ? refOrClient : null,
-        _apiClient = refOrClient is ApiClient
-            ? refOrClient
-            : (client ?? apiClient),
-        super(const AuthInitial()) {
+  ]) : _ref = refOrClient is Ref ? refOrClient : null,
+       _apiClient = refOrClient is ApiClient
+           ? refOrClient
+           : (client ?? apiClient),
+       super(const AuthInitial()) {
     _restoreSession();
   }
 
@@ -60,10 +62,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     final sw = Stopwatch()..start();
     debugPrint('[AUTH_RESTORE_START]');
     try {
-      final token = await _sessionManager.getAccessToken() ?? await _apiClient.getToken();
+      final token =
+          await _sessionManager.getAccessToken() ?? await _apiClient.getToken();
       if (!mounted) return;
       if (token == null || token.isEmpty) {
-        debugPrint('[AUTH_RESTORE_END] (${sw.elapsedMilliseconds}ms): No token -> AuthUnauthenticated');
+        debugPrint(
+          '[AUTH_RESTORE_END] (${sw.elapsedMilliseconds}ms): No token -> AuthUnauthenticated',
+        );
         state = const AuthUnauthenticated();
         return;
       }
@@ -71,7 +76,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Fast restore: check cached user profile first for instant UI transition
       final cachedUser = await _sessionManager.getUser();
       if (cachedUser != null && mounted) {
-        debugPrint('[AUTH_RESTORE_END] (${sw.elapsedMilliseconds}ms): Fast-restored cached user ${cachedUser.name} (${cachedUser.role.displayName})');
+        debugPrint(
+          '[AUTH_RESTORE_END] (${sw.elapsedMilliseconds}ms): Fast-restored cached user ${cachedUser.name} (${cachedUser.role.displayName})',
+        );
         state = AuthAuthenticated(user: cachedUser, token: token);
       }
 
@@ -80,7 +87,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (!mounted) return;
       if (user != null) {
         if (user.accountStatus != AccountStatus.active) {
-          state = AuthError(message: 'Your account is ${user.accountStatus.name}. Access denied.');
+          state = AuthError(
+            message:
+                'Your account is ${user.accountStatus.name}. Access denied.',
+          );
           await _repository.logout();
           await _sessionManager.clearSession();
           return;
@@ -92,7 +102,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       } else if (cachedUser == null) {
         await _sessionManager.clearSession();
         if (!mounted) return;
-        debugPrint('[AUTH_INIT] _restoreSession: User is null. Setting state to AuthUnauthenticated');
+        debugPrint(
+          '[AUTH_INIT] _restoreSession: User is null. Setting state to AuthUnauthenticated',
+        );
         state = const AuthUnauthenticated();
       }
     } catch (e) {
@@ -111,7 +123,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Invalidate notifications & activity
       _ref.invalidate(notificationsProvider);
       _ref.invalidate(unreadNotificationCountProvider);
-      
+
       // Invalidate user notes & personal schedules
       _ref.invalidate(userNotesProvider);
       _ref.invalidate(myFacultyAssignmentsProvider);
@@ -119,14 +131,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _ref.invalidate(todayScheduleProvider);
       _ref.invalidate(weeklyTimetableProvider);
       _ref.invalidate(currentStudentAcademicProfileProvider);
-      
+
       // Invalidate role dashboard stats
       _ref.invalidate(studentStatsProvider);
       _ref.invalidate(facultyStatsProvider);
       _ref.invalidate(hodStatsProvider);
       _ref.invalidate(collegeAdminStatsProvider);
       _ref.invalidate(superAdminStatsProvider);
-      
+
       // Invalidate reports & analytics
       _ref.invalidate(roleDashboardReportProvider);
       _ref.invalidate(myAttendanceReportProvider);
@@ -142,8 +154,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = const AuthLoading();
     try {
       final user = await _repository.login(identifier, password);
-      final token = await _sessionManager.getAccessToken() ?? await _apiClient.getToken() ?? 'token';
-      
+      final token =
+          await _sessionManager.getAccessToken() ??
+          await _apiClient.getToken() ??
+          'token';
+
       await _sessionManager.saveSession(token: token, user: user);
       _invalidateUserScopedCaches();
       state = AuthAuthenticated(user: user, token: token);
@@ -163,7 +178,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _invalidateUserScopedCaches();
 
       final user = await _repository.loginAsDevelopmentRole(role);
-      final token = await _apiClient.getToken() ?? await _sessionManager.getAccessToken() ?? '';
+      final token =
+          await _apiClient.getToken() ??
+          await _sessionManager.getAccessToken() ??
+          '';
       await _sessionManager.saveSession(token: token, user: user);
       _invalidateUserScopedCaches();
       state = AuthAuthenticated(user: user, token: token);
@@ -177,7 +195,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> logout() async {
     state = const AuthLoading();
     try {
-      final user = state is AuthAuthenticated ? (state as AuthAuthenticated).user : null;
+      final user = state is AuthAuthenticated
+          ? (state as AuthAuthenticated).user
+          : null;
       if (user != null) {
         await _manageFcmToken(false, user.id);
       }
@@ -195,7 +215,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> logoutAll() async {
     state = const AuthLoading();
     try {
-      final user = state is AuthAuthenticated ? (state as AuthAuthenticated).user : null;
+      final user = state is AuthAuthenticated
+          ? (state as AuthAuthenticated).user
+          : null;
       if (user != null) {
         await _manageFcmToken(false, user.id);
       }
@@ -225,7 +247,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
@@ -241,23 +262,37 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  void _setAuthState(AuthState newState) {
+    state = newState;
+  }
+
   Future<void> _manageFcmToken(bool isLogin, String uid) async {
     try {
       final messaging = fcm.FirebaseMessaging.instance;
-      
+
       if (isLogin) {
         if (!kIsWeb) {
           final settings = await messaging.requestPermission();
-          if (settings.authorizationStatus != fcm.AuthorizationStatus.authorized) return;
+          if (settings.authorizationStatus !=
+              fcm.AuthorizationStatus.authorized) {
+            return;
+          }
         } else {
           await messaging.requestPermission();
         }
-        
+
         final token = await messaging.getToken();
         if (token != null) {
           try {
-            final platform = kIsWeb ? 'web' : (defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android');
-            await ApiNotificationRepository().registerDeviceToken(deviceToken: token, platform: platform);
+            final platform = kIsWeb
+                ? 'web'
+                : (defaultTargetPlatform == TargetPlatform.iOS
+                      ? 'ios'
+                      : 'android');
+            await ApiNotificationRepository().registerDeviceToken(
+              deviceToken: token,
+              platform: platform,
+            );
           } catch (_) {}
         }
       } else {
@@ -300,3 +335,171 @@ final currentUserProvider = Provider<UserModel?>((ref) {
   return null;
 });
 
+/// Extension providing Phase 2 & 3 Email OTP, Registration, and Institutional Activation actions
+/// without breaking existing test classes that implement AuthNotifier.
+extension AuthOtpActions on AuthNotifier {
+  Future<void> requestLoginOtp(String email) async {
+    if (runtimeType != AuthNotifier) {
+      final dynamic dyn = this;
+      return await dyn.requestLoginOtp(email);
+    }
+    try {
+      await _repository.requestLoginOtp(email);
+    } catch (e) {
+      final cleanMsg = e.toString().replaceFirst('Exception: ', '');
+      throw Exception(cleanMsg);
+    }
+  }
+
+  Future<void> loginWithOtp(String email, String otp) async {
+    if (runtimeType != AuthNotifier) {
+      final dynamic dyn = this;
+      return await dyn.loginWithOtp(email, otp);
+    }
+    _setAuthState(const AuthLoading());
+    try {
+      final user = await _repository.loginWithOtp(email, otp);
+      final token =
+          await _sessionManager.getAccessToken() ??
+          await _apiClient.getToken() ??
+          'token';
+
+      await _sessionManager.saveSession(token: token, user: user);
+      _invalidateUserScopedCaches();
+      _setAuthState(AuthAuthenticated(user: user, token: token));
+      await _manageFcmToken(true, user.id);
+    } catch (e) {
+      final cleanMsg = e.toString().replaceFirst('Exception: ', '');
+      _setAuthState(AuthError(message: cleanMsg));
+      throw Exception(cleanMsg);
+    }
+  }
+
+  Future<void> requestRegistrationOtp(String email) async {
+    if (runtimeType != AuthNotifier) {
+      final dynamic dyn = this;
+      return await dyn.requestRegistrationOtp(email);
+    }
+    try {
+      await _repository.requestRegistrationOtp(email);
+    } catch (e) {
+      final cleanMsg = e.toString().replaceFirst('Exception: ', '');
+      throw Exception(cleanMsg);
+    }
+  }
+
+  Future<String> verifyRegistrationOtp({
+    required String email,
+    required String otp,
+  }) async {
+    if (runtimeType != AuthNotifier) {
+      final dynamic dyn = this;
+      return await dyn.verifyRegistrationOtp(email: email, otp: otp);
+    }
+    try {
+      return await _repository.verifyRegistrationOtp(email: email, otp: otp);
+    } catch (e) {
+      final cleanMsg = e.toString().replaceFirst('Exception: ', '');
+      throw Exception(cleanMsg);
+    }
+  }
+
+  Future<void> completeRegistration({
+    required String registrationToken,
+    required String password,
+    required String confirmPassword,
+    String? name,
+  }) async {
+    if (runtimeType != AuthNotifier) {
+      final dynamic dyn = this;
+      return await dyn.completeRegistration(
+        registrationToken: registrationToken,
+        password: password,
+        confirmPassword: confirmPassword,
+        name: name,
+      );
+    }
+    _setAuthState(const AuthLoading());
+    try {
+      final user = await _repository.completeRegistration(
+        registrationToken: registrationToken,
+        password: password,
+        confirmPassword: confirmPassword,
+        name: name,
+      );
+      final token =
+          await _sessionManager.getAccessToken() ??
+          await _apiClient.getToken() ??
+          'token';
+
+      await _sessionManager.saveSession(token: token, user: user);
+      _invalidateUserScopedCaches();
+      _setAuthState(AuthAuthenticated(user: user, token: token));
+      await _manageFcmToken(true, user.id);
+    } catch (e) {
+      final cleanMsg = e.toString().replaceFirst('Exception: ', '');
+      _setAuthState(AuthError(message: cleanMsg));
+      throw Exception(cleanMsg);
+    }
+  }
+
+  Future<void> requestInstitutionalActivationOtp(String email) async {
+    if (runtimeType != AuthNotifier) {
+      final dynamic dyn = this;
+      return await dyn.requestInstitutionalActivationOtp(email);
+    }
+    try {
+      await _repository.requestInstitutionalActivationOtp(email);
+    } catch (e) {
+      final cleanMsg = e.toString().replaceFirst('Exception: ', '');
+      throw Exception(cleanMsg);
+    }
+  }
+
+  Future<String> verifyInstitutionalActivationOtp({
+    required String email,
+    required String otp,
+  }) async {
+    if (runtimeType != AuthNotifier) {
+      final dynamic dyn = this;
+      return await dyn.verifyInstitutionalActivationOtp(email: email, otp: otp);
+    }
+    try {
+      return await _repository.verifyInstitutionalActivationOtp(
+        email: email,
+        otp: otp,
+      );
+    } catch (e) {
+      final cleanMsg = e.toString().replaceFirst('Exception: ', '');
+      throw Exception(cleanMsg);
+    }
+  }
+
+  Future<Map<String, dynamic>> completeInstitutionalActivation({
+    required String emailVerificationToken,
+    required String activationCode,
+    String? password,
+    String? confirmPassword,
+  }) async {
+    if (runtimeType != AuthNotifier) {
+      final dynamic dyn = this;
+      return await dyn.completeInstitutionalActivation(
+        emailVerificationToken: emailVerificationToken,
+        activationCode: activationCode,
+        password: password,
+        confirmPassword: confirmPassword,
+      );
+    }
+    try {
+      return await _repository.completeInstitutionalActivation(
+        emailVerificationToken: emailVerificationToken,
+        activationCode: activationCode,
+        password: password,
+        confirmPassword: confirmPassword,
+      );
+    } catch (e) {
+      final cleanMsg = e.toString().replaceFirst('Exception: ', '');
+      throw Exception(cleanMsg);
+    }
+  }
+}

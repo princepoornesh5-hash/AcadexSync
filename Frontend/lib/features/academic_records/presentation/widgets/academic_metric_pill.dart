@@ -43,10 +43,7 @@ class AcademicMetricPill extends StatelessWidget {
         decoration: BoxDecoration(
           color: isDark ? color.withOpacity(0.12) : color.withOpacity(0.08),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: color.withOpacity(0.25),
-            width: 1,
-          ),
+          border: Border.all(color: color.withOpacity(0.25), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

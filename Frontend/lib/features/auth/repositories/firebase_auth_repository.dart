@@ -17,7 +17,9 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<UserModel> loginAsDevelopmentRole(AppRole role) async {
     if (!kDebugMode) {
-      throw StateError('CRITICAL: Development test login is strictly prohibited in release builds.');
+      throw StateError(
+        'CRITICAL: Development test login is strictly prohibited in release builds.',
+      );
     }
     return MockAuthRepository().loginAsDevelopmentRole(role);
   }
@@ -25,20 +27,31 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<UserModel> login(String email, String password) async {
     final trimmedEmail = email.trim();
-    developer.log('Authentication started for email: $trimmedEmail', name: 'Acadex.Auth');
+    developer.log(
+      'Authentication started for email: $trimmedEmail',
+      name: 'Acadex.Auth',
+    );
 
     try {
       final credential = await _authService.signIn(trimmedEmail, password);
       final user = credential.user;
 
       if (user == null) {
-        developer.log('Firebase sign-in completed but Firebase user was null.', name: 'Acadex.Auth');
+        developer.log(
+          'Firebase sign-in completed but Firebase user was null.',
+          name: 'Acadex.Auth',
+        );
         throw Exception("Authentication succeeded but user is null.");
       }
 
-      developer.log('Firebase authentication succeeded. Firebase UID: ${user.uid}', name: 'Acadex.Auth');
+      developer.log(
+        'Firebase authentication succeeded. Firebase UID: ${user.uid}',
+        name: 'Acadex.Auth',
+      );
 
-      final acadexUser = await _userProfileRepository.getUserProfileByUid(user.uid);
+      final acadexUser = await _userProfileRepository.getUserProfileByUid(
+        user.uid,
+      );
       developer.log(
         'User identity lookup result for UID ${user.uid}: ${acadexUser != null ? "Found" : "Not Found"}',
         name: 'Acadex.Auth',
@@ -47,7 +60,7 @@ class FirebaseAuthRepository implements AuthRepository {
       if (acadexUser == null) {
         await _authService.signOut();
         throw const BackendPermissionException(
-          'Your Acadex profile has not been configured yet.'
+          'Your Acadex profile has not been configured yet.',
         );
       }
 
@@ -59,7 +72,7 @@ class FirebaseAuthRepository implements AuthRepository {
       if (acadexUser.accountStatus != AccountStatus.active) {
         await _authService.signOut();
         throw BackendPermissionException(
-          'Your account is ${acadexUser.accountStatus.name}. Access denied.'
+          'Your account is ${acadexUser.accountStatus.name}. Access denied.',
         );
       }
 
@@ -72,7 +85,11 @@ class FirebaseAuthRepository implements AuthRepository {
           error: e,
         );
       } else {
-        developer.log('Authentication error: $e', name: 'Acadex.Auth', error: e);
+        developer.log(
+          'Authentication error: $e',
+          name: 'Acadex.Auth',
+          error: e,
+        );
       }
 
       if (e is AcadexBackendException) {
@@ -92,25 +109,42 @@ class FirebaseAuthRepository implements AuthRepository {
   Future<UserModel?> getCurrentUser() async {
     final user = _authService.currentUser;
     if (user == null) {
-      developer.log('getCurrentUser: No active Firebase user session.', name: 'Acadex.Auth');
+      developer.log(
+        'getCurrentUser: No active Firebase user session.',
+        name: 'Acadex.Auth',
+      );
       return null;
     }
 
-    developer.log('getCurrentUser: Active Firebase user found with UID: ${user.uid}', name: 'Acadex.Auth');
-    final acadexUser = await _userProfileRepository.getUserProfileByUid(user.uid);
+    developer.log(
+      'getCurrentUser: Active Firebase user found with UID: ${user.uid}',
+      name: 'Acadex.Auth',
+    );
+    final acadexUser = await _userProfileRepository.getUserProfileByUid(
+      user.uid,
+    );
     if (acadexUser == null) {
-      developer.log('getCurrentUser: User profile not found for UID: ${user.uid}', name: 'Acadex.Auth');
+      developer.log(
+        'getCurrentUser: User profile not found for UID: ${user.uid}',
+        name: 'Acadex.Auth',
+      );
       return null;
     }
 
-    developer.log('getCurrentUser: Identity restored for ${user.uid} with role: ${acadexUser.role.value}', name: 'Acadex.Auth');
+    developer.log(
+      'getCurrentUser: Identity restored for ${user.uid} with role: ${acadexUser.role.value}',
+      name: 'Acadex.Auth',
+    );
     return acadexUser;
   }
 
   @override
   Future<void> sendPasswordResetEmail(String email) async {
     final trimmedEmail = email.trim();
-    developer.log('Password reset requested for email: $trimmedEmail', name: 'Acadex.Auth');
+    developer.log(
+      'Password reset requested for email: $trimmedEmail',
+      name: 'Acadex.Auth',
+    );
     await _authService.sendPasswordResetEmail(trimmedEmail);
   }
 
@@ -121,7 +155,9 @@ class FirebaseAuthRepository implements AuthRepository {
   }) async {
     // Firebase password reset uses email links, not OTP.
     // This method is provided for interface compliance.
-    throw UnimplementedError('Firebase auth uses email link reset, not OTP verification');
+    throw UnimplementedError(
+      'Firebase auth uses email link reset, not OTP verification',
+    );
   }
 
   @override
@@ -130,7 +166,9 @@ class FirebaseAuthRepository implements AuthRepository {
     required String newPassword,
   }) async {
     // Firebase password reset uses email links.
-    throw UnimplementedError('Firebase auth uses email link reset, not token-based reset');
+    throw UnimplementedError(
+      'Firebase auth uses email link reset, not token-based reset',
+    );
   }
 
   @override
@@ -141,7 +179,9 @@ class FirebaseAuthRepository implements AuthRepository {
     required String password,
   }) async {
     // Account activation is handled by the backend API, not Firebase.
-    throw UnimplementedError('Account activation is handled by the backend API');
+    throw UnimplementedError(
+      'Account activation is handled by the backend API',
+    );
   }
 
   @override
@@ -156,5 +196,67 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<void> logoutAll() async {
     await logout();
+  }
+
+  @override
+  Future<void> requestLoginOtp(String email) async {
+    throw UnimplementedError('Use ApiAuthRepository for OTP login');
+  }
+
+  @override
+  Future<UserModel> loginWithOtp(String email, String otp) async {
+    throw UnimplementedError('Use ApiAuthRepository for OTP login');
+  }
+
+  @override
+  Future<void> requestRegistrationOtp(String email) async {
+    throw UnimplementedError('Use ApiAuthRepository for registration');
+  }
+
+  @override
+  Future<String> verifyRegistrationOtp({
+    required String email,
+    required String otp,
+  }) async {
+    throw UnimplementedError('Use ApiAuthRepository for registration');
+  }
+
+  @override
+  Future<UserModel> completeRegistration({
+    required String registrationToken,
+    required String password,
+    required String confirmPassword,
+    String? name,
+  }) async {
+    throw UnimplementedError('Use ApiAuthRepository for registration');
+  }
+
+  @override
+  Future<void> requestInstitutionalActivationOtp(String email) async {
+    throw UnimplementedError(
+      'Use ApiAuthRepository for institutional activation',
+    );
+  }
+
+  @override
+  Future<String> verifyInstitutionalActivationOtp({
+    required String email,
+    required String otp,
+  }) async {
+    throw UnimplementedError(
+      'Use ApiAuthRepository for institutional activation',
+    );
+  }
+
+  @override
+  Future<Map<String, dynamic>> completeInstitutionalActivation({
+    required String emailVerificationToken,
+    required String activationCode,
+    String? password,
+    String? confirmPassword,
+  }) async {
+    throw UnimplementedError(
+      'Use ApiAuthRepository for institutional activation',
+    );
   }
 }

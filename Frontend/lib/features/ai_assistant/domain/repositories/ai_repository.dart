@@ -24,11 +24,7 @@ abstract class AiRepository {
     String? idempotencyKey,
   });
 
-  Future<Map<String, dynamic>> cancelAction({
-    required String actionId,
-  });
+  Future<Map<String, dynamic>> cancelAction({required String actionId});
 
-  Future<Map<String, dynamic>> getActionStatus({
-    required String actionId,
-  });
+  Future<Map<String, dynamic>> getActionStatus({required String actionId});
 }

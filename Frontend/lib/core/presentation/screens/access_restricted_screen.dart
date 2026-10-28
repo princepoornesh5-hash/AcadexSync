@@ -15,10 +15,7 @@ import '../widgets/acadex_page_container.dart';
 class AcadexAccessRestrictedScreen extends ConsumerWidget {
   final String? message;
 
-  const AcadexAccessRestrictedScreen({
-    super.key,
-    this.message,
-  });
+  const AcadexAccessRestrictedScreen({super.key, this.message});
 
   static String getHomeRouteForRole(AppRole role) {
     switch (role) {
@@ -57,12 +54,18 @@ class AcadexAccessRestrictedScreen extends ConsumerWidget {
             child: Container(
               padding: const EdgeInsets.all(36),
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                color: isDark
+                    ? AcadexColors.darkSurfaceCard
+                    : AcadexColors.surface,
                 borderRadius: AcadexRadius.borderRadiusXl,
                 border: Border.all(
-                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
                 ),
-                boxShadow: isDark ? AcadexShadows.darkMd : AcadexShadows.lightMd,
+                boxShadow: isDark
+                    ? AcadexShadows.darkMd
+                    : AcadexShadows.lightMd,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -74,7 +77,10 @@ class AcadexAccessRestrictedScreen extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: const Color(0xFFFEE2E2),
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFFECACA), width: 1),
+                      border: Border.all(
+                        color: const Color(0xFFFECACA),
+                        width: 1,
+                      ),
                     ),
                     child: const Icon(
                       LucideIcons.shieldAlert,
@@ -84,7 +90,10 @@ class AcadexAccessRestrictedScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 24),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AcadexColors.error.withValues(alpha: 0.1),
                       borderRadius: AcadexRadius.borderRadiusSm,
@@ -112,7 +121,9 @@ class AcadexAccessRestrictedScreen extends ConsumerWidget {
                     message ??
                         'You don\'t have permission to access or manage this section. If you believe this is an error, please contact your college administrator.',
                     style: AcadexTypography.body(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkSecondary,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -131,9 +142,13 @@ class AcadexAccessRestrictedScreen extends ConsumerWidget {
                           icon: const Icon(LucideIcons.arrowLeft, size: 16),
                           label: const Text('Go Back'),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            foregroundColor: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                             side: BorderSide(
-                              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                              color: isDark
+                                  ? AcadexColors.darkHairline
+                                  : AcadexColors.hairline,
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(

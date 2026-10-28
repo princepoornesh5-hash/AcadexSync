@@ -22,7 +22,9 @@ abstract class CalendarRepository {
     String? semesterId,
   });
 
-  Future<AcademicCalendarModel> createAcademicCalendar(Map<String, dynamic> data);
+  Future<AcademicCalendarModel> createAcademicCalendar(
+    Map<String, dynamic> data,
+  );
 
   Future<WorkingDayResolution> resolveWorkingDay(
     String date, {

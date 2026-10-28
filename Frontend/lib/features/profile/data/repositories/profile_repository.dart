@@ -5,14 +5,19 @@ import '../../domain/models/profile_models.dart';
 
 class ProfileRepository {
   static const int maxProfileImageSizeBytes = 5 * 1024 * 1024; // 5 MB
-  static const List<String> allowedImageExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+  static const List<String> allowedImageExtensions = [
+    'jpg',
+    'jpeg',
+    'png',
+    'webp',
+  ];
 
   final ApiClient _apiClient;
   final ImageKitUploader _uploader;
 
   ProfileRepository({ApiClient? apiClient, ImageKitUploader? uploader})
-      : _apiClient = apiClient ?? apiClientInstance,
-        _uploader = uploader ?? ImageKitUploader();
+    : _apiClient = apiClient ?? apiClientInstance,
+      _uploader = uploader ?? ImageKitUploader();
 
   static ApiClient get apiClientInstance => apiClient;
 
@@ -48,11 +53,10 @@ class ProfileRepository {
   }
 
   /// Updates allowed personal fields on the authenticated user's profile.
-  Future<ComposedProfileModel> updateMyProfile(Map<String, dynamic> data) async {
-    final response = await _apiClient.dio.patch(
-      '/profile/me',
-      data: data,
-    );
+  Future<ComposedProfileModel> updateMyProfile(
+    Map<String, dynamic> data,
+  ) async {
+    final response = await _apiClient.dio.patch('/profile/me', data: data);
     if (response.data != null && response.data['data'] != null) {
       return ComposedProfileModel.fromJson(
         response.data['data'] as Map<String, dynamic>,
@@ -80,10 +84,7 @@ class ProfileRepository {
     int page = 1,
     int limit = 20,
   }) async {
-    final queryParams = <String, dynamic>{
-      'page': page,
-      'limit': limit,
-    };
+    final queryParams = <String, dynamic>{'page': page, 'limit': limit};
     if (search != null && search.trim().isNotEmpty) {
       queryParams['search'] = search.trim();
     }
@@ -117,11 +118,7 @@ class ProfileRepository {
 
     final response = await _apiClient.dio.post(
       endpoint,
-      data: {
-        'fileName': fileName,
-        'mimeType': mimeType,
-        'fileSize': fileSize,
-      },
+      data: {'fileName': fileName, 'mimeType': mimeType, 'fileSize': fileSize},
     );
 
     if (response.data != null && response.data['data'] != null) {
@@ -146,10 +143,7 @@ class ProfileRepository {
 
     final response = await _apiClient.dio.post(
       endpoint,
-      data: {
-        'fileId': fileId,
-        'fileUrl': fileUrl,
-      },
+      data: {'fileId': fileId, 'fileUrl': fileUrl},
     );
 
     if (response.data != null && response.data['data'] != null) {
@@ -166,7 +160,9 @@ class ProfileRepository {
     void Function(int sent, int total)? onProgress,
   }) async {
     if (!isImageExtensionSupported(fileName)) {
-      throw Exception('Unsupported image format. Allowed: JPG, JPEG, PNG, WebP');
+      throw Exception(
+        'Unsupported image format. Allowed: JPG, JPEG, PNG, WebP',
+      );
     }
     if (imageBytes.lengthInBytes > maxProfileImageSizeBytes) {
       throw Exception('Image size exceeds the maximum limit of 5MB');

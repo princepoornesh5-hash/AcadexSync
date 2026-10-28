@@ -17,13 +17,11 @@ import '../providers/department_setup_provider.dart';
 class DepartmentSetupScreen extends ConsumerStatefulWidget {
   final String? initialDepartmentId;
 
-  const DepartmentSetupScreen({
-    super.key,
-    this.initialDepartmentId,
-  });
+  const DepartmentSetupScreen({super.key, this.initialDepartmentId});
 
   @override
-  ConsumerState<DepartmentSetupScreen> createState() => _DepartmentSetupScreenState();
+  ConsumerState<DepartmentSetupScreen> createState() =>
+      _DepartmentSetupScreenState();
 }
 
 class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
@@ -35,7 +33,10 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
     _selectedDepartmentId = widget.initialDepartmentId;
   }
 
-  void _handleContinueSetup(BuildContext context, SetupMilestone? nextMilestone) {
+  void _handleContinueSetup(
+    BuildContext context,
+    SetupMilestone? nextMilestone,
+  ) {
     if (nextMilestone == null) return;
 
     if (nextMilestone.isWaitingOnAdmin) {
@@ -43,7 +44,8 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
       return;
     }
 
-    if (nextMilestone.actionRoute != null && nextMilestone.actionRoute!.isNotEmpty) {
+    if (nextMilestone.actionRoute != null &&
+        nextMilestone.actionRoute!.isNotEmpty) {
       context.push(nextMilestone.actionRoute!);
     }
   }
@@ -55,8 +57,12 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusLg),
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: AcadexRadius.borderRadiusLg,
+        ),
         title: Row(
           children: [
             Container(
@@ -65,7 +71,11 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
                 color: AcadexColors.warning.withValues(alpha: 0.15),
                 borderRadius: AcadexRadius.borderRadiusSm,
               ),
-              child: const Icon(LucideIcons.bellRing, size: 20, color: AcadexColors.warning),
+              child: const Icon(
+                LucideIcons.bellRing,
+                size: 20,
+                color: AcadexColors.warning,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -83,16 +93,21 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              milestone.adminMessage ?? 'Academic Year is managed institution-wide by College Administration.',
+              milestone.adminMessage ??
+                  'Academic Year is managed institution-wide by College Administration.',
               style: AcadexTypography.body(
-                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                color: isDark
+                    ? AcadexColors.darkInkSecondary
+                    : AcadexColors.inkSecondary,
               ),
             ),
             const SizedBox(height: 12),
             Text(
               'A notification will be dispatched to your College Administrator requesting configuration of the active academic calendar.',
               style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
             ),
           ],
@@ -106,7 +121,9 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AcadexColors.primary,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+              shape: RoundedRectangleBorder(
+                borderRadius: AcadexRadius.borderRadiusMd,
+              ),
             ),
             icon: const Icon(LucideIcons.send, size: 16),
             label: const Text('Send Reminder'),
@@ -125,7 +142,9 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final setupAsync = ref.watch(departmentSetupProvider(_selectedDepartmentId));
+    final setupAsync = ref.watch(
+      departmentSetupProvider(_selectedDepartmentId),
+    );
     final departmentsAsync = ref.watch(departmentsProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -144,7 +163,9 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
         loading: () => const Center(
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: 60),
-            child: AcadexLoadingState(message: 'Calculating department setup progress...'),
+            child: AcadexLoadingState(
+              message: 'Calculating department setup progress...',
+            ),
           ),
         ),
         error: (err, _) => Center(
@@ -152,7 +173,8 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
             padding: const EdgeInsets.symmetric(vertical: 40),
             child: AcadexErrorState(
               message: 'Failed to calculate department setup state: $err',
-              onRetry: () => ref.refresh(departmentSetupProvider(_selectedDepartmentId)),
+              onRetry: () =>
+                  ref.refresh(departmentSetupProvider(_selectedDepartmentId)),
             ),
           ),
         ),
@@ -163,7 +185,12 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Top Navigation / Header
-              _buildTopBar(context, setupState, departmentsAsync.valueOrNull ?? [], isDark),
+              _buildTopBar(
+                context,
+                setupState,
+                departmentsAsync.valueOrNull ?? [],
+                isDark,
+              ),
               const SizedBox(height: 16),
 
               // Progress Overview Card
@@ -171,8 +198,13 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
               const SizedBox(height: 16),
 
               // Multi-course context notification if any (when context is still in progress)
-              if (setupState.multiContextNotice != null && !setupState.isCurrentContextComplete) ...[
-                _buildMultiContextBanner(context, setupState.multiContextNotice!, isDark),
+              if (setupState.multiContextNotice != null &&
+                  !setupState.isCurrentContextComplete) ...[
+                _buildMultiContextBanner(
+                  context,
+                  setupState.multiContextNotice!,
+                  isDark,
+                ),
                 const SizedBox(height: 16),
               ],
 
@@ -200,7 +232,9 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
                   Text(
                     '${setupState.completedCount} of ${setupState.totalCount} Complete',
                     style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                      color: isDark
+                          ? AcadexColors.darkInkSecondary
+                          : AcadexColors.inkSecondary,
                     ),
                   ),
                 ],
@@ -216,7 +250,12 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
                 itemBuilder: (context, index) {
                   final milestone = setupState.milestones[index];
                   final isCurrent = next?.id == milestone.id;
-                  return _buildMilestoneCard(context, milestone, isCurrent, isDark);
+                  return _buildMilestoneCard(
+                    context,
+                    milestone,
+                    isCurrent,
+                    isDark,
+                  );
                 },
               ),
               const SizedBox(height: 32),
@@ -264,7 +303,9 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
                           Text(
                             'Department Setup',
                             style: AcadexTypography.heading2(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ),
                           ),
                           if (setupState.isHod)
@@ -278,7 +319,9 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
                       Text(
                         setupState.departmentName,
                         style: AcadexTypography.body(
-                          color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                          color: isDark
+                              ? AcadexColors.darkInkSecondary
+                              : AcadexColors.inkSecondary,
                         ).copyWith(fontWeight: FontWeight.w600),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -310,21 +353,31 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
               ),
             ],
             // Department Selector for College Admin / Super Admin
-            if (setupState.canSwitchDepartment && allDepartments.isNotEmpty) ...[
+            if (setupState.canSwitchDepartment &&
+                allDepartments.isNotEmpty) ...[
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                  color: isDark
+                      ? AcadexColors.darkSurfaceCard
+                      : AcadexColors.surface,
                   borderRadius: AcadexRadius.borderRadiusMd,
                   border: Border.all(
-                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
                   ),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     isExpanded: true,
-                    value: setupState.departmentId.isNotEmpty ? setupState.departmentId : null,
+                    value: setupState.departmentId.isNotEmpty
+                        ? setupState.departmentId
+                        : null,
                     hint: const Text('Switch Department Context'),
                     items: allDepartments.map<DropdownMenuItem<String>>((d) {
                       return DropdownMenuItem<String>(
@@ -332,7 +385,9 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
                         child: Text(
                           '${d.name} (${d.code})',
                           style: AcadexTypography.body(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ),
                         ),
                       );
@@ -375,7 +430,11 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
                         color: AcadexColors.primary.withValues(alpha: 0.12),
                         borderRadius: AcadexRadius.borderRadiusMd,
                       ),
-                      child: const Icon(LucideIcons.compass, color: AcadexColors.primary, size: 20),
+                      child: const Icon(
+                        LucideIcons.compass,
+                        color: AcadexColors.primary,
+                        size: 20,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -385,14 +444,18 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
                           Text(
                             'Setup Progress',
                             style: AcadexTypography.heading3(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
                           Text(
                             '${setupState.completedCount} / ${setupState.totalCount} complete',
                             style: AcadexTypography.caption(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -404,8 +467,12 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
               ),
               const SizedBox(width: 8),
               AcadexBadge(
-                label: setupState.isComplete ? 'READY' : '${setupState.percentage}%',
-                variant: setupState.isComplete ? AcadexBadgeVariant.success : AcadexBadgeVariant.primary,
+                label: setupState.isComplete
+                    ? 'READY'
+                    : '${setupState.percentage}%',
+                variant: setupState.isComplete
+                    ? AcadexBadgeVariant.success
+                    : AcadexBadgeVariant.primary,
               ),
             ],
           ),
@@ -415,9 +482,13 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
             child: LinearProgressIndicator(
               value: setupState.progressRatio,
               minHeight: 8,
-              backgroundColor: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+              backgroundColor: isDark
+                  ? AcadexColors.darkHairline
+                  : AcadexColors.hairline,
               valueColor: AlwaysStoppedAnimation<Color>(
-                setupState.isComplete ? AcadexColors.success : AcadexColors.primary,
+                setupState.isComplete
+                    ? AcadexColors.success
+                    : AcadexColors.primary,
               ),
             ),
           ),
@@ -436,8 +507,12 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: nextMilestone.isWaitingOnAdmin
-            ? (isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight)
-            : (isDark ? AcadexColors.primary.withValues(alpha: 0.15) : AcadexColors.primaryLight),
+            ? (isDark
+                  ? AcadexColors.warningDarkContainer
+                  : AcadexColors.warningLight)
+            : (isDark
+                  ? AcadexColors.primary.withValues(alpha: 0.15)
+                  : AcadexColors.primaryLight),
         borderRadius: AcadexRadius.borderRadiusLg,
         border: Border.all(
           color: nextMilestone.isWaitingOnAdmin
@@ -452,15 +527,23 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
           Row(
             children: [
               Icon(
-                nextMilestone.isWaitingOnAdmin ? LucideIcons.clock : LucideIcons.sparkles,
+                nextMilestone.isWaitingOnAdmin
+                    ? LucideIcons.clock
+                    : LucideIcons.sparkles,
                 size: 18,
-                color: nextMilestone.isWaitingOnAdmin ? AcadexColors.warning : AcadexColors.primary,
+                color: nextMilestone.isWaitingOnAdmin
+                    ? AcadexColors.warning
+                    : AcadexColors.primary,
               ),
               const SizedBox(width: 8),
               Text(
-                nextMilestone.isWaitingOnAdmin ? 'WAITING ON COLLEGE ADMIN' : 'NEXT STEP',
+                nextMilestone.isWaitingOnAdmin
+                    ? 'WAITING ON COLLEGE ADMIN'
+                    : 'NEXT STEP',
                 style: AcadexTypography.eyebrow(
-                  color: nextMilestone.isWaitingOnAdmin ? AcadexColors.warningDark : AcadexColors.primary,
+                  color: nextMilestone.isWaitingOnAdmin
+                      ? AcadexColors.warningDark
+                      : AcadexColors.primary,
                 ).copyWith(fontWeight: FontWeight.w800),
               ),
             ],
@@ -468,7 +551,8 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
           const SizedBox(height: 8),
           Text(
             nextMilestone.isWaitingOnAdmin
-                ? (nextMilestone.adminMessage ?? 'Waiting for college-wide academic calendar setup.')
+                ? (nextMilestone.adminMessage ??
+                      'Waiting for college-wide academic calendar setup.')
                 : 'Configure ${nextMilestone.title} to continue building your department foundation.',
             style: AcadexTypography.bodyMedium(
               color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
@@ -478,23 +562,33 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
           Text(
             nextMilestone.description,
             style: AcadexTypography.caption(
-              color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+              color: isDark
+                  ? AcadexColors.darkInkSecondary
+                  : AcadexColors.inkSecondary,
             ),
           ),
           const SizedBox(height: 14),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: nextMilestone.isWaitingOnAdmin ? AcadexColors.warning : AcadexColors.primary,
+              backgroundColor: nextMilestone.isWaitingOnAdmin
+                  ? AcadexColors.warning
+                  : AcadexColors.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+              shape: RoundedRectangleBorder(
+                borderRadius: AcadexRadius.borderRadiusMd,
+              ),
             ),
             icon: Icon(
-              nextMilestone.isWaitingOnAdmin ? LucideIcons.bellRing : LucideIcons.arrowRight,
+              nextMilestone.isWaitingOnAdmin
+                  ? LucideIcons.bellRing
+                  : LucideIcons.arrowRight,
               size: 16,
             ),
             label: Text(
-              nextMilestone.isWaitingOnAdmin ? 'Notify College Admin' : 'Continue Setup',
+              nextMilestone.isWaitingOnAdmin
+                  ? 'Notify College Admin'
+                  : 'Continue Setup',
               style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
             ),
             onPressed: () => _handleContinueSetup(context, nextMilestone),
@@ -509,15 +603,21 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
     DepartmentSetupState setupState,
     bool isDark,
   ) {
-    final hasMultiRemaining = setupState.isCurrentContextComplete && !setupState.isDepartmentFullyConfigured;
+    final hasMultiRemaining =
+        setupState.isCurrentContextComplete &&
+        !setupState.isDepartmentFullyConfigured;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: hasMultiRemaining
-            ? (isDark ? AcadexColors.info.withValues(alpha: 0.15) : AcadexColors.infoLight)
-            : (isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight),
+            ? (isDark
+                  ? AcadexColors.info.withValues(alpha: 0.15)
+                  : AcadexColors.infoLight)
+            : (isDark
+                  ? AcadexColors.successDarkContainer
+                  : AcadexColors.successLight),
         borderRadius: AcadexRadius.borderRadiusLg,
         border: Border.all(
           color: hasMultiRemaining
@@ -534,7 +634,9 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: hasMultiRemaining ? AcadexColors.info : AcadexColors.success,
+                  color: hasMultiRemaining
+                      ? AcadexColors.info
+                      : AcadexColors.success,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -549,10 +651,10 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
                     ? 'CURRENT CONTEXT READY • REMAINING DEPARTMENT WORK'
                     : 'DEPARTMENT SETUP COMPLETE',
                 style: AcadexTypography.eyebrow(
-                  color: hasMultiRemaining ? AcadexColors.info : AcadexColors.successDark,
-                ).copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+                  color: hasMultiRemaining
+                      ? AcadexColors.info
+                      : AcadexColors.successDark,
+                ).copyWith(fontWeight: FontWeight.w800),
               ),
             ],
           ),
@@ -567,10 +669,12 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
           Text(
             hasMultiRemaining
                 ? (setupState.multiContextNotice ??
-                    'Primary course setup is complete. Additional programs in this department still require setup before complete academic readiness.')
+                      'Primary course setup is complete. Additional programs in this department still require setup before complete academic readiness.')
                 : 'Your academic structure is ready. Faculty can manage classes, students can access schedules, and attendance can be conducted for published timetable periods.',
             style: AcadexTypography.body(
-              color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+              color: isDark
+                  ? AcadexColors.darkInkSecondary
+                  : AcadexColors.inkSecondary,
             ),
           ),
           const SizedBox(height: 16),
@@ -582,22 +686,44 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AcadexColors.primary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-                  shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 11,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AcadexRadius.borderRadiusMd,
+                  ),
                 ),
                 icon: const Icon(LucideIcons.layoutGrid, size: 16),
-                label: const Text('View Academic Structure', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                label: const Text(
+                  'View Academic Structure',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                ),
                 onPressed: () => context.push('/academics'),
               ),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                  side: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-                  shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                  foregroundColor: isDark
+                      ? AcadexColors.darkInk
+                      : AcadexColors.ink,
+                  side: BorderSide(
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 11,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AcadexRadius.borderRadiusMd,
+                  ),
                 ),
                 icon: const Icon(LucideIcons.calendarClock, size: 16),
-                label: const Text('View Timetable', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                label: const Text(
+                  'View Timetable',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                ),
                 onPressed: () => context.push('/timetable'),
               ),
             ],
@@ -607,11 +733,17 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
     );
   }
 
-  Widget _buildMultiContextBanner(BuildContext context, String notice, bool isDark) {
+  Widget _buildMultiContextBanner(
+    BuildContext context,
+    String notice,
+    bool isDark,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? AcadexColors.info.withValues(alpha: 0.15) : AcadexColors.infoLight,
+        color: isDark
+            ? AcadexColors.info.withValues(alpha: 0.15)
+            : AcadexColors.infoLight,
         borderRadius: AcadexRadius.borderRadiusMd,
         border: Border.all(color: AcadexColors.info.withValues(alpha: 0.3)),
       ),
@@ -624,7 +756,9 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
             child: Text(
               notice,
               style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                color: isDark
+                    ? AcadexColors.darkInkSecondary
+                    : AcadexColors.inkSecondary,
               ),
             ),
           ),
@@ -654,14 +788,18 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
         break;
       case SetupMilestoneStatus.ready:
         cardBg = isDark ? AcadexColors.darkSurfaceCard : Colors.white;
-        borderCol = isCurrent ? AcadexColors.primary : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline);
+        borderCol = isCurrent
+            ? AcadexColors.primary
+            : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline);
         statusBadge = AcadexBadge(
           label: isCurrent ? 'CURRENT' : 'READY',
           variant: AcadexBadgeVariant.primary,
         );
         break;
       case SetupMilestoneStatus.waitingOnAdmin:
-        cardBg = isDark ? AcadexColors.warningDarkContainer.withValues(alpha: 0.3) : AcadexColors.warningLight.withValues(alpha: 0.5);
+        cardBg = isDark
+            ? AcadexColors.warningDarkContainer.withValues(alpha: 0.3)
+            : AcadexColors.warningLight.withValues(alpha: 0.5);
         borderCol = AcadexColors.warning.withValues(alpha: 0.5);
         statusBadge = const AcadexBadge(
           label: 'WAITING FOR COLLEGE ADMIN',
@@ -701,16 +839,26 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
                   color: milestone.isCompleted
                       ? AcadexColors.success
                       : (isCurrent
-                          ? AcadexColors.primary
-                          : (isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft)),
+                            ? AcadexColors.primary
+                            : (isDark
+                                  ? AcadexColors.darkSurfaceHover
+                                  : AcadexColors.canvasSoft)),
                   shape: BoxShape.circle,
                 ),
                 child: milestone.isCompleted
-                    ? const Icon(LucideIcons.check, size: 16, color: Colors.white)
+                    ? const Icon(
+                        LucideIcons.check,
+                        size: 16,
+                        color: Colors.white,
+                      )
                     : Text(
                         '${milestone.stepNumber}',
                         style: TextStyle(
-                          color: isCurrent ? Colors.white : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                          color: isCurrent
+                              ? Colors.white
+                              : (isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted),
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                         ),
@@ -729,11 +877,16 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
                       children: [
                         Text(
                           milestone.title,
-                          style: AcadexTypography.bodyMedium(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                          ).copyWith(
-                            fontWeight: isCurrent || milestone.isCompleted ? FontWeight.w700 : FontWeight.w600,
-                          ),
+                          style:
+                              AcadexTypography.bodyMedium(
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
+                              ).copyWith(
+                                fontWeight: isCurrent || milestone.isCompleted
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
+                              ),
                         ),
                         statusBadge,
                       ],
@@ -742,20 +895,28 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
                     Text(
                       milestone.description,
                       style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                     ),
                     if (milestone.summaryDetail != null) ...[
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(LucideIcons.checkCheck, size: 13, color: AcadexColors.success),
+                          const Icon(
+                            LucideIcons.checkCheck,
+                            size: 13,
+                            color: AcadexColors.success,
+                          ),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
                               milestone.summaryDetail!,
                               style: AcadexTypography.caption(
-                                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                                color: isDark
+                                    ? AcadexColors.darkInkSecondary
+                                    : AcadexColors.inkSecondary,
                               ).copyWith(fontWeight: FontWeight.w600),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -763,12 +924,15 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
                         ],
                       ),
                     ],
-                    if (milestone.isWaitingOnAdmin && milestone.adminMessage != null) ...[
+                    if (milestone.isWaitingOnAdmin &&
+                        milestone.adminMessage != null) ...[
                       const SizedBox(height: 6),
                       Text(
                         milestone.adminMessage!,
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.warning : AcadexColors.warningDark,
+                          color: isDark
+                              ? AcadexColors.warning
+                              : AcadexColors.warningDark,
                         ).copyWith(fontWeight: FontWeight.w500),
                       ),
                     ],
@@ -777,7 +941,9 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
                       Text(
                         milestone.decision!.explanation,
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                          color: isDark
+                              ? AcadexColors.darkInkSecondary
+                              : AcadexColors.inkSecondary,
                         ).copyWith(fontWeight: FontWeight.w500),
                       ),
                     ],
@@ -806,23 +972,47 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AcadexColors.warning,
                       side: const BorderSide(color: AcadexColors.warning),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AcadexRadius.borderRadiusMd,
+                      ),
                     ),
                     icon: const Icon(LucideIcons.bellRing, size: 14),
-                    label: const Text('Notify College Admin', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                    label: const Text(
+                      'Notify College Admin',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     onPressed: () => _showNotifyAdminDialog(context, milestone),
                   ),
                 ] else if (milestone.isReady) ...[
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isCurrent ? AcadexColors.primary : AcadexColors.secondary,
+                      backgroundColor: isCurrent
+                          ? AcadexColors.primary
+                          : AcadexColors.secondary,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AcadexRadius.borderRadiusMd,
+                      ),
                     ),
                     icon: const Icon(LucideIcons.plus, size: 14),
-                    label: Text(milestone.actionLabel, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                    label: Text(
+                      milestone.actionLabel,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     onPressed: () {
                       if (milestone.actionRoute != null) {
                         context.push(milestone.actionRoute!);
@@ -838,21 +1028,33 @@ class _DepartmentSetupScreenState extends ConsumerState<DepartmentSetupScreen> {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AcadexColors.primary,
                         side: const BorderSide(color: AcadexColors.primary),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AcadexRadius.borderRadiusMd,
+                        ),
                       ),
                       icon: const Icon(LucideIcons.arrowRight, size: 14),
                       label: Text(
                         milestone.decision!.actionLabel!,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                      onPressed: () => context.push(milestone.decision!.actionRoute!),
+                      onPressed: () =>
+                          context.push(milestone.decision!.actionRoute!),
                     )
                   else
                     Text(
-                      milestone.decision?.waitingReason ?? 'Prerequisites required',
+                      milestone.decision?.waitingReason ??
+                          'Prerequisites required',
                       style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                     ),
                 ],

@@ -34,7 +34,10 @@ class UserCard extends StatelessWidget {
                   backgroundColor: DashboardColors.primaryLight,
                   child: Text(
                     user.name.substring(0, 1).toUpperCase(),
-                    style: GoogleFonts.inter(color: DashboardColors.primary, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.inter(
+                      color: DashboardColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -44,14 +47,21 @@ class UserCard extends StatelessWidget {
                     children: [
                       Text(
                         user.name,
-                        style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: DashboardColors.textPrimary),
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: DashboardColors.textPrimary,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
                       Text(
                         user.email,
-                        style: GoogleFonts.inter(fontSize: 13, color: DashboardColors.textSecondary),
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: DashboardColors.textSecondary,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -73,17 +83,30 @@ class UserCard extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                const Icon(LucideIcons.building, size: 14, color: DashboardColors.textMuted),
+                const Icon(
+                  LucideIcons.building,
+                  size: 14,
+                  color: DashboardColors.textMuted,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    user.departmentId != null ? 'Dept: ${user.departmentId}' : 'No Department',
-                    style: GoogleFonts.inter(fontSize: 12, color: DashboardColors.textSecondary),
+                    user.departmentId != null
+                        ? 'Dept: ${user.departmentId}'
+                        : 'No Department',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: DashboardColors.textSecondary,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const Icon(LucideIcons.chevronRight, size: 16, color: DashboardColors.textMuted),
+                const Icon(
+                  LucideIcons.chevronRight,
+                  size: 16,
+                  color: DashboardColors.textMuted,
+                ),
               ],
             ),
           ],

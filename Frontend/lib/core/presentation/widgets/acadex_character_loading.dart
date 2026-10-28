@@ -42,7 +42,9 @@ class _AcadexCharacterLoadingState extends State<AcadexCharacterLoading>
       vsync: this,
       duration: const Duration(milliseconds: 1650),
     );
-    final isTest = WidgetsBinding.instance.runtimeType.toString().contains('Test');
+    final isTest = WidgetsBinding.instance.runtimeType.toString().contains(
+      'Test',
+    );
     if (!isTest) {
       _controller.repeat();
     } else {
@@ -91,14 +93,22 @@ class _AcadexCharacterLoadingState extends State<AcadexCharacterLoading>
             Text(
               widget.message!,
               textAlign: TextAlign.center,
-              style: (widget.isCompact
-                      ? AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                        )
-                      : AcadexTypography.body(
-                          color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                        ))
-                  .copyWith(fontSize: widget.isCompact ? 12 : 13.5, fontWeight: FontWeight.w500),
+              style:
+                  (widget.isCompact
+                          ? AcadexTypography.caption(
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
+                            )
+                          : AcadexTypography.body(
+                              color: isDark
+                                  ? AcadexColors.darkInkSecondary
+                                  : AcadexColors.inkSecondary,
+                            ))
+                      .copyWith(
+                        fontSize: widget.isCompact ? 12 : 13.5,
+                        fontWeight: FontWeight.w500,
+                      ),
             ),
           ],
         ],
@@ -112,16 +122,14 @@ class _SnowmanCharacterPainter extends CustomPainter {
   final double cycleProgress; // 0.0 to 1.0
   final bool isDark;
 
-  _SnowmanCharacterPainter({
-    required this.cycleProgress,
-    required this.isDark,
-  });
+  _SnowmanCharacterPainter({required this.cycleProgress, required this.isDark});
 
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
-    final cx = w * 0.48; // Slightly offset to center visual weight including backpack
+    final cx =
+        w * 0.48; // Slightly offset to center visual weight including backpack
 
     // Calculate macOS Dock bounce translation and squash/stretch factors
     double bounceY = 0.0;
@@ -195,21 +203,30 @@ class _SnowmanCharacterPainter extends CustomPainter {
 
     // 1. Soft Dynamic Ground Shadow
     // Shadow size and opacity breathe inversely with jump height
-    final shadowScale = (1.0 - ((-bounceY) / (14.0 * (h / 80.0)) * 0.28)) * scaleX;
-    final shadowAlpha = math.max(0.04, (0.16 * (1.0 - ((-bounceY) / (14.0 * (h / 80.0)) * 0.4))));
+    final shadowScale =
+        (1.0 - ((-bounceY) / (14.0 * (h / 80.0)) * 0.28)) * scaleX;
+    final shadowAlpha = math.max(
+      0.04,
+      (0.16 * (1.0 - ((-bounceY) / (14.0 * (h / 80.0)) * 0.4))),
+    );
     final shadowY = h * 0.90;
 
     final shadowPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          (isDark ? Colors.black : const Color(0xFF0F172A)).withValues(alpha: isDark ? shadowAlpha * 1.8 : shadowAlpha),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCenter(
-        center: Offset(cx, shadowY),
-        width: w * 0.62 * shadowScale,
-        height: h * 0.16 * shadowScale,
-      ));
+      ..shader =
+          RadialGradient(
+            colors: [
+              (isDark ? Colors.black : const Color(0xFF0F172A)).withValues(
+                alpha: isDark ? shadowAlpha * 1.8 : shadowAlpha,
+              ),
+              Colors.transparent,
+            ],
+          ).createShader(
+            Rect.fromCenter(
+              center: Offset(cx, shadowY),
+              width: w * 0.62 * shadowScale,
+              height: h * 0.16 * shadowScale,
+            ),
+          );
 
     canvas.drawOval(
       Rect.fromCenter(
@@ -262,7 +279,11 @@ class _SnowmanCharacterPainter extends CustomPainter {
 
     // Backpack Mini Front Pocket
     final pocketRect = RRect.fromRectAndRadius(
-      Rect.fromCenter(center: Offset(bpX + (w * 0.02), bpY + (bpH * 0.18)), width: bpW * 0.72, height: bpH * 0.42),
+      Rect.fromCenter(
+        center: Offset(bpX + (w * 0.02), bpY + (bpH * 0.18)),
+        width: bpW * 0.72,
+        height: bpH * 0.42,
+      ),
       Radius.circular(w * 0.04),
     );
     final pocketPaint = Paint()
@@ -272,7 +293,12 @@ class _SnowmanCharacterPainter extends CustomPainter {
 
     // Tiny Campus Notebook peeking out of backpack top
     final notebookRect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(bpX - (bpW * 0.32), bpY - (bpH * 0.68), bpW * 0.45, bpH * 0.38),
+      Rect.fromLTWH(
+        bpX - (bpW * 0.32),
+        bpY - (bpH * 0.68),
+        bpW * 0.45,
+        bpH * 0.38,
+      ),
       Radius.circular(w * 0.02),
     );
     final notebookPaint = Paint()
@@ -289,7 +315,8 @@ class _SnowmanCharacterPainter extends CustomPainter {
       ..lineTo(bpX - (bpW * 0.16), bpY - (bpH * 0.42))
       ..close();
     final bookmarkPaint = Paint()
-      ..color = const Color(0xFFF59E0B) // Amber college accent
+      ..color =
+          const Color(0xFFF59E0B) // Amber college accent
       ..style = PaintingStyle.fill;
     canvas.drawPath(bookmarkPath, bookmarkPaint);
 
@@ -316,15 +343,15 @@ class _SnowmanCharacterPainter extends CustomPainter {
       stops: const [0.0, 0.45, 0.75, 1.0],
     );
     final basePaint = Paint()
-      ..shader = baseGradient.createShader(Rect.fromCircle(
-        center: Offset(cx, baseCenterY),
-        radius: baseRadius,
-      ));
+      ..shader = baseGradient.createShader(
+        Rect.fromCircle(center: Offset(cx, baseCenterY), radius: baseRadius),
+      );
     canvas.drawCircle(Offset(cx, baseCenterY), baseRadius, basePaint);
 
     // Subtle 3D Rim / Ambient occlusion on base snowball
     final baseRimPaint = Paint()
-      ..color = (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)).withValues(alpha: 0.25)
+      ..color = (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))
+          .withValues(alpha: 0.25)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
     canvas.drawCircle(Offset(cx, baseCenterY), baseRadius, baseRimPaint);
@@ -333,8 +360,16 @@ class _SnowmanCharacterPainter extends CustomPainter {
     final buttonPaint = Paint()
       ..color = const Color(0xFF1E293B)
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(cx, baseCenterY - (baseRadius * 0.15)), w * 0.024, buttonPaint);
-    canvas.drawCircle(Offset(cx, baseCenterY + (baseRadius * 0.32)), w * 0.024, buttonPaint);
+    canvas.drawCircle(
+      Offset(cx, baseCenterY - (baseRadius * 0.15)),
+      w * 0.024,
+      buttonPaint,
+    );
+    canvas.drawCircle(
+      Offset(cx, baseCenterY + (baseRadius * 0.32)),
+      w * 0.024,
+      buttonPaint,
+    );
 
     // Backpack shoulder strap wrapping over the shoulder
     final strapPath = Path()
@@ -375,10 +410,9 @@ class _SnowmanCharacterPainter extends CustomPainter {
       stops: const [0.0, 0.45, 0.75, 1.0],
     );
     final headPaint = Paint()
-      ..shader = headGradient.createShader(Rect.fromCircle(
-        center: Offset(cx, headCenterY),
-        radius: headRadius,
-      ));
+      ..shader = headGradient.createShader(
+        Rect.fromCircle(center: Offset(cx, headCenterY), radius: headRadius),
+      );
     canvas.drawCircle(Offset(cx, headCenterY), headRadius, headPaint);
 
     // 5. Sleek Collegiate Scarf Band (connecting head and body)
@@ -394,11 +428,7 @@ class _SnowmanCharacterPainter extends CustomPainter {
     final scarfGradient = const LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [
-        Color(0xFF2563EB),
-        Color(0xFF1E40AF),
-        Color(0xFF1E3A8A),
-      ],
+      colors: [Color(0xFF2563EB), Color(0xFF1E40AF), Color(0xFF1E3A8A)],
     );
     final scarfPaint = Paint()
       ..shader = scarfGradient.createShader(scarfRect.outerRect)
@@ -418,7 +448,12 @@ class _SnowmanCharacterPainter extends CustomPainter {
 
     // Scarf tail folded neatly on side
     final tailRect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(cx - (headRadius * 0.65), scarfCenterY, headRadius * 0.38, headRadius * 0.55),
+      Rect.fromLTWH(
+        cx - (headRadius * 0.65),
+        scarfCenterY,
+        headRadius * 0.38,
+        headRadius * 0.55,
+      ),
       Radius.circular(w * 0.02),
     );
     canvas.drawRRect(tailRect, scarfPaint);
@@ -438,15 +473,31 @@ class _SnowmanCharacterPainter extends CustomPainter {
 
     // Eye Twinkles (specular highlights)
     final twinklePaint = Paint()..color = Colors.white;
-    canvas.drawCircle(Offset(eyeLeftX + (eyeRadius * 0.28), eyeY - (eyeRadius * 0.28)), eyeRadius * 0.40, twinklePaint);
-    canvas.drawCircle(Offset(eyeRightX + (eyeRadius * 0.28), eyeY - (eyeRadius * 0.28)), eyeRadius * 0.40, twinklePaint);
+    canvas.drawCircle(
+      Offset(eyeLeftX + (eyeRadius * 0.28), eyeY - (eyeRadius * 0.28)),
+      eyeRadius * 0.40,
+      twinklePaint,
+    );
+    canvas.drawCircle(
+      Offset(eyeRightX + (eyeRadius * 0.28), eyeY - (eyeRadius * 0.28)),
+      eyeRadius * 0.40,
+      twinklePaint,
+    );
 
     // Soft Rosy Cheeks
     final cheekPaint = Paint()
       ..color = const Color(0xFFF43F5E).withValues(alpha: 0.22)
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(eyeLeftX - (headRadius * 0.16), eyeY + (headRadius * 0.24)), headRadius * 0.15, cheekPaint);
-    canvas.drawCircle(Offset(eyeRightX + (headRadius * 0.16), eyeY + (headRadius * 0.24)), headRadius * 0.15, cheekPaint);
+    canvas.drawCircle(
+      Offset(eyeLeftX - (headRadius * 0.16), eyeY + (headRadius * 0.24)),
+      headRadius * 0.15,
+      cheekPaint,
+    );
+    canvas.drawCircle(
+      Offset(eyeRightX + (headRadius * 0.16), eyeY + (headRadius * 0.24)),
+      headRadius * 0.15,
+      cheekPaint,
+    );
 
     // Cute minimal 3D Carrot Nose (soft rounded conical peg)
     final nosePath = Path()
@@ -455,7 +506,8 @@ class _SnowmanCharacterPainter extends CustomPainter {
       ..lineTo(cx - (headRadius * 0.06), headCenterY + (headRadius * 0.22))
       ..close();
     final nosePaint = Paint()
-      ..color = const Color(0xFFF97316) // Warm crisp orange
+      ..color =
+          const Color(0xFFF97316) // Warm crisp orange
       ..style = PaintingStyle.fill;
     canvas.drawPath(nosePath, nosePaint);
 
@@ -480,6 +532,7 @@ class _SnowmanCharacterPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SnowmanCharacterPainter oldDelegate) {
-    return oldDelegate.cycleProgress != cycleProgress || oldDelegate.isDark != isDark;
+    return oldDelegate.cycleProgress != cycleProgress ||
+        oldDelegate.isDark != isDark;
   }
 }

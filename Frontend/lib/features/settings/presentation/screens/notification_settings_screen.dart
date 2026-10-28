@@ -18,12 +18,28 @@ class NotificationSettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        leading: IconButton(icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface), onPressed: () => context.safePop(fallbackRoute: '/settings')),
-        title: Text("Notifications", style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface)),
+        leading: IconButton(
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          onPressed: () => context.safePop(fallbackRoute: '/settings'),
+        ),
+        title: Text(
+          "Notifications",
+          style: AcadexTypography.title(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
       ),
       body: prefsAsync.when(
-        loading: () => const AcadexLoadingState(message: "Loading notification preferences..."),
-        error: (err, _) => AcadexErrorState(message: "Error: $err", onRetry: () => ref.refresh(notificationPreferencesProvider)),
+        loading: () => const AcadexLoadingState(
+          message: "Loading notification preferences...",
+        ),
+        error: (err, _) => AcadexErrorState(
+          message: "Error: $err",
+          onRetry: () => ref.refresh(notificationPreferencesProvider),
+        ),
         data: (prefs) => AcadexPageContainer(
           maxWidth: AcadexLayout.formMaxWidth,
           child: Column(
@@ -37,14 +53,22 @@ class NotificationSettingsScreen extends ConsumerWidget {
                     title: "Attendance Alerts",
                     subtitle: "Get notified for daily attendance",
                     value: prefs.attendanceAlerts,
-                    onChanged: (val) => ref.read(notificationPreferencesProvider.notifier).updatePreferences(prefs.copyWith(attendanceAlerts: val)),
+                    onChanged: (val) => ref
+                        .read(notificationPreferencesProvider.notifier)
+                        .updatePreferences(
+                          prefs.copyWith(attendanceAlerts: val),
+                        ),
                   ),
                   ToggleTile(
                     icon: LucideIcons.bookOpen,
                     title: "Academic Updates",
                     subtitle: "Assignments, marks, and timetable changes",
                     value: prefs.academicUpdates,
-                    onChanged: (val) => ref.read(notificationPreferencesProvider.notifier).updatePreferences(prefs.copyWith(academicUpdates: val)),
+                    onChanged: (val) => ref
+                        .read(notificationPreferencesProvider.notifier)
+                        .updatePreferences(
+                          prefs.copyWith(academicUpdates: val),
+                        ),
                   ),
                 ],
               ),
@@ -56,7 +80,9 @@ class NotificationSettingsScreen extends ConsumerWidget {
                     title: "Notes Uploaded",
                     subtitle: "Notify when new study materials are added",
                     value: prefs.notesUploaded,
-                    onChanged: (val) => ref.read(notificationPreferencesProvider.notifier).updatePreferences(prefs.copyWith(notesUploaded: val)),
+                    onChanged: (val) => ref
+                        .read(notificationPreferencesProvider.notifier)
+                        .updatePreferences(prefs.copyWith(notesUploaded: val)),
                   ),
                 ],
               ),
@@ -68,14 +94,20 @@ class NotificationSettingsScreen extends ConsumerWidget {
                     title: "Announcements",
                     subtitle: "Important college-wide messages",
                     value: prefs.announcements,
-                    onChanged: (val) => ref.read(notificationPreferencesProvider.notifier).updatePreferences(prefs.copyWith(announcements: val)),
+                    onChanged: (val) => ref
+                        .read(notificationPreferencesProvider.notifier)
+                        .updatePreferences(prefs.copyWith(announcements: val)),
                   ),
                   ToggleTile(
                     icon: LucideIcons.bell,
                     title: "General Notifications",
                     subtitle: "Other system notifications",
                     value: prefs.generalNotifications,
-                    onChanged: (val) => ref.read(notificationPreferencesProvider.notifier).updatePreferences(prefs.copyWith(generalNotifications: val)),
+                    onChanged: (val) => ref
+                        .read(notificationPreferencesProvider.notifier)
+                        .updatePreferences(
+                          prefs.copyWith(generalNotifications: val),
+                        ),
                   ),
                 ],
               ),

@@ -105,8 +105,18 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
 
   String _formatDate(DateTime dt) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
@@ -121,10 +131,14 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
       return;
     }
 
-    if ((_selectedType == RequestType.leave || _selectedType == RequestType.onDuty) &&
+    if ((_selectedType == RequestType.leave ||
+            _selectedType == RequestType.onDuty) &&
         _isDateRange &&
         _endDate.isBefore(_startDate)) {
-      AcadexSnackBar.showError(context, 'End date cannot be earlier than start date.');
+      AcadexSnackBar.showError(
+        context,
+        'End date cannot be earlier than start date.',
+      );
       return;
     }
 
@@ -147,7 +161,8 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
       }
 
       RequestDetailsModel? details;
-      if (_selectedType == RequestType.leave || _selectedType == RequestType.onDuty) {
+      if (_selectedType == RequestType.leave ||
+          _selectedType == RequestType.onDuty) {
         details = RequestDetailsModel(
           startDate: _isDateRange ? _startDate : _selectedDate,
           endDate: _isDateRange ? _endDate : _selectedDate,
@@ -155,10 +170,7 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
           reason: reason,
         );
       } else if (_selectedType == RequestType.attendanceCorrection) {
-        details = RequestDetailsModel(
-          date: _selectedDate,
-          reason: reason,
-        );
+        details = RequestDetailsModel(date: _selectedDate, reason: reason);
       } else if (_selectedType == RequestType.resourceRequest ||
           _selectedType == RequestType.facultyRequirement) {
         details = RequestDetailsModel(
@@ -176,7 +188,9 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
           ? _titleController.text.trim()
           : null;
 
-      final res = await ref.read(requestActionProvider.notifier).createRequest(
+      final res = await ref
+          .read(requestActionProvider.notifier)
+          .createRequest(
             requestType: _selectedType,
             title: title,
             description: reason,
@@ -189,7 +203,9 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
         if (res != null) {
           AcadexSnackBar.showSuccess(
             context,
-            asDraft ? 'Draft request saved.' : 'Your request was submitted successfully.',
+            asDraft
+                ? 'Draft request saved.'
+                : 'Your request was submitted successfully.',
           );
           context.pop();
         } else {
@@ -231,7 +247,8 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
       _selectedType = allowedTypes.first;
     }
 
-    final hasAcademicContext = widget.initialSubjectName != null || widget.initialSectionName != null;
+    final hasAcademicContext =
+        widget.initialSubjectName != null || widget.initialSectionName != null;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -261,11 +278,17 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
                   decoration: BoxDecoration(
                     color: AcadexColors.primaryLight,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.2)),
+                    border: Border.all(
+                      color: AcadexColors.primary.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(LucideIcons.graduationCap, color: AcadexColors.primary, size: 18),
+                      const Icon(
+                        LucideIcons.graduationCap,
+                        color: AcadexColors.primary,
+                        size: 18,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -283,10 +306,7 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
               ],
 
               // Request Type Selection
-              Text(
-                'What do you need?',
-                style: AcadexTypography.heading3(),
-              ),
+              Text('What do you need?', style: AcadexTypography.heading3()),
               const SizedBox(height: 8),
 
               Container(
@@ -306,7 +326,11 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
                         value: type,
                         child: Row(
                           children: [
-                            Icon(type.icon, size: 16, color: AcadexColors.primary),
+                            Icon(
+                              type.icon,
+                              size: 16,
+                              color: AcadexColors.primary,
+                            ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
@@ -335,7 +359,8 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
               // Conditional Fields
 
               // 1. Leave & On-Duty: Date or Date Range
-              if (_selectedType == RequestType.leave || _selectedType == RequestType.onDuty) ...[
+              if (_selectedType == RequestType.leave ||
+                  _selectedType == RequestType.onDuty) ...[
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -344,11 +369,16 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
                       children: [
                         Text(
                           _isDateRange ? 'Date Range' : 'Date',
-                          style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+                          style: AcadexTypography.caption().copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         const Text(
                           ' *',
-                          style: TextStyle(color: AcadexColors.error, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: AcadexColors.error,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
@@ -404,11 +434,16 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
                   children: [
                     Text(
                       'Date of Class',
-                      style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+                      style: AcadexTypography.caption().copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const Text(
                       ' *',
-                      style: TextStyle(color: AcadexColors.error, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: AcadexColors.error,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -428,7 +463,9 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
                   _selectedType == RequestType.resourceRequest
                       ? 'Resource Needed'
                       : 'Faculty Position / Specialization',
-                  style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+                  style: AcadexTypography.caption().copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextField(
@@ -437,18 +474,27 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
                     hintText: _selectedType == RequestType.resourceRequest
                         ? 'e.g. Projector for Lab 3, Whiteboard markers'
                         : 'e.g. 2 Assistant Professors for AI & ML',
-                    hintStyle: AcadexTypography.bodySmall(color: AcadexColors.inkMuted),
+                    hintStyle: AcadexTypography.bodySmall(
+                      color: AcadexColors.inkMuted,
+                    ),
                     filled: true,
                     fillColor: AcadexColors.canvasSoft,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AcadexColors.hairline),
+                      borderSide: const BorderSide(
+                        color: AcadexColors.hairline,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AcadexColors.hairline),
+                      borderSide: const BorderSide(
+                        color: AcadexColors.hairline,
+                      ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -458,25 +504,36 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
               if (_selectedType == RequestType.timetableChange) ...[
                 Text(
                   'Requested Change Details',
-                  style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+                  style: AcadexTypography.caption().copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextField(
                   controller: _requestedChangeController,
                   decoration: InputDecoration(
                     hintText: 'e.g. Move Tuesday Period 3 to Thursday Period 2',
-                    hintStyle: AcadexTypography.bodySmall(color: AcadexColors.inkMuted),
+                    hintStyle: AcadexTypography.bodySmall(
+                      color: AcadexColors.inkMuted,
+                    ),
                     filled: true,
                     fillColor: AcadexColors.canvasSoft,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AcadexColors.hairline),
+                      borderSide: const BorderSide(
+                        color: AcadexColors.hairline,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AcadexColors.hairline),
+                      borderSide: const BorderSide(
+                        color: AcadexColors.hairline,
+                      ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -490,25 +547,36 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
                   _selectedType == RequestType.generalAdminRequest) ...[
                 Text(
                   'Title (Optional)',
-                  style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+                  style: AcadexTypography.caption().copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextField(
                   controller: _titleController,
                   decoration: InputDecoration(
                     hintText: 'Brief summary of what you need...',
-                    hintStyle: AcadexTypography.bodySmall(color: AcadexColors.inkMuted),
+                    hintStyle: AcadexTypography.bodySmall(
+                      color: AcadexColors.inkMuted,
+                    ),
                     filled: true,
                     fillColor: AcadexColors.canvasSoft,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AcadexColors.hairline),
+                      borderSide: const BorderSide(
+                        color: AcadexColors.hairline,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AcadexColors.hairline),
+                      borderSide: const BorderSide(
+                        color: AcadexColors.hairline,
+                      ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -519,12 +587,19 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    _selectedType == RequestType.leave ? 'Reason for Leave' : 'Details & Reason',
-                    style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+                    _selectedType == RequestType.leave
+                        ? 'Reason for Leave'
+                        : 'Details & Reason',
+                    style: AcadexTypography.caption().copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const Text(
                     ' *',
-                    style: TextStyle(color: AcadexColors.error, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: AcadexColors.error,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
@@ -536,7 +611,9 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
                   hintText: _selectedType == RequestType.leave
                       ? 'I need leave tomorrow because...'
                       : 'Describe the issue or reason clearly...',
-                  hintStyle: AcadexTypography.bodySmall(color: AcadexColors.inkMuted),
+                  hintStyle: AcadexTypography.bodySmall(
+                    color: AcadexColors.inkMuted,
+                  ),
                   filled: true,
                   fillColor: AcadexColors.canvasSoft,
                   border: OutlineInputBorder(
@@ -549,7 +626,10 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AcadexColors.primary, width: 1.5),
+                    borderSide: const BorderSide(
+                      color: AcadexColors.primary,
+                      width: 1.5,
+                    ),
                   ),
                   contentPadding: const EdgeInsets.all(14),
                 ),
@@ -563,7 +643,9 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
                 decoration: BoxDecoration(
                   color: AcadexColors.primary.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.2)),
+                  border: Border.all(
+                    color: AcadexColors.primary.withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -574,7 +656,11 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
                         color: AcadexColors.primary.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Icon(LucideIcons.send, size: 16, color: AcadexColors.primary),
+                      child: const Icon(
+                        LucideIcons.send,
+                        size: 16,
+                        color: AcadexColors.primary,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -586,18 +672,24 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
                             children: [
                               Text(
                                 'Send to: ',
-                                style: AcadexTypography.caption(color: AcadexColors.inkMuted),
+                                style: AcadexTypography.caption(
+                                  color: AcadexColors.inkMuted,
+                                ),
                               ),
                               Text(
                                 _resolveRecipientTitle(role, _selectedType),
-                                style: AcadexTypography.body(color: AcadexColors.ink).copyWith(fontWeight: FontWeight.w700),
+                                style: AcadexTypography.body(
+                                  color: AcadexColors.ink,
+                                ).copyWith(fontWeight: FontWeight.w700),
                               ),
                             ],
                           ),
                           const SizedBox(height: 2),
                           Text(
                             _resolveRecipientExplanation(role, _selectedType),
-                            style: AcadexTypography.caption(color: AcadexColors.inkSecondary),
+                            style: AcadexTypography.caption(
+                              color: AcadexColors.inkSecondary,
+                            ),
                           ),
                         ],
                       ),
@@ -642,7 +734,8 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
     } else if (role == AppRole.student) {
       if (type == RequestType.attendanceCorrection) {
         return 'Assigned Subject Faculty';
-      } else if (type == RequestType.documentRequest || type == RequestType.generalAdminRequest) {
+      } else if (type == RequestType.documentRequest ||
+          type == RequestType.generalAdminRequest) {
         return 'College Administration';
       }
       return 'Head of Department (HOD)';
@@ -658,7 +751,8 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
     } else if (role == AppRole.student) {
       if (type == RequestType.attendanceCorrection) {
         return 'Your request will be routed to your course faculty member to verify attendance records.';
-      } else if (type == RequestType.documentRequest || type == RequestType.generalAdminRequest) {
+      } else if (type == RequestType.documentRequest ||
+          type == RequestType.generalAdminRequest) {
         return 'Your request will be routed to College Admin office for processing.';
       }
       return 'Your request will be routed to your department Head of Department for official review.';
@@ -714,7 +808,11 @@ class _DatePickerTile extends StatelessWidget {
                 ),
               ],
             ),
-            const Icon(LucideIcons.calendar, size: 18, color: AcadexColors.primary),
+            const Icon(
+              LucideIcons.calendar,
+              size: 18,
+              color: AcadexColors.primary,
+            ),
           ],
         ),
       ),

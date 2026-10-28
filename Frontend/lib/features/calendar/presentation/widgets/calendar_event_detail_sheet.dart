@@ -80,7 +80,9 @@ class _CalendarEventDetailSheetState
     if (shouldCancel == true && mounted) {
       setState(() => _isLoading = true);
       try {
-        await ref.read(calendarEventsProvider.notifier).cancelEvent(
+        await ref
+            .read(calendarEventsProvider.notifier)
+            .cancelEvent(
               widget.event.id,
               reason: reasonController.text.trim().isNotEmpty
                   ? reasonController.text.trim()
@@ -96,9 +98,9 @@ class _CalendarEventDetailSheetState
       } catch (e) {
         if (mounted) {
           setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to cancel event: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Failed to cancel event: $e')));
         }
       }
     }
@@ -107,7 +109,9 @@ class _CalendarEventDetailSheetState
   Future<void> _handlePublishEvent() async {
     setState(() => _isLoading = true);
     try {
-      await ref.read(calendarEventsProvider.notifier).publishEvent(widget.event.id);
+      await ref
+          .read(calendarEventsProvider.notifier)
+          .publishEvent(widget.event.id);
       if (mounted) {
         Navigator.of(context).pop();
         widget.onChanged?.call();
@@ -118,9 +122,9 @@ class _CalendarEventDetailSheetState
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to publish event: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to publish event: $e')));
       }
     }
   }
@@ -171,7 +175,10 @@ class _CalendarEventDetailSheetState
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AcadexColors.primary.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(6),
@@ -188,7 +195,10 @@ class _CalendarEventDetailSheetState
                 const SizedBox(width: 8),
                 if (event.status == CalendarEventStatus.cancelled)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.red.shade50,
                       borderRadius: BorderRadius.circular(6),
@@ -204,7 +214,10 @@ class _CalendarEventDetailSheetState
                   )
                 else if (event.status == CalendarEventStatus.draft)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.amber.shade50,
                       borderRadius: BorderRadius.circular(6),
@@ -251,11 +264,20 @@ class _CalendarEventDetailSheetState
             _buildDetailRow(LucideIcons.clock, 'Time', timeLabel),
             const SizedBox(height: 10),
 
-            _buildDetailRow(LucideIcons.layers, 'Source', event.sourceType.displayName),
+            _buildDetailRow(
+              LucideIcons.layers,
+              'Source',
+              event.sourceType.displayName,
+            ),
             const SizedBox(height: 10),
 
-            if (event.academicContext != null && event.academicContext!.isNotEmpty) ...[
-              _buildDetailRow(LucideIcons.graduationCap, 'Scope', event.academicContext!),
+            if (event.academicContext != null &&
+                event.academicContext!.isNotEmpty) ...[
+              _buildDetailRow(
+                LucideIcons.graduationCap,
+                'Scope',
+                event.academicContext!,
+              ),
               const SizedBox(height: 10),
             ],
 
@@ -303,7 +325,8 @@ class _CalendarEventDetailSheetState
             ],
 
             // Action Buttons
-            if (event.navigationTarget != null && event.navigationTarget!.isNotEmpty) ...[
+            if (event.navigationTarget != null &&
+                event.navigationTarget!.isNotEmpty) ...[
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -325,7 +348,8 @@ class _CalendarEventDetailSheetState
             ] else ...[
               Row(
                 children: [
-                  if (event.status == CalendarEventStatus.draft && event.canEdit)
+                  if (event.status == CalendarEventStatus.draft &&
+                      event.canEdit)
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: _isLoading ? null : _handlePublishEvent,
@@ -346,7 +370,11 @@ class _CalendarEventDetailSheetState
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: _isLoading ? null : _handleCancelEvent,
-                        icon: const Icon(LucideIcons.ban, size: 16, color: Colors.red),
+                        icon: const Icon(
+                          LucideIcons.ban,
+                          size: 16,
+                          color: Colors.red,
+                        ),
                         label: const Text(
                           'Cancel Event',
                           style: TextStyle(color: Colors.red),

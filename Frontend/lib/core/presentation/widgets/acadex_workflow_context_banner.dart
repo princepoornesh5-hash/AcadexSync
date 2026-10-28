@@ -82,13 +82,16 @@ class AcadexWorkflowContextBanner extends StatelessWidget {
                     Flexible(
                       child: Text(
                         'SETUP CONTEXT FOR $targetEntityName'.toUpperCase(),
-                        style: AcadexTypography.eyebrow(
-                          color: isDark ? AcadexColors.primaryMuted : AcadexColors.primary,
-                        ).copyWith(
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.6,
-                          fontSize: 10.5,
-                        ),
+                        style:
+                            AcadexTypography.eyebrow(
+                              color: isDark
+                                  ? AcadexColors.primaryMuted
+                                  : AcadexColors.primary,
+                            ).copyWith(
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.6,
+                              fontSize: 10.5,
+                            ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -113,12 +116,17 @@ class AcadexWorkflowContextBanner extends StatelessWidget {
                 children: contextItems.map((item) {
                   return Container(
                     constraints: BoxConstraints(maxWidth: maxItemWidth),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: isDark ? AcadexColors.darkCanvas : Colors.white,
                       borderRadius: AcadexRadius.borderRadiusSm,
                       border: Border.all(
-                        color: isDark ? AcadexColors.darkHairline : const Color(0xFFCBD5E1),
+                        color: isDark
+                            ? AcadexColors.darkHairline
+                            : const Color(0xFFCBD5E1),
                         width: 1,
                       ),
                     ),
@@ -129,7 +137,9 @@ class AcadexWorkflowContextBanner extends StatelessWidget {
                           Icon(
                             item.icon,
                             size: 13,
-                            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.primary,
+                            color: isDark
+                                ? AcadexColors.darkInkSecondary
+                                : AcadexColors.primary,
                           ),
                           const SizedBox(width: 5),
                         ],
@@ -139,15 +149,27 @@ class AcadexWorkflowContextBanner extends StatelessWidget {
                               children: [
                                 TextSpan(
                                   text: '${item.label}: ',
-                                  style: AcadexTypography.caption(
-                                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                                  ).copyWith(fontSize: 11.5, fontWeight: FontWeight.w500),
+                                  style:
+                                      AcadexTypography.caption(
+                                        color: isDark
+                                            ? AcadexColors.darkInkMuted
+                                            : AcadexColors.inkMuted,
+                                      ).copyWith(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                 ),
                                 TextSpan(
                                   text: item.value,
-                                  style: AcadexTypography.caption(
-                                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                                  ).copyWith(fontSize: 12, fontWeight: FontWeight.w700),
+                                  style:
+                                      AcadexTypography.caption(
+                                        color: isDark
+                                            ? AcadexColors.darkInk
+                                            : AcadexColors.ink,
+                                      ).copyWith(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                 ),
                               ],
                             ),
@@ -170,16 +192,18 @@ class AcadexWorkflowContextBanner extends StatelessWidget {
                 onTap: onChangeContext,
                 borderRadius: BorderRadius.circular(4),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 2,
+                  ),
                   child: Text(
                     'Change context…',
-                    style: AcadexTypography.caption(
-                      color: AcadexColors.primary,
-                    ).copyWith(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      decoration: TextDecoration.underline,
-                    ),
+                    style: AcadexTypography.caption(color: AcadexColors.primary)
+                        .copyWith(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.underline,
+                        ),
                   ),
                 ),
               ),

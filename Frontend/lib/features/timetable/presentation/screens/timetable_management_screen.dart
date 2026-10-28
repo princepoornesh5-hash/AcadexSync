@@ -64,9 +64,13 @@ class TimetableFilterState {
     bool clearSection = false,
   }) {
     return TimetableFilterState(
-      departmentId: clearDepartment ? null : (departmentId ?? this.departmentId),
+      departmentId: clearDepartment
+          ? null
+          : (departmentId ?? this.departmentId),
       courseId: clearCourse ? null : (courseId ?? this.courseId),
-      academicYearId: clearAcademicYear ? null : (academicYearId ?? this.academicYearId),
+      academicYearId: clearAcademicYear
+          ? null
+          : (academicYearId ?? this.academicYearId),
       semesterId: clearSemester ? null : (semesterId ?? this.semesterId),
       sectionId: clearSection ? null : (sectionId ?? this.sectionId),
       day: clearDay ? null : (day ?? this.day),
@@ -86,37 +90,44 @@ class TimetableFilterState {
       searchQuery.isNotEmpty;
 }
 
-final timetableFilterProvider = StateProvider<TimetableFilterState>((ref) => TimetableFilterState());
+final timetableFilterProvider = StateProvider<TimetableFilterState>(
+  (ref) => TimetableFilterState(),
+);
 
-final managementContainersProvider = FutureProvider.autoDispose<List<TimetableContainerModel>>((ref) async {
-  final filters = ref.watch(timetableFilterProvider);
-  final authState = ref.watch(authProvider);
-  if (authState is! AuthAuthenticated) return [];
+final managementContainersProvider =
+    FutureProvider.autoDispose<List<TimetableContainerModel>>((ref) async {
+      final filters = ref.watch(timetableFilterProvider);
+      final authState = ref.watch(authProvider);
+      if (authState is! AuthAuthenticated) return [];
 
-  final user = authState.user;
-  final repo = ref.watch(timetableRepositoryProvider);
+      final user = authState.user;
+      final repo = ref.watch(timetableRepositoryProvider);
 
-  final deptId = (user.role == AppRole.hod) ? user.departmentId : filters.departmentId;
+      final deptId = (user.role == AppRole.hod)
+          ? user.departmentId
+          : filters.departmentId;
 
-  final containers = await repo.getTimetableContainers(
-    collegeId: user.collegeId ?? '',
-    departmentId: deptId,
-    courseId: filters.courseId,
-    academicYearId: filters.academicYearId,
-    semesterId: filters.semesterId,
-    sectionId: filters.sectionId,
-    status: filters.status,
-  );
+      final containers = await repo.getTimetableContainers(
+        collegeId: user.collegeId ?? '',
+        departmentId: deptId,
+        courseId: filters.courseId,
+        academicYearId: filters.academicYearId,
+        semesterId: filters.semesterId,
+        sectionId: filters.sectionId,
+        status: filters.status,
+      );
 
-  if (filters.searchQuery.trim().isEmpty) return containers;
+      if (filters.searchQuery.trim().isEmpty) return containers;
 
-  final query = filters.searchQuery.trim().toLowerCase();
-  return containers.where((c) {
-    return c.name.toLowerCase().contains(query);
-  }).toList();
-});
+      final query = filters.searchQuery.trim().toLowerCase();
+      return containers.where((c) {
+        return c.name.toLowerCase().contains(query);
+      }).toList();
+    });
 
-final managementTimetableProvider = FutureProvider<List<TimetableModel>>((ref) async {
+final managementTimetableProvider = FutureProvider<List<TimetableModel>>((
+  ref,
+) async {
   final filters = ref.watch(timetableFilterProvider);
   final authState = ref.watch(authProvider);
   if (authState is! AuthAuthenticated) return [];
@@ -125,7 +136,9 @@ final managementTimetableProvider = FutureProvider<List<TimetableModel>>((ref) a
   final repo = ref.watch(timetableRepositoryProvider);
 
   // HOD implicitly filters by their own department if they are HOD
-  final deptId = (user.role == AppRole.hod) ? user.departmentId : filters.departmentId;
+  final deptId = (user.role == AppRole.hod)
+      ? user.departmentId
+      : filters.departmentId;
 
   final entries = await repo.getTimetable(
     collegeId: user.collegeId ?? '',
@@ -152,13 +165,26 @@ final managementTimetableProvider = FutureProvider<List<TimetableModel>>((ref) a
       final faculty = facultyMap[e.facultyId];
       final section = sectionMap[e.sectionId];
 
-      final subjectMatch = subject != null && (subject.name.toLowerCase().contains(query) || subject.code.toLowerCase().contains(query));
-      final facultyMatch = faculty != null && faculty.name.toLowerCase().contains(query);
-      final sectionMatch = section != null && section.name.toLowerCase().contains(query);
-      final roomMatch = e.roomNumber.toLowerCase().contains(query) || (e.building?.toLowerCase().contains(query) ?? false);
-      final rawIdMatch = e.subjectId.toLowerCase().contains(query) || e.facultyId.toLowerCase().contains(query);
+      final subjectMatch =
+          subject != null &&
+          (subject.name.toLowerCase().contains(query) ||
+              subject.code.toLowerCase().contains(query));
+      final facultyMatch =
+          faculty != null && faculty.name.toLowerCase().contains(query);
+      final sectionMatch =
+          section != null && section.name.toLowerCase().contains(query);
+      final roomMatch =
+          e.roomNumber.toLowerCase().contains(query) ||
+          (e.building?.toLowerCase().contains(query) ?? false);
+      final rawIdMatch =
+          e.subjectId.toLowerCase().contains(query) ||
+          e.facultyId.toLowerCase().contains(query);
 
-      return subjectMatch || facultyMatch || sectionMatch || roomMatch || rawIdMatch;
+      return subjectMatch ||
+          facultyMatch ||
+          sectionMatch ||
+          roomMatch ||
+          rawIdMatch;
     }).toList();
   }
 
@@ -176,10 +202,12 @@ class TimetableManagementScreen extends ConsumerStatefulWidget {
   const TimetableManagementScreen({super.key});
 
   @override
-  ConsumerState<TimetableManagementScreen> createState() => _TimetableManagementScreenState();
+  ConsumerState<TimetableManagementScreen> createState() =>
+      _TimetableManagementScreenState();
 }
 
-class _TimetableManagementScreenState extends ConsumerState<TimetableManagementScreen>
+class _TimetableManagementScreenState
+    extends ConsumerState<TimetableManagementScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   DateTime _substitutionSelectedDate = DateTime.now();
@@ -196,14 +224,30 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
     super.dispose();
   }
 
-  Future<void> _openCreateTimetable({TimetableContainerModel? initialContainer}) async {
-    final courses = await ref.read(coursesProvider.future).catchError((_) => <Course>[]);
-    final academicYears = await ref.read(academicYearsProvider.future).catchError((_) => <AcademicYear>[]);
-    final semesters = await ref.read(semestersProvider.future).catchError((_) => <Semester>[]);
-    final sections = await ref.read(sectionsProvider.future).catchError((_) => <Section>[]);
-    final subjects = await ref.read(subjectsProvider.future).catchError((_) => <Subject>[]);
-    final facultyAssignments = await ref.read(facultyAssignmentsProvider.future).catchError((_) => <FacultyAssignment>[]);
-    final rooms = await ref.read(roomsProvider.future).catchError((_) => <Room>[]);
+  Future<void> _openCreateTimetable({
+    TimetableContainerModel? initialContainer,
+  }) async {
+    final courses = await ref
+        .read(coursesProvider.future)
+        .catchError((_) => <Course>[]);
+    final academicYears = await ref
+        .read(academicYearsProvider.future)
+        .catchError((_) => <AcademicYear>[]);
+    final semesters = await ref
+        .read(semestersProvider.future)
+        .catchError((_) => <Semester>[]);
+    final sections = await ref
+        .read(sectionsProvider.future)
+        .catchError((_) => <Section>[]);
+    final subjects = await ref
+        .read(subjectsProvider.future)
+        .catchError((_) => <Subject>[]);
+    final facultyAssignments = await ref
+        .read(facultyAssignmentsProvider.future)
+        .catchError((_) => <FacultyAssignment>[]);
+    final rooms = await ref
+        .read(roomsProvider.future)
+        .catchError((_) => <Room>[]);
 
     if (!mounted) return;
 
@@ -228,7 +272,8 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
 
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => TimetableSetupScreen(initialContainer: initialContainer),
+        builder: (_) =>
+            TimetableSetupScreen(initialContainer: initialContainer),
       ),
     );
   }
@@ -239,14 +284,21 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
     if (authState is! AuthAuthenticated) return const SizedBox.shrink();
 
     final user = authState.user;
-    if (user.role != AppRole.superAdmin && user.role != AppRole.collegeAdmin && user.role != AppRole.hod) {
+    if (user.role != AppRole.superAdmin &&
+        user.role != AppRole.collegeAdmin &&
+        user.role != AppRole.hod) {
       return Scaffold(
         appBar: AppBar(title: const Text('Unauthorized')),
-        body: const Center(child: Text('Unauthorized: Only administrators and HODs can manage timetables.')),
+        body: const Center(
+          child: Text(
+            'Unauthorized: Only administrators and HODs can manage timetables.',
+          ),
+        ),
       );
     }
 
-    final canCreate = user.role == AppRole.collegeAdmin || user.role == AppRole.hod;
+    final canCreate =
+        user.role == AppRole.collegeAdmin || user.role == AppRole.hod;
     final filters = ref.watch(timetableFilterProvider);
     final width = MediaQuery.of(context).size.width;
     final isMobile = width < 768;
@@ -269,10 +321,15 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
         children: [
           // Header with Create Timetable Action
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: isMobile ? 8 : 16),
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 16 : 24,
+              vertical: isMobile ? 8 : 16,
+            ),
             child: AcadexPageHeader(
               title: 'Manage Timetable',
-              subtitle: isMobile ? null : 'Create master timetable containers, configure periods & breaks, and manage live published schedules.',
+              subtitle: isMobile
+                  ? null
+                  : 'Create master timetable containers, configure periods & breaks, and manage live published schedules.',
               actions: [
                 if (canCreate) ...[
                   if (hasContainers && activeDraft != null)
@@ -280,11 +337,15 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                       label: 'Open Designer',
                       icon: LucideIcons.layoutGrid,
                       variant: AcadexButtonVariant.secondary,
-                      size: isMobile ? AcadexButtonSize.sm : AcadexButtonSize.md,
+                      size: isMobile
+                          ? AcadexButtonSize.sm
+                          : AcadexButtonSize.md,
                       onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => TimetableDesignerScreen(timetableId: activeDraft.id),
+                            builder: (_) => TimetableDesignerScreen(
+                              timetableId: activeDraft.id,
+                            ),
                           ),
                         );
                       },
@@ -301,95 +362,124 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
             ),
           ),
 
-                // Top View Switcher (Master Timetable Containers vs Class Slots)
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
-                      borderRadius: AcadexRadius.borderRadiusSm,
-                      border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-                    ),
-                    child: TabBar(
-                      controller: _tabController,
-                      isScrollable: true,
-                      tabAlignment: TabAlignment.start,
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      indicator: BoxDecoration(
-                        color: AcadexColors.primary,
-                        borderRadius: AcadexRadius.borderRadiusSm,
-                      ),
-                      labelColor: Colors.white,
-                      unselectedLabelColor: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                      tabs: const [
-                        Tab(
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(LucideIcons.calendarRange, size: 16),
-                              SizedBox(width: 8),
-                              Text('Master Timetables'),
-                            ],
-                          ),
-                        ),
-                        Tab(
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(LucideIcons.list, size: 16),
-                              SizedBox(width: 8),
-                              Text('Class Slots'),
-                            ],
-                          ),
-                        ),
-                        Tab(
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.swap_horiz_rounded, size: 16),
-                              SizedBox(width: 8),
-                              Text('Substitutions'),
-                            ],
-                          ),
-                        ),
+          // Top View Switcher (Master Timetable Containers vs Class Slots)
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AcadexColors.darkCanvasSoft
+                    : AcadexColors.canvasSoft,
+                borderRadius: AcadexRadius.borderRadiusSm,
+                border: Border.all(
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
+                ),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicator: BoxDecoration(
+                  color: AcadexColors.primary,
+                  borderRadius: AcadexRadius.borderRadiusSm,
+                ),
+                labelColor: Colors.white,
+                unselectedLabelColor: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+                tabs: const [
+                  Tab(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(LucideIcons.calendarRange, size: 16),
+                        SizedBox(width: 8),
+                        Text('Master Timetables'),
                       ],
                     ),
                   ),
-                ),
-
-                const SizedBox(height: 8),
-
-                // Responsive Filter Toolbar
-                _buildFilterBar(context, ref, user.role, filters),
-
-                // Tab Content Views or Section Authoring
-                Expanded(
-                  child: filters.sectionId != null && filters.courseId != null && filters.semesterId != null
-                      ? _buildSectionAuthoringView(
-                          context: context,
-                          ref: ref,
-                          filters: filters,
-                          isDark: isDark,
-                          isMobile: isMobile,
-                          canCreate: canCreate,
-                          userId: user.id,
-                        )
-                      : TabBarView(
-                          controller: _tabController,
-                          children: [
-                            // TAB 1: MASTER TIMETABLE CONTAINERS
-                            _buildContainersTab(context, ref, isDark, isMobile, canCreate),
-
-                            // TAB 2: INDIVIDUAL CLASS SLOTS
-                            _buildLegacySlotsTab(context, ref, isDark, isMobile, filters),
-
-                            // TAB 3: TEACHER SUBSTITUTIONS
-                            _buildSubstitutionsTab(context, ref, isDark, isMobile, user),
-                          ],
-                        ),
-                ),
-              ],
+                  Tab(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(LucideIcons.list, size: 16),
+                        SizedBox(width: 8),
+                        Text('Class Slots'),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.swap_horiz_rounded, size: 16),
+                        SizedBox(width: 8),
+                        Text('Substitutions'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // Responsive Filter Toolbar
+          _buildFilterBar(context, ref, user.role, filters),
+
+          // Tab Content Views or Section Authoring
+          Expanded(
+            child:
+                filters.sectionId != null &&
+                    filters.courseId != null &&
+                    filters.semesterId != null
+                ? _buildSectionAuthoringView(
+                    context: context,
+                    ref: ref,
+                    filters: filters,
+                    isDark: isDark,
+                    isMobile: isMobile,
+                    canCreate: canCreate,
+                    userId: user.id,
+                  )
+                : TabBarView(
+                    controller: _tabController,
+                    children: [
+                      // TAB 1: MASTER TIMETABLE CONTAINERS
+                      _buildContainersTab(
+                        context,
+                        ref,
+                        isDark,
+                        isMobile,
+                        canCreate,
+                      ),
+
+                      // TAB 2: INDIVIDUAL CLASS SLOTS
+                      _buildLegacySlotsTab(
+                        context,
+                        ref,
+                        isDark,
+                        isMobile,
+                        filters,
+                      ),
+
+                      // TAB 3: TEACHER SUBSTITUTIONS
+                      _buildSubstitutionsTab(
+                        context,
+                        ref,
+                        isDark,
+                        isMobile,
+                        user,
+                      ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -425,7 +515,8 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
           final facultyAssignmentsAsync = ref.watch(facultyAssignmentsProvider);
           final roomsAsync = ref.watch(roomsProvider);
 
-          final isPrereqLoading = coursesAsync.isLoading ||
+          final isPrereqLoading =
+              coursesAsync.isLoading ||
               academicYearsAsync.isLoading ||
               semestersAsync.isLoading ||
               sectionsAsync.isLoading ||
@@ -435,7 +526,9 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
 
           if (isPrereqLoading) {
             return const Center(
-              child: AcadexLoadingState(message: 'Validating academic prerequisites...'),
+              child: AcadexLoadingState(
+                message: 'Validating academic prerequisites...',
+              ),
             );
           }
 
@@ -448,18 +541,19 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
           final rooms = roomsAsync.value ?? [];
 
           final terminology = ref.watch(terminologyProvider);
-          final prereqCheck = AcademicPrerequisiteGuard.checkTimetablePrerequisites(
-            courses: courses,
-            academicYears: academicYears,
-            semesters: semesters,
-            sections: sections,
-            subjects: subjects,
-            facultyAssignments: facultyAssignments,
-            rooms: rooms,
-            isSectionEnabled: terminology.isSectionEnabled,
-            isRoomRequired: false,
-            termHelper: terminology,
-          );
+          final prereqCheck =
+              AcademicPrerequisiteGuard.checkTimetablePrerequisites(
+                courses: courses,
+                academicYears: academicYears,
+                semesters: semesters,
+                sections: sections,
+                subjects: subjects,
+                facultyAssignments: facultyAssignments,
+                rooms: rooms,
+                isSectionEnabled: terminology.isSectionEnabled,
+                isRoomRequired: false,
+                termHelper: terminology,
+              );
 
           if (!prereqCheck.isSatisfied && canCreate) {
             return Center(
@@ -495,21 +589,30 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
           separatorBuilder: (ctx, i) => const SizedBox(height: 12),
           itemBuilder: (ctx, index) {
             final container = containers[index];
-            final deptName = deptMap[container.departmentId]?.name ?? container.departmentId;
-            final courseName = courseMap[container.courseId]?.name ?? container.courseId;
-            final sectionName = sectionMap[container.sectionId]?.name ?? container.sectionId;
+            final deptName =
+                deptMap[container.departmentId]?.name ?? container.departmentId;
+            final courseName =
+                courseMap[container.courseId]?.name ?? container.courseId;
+            final sectionName =
+                sectionMap[container.sectionId]?.name ?? container.sectionId;
 
             return Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                color: isDark
+                    ? AcadexColors.darkSurfaceCard
+                    : AcadexColors.surface,
                 borderRadius: AcadexRadius.borderRadiusLg,
                 border: Border.all(
                   color: container.status == TimetableStatus.published
                       ? AcadexColors.success.withValues(alpha: 0.4)
-                      : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                      : (isDark
+                            ? AcadexColors.darkHairline
+                            : AcadexColors.hairline),
                 ),
-                boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+                boxShadow: isDark
+                    ? AcadexShadows.darkSm
+                    : AcadexShadows.lightSm,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -524,15 +627,22 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                           _buildStatusBadge(container.status, isDark),
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
-                              color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                              color: isDark
+                                  ? AcadexColors.darkCanvasSoft
+                                  : AcadexColors.canvasSoft,
                               borderRadius: AcadexRadius.borderRadiusXs,
                             ),
                             child: Text(
                               'v${container.version}',
                               style: AcadexTypography.caption(
-                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
                               ).copyWith(fontWeight: FontWeight.w700),
                             ),
                           ),
@@ -544,7 +654,9 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                         child: Text(
                           '${container.activeDays.length} Active Days • ${container.timingMode.displayName}',
                           style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -569,12 +681,19 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                   Text(
                     '$deptName • $courseName • Sem ${container.semesterId} • Section $sectionName',
                     style: AcadexTypography.bodySmall(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ),
 
                   const SizedBox(height: 16),
-                  Divider(height: 1, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                  Divider(
+                    height: 1,
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
+                  ),
                   const SizedBox(height: 14),
 
                   // Context-Specific Actions based on Status
@@ -595,12 +714,16 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
 
     switch (status) {
       case TimetableStatus.published:
-        bg = isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight;
+        bg = isDark
+            ? AcadexColors.successDarkContainer
+            : AcadexColors.successLight;
         fg = isDark ? Colors.green.shade200 : AcadexColors.success;
         label = 'PUBLISHED';
         break;
       case TimetableStatus.draft:
-        bg = isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight;
+        bg = isDark
+            ? AcadexColors.warningDarkContainer
+            : AcadexColors.warningLight;
         fg = isDark ? Colors.amber.shade200 : AcadexColors.warningDark;
         label = 'DRAFT';
         break;
@@ -619,7 +742,12 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
       ),
       child: Text(
         label,
-        style: TextStyle(color: fg, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+        style: TextStyle(
+          color: fg,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
@@ -641,14 +769,24 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
           children: [
             TextButton.icon(
               onPressed: () => _confirmDeleteContainer(context, ref, container),
-              icon: const Icon(LucideIcons.trash2, size: 16, color: AcadexColors.error),
-              label: const Text('Delete', style: TextStyle(color: AcadexColors.error)),
+              icon: const Icon(
+                LucideIcons.trash2,
+                size: 16,
+                color: AcadexColors.error,
+              ),
+              label: const Text(
+                'Delete',
+                style: TextStyle(color: AcadexColors.error),
+              ),
             ),
             OutlinedButton.icon(
               onPressed: () async {
                 try {
                   final repo = ref.read(timetableRepositoryProvider);
-                  await repo.publishTimetable(container.id, publishedBy: 'user');
+                  await repo.publishTimetable(
+                    container.id,
+                    publishedBy: 'user',
+                  );
                   ref.invalidate(managementContainersProvider);
                   ref.invalidate(managementTimetableProvider);
                   ref.invalidate(todayScheduleProvider);
@@ -677,13 +815,26 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => TimetableDesignerScreen(timetableId: container.id),
+                    builder: (_) =>
+                        TimetableDesignerScreen(timetableId: container.id),
                   ),
                 );
               },
-              icon: const Icon(LucideIcons.edit3, size: 16, color: Colors.white),
-              label: Text(isMobile ? 'Edit' : 'Continue Editing', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-              style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+              icon: const Icon(
+                LucideIcons.edit3,
+                size: 16,
+                color: Colors.white,
+              ),
+              label: Text(
+                isMobile ? 'Edit' : 'Continue Editing',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AcadexColors.primary,
+              ),
             ),
           ],
         ),
@@ -706,17 +857,15 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                 ref.invalidate(dateScheduleProvider);
                 ref.invalidate(weeklyTimetableProvider);
                 if (context.mounted) {
-                  AcadexSnackBar.showWarning(
-                    context,
-                    'Timetable unpublished.',
-                  );
+                  AcadexSnackBar.showWarning(context, 'Timetable unpublished.');
                 }
               },
               icon: const Icon(LucideIcons.archive, size: 16),
               label: const Text('Unpublish'),
             ),
             OutlinedButton.icon(
-              onPressed: () => _handleCreateDraftOrEditVersion(context, ref, container),
+              onPressed: () =>
+                  _handleCreateDraftOrEditVersion(context, ref, container),
               icon: const Icon(LucideIcons.copy, size: 16),
               label: Text(isMobile ? 'Edit Draft' : 'Edit Draft / New Version'),
             ),
@@ -724,13 +873,22 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => TimetableDesignerScreen(timetableId: container.id),
+                    builder: (_) =>
+                        TimetableDesignerScreen(timetableId: container.id),
                   ),
                 );
               },
               icon: const Icon(LucideIcons.eye, size: 16, color: Colors.white),
-              label: const Text('View Designer', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-              style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+              label: const Text(
+                'View Designer',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AcadexColors.primary,
+              ),
             ),
           ],
         ),
@@ -742,13 +900,19 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
           onPressed: () {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => TimetableDesignerScreen(timetableId: container.id),
+                builder: (_) =>
+                    TimetableDesignerScreen(timetableId: container.id),
               ),
             );
           },
           icon: const Icon(LucideIcons.eye, size: 16, color: Colors.white),
-          label: const Text('View Archived', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-          style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+          label: const Text(
+            'View Archived',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AcadexColors.primary,
+          ),
         ),
       );
     }
@@ -775,7 +939,8 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
       if (context.mounted) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => TimetableDesignerScreen(timetableId: existingDrafts.first.id),
+            builder: (_) =>
+                TimetableDesignerScreen(timetableId: existingDrafts.first.id),
           ),
         );
       }
@@ -799,17 +964,26 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
 
     final periods = await repo.getPeriods(container.id);
     if (periods.isNotEmpty) {
-      await repo.savePeriodsBatch(newServerId, periods.map((p) => p.copyWith(id: const Uuid().v4())).toList());
+      await repo.savePeriodsBatch(
+        newServerId,
+        periods.map((p) => p.copyWith(id: const Uuid().v4())).toList(),
+      );
     }
 
     final breaks = await repo.getBreaks(container.id);
     if (breaks.isNotEmpty) {
-      await repo.saveBreaksBatch(newServerId, breaks.map((b) => b.copyWith(id: const Uuid().v4())).toList());
+      await repo.saveBreaksBatch(
+        newServerId,
+        breaks.map((b) => b.copyWith(id: const Uuid().v4())).toList(),
+      );
     }
 
     final entries = await repo.getGridEntries(container.id);
     if (entries.isNotEmpty) {
-      await repo.saveGridEntriesBatch(newServerId, entries.map((e) => e.copyWith(id: const Uuid().v4())).toList());
+      await repo.saveGridEntriesBatch(
+        newServerId,
+        entries.map((e) => e.copyWith(id: const Uuid().v4())).toList(),
+      );
     }
 
     ref.invalidate(managementContainersProvider);
@@ -832,11 +1006,18 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Timetable Draft?'),
-        content: Text('Are you sure you want to delete "${container.name}"? This action cannot be undone.'),
+        content: Text(
+          'Are you sure you want to delete "${container.name}"? This action cannot be undone.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.error),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.error,
+            ),
             onPressed: () async {
               Navigator.of(ctx).pop();
               final repo = ref.read(timetableRepositoryProvider);
@@ -844,22 +1025,29 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                 await repo.deleteTimetableContainer(container.id);
                 ref.invalidate(managementContainersProvider);
                 if (context.mounted) {
-                  AcadexSnackBar.showInfo(
-                    context,
-                    'Timetable draft deleted.',
-                  );
+                  AcadexSnackBar.showInfo(context, 'Timetable draft deleted.');
                 }
               } catch (e) {
                 final errorMsg = e.toString().replaceFirst('Exception: ', '');
-                if (errorMsg.contains('attendance') || errorMsg.contains('archive') || errorMsg.contains('Cannot delete timetable with existing attendance')) {
+                if (errorMsg.contains('attendance') ||
+                    errorMsg.contains('archive') ||
+                    errorMsg.contains(
+                      'Cannot delete timetable with existing attendance',
+                    )) {
                   if (context.mounted) {
                     showDialog<void>(
                       context: context,
                       builder: (alertCtx) => AlertDialog(
-                        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusLg),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AcadexRadius.borderRadiusLg,
+                        ),
                         title: const Row(
                           children: [
-                            Icon(LucideIcons.alertTriangle, color: AcadexColors.warning, size: 22),
+                            Icon(
+                              LucideIcons.alertTriangle,
+                              color: AcadexColors.warning,
+                              size: 22,
+                            ),
                             SizedBox(width: 8),
                             Text('Cannot Delete Timetable'),
                           ],
@@ -875,11 +1063,16 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                           ElevatedButton.icon(
                             icon: const Icon(LucideIcons.archive, size: 16),
                             label: const Text('Archive Timetable'),
-                            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary, foregroundColor: Colors.white),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AcadexColors.primary,
+                              foregroundColor: Colors.white,
+                            ),
                             onPressed: () async {
                               Navigator.of(alertCtx).pop();
                               try {
-                                await repo.archiveTimetableContainer(container.id);
+                                await repo.archiveTimetableContainer(
+                                  container.id,
+                                );
                                 ref.invalidate(managementContainersProvider);
                                 if (context.mounted) {
                                   AcadexSnackBar.showSuccess(
@@ -892,7 +1085,8 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                                   AcadexSnackBar.showError(
                                     context,
                                     archiveErr,
-                                    fallbackMessage: 'Failed to archive timetable',
+                                    fallbackMessage:
+                                        'Failed to archive timetable',
                                   );
                                 }
                               }
@@ -936,9 +1130,13 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
       duration: AcadexMotion.resolveDuration(context, AcadexMotion.fast),
       switchInCurve: AcadexMotion.curveStandard,
       switchOutCurve: AcadexMotion.curveStandard,
-      transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
+      transitionBuilder: (child, animation) =>
+          FadeTransition(opacity: animation, child: child),
       child: timetableAsync.when(
-        loading: () => const AcadexLoadingState(key: ValueKey('mgt_loading'), message: 'Loading schedule entries...'),
+        loading: () => const AcadexLoadingState(
+          key: ValueKey('mgt_loading'),
+          message: 'Loading schedule entries...',
+        ),
         error: (e, st) => AcadexErrorState.fromError(
           key: const ValueKey('mgt_error'),
           error: e,
@@ -948,36 +1146,55 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
         data: (entries) {
           if (entries.isEmpty) {
             final authState = ref.watch(authProvider);
-            final userRole = authState is AuthAuthenticated ? authState.user.role : null;
-            final canCreate = userRole == AppRole.hod || userRole == AppRole.collegeAdmin;
-            final hasContainers = (ref.watch(managementContainersProvider).valueOrNull ?? []).isNotEmpty;
+            final userRole = authState is AuthAuthenticated
+                ? authState.user.role
+                : null;
+            final canCreate =
+                userRole == AppRole.hod || userRole == AppRole.collegeAdmin;
+            final hasContainers =
+                (ref.watch(managementContainersProvider).valueOrNull ?? [])
+                    .isNotEmpty;
 
             return Center(
               key: const ValueKey('mgt_empty'),
               child: AcadexEmptyState(
-                title: filters.hasActiveFilters ? 'No matching schedules found' : 'No timetable entries found',
+                title: filters.hasActiveFilters
+                    ? 'No matching schedules found'
+                    : 'No timetable entries found',
                 subtitle: filters.hasActiveFilters
                     ? 'Try adjusting your filters or search query.'
                     : (hasContainers
-                        ? 'Open a master timetable container in Timetable Designer to add and schedule class entries.'
-                        : 'A master timetable container must be created before scheduling class entries.'),
+                          ? 'Open a master timetable container in Timetable Designer to add and schedule class entries.'
+                          : 'A master timetable container must be created before scheduling class entries.'),
                 icon: LucideIcons.calendarX,
                 actionLabel: filters.hasActiveFilters
                     ? 'Clear All Filters'
-                    : (hasContainers ? 'View Master Timetables' : (canCreate ? 'Create Timetable' : null)),
+                    : (hasContainers
+                          ? 'View Master Timetables'
+                          : (canCreate ? 'Create Timetable' : null)),
                 onActionTap: filters.hasActiveFilters
-                    ? () => ref.read(timetableFilterProvider.notifier).state = TimetableFilterState()
-                    : (hasContainers ? () => _tabController.animateTo(0) : (canCreate ? _openCreateTimetable : null)),
+                    ? () => ref.read(timetableFilterProvider.notifier).state =
+                          TimetableFilterState()
+                    : (hasContainers
+                          ? () => _tabController.animateTo(0)
+                          : (canCreate ? _openCreateTimetable : null)),
               ),
             );
           }
 
           final authState = ref.watch(authProvider);
-          final userRole = authState is AuthAuthenticated ? authState.user.role : null;
-          final isHodOrAdmin = userRole == AppRole.hod || userRole == AppRole.collegeAdmin || userRole == AppRole.superAdmin;
+          final userRole = authState is AuthAuthenticated
+              ? authState.user.role
+              : null;
+          final isHodOrAdmin =
+              userRole == AppRole.hod ||
+              userRole == AppRole.collegeAdmin ||
+              userRole == AppRole.superAdmin;
 
           return ListView.builder(
-            key: ValueKey('mgt_list_${entries.length}_${filters.day?.name ?? 'all'}'),
+            key: ValueKey(
+              'mgt_list_${entries.length}_${filters.day?.name ?? 'all'}',
+            ),
             padding: const EdgeInsets.all(20),
             itemCount: entries.length,
             itemBuilder: (context, index) {
@@ -985,10 +1202,13 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
               return TimetableManagementCard(
                 entry: entry,
                 onEdit: () {
-                  if (entry.timetableId != null && entry.timetableId!.isNotEmpty) {
+                  if (entry.timetableId != null &&
+                      entry.timetableId!.isNotEmpty) {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => TimetableDesignerScreen(timetableId: entry.timetableId!),
+                        builder: (_) => TimetableDesignerScreen(
+                          timetableId: entry.timetableId!,
+                        ),
                       ),
                     );
                   } else {
@@ -1000,7 +1220,10 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                   }
                 },
                 onDuplicate: () => _openCreateTimetable(),
-                onSubstitute: isHodOrAdmin && entry.timetableId != null && entry.timetableId!.isNotEmpty
+                onSubstitute:
+                    isHodOrAdmin &&
+                        entry.timetableId != null &&
+                        entry.timetableId!.isNotEmpty
                     ? () {
                         TeacherSubstitutionDialog.show(
                           context,
@@ -1040,8 +1263,13 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
     final d = _substitutionSelectedDate.day.toString().padLeft(2, '0');
     final dateStr = '$y-$m-$d';
 
-    final deptId = user.role == AppRole.hod ? user.departmentId as String? : null;
-    final query = TeacherSubstitutionsQuery(date: dateStr, departmentId: deptId);
+    final deptId = user.role == AppRole.hod
+        ? user.departmentId as String?
+        : null;
+    final query = TeacherSubstitutionsQuery(
+      date: dateStr,
+      departmentId: deptId,
+    );
     final subsAsync = ref.watch(teacherSubstitutionsProvider(query));
 
     final facultyMap = ref.watch(timetableFacultyMapProvider);
@@ -1063,23 +1291,34 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
             children: [
               Row(
                 children: [
-                  const Icon(Icons.event, size: 18, color: AcadexColors.primary),
+                  const Icon(
+                    Icons.event,
+                    size: 18,
+                    color: AcadexColors.primary,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'Active Substitutions for $dateStr',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
                 ],
               ),
               OutlinedButton.icon(
                 icon: const Icon(Icons.calendar_today, size: 14),
                 label: const Text('Change Date'),
-                style: OutlinedButton.styleFrom(visualDensity: VisualDensity.compact),
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                ),
                 onPressed: () async {
                   final picked = await showDatePicker(
                     context: context,
                     initialDate: _substitutionSelectedDate,
-                    firstDate: DateTime.now().subtract(const Duration(days: 60)),
+                    firstDate: DateTime.now().subtract(
+                      const Duration(days: 60),
+                    ),
                     lastDate: DateTime.now().add(const Duration(days: 365)),
                   );
                   if (picked != null) {
@@ -1096,7 +1335,10 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
         // List or Empty
         Expanded(
           child: subsAsync.when(
-            loading: () => const AcadexLoadingState(key: ValueKey('subs_loading'), message: 'Loading substitutions...'),
+            loading: () => const AcadexLoadingState(
+              key: ValueKey('subs_loading'),
+              message: 'Loading substitutions...',
+            ),
             error: (e, _) => AcadexErrorState.fromError(
               key: const ValueKey('subs_error'),
               error: e,
@@ -1109,14 +1351,18 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                   key: const ValueKey('subs_empty'),
                   child: AcadexEmptyState(
                     title: 'No substitutions on this date',
-                    subtitle: 'To assign a teacher substitute, go to the "Class Slots" tab and click the Substitute icon on any class slot.',
+                    subtitle:
+                        'To assign a teacher substitute, go to the "Class Slots" tab and click the Substitute icon on any class slot.',
                     icon: Icons.swap_horiz_rounded,
                   ),
                 );
               }
 
               return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
                 itemCount: subs.length,
                 itemBuilder: (ctx, index) {
                   final sub = subs[index];
@@ -1126,7 +1372,9 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
 
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -1136,18 +1384,33 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AcadexColors.primary.withValues(alpha: 0.1),
+                                  color: AcadexColors.primary.withValues(
+                                    alpha: 0.1,
+                                  ),
                                   borderRadius: AcadexRadius.borderRadiusSm,
                                 ),
                                 child: Text(
                                   sub.date,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AcadexColors.primary),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: AcadexColors.primary,
+                                  ),
                                 ),
                               ),
                               if (section != null)
-                                Text('Section ${section.name}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                Text(
+                                  'Section ${section.name}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -1157,27 +1420,62 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('Original Faculty', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                    const Text(
+                                      'Original Faculty',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
                                     const SizedBox(height: 2),
-                                    Text(origFac?.name ?? sub.originalFacultyId, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                                    Text(
+                                      origFac?.name ?? sub.originalFacultyId,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
-                              const Icon(Icons.arrow_forward_rounded, size: 18, color: Colors.grey),
+                              const Icon(
+                                Icons.arrow_forward_rounded,
+                                size: 18,
+                                color: Colors.grey,
+                              ),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
-                                    const Text('Substitute Faculty', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                    const Text(
+                                      'Substitute Faculty',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
                                     const SizedBox(height: 2),
-                                    Text(subFac?.name ?? sub.substituteFacultyId, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AcadexColors.primary)),
+                                    Text(
+                                      subFac?.name ?? sub.substituteFacultyId,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        color: AcadexColors.primary,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 8),
-                          Text('Reason: ${sub.reason}', style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+                          Text(
+                            'Reason: ${sub.reason}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1194,7 +1492,12 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
   // =========================================================================
   // FILTER BAR
   // =========================================================================
-  Widget _buildFilterBar(BuildContext context, WidgetRef ref, AppRole role, TimetableFilterState filters) {
+  Widget _buildFilterBar(
+    BuildContext context,
+    WidgetRef ref,
+    AppRole role,
+    TimetableFilterState filters,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = MediaQuery.of(context).size.width < 768;
 
@@ -1218,15 +1521,23 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
               suffixIcon: filters.searchQuery.isNotEmpty
                   ? IconButton(
                       icon: const Icon(LucideIcons.x, size: 16),
-                      onPressed: () => ref.read(timetableFilterProvider.notifier).state = filters.copyWith(searchQuery: ''),
+                      onPressed: () =>
+                          ref.read(timetableFilterProvider.notifier).state =
+                              filters.copyWith(searchQuery: ''),
                     )
                   : null,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              border: OutlineInputBorder(borderRadius: AcadexRadius.borderRadiusMd),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 10,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: AcadexRadius.borderRadiusMd,
+              ),
               isDense: true,
             ),
             onChanged: (val) {
-              ref.read(timetableFilterProvider.notifier).state = filters.copyWith(searchQuery: val);
+              ref.read(timetableFilterProvider.notifier).state = filters
+                  .copyWith(searchQuery: val);
             },
           ),
           const SizedBox(height: 12),
@@ -1242,13 +1553,29 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                   hint: const Text('All Statuses'),
                   isDense: true,
                   items: const [
-                    DropdownMenuItem<TimetableStatus?>(value: null, child: Text('All Statuses', overflow: TextOverflow.ellipsis)),
-                    DropdownMenuItem(value: TimetableStatus.draft, child: Text('Draft', overflow: TextOverflow.ellipsis)),
-                    DropdownMenuItem(value: TimetableStatus.published, child: Text('Published', overflow: TextOverflow.ellipsis)),
-                    DropdownMenuItem(value: TimetableStatus.archived, child: Text('Archived', overflow: TextOverflow.ellipsis)),
+                    DropdownMenuItem<TimetableStatus?>(
+                      value: null,
+                      child: Text(
+                        'All Statuses',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: TimetableStatus.draft,
+                      child: Text('Draft', overflow: TextOverflow.ellipsis),
+                    ),
+                    DropdownMenuItem(
+                      value: TimetableStatus.published,
+                      child: Text('Published', overflow: TextOverflow.ellipsis),
+                    ),
+                    DropdownMenuItem(
+                      value: TimetableStatus.archived,
+                      child: Text('Archived', overflow: TextOverflow.ellipsis),
+                    ),
                   ],
                   onChanged: (val) {
-                    ref.read(timetableFilterProvider.notifier).state = filters.copyWith(status: val, clearStatus: val == null);
+                    ref.read(timetableFilterProvider.notifier).state = filters
+                        .copyWith(status: val, clearStatus: val == null);
                   },
                 ),
                 const SizedBox(width: 12),
@@ -1259,11 +1586,23 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                   hint: const Text('All Days'),
                   isDense: true,
                   items: [
-                    const DropdownMenuItem<TimetableDay?>(value: null, child: Text('All Days', overflow: TextOverflow.ellipsis)),
-                    ...TimetableDay.values.map((d) => DropdownMenuItem(value: d, child: Text(d.displayName, overflow: TextOverflow.ellipsis))),
+                    const DropdownMenuItem<TimetableDay?>(
+                      value: null,
+                      child: Text('All Days', overflow: TextOverflow.ellipsis),
+                    ),
+                    ...TimetableDay.values.map(
+                      (d) => DropdownMenuItem(
+                        value: d,
+                        child: Text(
+                          d.displayName,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
                   ],
                   onChanged: (val) {
-                    ref.read(timetableFilterProvider.notifier).state = filters.copyWith(day: val, clearDay: val == null);
+                    ref.read(timetableFilterProvider.notifier).state = filters
+                        .copyWith(day: val, clearDay: val == null);
                   },
                 ),
                 const SizedBox(width: 12),
@@ -1273,28 +1612,57 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                   Consumer(
                     builder: (context, ref, _) {
                       final deptsAsync = ref.watch(departmentsProvider);
-                      final deptName = deptsAsync.valueOrNull?.firstWhere(
-                        (d) => d.id == filters.departmentId,
-                        orElse: () => Department(id: '', name: 'Your Department', code: '', collegeId: '', hodId: '', description: '', isActive: true),
-                      ).name ?? 'Your Department';
+                      final deptName =
+                          deptsAsync.valueOrNull
+                              ?.firstWhere(
+                                (d) => d.id == filters.departmentId,
+                                orElse: () => Department(
+                                  id: '',
+                                  name: 'Your Department',
+                                  code: '',
+                                  collegeId: '',
+                                  hodId: '',
+                                  description: '',
+                                  isActive: true,
+                                ),
+                              )
+                              .name ??
+                          'Your Department';
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
-                          color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                          color: isDark
+                              ? AcadexColors.darkSurfaceCard
+                              : AcadexColors.surface,
                           borderRadius: BorderRadius.circular(AcadexRadius.md),
-                          border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.3)),
+                          border: Border.all(
+                            color: AcadexColors.primary.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(LucideIcons.building2, size: 13, color: AcadexColors.primary),
+                            const Icon(
+                              LucideIcons.building2,
+                              size: 13,
+                              color: AcadexColors.primary,
+                            ),
                             const SizedBox(width: 6),
                             Text(
                               deptName,
-                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
                             ),
                             const SizedBox(width: 6),
-                            const AcadexBadge(label: "YOUR DEPT", variant: AcadexBadgeVariant.primary),
+                            const AcadexBadge(
+                              label: "YOUR DEPT",
+                              variant: AcadexBadgeVariant.primary,
+                            ),
                           ],
                         ),
                       );
@@ -1311,11 +1679,26 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                           hint: const Text('All Departments'),
                           isDense: true,
                           items: [
-                            const DropdownMenuItem<String?>(value: null, child: Text('All Departments', overflow: TextOverflow.ellipsis)),
-                            ...depts.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name.isNotEmpty ? d.name : d.code, overflow: TextOverflow.ellipsis))),
+                            const DropdownMenuItem<String?>(
+                              value: null,
+                              child: Text(
+                                'All Departments',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            ...depts.map(
+                              (d) => DropdownMenuItem(
+                                value: d.id,
+                                child: Text(
+                                  d.name.isNotEmpty ? d.name : d.code,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
                           ],
                           onChanged: (val) {
-                            ref.read(timetableFilterProvider.notifier).state = filters.copyWith(departmentId: val);
+                            ref.read(timetableFilterProvider.notifier).state =
+                                filters.copyWith(departmentId: val);
                           },
                         ),
                         orElse: () => const SizedBox.shrink(),
@@ -1335,11 +1718,27 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                         hint: const Text('All Courses'),
                         isDense: true,
                         items: [
-                          const DropdownMenuItem<String?>(value: null, child: Text('All Courses', overflow: TextOverflow.ellipsis)),
-                          ...courses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name.isNotEmpty ? c.name : c.code, overflow: TextOverflow.ellipsis))),
+                          const DropdownMenuItem<String?>(
+                            value: null,
+                            child: Text(
+                              'All Courses',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          ...courses.map(
+                            (c) => DropdownMenuItem(
+                              value: c.id,
+                              child: Text(
+                                c.name.isNotEmpty ? c.name : c.code,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
                         ],
                         onChanged: (val) {
-                          ref.read(timetableFilterProvider.notifier).state = filters.copyWith(
+                          ref
+                              .read(timetableFilterProvider.notifier)
+                              .state = filters.copyWith(
                             courseId: val,
                             clearCourse: val == null,
                             clearSemester: true,
@@ -1363,11 +1762,27 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                         hint: const Text('All Academic Years'),
                         isDense: true,
                         items: [
-                          const DropdownMenuItem<String?>(value: null, child: Text('All Academic Years', overflow: TextOverflow.ellipsis)),
-                          ...years.map((y) => DropdownMenuItem(value: y.id, child: Text(y.name, overflow: TextOverflow.ellipsis))),
+                          const DropdownMenuItem<String?>(
+                            value: null,
+                            child: Text(
+                              'All Academic Years',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          ...years.map(
+                            (y) => DropdownMenuItem(
+                              value: y.id,
+                              child: Text(
+                                y.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
                         ],
                         onChanged: (val) {
-                          ref.read(timetableFilterProvider.notifier).state = filters.copyWith(
+                          ref
+                              .read(timetableFilterProvider.notifier)
+                              .state = filters.copyWith(
                             academicYearId: val,
                             clearAcademicYear: val == null,
                           );
@@ -1386,23 +1801,44 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                     return semsAsync.maybeWhen(
                       data: (sems) {
                         final filteredSems = filters.courseId != null
-                            ? sems.where((s) => s.courseId == filters.courseId).toList()
+                            ? sems
+                                  .where((s) => s.courseId == filters.courseId)
+                                  .toList()
                             : sems;
                         return DropdownButton<String?>(
-                          value: filters.semesterId != null && filteredSems.any((s) => s.id == filters.semesterId)
+                          value:
+                              filters.semesterId != null &&
+                                  filteredSems.any(
+                                    (s) => s.id == filters.semesterId,
+                                  )
                               ? filters.semesterId
                               : null,
                           hint: const Text('All Semesters'),
                           isDense: true,
                           items: [
-                            const DropdownMenuItem<String?>(value: null, child: Text('All Semesters', overflow: TextOverflow.ellipsis)),
-                            ...filteredSems.map((s) => DropdownMenuItem(
-                                  value: s.id,
-                                  child: Text(s.name.isNotEmpty ? s.name : 'Semester ${s.number}', overflow: TextOverflow.ellipsis),
-                                )),
+                            const DropdownMenuItem<String?>(
+                              value: null,
+                              child: Text(
+                                'All Semesters',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            ...filteredSems.map(
+                              (s) => DropdownMenuItem(
+                                value: s.id,
+                                child: Text(
+                                  s.name.isNotEmpty
+                                      ? s.name
+                                      : 'Semester ${s.number}',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
                           ],
                           onChanged: (val) {
-                            ref.read(timetableFilterProvider.notifier).state = filters.copyWith(
+                            ref
+                                .read(timetableFilterProvider.notifier)
+                                .state = filters.copyWith(
                               semesterId: val,
                               clearSemester: val == null,
                               clearSection: true,
@@ -1423,20 +1859,44 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                     return sectionsAsync.maybeWhen(
                       data: (sections) {
                         final filteredSections = filters.semesterId != null
-                            ? sections.where((s) => s.semesterId == filters.semesterId).toList()
+                            ? sections
+                                  .where(
+                                    (s) => s.semesterId == filters.semesterId,
+                                  )
+                                  .toList()
                             : sections;
                         return DropdownButton<String?>(
-                          value: filters.sectionId != null && filteredSections.any((s) => s.id == filters.sectionId)
+                          value:
+                              filters.sectionId != null &&
+                                  filteredSections.any(
+                                    (s) => s.id == filters.sectionId,
+                                  )
                               ? filters.sectionId
                               : null,
                           hint: const Text('All Sections'),
                           isDense: true,
                           items: [
-                            const DropdownMenuItem<String?>(value: null, child: Text('All Sections', overflow: TextOverflow.ellipsis)),
-                            ...filteredSections.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis))),
+                            const DropdownMenuItem<String?>(
+                              value: null,
+                              child: Text(
+                                'All Sections',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            ...filteredSections.map(
+                              (s) => DropdownMenuItem(
+                                value: s.id,
+                                child: Text(
+                                  s.name,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
                           ],
                           onChanged: (val) {
-                            ref.read(timetableFilterProvider.notifier).state = filters.copyWith(
+                            ref
+                                .read(timetableFilterProvider.notifier)
+                                .state = filters.copyWith(
                               sectionId: val,
                               clearSection: val == null,
                             );
@@ -1452,7 +1912,9 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                 if (filters.hasActiveFilters) ...[
                   const SizedBox(width: 12),
                   TextButton.icon(
-                    onPressed: () => ref.read(timetableFilterProvider.notifier).state = TimetableFilterState(),
+                    onPressed: () =>
+                        ref.read(timetableFilterProvider.notifier).state =
+                            TimetableFilterState(),
                     icon: const Icon(LucideIcons.x, size: 14),
                     label: const Text('Clear Filters'),
                   ),
@@ -1484,22 +1946,31 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
     final courseMap = ref.watch(timetableCourseMapProvider);
     final semMap = ref.watch(timetableSemesterMapProvider);
 
-    final sectionName = sectionMap[filters.sectionId]?.name ?? filters.sectionId ?? '';
-    final courseName = courseMap[filters.courseId]?.name ?? filters.courseId ?? '';
-    final semName = semMap[filters.semesterId]?.name ?? 'Semester ${filters.semesterId}';
+    final sectionName =
+        sectionMap[filters.sectionId]?.name ?? filters.sectionId ?? '';
+    final courseName =
+        courseMap[filters.courseId]?.name ?? filters.courseId ?? '';
+    final semName =
+        semMap[filters.semesterId]?.name ?? 'Semester ${filters.semesterId}';
 
     return containersAsync.when(
-      loading: () => const AcadexLoadingState(message: 'Loading timetable context...'),
+      loading: () =>
+          const AcadexLoadingState(message: 'Loading timetable context...'),
       error: (e, st) => AcadexErrorState.fromError(
         error: e,
         title: 'Unable to load timetable',
         onRetry: () => ref.refresh(managementContainersProvider),
       ),
       data: (containers) {
-        final sectionContainer = containers.where((c) => c.sectionId == filters.sectionId).firstOrNull;
+        final sectionContainer = containers
+            .where((c) => c.sectionId == filters.sectionId)
+            .firstOrNull;
 
         return SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 12),
+          padding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 16 : 24,
+            vertical: 12,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1518,20 +1989,30 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                    color: isDark
+                        ? AcadexColors.darkSurfaceCard
+                        : AcadexColors.surface,
                     borderRadius: AcadexRadius.borderRadiusLg,
                     border: Border.all(
-                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                      color: isDark
+                          ? AcadexColors.darkHairline
+                          : AcadexColors.hairline,
                     ),
                   ),
                   child: Column(
                     children: [
-                      const Icon(LucideIcons.calendarClock, size: 40, color: AcadexColors.primary),
+                      const Icon(
+                        LucideIcons.calendarClock,
+                        size: 40,
+                        color: AcadexColors.primary,
+                      ),
                       const SizedBox(height: 12),
                       Text(
                         'No Timetable Container Found',
                         style: AcadexTypography.heading3(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -1539,7 +2020,9 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                         'Create a timetable container for $courseName • $semName • Section $sectionName to schedule periods and publish.',
                         textAlign: TextAlign.center,
                         style: AcadexTypography.bodySmall(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -1567,12 +2050,27 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                               updatedAt: DateTime.now(),
                             ),
                           ),
-                          icon: const Icon(LucideIcons.plus, size: 16, color: Colors.white),
-                          label: const Text('Create Timetable', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                          icon: const Icon(
+                            LucideIcons.plus,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                          label: const Text(
+                            'Create Timetable',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AcadexColors.primary,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusSm),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: AcadexRadius.borderRadiusSm,
+                            ),
                           ),
                         ),
                     ],
@@ -1582,9 +2080,13 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                 // CONTAINER EXISTS: SHOW REAL-TIME AUTHORING STATE
                 Consumer(
                   builder: (ctx, ref, _) {
-                    final authoringState = ref.watch(timetableAuthoringProvider(sectionContainer.id));
-                    final isDraft = sectionContainer.status == TimetableStatus.draft;
-                    final isPublished = sectionContainer.status == TimetableStatus.published;
+                    final authoringState = ref.watch(
+                      timetableAuthoringProvider(sectionContainer.id),
+                    );
+                    final isDraft =
+                        sectionContainer.status == TimetableStatus.draft;
+                    final isPublished =
+                        sectionContainer.status == TimetableStatus.published;
                     final entries = authoringState.entries;
 
                     return Column(
@@ -1594,12 +2096,16 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                            color: isDark
+                                ? AcadexColors.darkSurfaceCard
+                                : AcadexColors.surface,
                             borderRadius: AcadexRadius.borderRadiusLg,
                             border: Border.all(
                               color: isPublished
                                   ? AcadexColors.success.withValues(alpha: 0.5)
-                                  : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                                  : (isDark
+                                        ? AcadexColors.darkHairline
+                                        : AcadexColors.hairline),
                             ),
                           ),
                           child: Wrap(
@@ -1614,12 +2120,17 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                                   Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      _buildStatusBadge(sectionContainer.status, isDark),
+                                      _buildStatusBadge(
+                                        sectionContainer.status,
+                                        isDark,
+                                      ),
                                       const SizedBox(width: 8),
                                       Text(
                                         'v${sectionContainer.version}',
                                         style: AcadexTypography.caption(
-                                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                          color: isDark
+                                              ? AcadexColors.darkInkMuted
+                                              : AcadexColors.inkMuted,
                                         ).copyWith(fontWeight: FontWeight.w700),
                                       ),
                                     ],
@@ -1628,7 +2139,9 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                                   Text(
                                     sectionContainer.name,
                                     style: AcadexTypography.heading3(
-                                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                      color: isDark
+                                          ? AcadexColors.darkInk
+                                          : AcadexColors.ink,
                                     ),
                                   ),
                                 ],
@@ -1647,74 +2160,183 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                                           startPeriodIndex: 1,
                                         );
                                       },
-                                      icon: const Icon(LucideIcons.plus, size: 16, color: Colors.white),
-                                      label: const Text('Add Class', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                      icon: const Icon(
+                                        LucideIcons.plus,
+                                        size: 16,
+                                        color: Colors.white,
+                                      ),
+                                      label: const Text(
+                                        'Add Class',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: AcadexColors.primary,
-                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusSm),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 10,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              AcadexRadius.borderRadiusSm,
+                                        ),
                                       ),
                                     ),
                                     ElevatedButton.icon(
-                                      onPressed: () => _handlePublish(context, ref, sectionContainer, userId),
-                                      icon: const Icon(LucideIcons.send, size: 16, color: Colors.white),
-                                      label: const Text('Publish', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                      onPressed: () => _handlePublish(
+                                        context,
+                                        ref,
+                                        sectionContainer,
+                                        userId,
+                                      ),
+                                      icon: const Icon(
+                                        LucideIcons.send,
+                                        size: 16,
+                                        color: Colors.white,
+                                      ),
+                                      label: const Text(
+                                        'Publish',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: AcadexColors.success,
-                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusSm),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 10,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              AcadexRadius.borderRadiusSm,
+                                        ),
                                       ),
                                     ),
                                     OutlinedButton.icon(
                                       onPressed: () {
                                         Navigator.of(context).push(
                                           MaterialPageRoute(
-                                            builder: (_) => TimetableDesignerScreen(timetableId: sectionContainer.id),
+                                            builder: (_) =>
+                                                TimetableDesignerScreen(
+                                                  timetableId:
+                                                      sectionContainer.id,
+                                                ),
                                           ),
                                         );
                                       },
-                                      icon: const Icon(LucideIcons.layoutGrid, size: 16),
+                                      icon: const Icon(
+                                        LucideIcons.layoutGrid,
+                                        size: 16,
+                                      ),
                                       label: const Text('Weekly Grid'),
                                       style: OutlinedButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusSm),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 10,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              AcadexRadius.borderRadiusSm,
+                                        ),
                                       ),
                                     ),
                                   ],
                                   if (isPublished && canCreate) ...[
                                     OutlinedButton.icon(
-                                      onPressed: () => _handleUnpublish(context, ref, sectionContainer),
-                                      icon: const Icon(LucideIcons.archive, size: 16, color: AcadexColors.warningDark),
-                                      label: Text('Unpublish', style: TextStyle(color: isDark ? Colors.amber.shade200 : AcadexColors.warningDark)),
+                                      onPressed: () => _handleUnpublish(
+                                        context,
+                                        ref,
+                                        sectionContainer,
+                                      ),
+                                      icon: const Icon(
+                                        LucideIcons.archive,
+                                        size: 16,
+                                        color: AcadexColors.warningDark,
+                                      ),
+                                      label: Text(
+                                        'Unpublish',
+                                        style: TextStyle(
+                                          color: isDark
+                                              ? Colors.amber.shade200
+                                              : AcadexColors.warningDark,
+                                        ),
+                                      ),
                                       style: OutlinedButton.styleFrom(
-                                        side: BorderSide(color: isDark ? Colors.amber.shade400 : AcadexColors.warning),
-                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusSm),
+                                        side: BorderSide(
+                                          color: isDark
+                                              ? Colors.amber.shade400
+                                              : AcadexColors.warning,
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 10,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              AcadexRadius.borderRadiusSm,
+                                        ),
                                       ),
                                     ),
                                     OutlinedButton.icon(
-                                      onPressed: () => _handleCreateDraftOrEditVersion(context, ref, sectionContainer),
-                                      icon: const Icon(LucideIcons.copy, size: 16),
+                                      onPressed: () =>
+                                          _handleCreateDraftOrEditVersion(
+                                            context,
+                                            ref,
+                                            sectionContainer,
+                                          ),
+                                      icon: const Icon(
+                                        LucideIcons.copy,
+                                        size: 16,
+                                      ),
                                       label: const Text('Edit Version'),
                                       style: OutlinedButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusSm),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 10,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              AcadexRadius.borderRadiusSm,
+                                        ),
                                       ),
                                     ),
                                     ElevatedButton.icon(
                                       onPressed: () {
                                         Navigator.of(context).push(
                                           MaterialPageRoute(
-                                            builder: (_) => TimetableDesignerScreen(timetableId: sectionContainer.id),
+                                            builder: (_) =>
+                                                TimetableDesignerScreen(
+                                                  timetableId:
+                                                      sectionContainer.id,
+                                                ),
                                           ),
                                         );
                                       },
-                                      icon: const Icon(LucideIcons.eye, size: 16, color: Colors.white),
-                                      label: const Text('View Grid', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                      icon: const Icon(
+                                        LucideIcons.eye,
+                                        size: 16,
+                                        color: Colors.white,
+                                      ),
+                                      label: const Text(
+                                        'View Grid',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: AcadexColors.primary,
-                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusSm),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 10,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              AcadexRadius.borderRadiusSm,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -1729,7 +2351,9 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                         Text(
                           'Schedule Entries (${entries.length})',
                           style: AcadexTypography.heading3(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -1738,29 +2362,43 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                           Container(
                             padding: const EdgeInsets.all(28),
                             decoration: BoxDecoration(
-                              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                              color: isDark
+                                  ? AcadexColors.darkSurfaceCard
+                                  : AcadexColors.surface,
                               borderRadius: AcadexRadius.borderRadiusMd,
                               border: Border.all(
-                                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                color: isDark
+                                    ? AcadexColors.darkHairline
+                                    : AcadexColors.hairline,
                               ),
                             ),
                             child: Center(
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(LucideIcons.calendar, size: 36, color: AcadexColors.primary.withValues(alpha: 0.6)),
+                                  Icon(
+                                    LucideIcons.calendar,
+                                    size: 36,
+                                    color: AcadexColors.primary.withValues(
+                                      alpha: 0.6,
+                                    ),
+                                  ),
                                   const SizedBox(height: 10),
                                   Text(
                                     'No Classes Scheduled Yet',
                                     style: AcadexTypography.body(
-                                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                      color: isDark
+                                          ? AcadexColors.darkInk
+                                          : AcadexColors.ink,
                                     ).copyWith(fontWeight: FontWeight.w600),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     'Tap "+ Add Class" to schedule teaching periods for this section.',
                                     style: AcadexTypography.caption(
-                                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                      color: isDark
+                                          ? AcadexColors.darkInkMuted
+                                          : AcadexColors.inkMuted,
                                     ),
                                   ),
                                 ],
@@ -1770,18 +2408,29 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                         else
                           // Render Day by Day Chronologically
                           ...TimetableDay.values.map((day) {
-                            final dayEntries = entries.where((e) => e.dayOfWeek == day).toList()
-                              ..sort((a, b) => a.startTime.compareTo(b.startTime));
+                            final dayEntries =
+                                entries
+                                    .where((e) => e.dayOfWeek == day)
+                                    .toList()
+                                  ..sort(
+                                    (a, b) =>
+                                        a.startTime.compareTo(b.startTime),
+                                  );
 
-                            if (dayEntries.isEmpty) return const SizedBox.shrink();
+                            if (dayEntries.isEmpty)
+                              return const SizedBox.shrink();
 
                             return Container(
                               margin: const EdgeInsets.only(bottom: 16),
                               decoration: BoxDecoration(
-                                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                color: isDark
+                                    ? AcadexColors.darkSurfaceCard
+                                    : AcadexColors.surface,
                                 borderRadius: AcadexRadius.borderRadiusMd,
                                 border: Border.all(
-                                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                  color: isDark
+                                      ? AcadexColors.darkHairline
+                                      : AcadexColors.hairline,
                                 ),
                               ),
                               child: Column(
@@ -1789,24 +2438,40 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                                 children: [
                                   // Day Subheader
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 10,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
-                                      borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                                      color: isDark
+                                          ? AcadexColors.darkCanvasSoft
+                                          : AcadexColors.canvasSoft,
+                                      borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(8),
+                                      ),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
                                           day.displayName.toUpperCase(),
-                                          style: AcadexTypography.caption(
-                                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                                          ).copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
+                                          style:
+                                              AcadexTypography.caption(
+                                                color: isDark
+                                                    ? AcadexColors.darkInk
+                                                    : AcadexColors.ink,
+                                              ).copyWith(
+                                                fontWeight: FontWeight.w700,
+                                                letterSpacing: 0.8,
+                                              ),
                                         ),
                                         Text(
                                           '${dayEntries.length} class${dayEntries.length > 1 ? 'es' : ''}',
                                           style: AcadexTypography.caption(
-                                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                            color: isDark
+                                                ? AcadexColors.darkInkMuted
+                                                : AcadexColors.inkMuted,
                                           ),
                                         ),
                                       ],
@@ -1815,42 +2480,68 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                                   // List of Classes
                                   ListView.separated(
                                     shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
                                     itemCount: dayEntries.length,
                                     separatorBuilder: (_, __) => Divider(
                                       height: 1,
-                                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                      color: isDark
+                                          ? AcadexColors.darkHairline
+                                          : AcadexColors.hairline,
                                     ),
                                     itemBuilder: (ctx, idx) {
                                       final e = dayEntries[idx];
                                       final sub = subjectMap[e.subjectId];
                                       final subName = sub?.name ?? e.subjectId;
                                       final subCode = sub?.code ?? '';
-                                      final facName = facultyMap[e.facultyId]?.name ?? e.facultyId;
+                                      final facName =
+                                          facultyMap[e.facultyId]?.name ??
+                                          e.facultyId;
 
                                       return Padding(
                                         padding: const EdgeInsets.all(14),
                                         child: Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             // Time column
                                             Container(
                                               width: 90,
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 6,
+                                                  ),
                                               decoration: BoxDecoration(
-                                                color: AcadexColors.primary.withValues(alpha: 0.08),
-                                                borderRadius: AcadexRadius.borderRadiusXs,
+                                                color: AcadexColors.primary
+                                                    .withValues(alpha: 0.08),
+                                                borderRadius:
+                                                    AcadexRadius.borderRadiusXs,
                                               ),
                                               child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.center,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.center,
                                                 children: [
                                                   Text(
                                                     '${e.startTime}–${e.endTime}',
-                                                    style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(fontWeight: FontWeight.w700),
+                                                    style:
+                                                        AcadexTypography.caption(
+                                                          color: AcadexColors
+                                                              .primary,
+                                                        ).copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                        ),
                                                   ),
                                                   Text(
                                                     'P${e.startPeriodIndex}${e.periodSpan > 1 ? "-${e.endPeriodIndex}" : ""}',
-                                                    style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(fontSize: 10),
+                                                    style:
+                                                        AcadexTypography.caption(
+                                                          color: AcadexColors
+                                                              .primary,
+                                                        ).copyWith(
+                                                          fontSize: 10,
+                                                        ),
                                                   ),
                                                 ],
                                               ),
@@ -1859,91 +2550,164 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                                             // Details column
                                             Expanded(
                                               child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: [
                                                   Text(
                                                     '$subName${subCode.isNotEmpty ? " ($subCode)" : ""}',
-                                                    style: AcadexTypography.body(
-                                                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                                                    ).copyWith(fontWeight: FontWeight.w600),
-                                                    overflow: TextOverflow.ellipsis,
+                                                    style:
+                                                        AcadexTypography.body(
+                                                          color: isDark
+                                                              ? AcadexColors
+                                                                    .darkInk
+                                                              : AcadexColors
+                                                                    .ink,
+                                                        ).copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                   ),
                                                   const SizedBox(height: 3),
                                                   Row(
                                                     children: [
-                                                      Icon(LucideIcons.user, size: 13, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                                      Icon(
+                                                        LucideIcons.user,
+                                                        size: 13,
+                                                        color: isDark
+                                                            ? AcadexColors
+                                                                  .darkInkMuted
+                                                            : AcadexColors
+                                                                  .inkMuted,
+                                                      ),
                                                       const SizedBox(width: 4),
                                                       Expanded(
                                                         child: Text(
                                                           facName,
                                                           style: AcadexTypography.caption(
-                                                            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                                                            color: isDark
+                                                                ? AcadexColors
+                                                                      .darkInkSecondary
+                                                                : AcadexColors
+                                                                      .inkSecondary,
                                                           ),
-                                                          overflow: TextOverflow.ellipsis,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
                                                         ),
                                                       ),
                                                     ],
                                                   ),
                                                   const SizedBox(height: 3),
                                                   Wrap(
-                                                     crossAxisAlignment: WrapCrossAlignment.center,
-                                                     spacing: 8,
-                                                     runSpacing: 4,
-                                                     children: [
-                                                       Row(
-                                                         mainAxisSize: MainAxisSize.min,
-                                                         children: [
-                                                           Icon(LucideIcons.doorOpen, size: 13, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                                                           const SizedBox(width: 4),
-                                                           Flexible(
-                                                             child: Text(
-                                                               'Room: ${e.roomNumber}${e.building != null ? " (${e.building})" : ""}',
-                                                               style: AcadexTypography.caption(
-                                                                 color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                                                               ),
-                                                               overflow: TextOverflow.ellipsis,
-                                                             ),
-                                                           ),
-                                                         ],
-                                                       ),
-                                                       Container(
-                                                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                         decoration: BoxDecoration(
-                                                           color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
-                                                           borderRadius: AcadexRadius.borderRadiusXs,
-                                                         ),
-                                                         child: Text(
-                                                           e.sessionType.displayName,
-                                                           style: AcadexTypography.caption(
-                                                             color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                                                           ).copyWith(fontSize: 10),
-                                                         ),
-                                                       ),
-                                                     ],
-                                                   ),
+                                                    crossAxisAlignment:
+                                                        WrapCrossAlignment
+                                                            .center,
+                                                    spacing: 8,
+                                                    runSpacing: 4,
+                                                    children: [
+                                                      Row(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: [
+                                                          Icon(
+                                                            LucideIcons
+                                                                .doorOpen,
+                                                            size: 13,
+                                                            color: isDark
+                                                                ? AcadexColors
+                                                                      .darkInkMuted
+                                                                : AcadexColors
+                                                                      .inkMuted,
+                                                          ),
+                                                          const SizedBox(
+                                                            width: 4,
+                                                          ),
+                                                          Flexible(
+                                                            child: Text(
+                                                              'Room: ${e.roomNumber}${e.building != null ? " (${e.building})" : ""}',
+                                                              style: AcadexTypography.caption(
+                                                                color: isDark
+                                                                    ? AcadexColors
+                                                                          .darkInkMuted
+                                                                    : AcadexColors
+                                                                          .inkMuted,
+                                                              ),
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      Container(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 6,
+                                                              vertical: 2,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color: isDark
+                                                              ? AcadexColors
+                                                                    .darkCanvasSoft
+                                                              : AcadexColors
+                                                                    .canvasSoft,
+                                                          borderRadius:
+                                                              AcadexRadius
+                                                                  .borderRadiusXs,
+                                                        ),
+                                                        child: Text(
+                                                          e
+                                                              .sessionType
+                                                              .displayName,
+                                                          style: AcadexTypography.caption(
+                                                            color: isDark
+                                                                ? AcadexColors
+                                                                      .darkInkMuted
+                                                                : AcadexColors
+                                                                      .inkMuted,
+                                                          ).copyWith(fontSize: 10),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ],
                                               ),
                                             ),
                                             // Actions (if draft)
                                             if (isDraft && canCreate) ...[
                                               IconButton(
-                                                icon: const Icon(LucideIcons.pencil, size: 16),
+                                                icon: const Icon(
+                                                  LucideIcons.pencil,
+                                                  size: 16,
+                                                ),
                                                 tooltip: 'Edit Class',
                                                 onPressed: () {
                                                   showTimetableClassEditorDialog(
                                                     context: context,
-                                                    timetableId: sectionContainer.id,
+                                                    timetableId:
+                                                        sectionContainer.id,
                                                     day: e.dayOfWeek,
-                                                    startPeriodIndex: e.startPeriodIndex,
+                                                    startPeriodIndex:
+                                                        e.startPeriodIndex,
                                                     existingEntry: e,
                                                   );
                                                 },
                                               ),
                                               IconButton(
-                                                icon: const Icon(LucideIcons.trash2, size: 16, color: AcadexColors.error),
+                                                icon: const Icon(
+                                                  LucideIcons.trash2,
+                                                  size: 16,
+                                                  color: AcadexColors.error,
+                                                ),
                                                 tooltip: 'Delete Class',
                                                 onPressed: () {
-                                                  _confirmDeleteSectionEntry(context, ref, sectionContainer, e);
+                                                  _confirmDeleteSectionEntry(
+                                                    context,
+                                                    ref,
+                                                    sectionContainer,
+                                                    e,
+                                                  );
                                                 },
                                               ),
                                             ],
@@ -1974,7 +2738,9 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
     TimetableContainerModel container,
     String userId,
   ) async {
-    final notifier = ref.read(timetableAuthoringProvider(container.id).notifier);
+    final notifier = ref.read(
+      timetableAuthoringProvider(container.id).notifier,
+    );
     final success = await notifier.publish(publishedBy: userId);
 
     if (success) {
@@ -1988,23 +2754,28 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
       }
     } else {
       final state = ref.read(timetableAuthoringProvider(container.id));
-      final errorMsg = state.errorMessage ?? 'Publish failed. Check for scheduling conflicts.';
+      final errorMsg =
+          state.errorMessage ??
+          'Publish failed. Check for scheduling conflicts.';
       if (context.mounted) {
         showDialog<void>(
           context: context,
           builder: (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusLg),
+            shape: RoundedRectangleBorder(
+              borderRadius: AcadexRadius.borderRadiusLg,
+            ),
             title: const Row(
               children: [
-                Icon(LucideIcons.alertTriangle, color: AcadexColors.error, size: 22),
+                Icon(
+                  LucideIcons.alertTriangle,
+                  color: AcadexColors.error,
+                  size: 22,
+                ),
                 SizedBox(width: 8),
                 Text('Cannot Publish Timetable'),
               ],
             ),
-            content: Text(
-              errorMsg,
-              style: const TextStyle(fontSize: 14),
-            ),
+            content: Text(errorMsg, style: const TextStyle(fontSize: 14)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
@@ -2022,7 +2793,9 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
     WidgetRef ref,
     TimetableContainerModel container,
   ) async {
-    final notifier = ref.read(timetableAuthoringProvider(container.id).notifier);
+    final notifier = ref.read(
+      timetableAuthoringProvider(container.id).notifier,
+    );
     final success = await notifier.unpublish();
 
     if (success) {
@@ -2045,7 +2818,11 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
     }
   }
 
-  void _confirmDeleteSlot(BuildContext context, WidgetRef ref, TimetableModel entry) {
+  void _confirmDeleteSlot(
+    BuildContext context,
+    WidgetRef ref,
+    TimetableModel entry,
+  ) {
     final subjectMap = ref.read(timetableSubjectMapProvider);
     final subject = subjectMap[entry.subjectId];
     final subjectName = subject?.name ?? entry.subjectId;
@@ -2053,10 +2830,16 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusXl),
+        shape: RoundedRectangleBorder(
+          borderRadius: AcadexRadius.borderRadiusXl,
+        ),
         title: const Row(
           children: [
-            Icon(LucideIcons.alertTriangle, color: AcadexColors.error, size: 20),
+            Icon(
+              LucideIcons.alertTriangle,
+              color: AcadexColors.error,
+              size: 20,
+            ),
             SizedBox(width: 8),
             Text('Delete this schedule slot?'),
           ],
@@ -2065,7 +2848,9 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Are you sure you want to remove this timetable slot? This will update the timetable container on the server.'),
+            const Text(
+              'Are you sure you want to remove this timetable slot? This will update the timetable container on the server.',
+            ),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
@@ -2076,19 +2861,37 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Subject: $subjectName', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  Text(
+                    'Subject: $subjectName',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text('Day: ${entry.dayOfWeek.displayName}', style: const TextStyle(fontSize: 12)),
-                  Text('Time: ${entry.startTime} – ${entry.endTime}', style: const TextStyle(fontSize: 12)),
+                  Text(
+                    'Day: ${entry.dayOfWeek.displayName}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  Text(
+                    'Time: ${entry.startTime} – ${entry.endTime}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
                 ],
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.error, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.error,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () async {
               Navigator.pop(ctx);
               final repo = ref.read(timetableRepositoryProvider);
@@ -2099,32 +2902,49 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                     collegeId: entry.collegeId,
                     sectionId: entry.sectionId,
                   );
-                  final draft = containers.where((c) => c.status == TimetableStatus.draft).firstOrNull;
-                  final published = containers.where((c) => c.status == TimetableStatus.published).firstOrNull;
+                  final draft = containers
+                      .where((c) => c.status == TimetableStatus.draft)
+                      .firstOrNull;
+                  final published = containers
+                      .where((c) => c.status == TimetableStatus.published)
+                      .firstOrNull;
                   if (draft != null) {
                     targetTimetableId = draft.id;
                   } else if (published != null) {
-                    throw StateError('Published timetables cannot be modified directly. Please unpublish or create a revision first.');
+                    throw StateError(
+                      'Published timetables cannot be modified directly. Please unpublish or create a revision first.',
+                    );
                   } else if (containers.isNotEmpty) {
                     targetTimetableId = containers.first.id;
                   }
                 }
 
                 if (targetTimetableId == null || targetTimetableId.isEmpty) {
-                  throw Exception('No associated timetable container found for this entry.');
+                  throw Exception(
+                    'No associated timetable container found for this entry.',
+                  );
                 }
 
-                final container = await repo.getTimetableContainer(targetTimetableId);
-                if (container != null && container.status == TimetableStatus.published) {
-                  throw StateError('Published timetables cannot be modified directly. Please unpublish or create a revision first.');
+                final container = await repo.getTimetableContainer(
+                  targetTimetableId,
+                );
+                if (container != null &&
+                    container.status == TimetableStatus.published) {
+                  throw StateError(
+                    'Published timetables cannot be modified directly. Please unpublish or create a revision first.',
+                  );
                 }
 
                 await repo.deleteGridEntry(targetTimetableId, entry.id);
 
                 ref.invalidate(managementTimetableProvider);
                 ref.invalidate(managementContainersProvider);
-                ref.invalidate(timetableGridEntriesStreamProvider(targetTimetableId));
-                ref.invalidate(timetableContainerStreamProvider(targetTimetableId));
+                ref.invalidate(
+                  timetableGridEntriesStreamProvider(targetTimetableId),
+                );
+                ref.invalidate(
+                  timetableContainerStreamProvider(targetTimetableId),
+                );
 
                 if (context.mounted) {
                   AcadexSnackBar.showSuccess(
@@ -2158,10 +2978,16 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusXl),
+        shape: RoundedRectangleBorder(
+          borderRadius: AcadexRadius.borderRadiusXl,
+        ),
         title: const Row(
           children: [
-            Icon(LucideIcons.alertTriangle, color: AcadexColors.error, size: 20),
+            Icon(
+              LucideIcons.alertTriangle,
+              color: AcadexColors.error,
+              size: 20,
+            ),
             SizedBox(width: 8),
             Text('Delete Class Entry?'),
           ],
@@ -2171,14 +2997,24 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
           style: TextStyle(fontSize: 14),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.error, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.error,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () async {
               Navigator.pop(ctx);
               try {
-                await ref.read(timetableAuthoringProvider(container.id).notifier).deleteEntryAuthoritatively(entry.id);
-                ref.invalidate(timetableGridEntriesStreamProvider(container.id));
+                await ref
+                    .read(timetableAuthoringProvider(container.id).notifier)
+                    .deleteEntryAuthoritatively(entry.id);
+                ref.invalidate(
+                  timetableGridEntriesStreamProvider(container.id),
+                );
                 ref.invalidate(timetableContainerStreamProvider(container.id));
                 ref.invalidate(managementContainersProvider);
                 ref.invalidate(managementTimetableProvider);
@@ -2226,14 +3062,22 @@ class HodTimetableReadinessCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final List<Subject> subjects = ref.watch(subjectsForSemesterProvider(semesterId));
-    final List<FacultyAssignment> assignments = sectionId.isNotEmpty && sectionId != 'none'
+    final List<Subject> subjects = ref.watch(
+      subjectsForSemesterProvider(semesterId),
+    );
+    final List<FacultyAssignment> assignments =
+        sectionId.isNotEmpty && sectionId != 'none'
         ? ref.watch(facultyAssignmentsBySectionProvider(sectionId))
         : ref.watch(facultyAssignmentsBySemesterProvider(semesterId));
     final List<Subject> unassignedSubjects = ref.watch(
-      unassignedSubjectsForSectionProvider((semesterId: semesterId, sectionId: sectionId)),
+      unassignedSubjectsForSectionProvider((
+        semesterId: semesterId,
+        sectionId: sectionId,
+      )),
     );
-    final int enrollmentCount = ref.watch(sectionActiveEnrollmentCountProvider(sectionId));
+    final int enrollmentCount = ref.watch(
+      sectionActiveEnrollmentCountProvider(sectionId),
+    );
 
     final totalSubjects = subjects.length;
     final activeAssignments = assignments.where((a) => a.isActive).toList();
@@ -2245,14 +3089,14 @@ class HodTimetableReadinessCard extends ConsumerWidget {
     final badgeLabel = totalSubjects == 0
         ? 'NO SUBJECTS'
         : isReady
-            ? 'READY FOR TIMETABLE'
-            : '$unassignedCount UNASSIGNED';
+        ? 'READY FOR TIMETABLE'
+        : '$unassignedCount UNASSIGNED';
 
     final badgeVariant = totalSubjects == 0
         ? AcadexBadgeVariant.neutral
         : isReady
-            ? AcadexBadgeVariant.success
-            : AcadexBadgeVariant.warning;
+        ? AcadexBadgeVariant.success
+        : AcadexBadgeVariant.warning;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -2261,8 +3105,12 @@ class HodTimetableReadinessCard extends ConsumerWidget {
         borderRadius: AcadexRadius.borderRadiusLg,
         border: Border.all(
           color: isReady
-              ? (isDark ? AcadexColors.success.withValues(alpha: 0.3) : AcadexColors.successLight)
-              : (isDark ? AcadexColors.warning.withValues(alpha: 0.3) : AcadexColors.warningLight),
+              ? (isDark
+                    ? AcadexColors.success.withValues(alpha: 0.3)
+                    : AcadexColors.successLight)
+              : (isDark
+                    ? AcadexColors.warning.withValues(alpha: 0.3)
+                    : AcadexColors.warningLight),
         ),
       ),
       child: Column(
@@ -2280,13 +3128,21 @@ class HodTimetableReadinessCard extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: (isReady ? AcadexColors.success : AcadexColors.warning).withValues(alpha: 0.12),
+                      color:
+                          (isReady
+                                  ? AcadexColors.success
+                                  : AcadexColors.warning)
+                              .withValues(alpha: 0.12),
                       borderRadius: AcadexRadius.borderRadiusMd,
                     ),
                     child: Icon(
-                      isReady ? LucideIcons.checkCircle2 : LucideIcons.alertTriangle,
+                      isReady
+                          ? LucideIcons.checkCircle2
+                          : LucideIcons.alertTriangle,
                       size: 18,
-                      color: isReady ? AcadexColors.success : AcadexColors.warning,
+                      color: isReady
+                          ? AcadexColors.success
+                          : AcadexColors.warning,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -2301,10 +3157,7 @@ class HodTimetableReadinessCard extends ConsumerWidget {
                   ),
                 ],
               ),
-              AcadexBadge(
-                label: badgeLabel,
-                variant: badgeVariant,
-              ),
+              AcadexBadge(label: badgeLabel, variant: badgeVariant),
             ],
           ),
           const SizedBox(height: 4),
@@ -2363,7 +3216,9 @@ class HodTimetableReadinessCard extends ConsumerWidget {
     bool isWarning = false,
   }) {
     final chipColor = isWarning
-        ? (isDark ? AcadexColors.warning.withValues(alpha: 0.15) : AcadexColors.warningLight)
+        ? (isDark
+              ? AcadexColors.warning.withValues(alpha: 0.15)
+              : AcadexColors.warningLight)
         : (isDark ? AcadexColors.darkSurface : AcadexColors.canvasSoft);
     final textColor = isWarning
         ? AcadexColors.warning
@@ -2387,11 +3242,12 @@ class HodTimetableReadinessCard extends ConsumerWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: AcadexTypography.caption(color: textColor).copyWith(fontWeight: FontWeight.w600),
+            style: AcadexTypography.caption(
+              color: textColor,
+            ).copyWith(fontWeight: FontWeight.w600),
           ),
         ],
       ),
     );
   }
 }
-

@@ -32,7 +32,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     if (state is AuthAuthenticated) {
       _hasNavigated = true;
       _navigateBasedOnRole(state.user.role);
-    } else if (state is AuthUnauthenticated || state is AuthError || state is AuthProfileError) {
+    } else if (state is AuthUnauthenticated ||
+        state is AuthError ||
+        state is AuthProfileError) {
       _hasNavigated = true;
       context.go('/login');
     }
@@ -67,7 +69,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : const Color(0xFF0F172A),
+      backgroundColor: isDark
+          ? AcadexColors.darkCanvas
+          : const Color(0xFF0F172A),
       body: AnimatedParticleSphereBackground(
         variant: ParticleSphereVariant.splash,
         child: Center(
@@ -93,11 +97,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(LucideIcons.graduationCap, color: Colors.white, size: 44),
+                child: const Icon(
+                  LucideIcons.graduationCap,
+                  color: Colors.white,
+                  size: 44,
+                ),
               ),
               const SizedBox(height: 28),
               const Text(
-                "Acadex",
+                "ACADEXSYNC",
                 style: TextStyle(
                   fontSize: 34,
                   fontWeight: FontWeight.bold,

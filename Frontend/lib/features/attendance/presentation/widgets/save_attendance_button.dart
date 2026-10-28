@@ -37,7 +37,9 @@ class SaveAttendanceButton extends StatelessWidget {
       icon: LucideIcons.checkCheck,
       isLoading: isLoading,
       isFullWidth: isFullWidth,
-      variant: isValid ? AcadexButtonVariant.primary : AcadexButtonVariant.secondary,
+      variant: isValid
+          ? AcadexButtonVariant.primary
+          : AcadexButtonVariant.secondary,
       onPressed: () {
         if (hasNoStudents) {
           AcadexSnackBar.showWarning(

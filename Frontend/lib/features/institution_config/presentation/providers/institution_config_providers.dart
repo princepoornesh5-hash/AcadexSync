@@ -3,19 +3,24 @@ import '../../domain/models/institution_config_models.dart';
 import '../../domain/repositories/institution_config_repository.dart';
 import '../../data/repositories/api_institution_config_repository.dart';
 
-final institutionConfigRepositoryProvider = Provider<InstitutionConfigRepository>((ref) {
-  return ApiInstitutionConfigRepository();
-});
+final institutionConfigRepositoryProvider =
+    Provider<InstitutionConfigRepository>((ref) {
+      return ApiInstitutionConfigRepository();
+    });
 
-final institutionConfigProvider = FutureProvider<InstitutionConfigModel>((ref) async {
+final institutionConfigProvider = FutureProvider<InstitutionConfigModel>((
+  ref,
+) async {
   final repo = ref.watch(institutionConfigRepositoryProvider);
   return repo.getEffectiveConfiguration();
 });
 
-final institutionPresetsProvider = FutureProvider<List<InstitutionPresetModel>>((ref) async {
-  final repo = ref.watch(institutionConfigRepositoryProvider);
-  return repo.getPresets();
-});
+final institutionPresetsProvider = FutureProvider<List<InstitutionPresetModel>>(
+  (ref) async {
+    final repo = ref.watch(institutionConfigRepositoryProvider);
+    return repo.getPresets();
+  },
+);
 
 class TerminologyHelper {
   final InstitutionConfigModel config;
@@ -59,13 +64,20 @@ class TerminologyHelper {
   bool get isBuildingEnabled => config.academicStructure.building;
   bool get isRoomEnabled => config.academicStructure.room;
 
-  String programName({bool plural = false}) => label(AcademicConcept.program, plural: plural);
-  String semesterName({bool plural = false}) => label(AcademicConcept.semester, plural: plural);
-  String sectionName({bool plural = false}) => label(AcademicConcept.section, plural: plural);
-  String subjectName({bool plural = false}) => label(AcademicConcept.subject, plural: plural);
-  String roomName({bool plural = false}) => label(AcademicConcept.room, plural: plural);
-  String departmentName({bool plural = false}) => label(AcademicConcept.department, plural: plural);
-  String academicYearName({bool plural = false}) => label(AcademicConcept.academicYear, plural: plural);
+  String programName({bool plural = false}) =>
+      label(AcademicConcept.program, plural: plural);
+  String semesterName({bool plural = false}) =>
+      label(AcademicConcept.semester, plural: plural);
+  String sectionName({bool plural = false}) =>
+      label(AcademicConcept.section, plural: plural);
+  String subjectName({bool plural = false}) =>
+      label(AcademicConcept.subject, plural: plural);
+  String roomName({bool plural = false}) =>
+      label(AcademicConcept.room, plural: plural);
+  String departmentName({bool plural = false}) =>
+      label(AcademicConcept.department, plural: plural);
+  String academicYearName({bool plural = false}) =>
+      label(AcademicConcept.academicYear, plural: plural);
   String programsName() => programName(plural: true);
   String semestersName() => semesterName(plural: true);
   String sectionsName() => sectionName(plural: true);
@@ -76,7 +88,8 @@ class TerminologyHelper {
   String periodName({bool plural = false}) => semesterName(plural: plural);
   String cohortLabel() => 'Cohort';
   String stageLabel() => 'Academic Stage';
-  String createActionLabel(AcademicConcept concept) => '+ Create ${label(concept)}';
+  String createActionLabel(AcademicConcept concept) =>
+      '+ Create ${label(concept)}';
   String addActionLabel(AcademicConcept concept) => '+ Add ${label(concept)}';
   String createLabel(AcademicConcept concept) => 'Create ${label(concept)}';
   String addLabel(AcademicConcept concept) => 'Add ${label(concept)}';
@@ -92,7 +105,8 @@ class TerminologyHelper {
     if (stage != null && stage.isNotEmpty) parts.add(stage);
     if (period != null && period.isNotEmpty) parts.add(period);
     if (cohort != null && cohort.isNotEmpty) parts.add('Cohort: $cohort');
-    if (academicYear != null && academicYear.isNotEmpty) parts.add('AY: $academicYear');
+    if (academicYear != null && academicYear.isNotEmpty)
+      parts.add('AY: $academicYear');
     return parts.join(' • ');
   }
 
@@ -155,12 +169,13 @@ class InstitutionConfigActionState {
   });
 }
 
-class InstitutionConfigNotifier extends StateNotifier<InstitutionConfigActionState> {
+class InstitutionConfigNotifier
+    extends StateNotifier<InstitutionConfigActionState> {
   final InstitutionConfigRepository _repo;
   final Ref _ref;
 
   InstitutionConfigNotifier(this._repo, this._ref)
-      : super(const InstitutionConfigActionState());
+    : super(const InstitutionConfigActionState());
 
   Future<InstitutionConfigModel?> updateConfiguration({
     required InstitutionType institutionType,
@@ -191,7 +206,10 @@ class InstitutionConfigNotifier extends StateNotifier<InstitutionConfigActionSta
 }
 
 final institutionConfigActionProvider =
-    StateNotifierProvider.autoDispose<InstitutionConfigNotifier, InstitutionConfigActionState>((ref) {
-  final repo = ref.watch(institutionConfigRepositoryProvider);
-  return InstitutionConfigNotifier(repo, ref);
-});
+    StateNotifierProvider.autoDispose<
+      InstitutionConfigNotifier,
+      InstitutionConfigActionState
+    >((ref) {
+      final repo = ref.watch(institutionConfigRepositoryProvider);
+      return InstitutionConfigNotifier(repo, ref);
+    });

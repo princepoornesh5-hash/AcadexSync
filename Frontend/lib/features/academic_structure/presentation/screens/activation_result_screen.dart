@@ -69,7 +69,9 @@ class _ActivationResultScreenState extends State<ActivationResultScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final res = widget.result;
-    final expiryFormatted = DateFormat('MMM dd, yyyy • hh:mm a').format(res.expiresAt.toLocal());
+    final expiryFormatted = DateFormat(
+      'MMM dd, yyyy • hh:mm a',
+    ).format(res.expiresAt.toLocal());
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -77,7 +79,10 @@ class _ActivationResultScreenState extends State<ActivationResultScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: _handleDone,
         ),
         title: Text(
@@ -100,9 +105,16 @@ class _ActivationResultScreenState extends State<ActivationResultScreen> {
                 decoration: BoxDecoration(
                   color: AcadexColors.successLight,
                   shape: BoxShape.circle,
-                  border: Border.all(color: AcadexColors.success.withValues(alpha: 0.3), width: 2),
+                  border: Border.all(
+                    color: AcadexColors.success.withValues(alpha: 0.3),
+                    width: 2,
+                  ),
                 ),
-                child: const Icon(LucideIcons.circleCheck, color: AcadexColors.success, size: 34),
+                child: const Icon(
+                  LucideIcons.circleCheck,
+                  color: AcadexColors.success,
+                  size: 34,
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -118,7 +130,9 @@ class _ActivationResultScreenState extends State<ActivationResultScreen> {
               'An invitation has been created. Provide the activation code below to the administrator to complete setup.',
               textAlign: TextAlign.center,
               style: AcadexTypography.body(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ).copyWith(fontSize: 13),
             ),
             const SizedBox(height: 24),
@@ -127,13 +141,17 @@ class _ActivationResultScreenState extends State<ActivationResultScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                color: isDark
+                    ? AcadexColors.darkSurfaceCard
+                    : AcadexColors.surface,
                 borderRadius: AcadexRadius.borderRadiusLg,
                 border: Border.all(
                   color: AcadexColors.primary.withValues(alpha: 0.4),
                   width: 1.5,
                 ),
-                boxShadow: isDark ? AcadexShadows.darkMd : AcadexShadows.lightMd,
+                boxShadow: isDark
+                    ? AcadexShadows.darkMd
+                    : AcadexShadows.lightMd,
               ),
               child: Column(
                 children: [
@@ -146,12 +164,19 @@ class _ActivationResultScreenState extends State<ActivationResultScreen> {
                   const SizedBox(height: 12),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.darkCanvas : AcadexColors.canvasSoft,
+                      color: isDark
+                          ? AcadexColors.darkCanvas
+                          : AcadexColors.canvasSoft,
                       borderRadius: AcadexRadius.borderRadiusMd,
                       border: Border.all(
-                        color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                        color: isDark
+                            ? AcadexColors.darkHairline
+                            : AcadexColors.hairline,
                       ),
                     ),
                     child: SelectableText(
@@ -170,21 +195,33 @@ class _ActivationResultScreenState extends State<ActivationResultScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(LucideIcons.clock, size: 14, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                      Icon(
+                        LucideIcons.clock,
+                        size: 14,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         'Expires: $expiryFormatted',
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ).copyWith(fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   AcadexButton(
-                    label: _copied ? 'Copied to Clipboard!' : 'Copy Activation Code',
+                    label: _copied
+                        ? 'Copied to Clipboard!'
+                        : 'Copy Activation Code',
                     icon: _copied ? LucideIcons.check : LucideIcons.copy,
-                    variant: _copied ? AcadexButtonVariant.secondary : AcadexButtonVariant.primary,
+                    variant: _copied
+                        ? AcadexButtonVariant.secondary
+                        : AcadexButtonVariant.primary,
                     isFullWidth: true,
                     onPressed: _copyToClipboard,
                   ),
@@ -222,7 +259,8 @@ class _ActivationResultScreenState extends State<ActivationResultScreen> {
                     value: res.adminInstituteId,
                     isMonospace: true,
                   ),
-                  if (res.collegeName.isNotEmpty || res.collegeCode.isNotEmpty) ...[
+                  if (res.collegeName.isNotEmpty ||
+                      res.collegeCode.isNotEmpty) ...[
                     const Divider(height: 16),
                     _buildDetailRow(
                       context,
@@ -273,12 +311,18 @@ class _ActivationResultScreenState extends State<ActivationResultScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFFFEF3C7),
                 borderRadius: AcadexRadius.borderRadiusMd,
-                border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.4)),
+                border: Border.all(
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.4),
+                ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(LucideIcons.shieldAlert, color: Color(0xFFD97706), size: 18),
+                  const Icon(
+                    LucideIcons.shieldAlert,
+                    color: Color(0xFFD97706),
+                    size: 18,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -297,7 +341,9 @@ class _ActivationResultScreenState extends State<ActivationResultScreen> {
                           'This activation code is displayed only once and is not stored in plaintext. If lost, you will need to re-issue the invitation.',
                           style: TextStyle(
                             fontSize: 11,
-                            color: isDark ? const Color(0xFF92400E) : const Color(0xFF92400E),
+                            color: isDark
+                                ? const Color(0xFF92400E)
+                                : const Color(0xFF92400E),
                             height: 1.4,
                           ),
                         ),
@@ -348,7 +394,11 @@ class _ActivationResultScreenState extends State<ActivationResultScreen> {
   }) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+        Icon(
+          icon,
+          size: 16,
+          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+        ),
         const SizedBox(width: 10),
         Text(
           label,

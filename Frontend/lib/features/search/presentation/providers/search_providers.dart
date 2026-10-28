@@ -36,9 +36,11 @@ class RecentSearchesNotifier extends Notifier<List<String>> {
     if (query.trim().isEmpty) return;
     final currentState = state;
     // Remove if already exists to move it to the top
-    final filtered = currentState.where((q) => q.toLowerCase() != query.toLowerCase()).toList();
+    final filtered = currentState
+        .where((q) => q.toLowerCase() != query.toLowerCase())
+        .toList();
     filtered.insert(0, query.trim());
-    
+
     // Keep only top 10
     if (filtered.length > 10) {
       filtered.removeLast();
@@ -55,13 +57,16 @@ class RecentSearchesNotifier extends Notifier<List<String>> {
   }
 }
 
-final recentSearchesProvider = NotifierProvider<RecentSearchesNotifier, List<String>>(() {
-  return RecentSearchesNotifier();
-});
+final recentSearchesProvider =
+    NotifierProvider<RecentSearchesNotifier, List<String>>(() {
+      return RecentSearchesNotifier();
+    });
 
 // --- Search Results Provider ---
 
-final searchResultsProvider = FutureProvider.autoDispose<List<SearchResult>>((ref) async {
+final searchResultsProvider = FutureProvider.autoDispose<List<SearchResult>>((
+  ref,
+) async {
   final query = ref.watch(searchQueryProvider);
   final filter = ref.watch(searchFilterProvider);
   final authState = ref.watch(authProvider);
@@ -76,10 +81,10 @@ final searchResultsProvider = FutureProvider.autoDispose<List<SearchResult>>((re
 
   // Debouncing logic: Wait 300ms before triggering the search
   await Future.delayed(const Duration(milliseconds: 300));
-  
+
   // If the provider was disposed during the delay (e.g. user typed a new character),
   // this execution will be cancelled. We can check if it's still alive, but FutureProvider handles basic cancellation.
-  
+
   final searchRepo = ref.read(searchRepositoryProvider);
   return searchRepo.search(query, authState.user, filterType: filter);
 });

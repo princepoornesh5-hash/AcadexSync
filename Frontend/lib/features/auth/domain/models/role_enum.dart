@@ -1,10 +1,4 @@
-enum AppRole {
-  superAdmin,
-  collegeAdmin,
-  hod,
-  faculty,
-  student,
-}
+enum AppRole { superAdmin, collegeAdmin, hod, faculty, student }
 
 extension AppRoleExtension on AppRole {
   String get value {

@@ -17,10 +17,16 @@ class NotificationPreviewList extends ConsumerWidget {
       loading: () => const SizedBox(
         height: 64,
         child: Center(
-          child: Text('Loading notifications...', style: TextStyle(fontSize: 13, color: AcadexColors.inkMuted)),
+          child: Text(
+            'Loading notifications...',
+            style: TextStyle(fontSize: 13, color: AcadexColors.inkMuted),
+          ),
         ),
       ),
-      error: (err, stack) => Text('Error loading notifications', style: AcadexTypography.bodySmall(color: AcadexColors.error)),
+      error: (err, stack) => Text(
+        'Error loading notifications',
+        style: AcadexTypography.bodySmall(color: AcadexColors.error),
+      ),
       data: (notifications) {
         if (notifications.isEmpty) {
           return Container(
@@ -35,19 +41,36 @@ class NotificationPreviewList extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(LucideIcons.bell, color: Theme.of(context).primaryColor),
+                  child: Icon(
+                    LucideIcons.bell,
+                    color: Theme.of(context).primaryColor,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('All caught up!', style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontWeight: FontWeight.w600)),
+                      Text(
+                        'All caught up!',
+                        style: AcadexTypography.body(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ).copyWith(fontWeight: FontWeight.w600),
+                      ),
                       const SizedBox(height: 4),
-                      Text('You have no new notifications.', style: AcadexTypography.bodySmall(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)),
+                      Text(
+                        'You have no new notifications.',
+                        style: AcadexTypography.bodySmall(
+                          color:
+                              Theme.of(context).textTheme.bodySmall?.color ??
+                              AcadexColors.inkMuted,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -78,7 +101,9 @@ class NotificationPreviewList extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Text(
                           'Latest Notifications',
-                          style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface),
+                          style: AcadexTypography.title(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
                       ],
                     ),
@@ -86,25 +111,39 @@ class NotificationPreviewList extends ConsumerWidget {
                       onPressed: () => context.go('/module/Notifications'),
                       style: TextButton.styleFrom(
                         foregroundColor: Theme.of(context).primaryColor,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      child: Text('View All', style: AcadexTypography.button(color: Theme.of(context).primaryColor)),
+                      child: Text(
+                        'View All',
+                        style: AcadexTypography.button(
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
               Divider(color: Theme.of(context).dividerColor, height: 1),
-              ...previews.map((notification) => NotificationCard(
-                    notification: notification,
-                    onReadToggle: () {
-                      ref.read(notificationsProvider.notifier).markAsRead(notification.id);
-                    },
-                    onDelete: () {
-                      ref.read(notificationsProvider.notifier).deleteNotification(notification.id);
-                    },
-                  )),
+              ...previews.map(
+                (notification) => NotificationCard(
+                  notification: notification,
+                  onReadToggle: () {
+                    ref
+                        .read(notificationsProvider.notifier)
+                        .markAsRead(notification.id);
+                  },
+                  onDelete: () {
+                    ref
+                        .read(notificationsProvider.notifier)
+                        .deleteNotification(notification.id);
+                  },
+                ),
+              ),
             ],
           ),
         );

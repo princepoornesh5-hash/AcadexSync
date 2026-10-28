@@ -5,12 +5,12 @@ import '../../domain/repositories/activation_repository.dart';
 import '../../data/repositories/api_activation_repository.dart';
 
 enum ActivationStep {
-  enterCode,       // Step 1: Input activation code
+  enterCode, // Step 1: Input activation code
   confirmIdentity, // Step 2: Confirm identity ("Is this you?")
-  selectContact,   // Step 3: Select email/phone & request OTP
-  verifyOtp,       // Step 4: Verify 6-digit OTP code
-  setPassword,     // Step 5: Set & confirm password (or activate for existing user)
-  success,         // Step 6: Confirmation & redirect to login
+  selectContact, // Step 3: Select email/phone & request OTP
+  verifyOtp, // Step 4: Verify 6-digit OTP code
+  setPassword, // Step 5: Set & confirm password (or activate for existing user)
+  success, // Step 6: Confirmation & redirect to login
 }
 
 class ActivationState {
@@ -71,11 +71,15 @@ class ActivationState {
       error: clearError ? null : (error ?? this.error),
       activationCode: activationCode ?? this.activationCode,
       validationResult: validationResult ?? this.validationResult,
-      selectedContactMethod: selectedContactMethod ?? this.selectedContactMethod,
+      selectedContactMethod:
+          selectedContactMethod ?? this.selectedContactMethod,
       sendOtpResult: sendOtpResult ?? this.sendOtpResult,
-      resendCooldownRemaining: resendCooldownRemaining ?? this.resendCooldownRemaining,
+      resendCooldownRemaining:
+          resendCooldownRemaining ?? this.resendCooldownRemaining,
       otpExpiryRemaining: otpExpiryRemaining ?? this.otpExpiryRemaining,
-      activationToken: clearActivationToken ? null : (activationToken ?? this.activationToken),
+      activationToken: clearActivationToken
+          ? null
+          : (activationToken ?? this.activationToken),
       isExistingUser: isExistingUser ?? this.isExistingUser,
       completionResult: completionResult ?? this.completionResult,
     );
@@ -155,13 +159,16 @@ class ActivationNotifier extends StateNotifier<ActivationState> {
     }
 
     if (state.validationResult == null) {
-      state = state.copyWith(error: 'Please validate your activation code first.');
+      state = state.copyWith(
+        error: 'Please validate your activation code first.',
+      );
       return;
     }
 
     if (state.validationResult!.contactOptions.isEmpty) {
       state = state.copyWith(
-        error: 'No registered email or phone found on this account. Please contact your campus administrator.',
+        error:
+            'No registered email or phone found on this account. Please contact your campus administrator.',
       );
       return;
     }
@@ -184,18 +191,25 @@ class ActivationNotifier extends StateNotifier<ActivationState> {
     final method = state.selectedContactMethod;
 
     if (flowId == null || flowId.isEmpty) {
-      state = state.copyWith(error: 'Activation session expired. Please re-enter your activation code.');
+      state = state.copyWith(
+        error:
+            'Activation session expired. Please re-enter your activation code.',
+      );
       return false;
     }
 
     if (method == null || method.isEmpty) {
-      state = state.copyWith(error: 'Please select a contact method to receive your verification code.');
+      state = state.copyWith(
+        error:
+            'Please select a contact method to receive your verification code.',
+      );
       return false;
     }
 
     if (state.resendCooldownRemaining > 0) {
       state = state.copyWith(
-        error: 'Please wait ${state.resendCooldownRemaining} seconds before requesting another code.',
+        error:
+            'Please wait ${state.resendCooldownRemaining} seconds before requesting another code.',
       );
       return false;
     }
@@ -240,7 +254,9 @@ class ActivationNotifier extends StateNotifier<ActivationState> {
 
     _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (state.resendCooldownRemaining > 1) {
-        state = state.copyWith(resendCooldownRemaining: state.resendCooldownRemaining - 1);
+        state = state.copyWith(
+          resendCooldownRemaining: state.resendCooldownRemaining - 1,
+        );
       } else {
         state = state.copyWith(resendCooldownRemaining: 0);
         timer.cancel();
@@ -254,7 +270,9 @@ class ActivationNotifier extends StateNotifier<ActivationState> {
 
     _expiryTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (state.otpExpiryRemaining > 1) {
-        state = state.copyWith(otpExpiryRemaining: state.otpExpiryRemaining - 1);
+        state = state.copyWith(
+          otpExpiryRemaining: state.otpExpiryRemaining - 1,
+        );
       } else {
         state = state.copyWith(otpExpiryRemaining: 0);
         timer.cancel();
@@ -269,12 +287,16 @@ class ActivationNotifier extends StateNotifier<ActivationState> {
     final otp = rawOtp.trim();
 
     if (flowId == null || method == null) {
-      state = state.copyWith(error: 'Verification session expired. Please start over.');
+      state = state.copyWith(
+        error: 'Verification session expired. Please start over.',
+      );
       return false;
     }
 
     if (otp.length != 6) {
-      state = state.copyWith(error: 'Please enter the complete 6-digit verification code.');
+      state = state.copyWith(
+        error: 'Please enter the complete 6-digit verification code.',
+      );
       return false;
     }
 
@@ -313,7 +335,8 @@ class ActivationNotifier extends StateNotifier<ActivationState> {
     final token = state.activationToken;
     if (token == null || token.isEmpty) {
       state = state.copyWith(
-        error: 'Verification session has expired. Please verify your OTP again.',
+        error:
+            'Verification session has expired. Please verify your OTP again.',
         currentStep: ActivationStep.selectContact,
       );
       return false;
@@ -334,11 +357,16 @@ class ActivationNotifier extends StateNotifier<ActivationState> {
         return false;
       }
       if (password.length < 8) {
-        state = state.copyWith(error: 'Password must be at least 8 characters long.');
+        state = state.copyWith(
+          error: 'Password must be at least 8 characters long.',
+        );
         return false;
       }
-      if (!RegExp(r'[a-zA-Z]').hasMatch(password) || !RegExp(r'[0-9]').hasMatch(password)) {
-        state = state.copyWith(error: 'Password must contain at least one letter and one number.');
+      if (!RegExp(r'[a-zA-Z]').hasMatch(password) ||
+          !RegExp(r'[0-9]').hasMatch(password)) {
+        state = state.copyWith(
+          error: 'Password must contain at least one letter and one number.',
+        );
         return false;
       }
     }
@@ -355,7 +383,8 @@ class ActivationNotifier extends StateNotifier<ActivationState> {
       state = state.copyWith(
         isLoading: false,
         completionResult: result,
-        clearActivationToken: true, // Immediately clear secret token from memory
+        clearActivationToken:
+            true, // Immediately clear secret token from memory
         currentStep: ActivationStep.success,
       );
       return true;
@@ -383,7 +412,8 @@ class ActivationNotifier extends StateNotifier<ActivationState> {
       return;
     }
     // Cannot skip to selectContact without validationResult
-    if (step == ActivationStep.selectContact && state.validationResult == null) {
+    if (step == ActivationStep.selectContact &&
+        state.validationResult == null) {
       return;
     }
     state = state.copyWith(currentStep: step, clearError: true);
@@ -399,6 +429,8 @@ final activationRepositoryProvider = Provider<ActivationRepository>((ref) {
 });
 
 final activationNotifierProvider =
-    StateNotifierProvider.autoDispose<ActivationNotifier, ActivationState>((ref) {
-  return ActivationNotifier(ref.watch(activationRepositoryProvider));
-});
+    StateNotifierProvider.autoDispose<ActivationNotifier, ActivationState>((
+      ref,
+    ) {
+      return ActivationNotifier(ref.watch(activationRepositoryProvider));
+    });

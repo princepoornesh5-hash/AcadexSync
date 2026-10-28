@@ -35,7 +35,9 @@ class DownloadUrlResult {
       mimeType: json['mimeType'] as String? ?? 'application/pdf',
       fileSize: json['fileSize'] is int
           ? json['fileSize'] as int
-          : (json['fileSize'] != null ? int.tryParse(json['fileSize'].toString()) ?? 0 : 0),
+          : (json['fileSize'] != null
+                ? int.tryParse(json['fileSize'].toString()) ?? 0
+                : 0),
     );
   }
 }
@@ -57,8 +59,8 @@ class ApiNotesRepository implements NotesRepository {
   final ImageKitUploader _uploader;
 
   ApiNotesRepository({ApiClient? apiClient, ImageKitUploader? uploader})
-      : _apiClient = apiClient ?? apiClientInstance,
-        _uploader = uploader ?? ImageKitUploader();
+    : _apiClient = apiClient ?? apiClientInstance,
+      _uploader = uploader ?? ImageKitUploader();
 
   static ApiClient get apiClientInstance => apiClient;
 
@@ -78,7 +80,8 @@ class ApiNotesRepository implements NotesRepository {
   }) async {
     final queryParams = <String, dynamic>{
       'collegeId': collegeId,
-      if (departmentId != null && departmentId.isNotEmpty) 'departmentId': departmentId,
+      if (departmentId != null && departmentId.isNotEmpty)
+        'departmentId': departmentId,
       if (courseId != null && courseId.isNotEmpty) 'courseId': courseId,
       if (semesterId != null && semesterId.isNotEmpty) 'semesterId': semesterId,
       if (sectionId != null && sectionId.isNotEmpty) 'sectionId': sectionId,
@@ -95,7 +98,10 @@ class ApiNotesRepository implements NotesRepository {
       final data = response.data['data'];
       final items = (data['items'] as List?) ?? (data is List ? data : []);
       return items
-          .map((item) => NoteModel.fromJson(Map<String, dynamic>.from(item as Map)))
+          .map(
+            (item) =>
+                NoteModel.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
           .toList();
     }
     return [];
@@ -124,7 +130,10 @@ class ApiNotesRepository implements NotesRepository {
       final data = response.data['data'];
       final items = (data['items'] as List?) ?? [];
       return items
-          .map((item) => NoteModel.fromJson(Map<String, dynamic>.from(item as Map)))
+          .map(
+            (item) =>
+                NoteModel.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
           .toList();
     }
     return [];
@@ -200,7 +209,9 @@ class ApiNotesRepository implements NotesRepository {
   // =========================================================================
 
   Future<DownloadUrlResult> getDownloadUrl(String noteId) async {
-    final response = await _apiClient.dio.get('/academics/notes/$noteId/download');
+    final response = await _apiClient.dio.get(
+      '/academics/notes/$noteId/download',
+    );
     if (response.data != null && response.data['data'] != null) {
       return DownloadUrlResult.fromJson(
         Map<String, dynamic>.from(response.data['data'] as Map),
@@ -238,9 +249,11 @@ class ApiNotesRepository implements NotesRepository {
       'fileSize': fileSize,
       if (semesterId != null && semesterId.isNotEmpty) 'semesterId': semesterId,
       if (courseId != null && courseId.isNotEmpty) 'courseId': courseId,
-      if (departmentId != null && departmentId.isNotEmpty) 'departmentId': departmentId,
+      if (departmentId != null && departmentId.isNotEmpty)
+        'departmentId': departmentId,
       if (sectionId != null && sectionId.isNotEmpty) 'sectionId': sectionId,
-      if (facultyAssignmentId != null && facultyAssignmentId.isNotEmpty) 'facultyAssignmentId': facultyAssignmentId,
+      if (facultyAssignmentId != null && facultyAssignmentId.isNotEmpty)
+        'facultyAssignmentId': facultyAssignmentId,
     };
 
     final response = await _apiClient.dio.post(
@@ -250,10 +263,20 @@ class ApiNotesRepository implements NotesRepository {
 
     if (response.data != null && response.data['data'] != null) {
       final data = response.data['data'] as Map<String, dynamic>;
-      final note = NoteModel.fromJson(Map<String, dynamic>.from(data['note'] as Map));
-      final auth = ImageKitUploadAuth.fromJson(Map<String, dynamic>.from(data['uploadAuth'] as Map));
-      final uploadUrl = data['uploadUrl'] as String? ?? 'https://upload.imagekit.io/api/v1/files/upload';
-      return NoteUploadAuthSession(note: note, auth: auth, uploadUrl: uploadUrl);
+      final note = NoteModel.fromJson(
+        Map<String, dynamic>.from(data['note'] as Map),
+      );
+      final auth = ImageKitUploadAuth.fromJson(
+        Map<String, dynamic>.from(data['uploadAuth'] as Map),
+      );
+      final uploadUrl =
+          data['uploadUrl'] as String? ??
+          'https://upload.imagekit.io/api/v1/files/upload';
+      return NoteUploadAuthSession(
+        note: note,
+        auth: auth,
+        uploadUrl: uploadUrl,
+      );
     }
     throw Exception('Failed to obtain upload authorization from backend');
   }

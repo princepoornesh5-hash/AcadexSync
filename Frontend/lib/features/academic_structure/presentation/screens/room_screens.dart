@@ -45,7 +45,8 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
     final isHod = user?.role == AppRole.hod;
     final userDeptId = user?.departmentId ?? '';
 
-    final canManageRooms = user?.role == AppRole.superAdmin ||
+    final canManageRooms =
+        user?.role == AppRole.superAdmin ||
         user?.role == AppRole.collegeAdmin ||
         user?.role == AppRole.hod;
 
@@ -60,7 +61,8 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
         children: [
           AcadexPageHeader(
             title: roomsLabel,
-            subtitle: "Manage classrooms, lecture halls, laboratories, and seating capacities.",
+            subtitle:
+                "Manage classrooms, lecture halls, laboratories, and seating capacities.",
             actions: [
               if (canManageRooms)
                 AcadexButton(
@@ -73,9 +75,12 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
             ],
           ),
           AcadexSearchFilterBar(
-            searchHint: "Search ${roomsLabel.toLowerCase()} by code, name, or department...",
+            searchHint:
+                "Search ${roomsLabel.toLowerCase()} by code, name, or department...",
             onSearchChanged: (v) => setState(() => _searchQuery = v),
-            onActionTap: canManageRooms ? () => context.push('/academics/rooms/new') : null,
+            onActionTap: canManageRooms
+                ? () => context.push('/academics/rooms/new')
+                : null,
             actionLabel: "Add $roomLabel",
           ),
           const SizedBox(height: 10),
@@ -100,19 +105,27 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
                       label: Text(t.$2),
                       selected: _typeFilter == t.$1,
                       onSelected: (_) => setState(() => _typeFilter = t.$1),
-                      selectedColor: AcadexColors.primary.withValues(alpha: 0.15),
+                      selectedColor: AcadexColors.primary.withValues(
+                        alpha: 0.15,
+                      ),
                       checkmarkColor: AcadexColors.primary,
                       labelStyle: TextStyle(
                         color: _typeFilter == t.$1
                             ? AcadexColors.primary
-                            : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                        fontWeight: _typeFilter == t.$1 ? FontWeight.w600 : FontWeight.w400,
+                            : (isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted),
+                        fontWeight: _typeFilter == t.$1
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                         fontSize: 12,
                       ),
                       side: BorderSide(
                         color: _typeFilter == t.$1
                             ? AcadexColors.primary
-                            : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                            : (isDark
+                                  ? AcadexColors.darkHairline
+                                  : AcadexColors.hairline),
                       ),
                     ),
                   ),
@@ -130,19 +143,27 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
                       label: Text(s.$2),
                       selected: _statusFilter == s.$1,
                       onSelected: (_) => setState(() => _statusFilter = s.$1),
-                      selectedColor: AcadexColors.primary.withValues(alpha: 0.15),
+                      selectedColor: AcadexColors.primary.withValues(
+                        alpha: 0.15,
+                      ),
                       checkmarkColor: AcadexColors.primary,
                       labelStyle: TextStyle(
                         color: _statusFilter == s.$1
                             ? AcadexColors.primary
-                            : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                        fontWeight: _statusFilter == s.$1 ? FontWeight.w600 : FontWeight.w400,
+                            : (isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted),
+                        fontWeight: _statusFilter == s.$1
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                         fontSize: 12,
                       ),
                       side: BorderSide(
                         color: _statusFilter == s.$1
                             ? AcadexColors.primary
-                            : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                            : (isDark
+                                  ? AcadexColors.darkHairline
+                                  : AcadexColors.hairline),
                       ),
                     ),
                   ),
@@ -163,13 +184,16 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
                 final filtered = rooms.where((r) {
                   // HOD scoping: see department-specific rooms or campus-wide shared rooms
                   if (isHod && userDeptId.isNotEmpty) {
-                    if (r.departmentId != null && r.departmentId!.isNotEmpty && r.departmentId != userDeptId) {
+                    if (r.departmentId != null &&
+                        r.departmentId!.isNotEmpty &&
+                        r.departmentId != userDeptId) {
                       return false;
                     }
                   }
 
                   // Type filter
-                  if (_typeFilter != 'all' && r.type.toLowerCase() != _typeFilter) {
+                  if (_typeFilter != 'all' &&
+                      r.type.toLowerCase() != _typeFilter) {
                     return false;
                   }
 
@@ -180,7 +204,9 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
                   // Search query
                   if (_searchQuery.isEmpty) return true;
                   final q = _searchQuery.toLowerCase();
-                  final deptName = r.departmentId != null ? (deptMap[r.departmentId]?.name ?? '') : 'Shared';
+                  final deptName = r.departmentId != null
+                      ? (deptMap[r.departmentId]?.name ?? '')
+                      : 'Shared';
                   return r.name.toLowerCase().contains(q) ||
                       r.code.toLowerCase().contains(q) ||
                       r.type.toLowerCase().contains(q) ||
@@ -194,11 +220,23 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(LucideIcons.doorClosed, size: 48, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                          Icon(
+                            LucideIcons.doorClosed,
+                            size: 48,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
+                          ),
                           const SizedBox(height: 16),
                           Text(
-                            rooms.isEmpty ? "No $roomsLabel Yet" : "No Matching $roomsLabel",
-                            style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                            rooms.isEmpty
+                                ? "No $roomsLabel Yet"
+                                : "No Matching $roomsLabel",
+                            style: AcadexTypography.heading3(
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -206,14 +244,19 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
                                 ? "Establish classrooms, laboratories, and lecture halls to enable timetable scheduling."
                                 : "No $roomsLabel match your current search and filter criteria.",
                             textAlign: TextAlign.center,
-                            style: AcadexTypography.body(color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                            style: AcadexTypography.body(
+                              color: isDark
+                                  ? AcadexColors.darkInkSecondary
+                                  : AcadexColors.inkSecondary,
+                            ),
                           ),
                           if (canManageRooms && rooms.isEmpty) ...[
                             const SizedBox(height: 20),
                             AcadexButton(
                               label: "+ Create First $roomLabel",
                               icon: LucideIcons.plus,
-                              onPressed: () => context.push('/academics/rooms/new'),
+                              onPressed: () =>
+                                  context.push('/academics/rooms/new'),
                             ),
                           ],
                         ],
@@ -228,7 +271,8 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final r = filtered[index];
-                      final deptName = r.departmentId != null && r.departmentId!.isNotEmpty
+                      final deptName =
+                          r.departmentId != null && r.departmentId!.isNotEmpty
                           ? (deptMap[r.departmentId]?.name ?? 'Department')
                           : 'Campus Shared';
 
@@ -244,10 +288,16 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
                                   child: Row(
                                     children: [
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: AcadexColors.primary.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(AcadexRadius.sm),
+                                          color: AcadexColors.primary
+                                              .withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(
+                                            AcadexRadius.sm,
+                                          ),
                                         ),
                                         child: Text(
                                           r.code,
@@ -262,7 +312,10 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
                                       Expanded(
                                         child: Text(
                                           r.name,
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
@@ -271,32 +324,58 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
                                 ),
                                 AcadexBadge(
                                   label: r.isActive ? "Active" : "Inactive",
-                                  variant: r.isActive ? AcadexBadgeVariant.success : AcadexBadgeVariant.neutral,
+                                  variant: r.isActive
+                                      ? AcadexBadgeVariant.success
+                                      : AcadexBadgeVariant.neutral,
                                 ),
                               ],
                             ),
                             const SizedBox(height: 8),
                             Row(
                               children: [
-                                Icon(LucideIcons.users, size: 14, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                Icon(
+                                  LucideIcons.users,
+                                  size: 14,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   "Capacity: ${r.capacity}",
-                                  style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                  style: AcadexTypography.caption(
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
-                                Icon(LucideIcons.tag, size: 14, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                Icon(
+                                  LucideIcons.tag,
+                                  size: 14,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   r.type.toUpperCase(),
-                                  style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                  style: AcadexTypography.caption(
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
+                                  ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 6),
                             Text(
                               deptName,
-                              style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                              style: AcadexTypography.caption(
+                                color: isDark
+                                    ? AcadexColors.darkInkSecondary
+                                    : AcadexColors.inkSecondary,
+                              ),
                             ),
                             if (canManageRooms) ...[
                               const SizedBox(height: 10),
@@ -307,7 +386,9 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
                                     label: "Edit",
                                     icon: LucideIcons.edit,
                                     variant: AcadexButtonVariant.secondary,
-                                    onPressed: () => context.push('/academics/rooms/edit/${r.id}'),
+                                    onPressed: () => context.push(
+                                      '/academics/rooms/edit/${r.id}',
+                                    ),
                                   ),
                                 ],
                               ),
@@ -331,7 +412,8 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
                     "Actions",
                   ],
                   rows: filtered.map((r) {
-                    final deptName = r.departmentId != null && r.departmentId!.isNotEmpty
+                    final deptName =
+                        r.departmentId != null && r.departmentId!.isNotEmpty
                         ? (deptMap[r.departmentId]?.name ?? r.departmentId!)
                         : 'Campus Shared';
 
@@ -339,10 +421,17 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
                       cells: [
                         DataCell(
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: AcadexColors.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(AcadexRadius.sm),
+                              color: AcadexColors.primary.withValues(
+                                alpha: 0.1,
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                AcadexRadius.sm,
+                              ),
                             ),
                             child: Text(
                               r.code,
@@ -357,9 +446,18 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
                         DataCell(
                           Row(
                             children: [
-                              const Icon(LucideIcons.doorClosed, size: 16, color: AcadexColors.primary),
+                              const Icon(
+                                LucideIcons.doorClosed,
+                                size: 16,
+                                color: AcadexColors.primary,
+                              ),
                               const SizedBox(width: 8),
-                              Text(r.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                              Text(
+                                r.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -367,9 +465,18 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
                         DataCell(
                           Row(
                             children: [
-                              const Icon(LucideIcons.users, size: 14, color: AcadexColors.inkMuted),
+                              const Icon(
+                                LucideIcons.users,
+                                size: 14,
+                                color: AcadexColors.inkMuted,
+                              ),
                               const SizedBox(width: 6),
-                              Text("${r.capacity} seats", style: const TextStyle(fontWeight: FontWeight.w600)),
+                              Text(
+                                "${r.capacity} seats",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -377,7 +484,9 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
                         DataCell(
                           AcadexBadge(
                             label: r.isActive ? "Active" : "Inactive",
-                            variant: r.isActive ? AcadexBadgeVariant.success : AcadexBadgeVariant.neutral,
+                            variant: r.isActive
+                                ? AcadexBadgeVariant.success
+                                : AcadexBadgeVariant.neutral,
                           ),
                         ),
                         DataCell(
@@ -385,7 +494,9 @@ class _RoomListScreenState extends ConsumerState<RoomListScreen> {
                               ? IconButton(
                                   icon: const Icon(LucideIcons.edit, size: 18),
                                   tooltip: "Edit Room",
-                                  onPressed: () => context.push('/academics/rooms/edit/${r.id}'),
+                                  onPressed: () => context.push(
+                                    '/academics/rooms/edit/${r.id}',
+                                  ),
                                 )
                               : const SizedBox.shrink(),
                         ),
@@ -479,7 +590,8 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
       final room = Room(
         id: _existing?.id ?? '',
         collegeId: _existing?.collegeId ?? collegeId,
-        departmentId: _selectedDepartmentId != null && _selectedDepartmentId!.isNotEmpty
+        departmentId:
+            _selectedDepartmentId != null && _selectedDepartmentId!.isNotEmpty
             ? _selectedDepartmentId
             : null,
         name: _nameCtrl.text.trim(),
@@ -547,10 +659,15 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/academics/rooms'),
         ),
         title: Text(
@@ -570,7 +687,8 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
                   title: "$roomLabel Details",
                   saveLabel: isEdit ? "Update $roomLabel" : "Create $roomLabel",
                   isSaving: _isLoading,
-                  onCancel: () => context.safePop(fallbackRoute: '/academics/rooms'),
+                  onCancel: () =>
+                      context.safePop(fallbackRoute: '/academics/rooms'),
                   onSave: () => _save(resolvedCollegeId),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -580,23 +698,43 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
                         AcadexFormField(
                           label: "Department",
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
                             decoration: BoxDecoration(
-                              color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                              color: isDark
+                                  ? AcadexColors.darkCanvasSoft
+                                  : AcadexColors.canvasSoft,
                               borderRadius: AcadexRadius.borderRadiusMd,
-                              border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                              border: Border.all(
+                                color: isDark
+                                    ? AcadexColors.darkHairline
+                                    : AcadexColors.hairline,
+                              ),
                             ),
                             child: Row(
                               children: [
-                                const Icon(LucideIcons.building2, size: 16, color: AcadexColors.primary),
+                                const Icon(
+                                  LucideIcons.building2,
+                                  size: 16,
+                                  color: AcadexColors.primary,
+                                ),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
                                     deptMap[userDeptId]?.name ?? userDeptId,
-                                    style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+                                    style: AcadexTypography.body(
+                                      color: isDark
+                                          ? AcadexColors.darkInk
+                                          : AcadexColors.ink,
+                                    ).copyWith(fontWeight: FontWeight.w600),
                                   ),
                                 ),
-                                const AcadexBadge(label: "YOUR DEPARTMENT", variant: AcadexBadgeVariant.primary),
+                                const AcadexBadge(
+                                  label: "YOUR DEPARTMENT",
+                                  variant: AcadexBadgeVariant.primary,
+                                ),
                               ],
                             ),
                           ),
@@ -604,19 +742,38 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
                         const SizedBox(height: 14),
                       ] else ...[
                         AcadexFormField(
-                          label: "Allocated Department (Optional for Shared Rooms)",
+                          label:
+                              "Allocated Department (Optional for Shared Rooms)",
                           child: departmentsAsync.when(
                             loading: () => const LinearProgressIndicator(),
-                            error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error)),
+                            error: (e, _) => Text(
+                              AcadexException.sanitizedMessage(e),
+                              style: const TextStyle(color: AcadexColors.error),
+                            ),
                             data: (depts) => DropdownButtonFormField<String?>(
                               initialValue: _selectedDepartmentId,
-                              dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                              decoration: const InputDecoration(hintText: "Campus Shared (All Departments)"),
+                              dropdownColor: isDark
+                                  ? AcadexColors.darkSurfaceCard
+                                  : AcadexColors.surface,
+                              decoration: const InputDecoration(
+                                hintText: "Campus Shared (All Departments)",
+                              ),
                               items: [
-                                const DropdownMenuItem(value: null, child: Text("Campus Shared (All Departments)")),
-                                ...depts.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name))),
+                                const DropdownMenuItem(
+                                  value: null,
+                                  child: Text(
+                                    "Campus Shared (All Departments)",
+                                  ),
+                                ),
+                                ...depts.map(
+                                  (d) => DropdownMenuItem(
+                                    value: d.id,
+                                    child: Text(d.name),
+                                  ),
+                                ),
                               ],
-                              onChanged: (v) => setState(() => _selectedDepartmentId = v),
+                              onChanged: (v) =>
+                                  setState(() => _selectedDepartmentId = v),
                             ),
                           ),
                         ),
@@ -634,7 +791,8 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
                           ),
                           textCapitalization: TextCapitalization.characters,
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return "Room code is required";
+                            if (v == null || v.trim().isEmpty)
+                              return "Room code is required";
                             return null;
                           },
                         ),
@@ -647,11 +805,13 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
                         child: TextFormField(
                           controller: _nameCtrl,
                           decoration: const InputDecoration(
-                            hintText: "e.g., Computer Systems Lab, Lecture Hall A",
+                            hintText:
+                                "e.g., Computer Systems Lab, Lecture Hall A",
                             prefixIcon: Icon(LucideIcons.doorClosed, size: 18),
                           ),
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return "Room name is required";
+                            if (v == null || v.trim().isEmpty)
+                              return "Room name is required";
                             return null;
                           },
                         ),
@@ -672,7 +832,8 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
                                   prefixIcon: Icon(LucideIcons.users, size: 18),
                                 ),
                                 validator: (v) {
-                                  if (v == null || v.trim().isEmpty) return "Capacity is required";
+                                  if (v == null || v.trim().isEmpty)
+                                    return "Capacity is required";
                                   final n = int.tryParse(v.trim());
                                   if (n == null || n <= 0) return "Must be > 0";
                                   return null;
@@ -686,16 +847,33 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
                               label: "Room Type *",
                               child: DropdownButtonFormField<String>(
                                 initialValue: _selectedType,
-                                dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                                decoration: const InputDecoration(prefixIcon: Icon(LucideIcons.tag, size: 18)),
+                                dropdownColor: isDark
+                                    ? AcadexColors.darkSurfaceCard
+                                    : AcadexColors.surface,
+                                decoration: const InputDecoration(
+                                  prefixIcon: Icon(LucideIcons.tag, size: 18),
+                                ),
                                 items: const [
-                                  DropdownMenuItem(value: 'lecture', child: Text("Lecture Hall")),
-                                  DropdownMenuItem(value: 'lab', child: Text("Laboratory")),
-                                  DropdownMenuItem(value: 'seminar', child: Text("Seminar Room")),
-                                  DropdownMenuItem(value: 'other', child: Text("Other")),
+                                  DropdownMenuItem(
+                                    value: 'lecture',
+                                    child: Text("Lecture Hall"),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'lab',
+                                    child: Text("Laboratory"),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'seminar',
+                                    child: Text("Seminar Room"),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'other',
+                                    child: Text("Other"),
+                                  ),
                                 ],
                                 onChanged: (v) {
-                                  if (v != null) setState(() => _selectedType = v);
+                                  if (v != null)
+                                    setState(() => _selectedType = v);
                                 },
                               ),
                             ),
@@ -714,8 +892,14 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              _isActive ? "Active (Available for Timetables)" : "Inactive (Deactivated)",
-                              style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                              _isActive
+                                  ? "Active (Available for Timetables)"
+                                  : "Inactive (Deactivated)",
+                              style: AcadexTypography.body(
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
+                              ),
                             ),
                           ],
                         ),

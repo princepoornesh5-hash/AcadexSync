@@ -16,10 +16,7 @@ class AiStreamStartEvent extends AiStreamEvent {
   final String model;
   final String correlationId;
 
-  const AiStreamStartEvent({
-    required this.model,
-    required this.correlationId,
-  });
+  const AiStreamStartEvent({required this.model, required this.correlationId});
 }
 
 class AiStreamDeltaEvent extends AiStreamEvent {
@@ -39,11 +36,7 @@ class AiStreamDoneEvent extends AiStreamEvent {
   final String? model;
   final Map<String, dynamic>? proposal;
 
-  const AiStreamDoneEvent({
-    required this.answer,
-    this.model,
-    this.proposal,
-  });
+  const AiStreamDoneEvent({required this.answer, this.model, this.proposal});
 }
 
 class AiStreamErrorEvent extends AiStreamEvent {

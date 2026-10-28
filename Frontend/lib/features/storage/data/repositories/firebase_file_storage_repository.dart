@@ -72,7 +72,11 @@ class FirebaseFileStorageRepository implements FileStorageRepository {
     );
 
     // 6. Upload
-    final fullMetadata = await _storageService.uploadFile(storagePath, bytes, settableMetadata);
+    final fullMetadata = await _storageService.uploadFile(
+      storagePath,
+      bytes,
+      settableMetadata,
+    );
 
     // 7. Get Download URL
     final downloadUrl = await _storageService.getDownloadUrl(storagePath);
@@ -114,7 +118,10 @@ class FirebaseFileStorageRepository implements FileStorageRepository {
   }
 
   @override
-  Future<void> updateMetadata(String storagePath, Map<String, String> newMetadata) async {
+  Future<void> updateMetadata(
+    String storagePath,
+    Map<String, String> newMetadata,
+  ) async {
     final settableMetadata = SettableMetadata(customMetadata: newMetadata);
     await _storageService.updateMetadata(storagePath, settableMetadata);
   }
@@ -132,26 +139,30 @@ class FirebaseFileStorageRepository implements FileStorageRepository {
   void _validateFileSize(int sizeBytes, FileCategory category) {
     switch (category) {
       case FileCategory.profileImage:
-        if (sizeBytes > maxProfileImageSize) throw Exception('Profile image exceeds size limit of 5MB');
+        if (sizeBytes > maxProfileImageSize)
+          throw Exception('Profile image exceeds size limit of 5MB');
         break;
       case FileCategory.certificate:
-        if (sizeBytes > maxCertificateSize) throw Exception('Certificate exceeds size limit of 10MB');
+        if (sizeBytes > maxCertificateSize)
+          throw Exception('Certificate exceeds size limit of 10MB');
         break;
       case FileCategory.noteAttachment:
-        if (sizeBytes > maxNoteAttachmentSize) throw Exception('Note attachment exceeds size limit of 25MB');
+        if (sizeBytes > maxNoteAttachmentSize)
+          throw Exception('Note attachment exceeds size limit of 25MB');
         break;
       case FileCategory.other:
-        if (sizeBytes > maxNoteAttachmentSize) throw Exception('File exceeds size limit of 25MB');
+        if (sizeBytes > maxNoteAttachmentSize)
+          throw Exception('File exceeds size limit of 25MB');
         break;
     }
   }
 
   void _validateContentType(String contentType, FileCategory category) {
     // Basic executable block
-    if (contentType.contains('executable') || 
-        contentType.endsWith('sh') || 
-        contentType.endsWith('bat') || 
-        contentType.endsWith('exe') || 
+    if (contentType.contains('executable') ||
+        contentType.endsWith('sh') ||
+        contentType.endsWith('bat') ||
+        contentType.endsWith('exe') ||
         contentType.endsWith('apk')) {
       throw Exception('Executable files are not allowed.');
     }
@@ -190,9 +201,12 @@ class FirebaseFileStorageRepository implements FileStorageRepository {
     }
   }
 
-  StoredFile _mapMetadataToStoredFile(FullMetadata metadata, String downloadUrl) {
+  StoredFile _mapMetadataToStoredFile(
+    FullMetadata metadata,
+    String downloadUrl,
+  ) {
     final custom = metadata.customMetadata ?? {};
-    
+
     return StoredFile(
       id: custom['id'] ?? metadata.name,
       ownerUid: custom['ownerUid'] ?? 'unknown',

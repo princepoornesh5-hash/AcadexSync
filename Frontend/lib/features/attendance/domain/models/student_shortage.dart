@@ -16,6 +16,7 @@ class StudentShortage {
     required this.section,
     required this.currentPercentage,
   });
-  
-  ShortageStatus get status => currentPercentage < 65 ? ShortageStatus.critical : ShortageStatus.warning;
+
+  ShortageStatus get status =>
+      currentPercentage < 65 ? ShortageStatus.critical : ShortageStatus.warning;
 }

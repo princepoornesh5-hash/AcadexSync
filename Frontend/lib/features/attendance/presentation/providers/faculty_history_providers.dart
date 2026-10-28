@@ -15,48 +15,61 @@ final currentFacultyIdProvider = Provider<String>((ref) {
 // History List & Filtering
 // ---------------------------------------------------------
 final historySearchQueryProvider = StateProvider<String>((ref) => '');
-final historyStatusFilterProvider = StateProvider<String?>((ref) => null); // null, 'open', 'locked', 'closed', 'cancelled'
+final historyStatusFilterProvider = StateProvider<String?>(
+  (ref) => null,
+); // null, 'open', 'locked', 'closed', 'cancelled'
 
-final facultyHistoryListProvider = FutureProvider<List<AttendanceSession>>((ref) async {
+final facultyHistoryListProvider = FutureProvider<List<AttendanceSession>>((
+  ref,
+) async {
   // Workspace-aware: Refetch history on workspace switch
   ref.watch(activeWorkspaceProvider);
   final repo = ref.watch(attendanceRepoProvider);
   return repo.getFacultySessions();
 });
 
-final filteredFacultyHistoryProvider = Provider<AsyncValue<List<AttendanceSession>>>((ref) {
-  final asyncList = ref.watch(facultyHistoryListProvider);
-  final searchQuery = ref.watch(historySearchQueryProvider).toLowerCase();
-  final statusFilter = ref.watch(historyStatusFilterProvider)?.toLowerCase();
+final filteredFacultyHistoryProvider =
+    Provider<AsyncValue<List<AttendanceSession>>>((ref) {
+      final asyncList = ref.watch(facultyHistoryListProvider);
+      final searchQuery = ref.watch(historySearchQueryProvider).toLowerCase();
+      final statusFilter = ref
+          .watch(historyStatusFilterProvider)
+          ?.toLowerCase();
 
-  return asyncList.whenData((list) {
-    // Deduplicate by session ID to prevent duplicate items from API/cache/merging
-    final seenIds = <String>{};
-    final uniqueList = <AttendanceSession>[];
-    for (final s in list) {
-      if (seenIds.add(s.id)) {
-        uniqueList.add(s);
-      }
-    }
+      return asyncList.whenData((list) {
+        // Deduplicate by session ID to prevent duplicate items from API/cache/merging
+        final seenIds = <String>{};
+        final uniqueList = <AttendanceSession>[];
+        for (final s in list) {
+          if (seenIds.add(s.id)) {
+            uniqueList.add(s);
+          }
+        }
 
-    return uniqueList.where((session) {
-      if (statusFilter != null && statusFilter.isNotEmpty) {
-        if (statusFilter == 'open' && !session.isOpen) return false;
-        if (statusFilter == 'locked' && !session.isLockedState) return false;
-        if (statusFilter == 'closed' && !session.isClosed) return false;
-        if (statusFilter == 'cancelled' && !session.isCancelled) return false;
-      }
-      
-      if (searchQuery.isNotEmpty) {
-        final matchesSub = session.subjectName.toLowerCase().contains(searchQuery);
-        final matchesSec = session.sectionName.toLowerCase().contains(searchQuery);
-        if (!matchesSub && !matchesSec) return false;
-      }
-      
-      return true;
-    }).toList();
-  });
-});
+        return uniqueList.where((session) {
+          if (statusFilter != null && statusFilter.isNotEmpty) {
+            if (statusFilter == 'open' && !session.isOpen) return false;
+            if (statusFilter == 'locked' && !session.isLockedState)
+              return false;
+            if (statusFilter == 'closed' && !session.isClosed) return false;
+            if (statusFilter == 'cancelled' && !session.isCancelled)
+              return false;
+          }
+
+          if (searchQuery.isNotEmpty) {
+            final matchesSub = session.subjectName.toLowerCase().contains(
+              searchQuery,
+            );
+            final matchesSec = session.sectionName.toLowerCase().contains(
+              searchQuery,
+            );
+            if (!matchesSub && !matchesSec) return false;
+          }
+
+          return true;
+        }).toList();
+      });
+    });
 
 // ---------------------------------------------------------
 // Detail & Edit Mode
@@ -66,9 +79,11 @@ final activeSessionIdProvider = StateProvider<String?>((ref) => null);
 final activeSessionProvider = Provider<AttendanceSession?>((ref) {
   final listAsync = ref.watch(facultyHistoryListProvider);
   final activeId = ref.watch(activeSessionIdProvider);
-  
+
   if (activeId == null) return null;
-  final sessionFromList = listAsync.valueOrNull?.where((s) => s.id == activeId).firstOrNull;
+  final sessionFromList = listAsync.valueOrNull
+      ?.where((s) => s.id == activeId)
+      .firstOrNull;
   if (sessionFromList != null) return sessionFromList;
 
   final detailAsync = ref.watch(sessionDetailProvider(activeId));
@@ -87,36 +102,34 @@ class EditSessionNotifier extends StateNotifier<List<AttendanceRecord>> {
   void updateStatus(String studentId, AttendanceStatus newStatus) {
     state = [
       for (final r in state)
-        if (r.studentId == studentId)
-          r.copyWith(status: newStatus)
-        else
-          r
+        if (r.studentId == studentId) r.copyWith(status: newStatus) else r,
     ];
   }
-  
+
   bool get hasChanges => state.any((r) => r.status != r.oldStatus);
-  
+
   int get remainingCount => state.where((r) => r.status == null).length;
 }
 
-final editSessionProvider = StateNotifierProvider<EditSessionNotifier, List<AttendanceRecord>>((ref) {
-  return EditSessionNotifier();
-});
+final editSessionProvider =
+    StateNotifierProvider<EditSessionNotifier, List<AttendanceRecord>>((ref) {
+      return EditSessionNotifier();
+    });
 
 final saveEditedSessionProvider = FutureProvider<bool>((ref) async {
   final activeSession = ref.read(activeSessionProvider);
   if (activeSession == null) return false;
-  
+
   final records = ref.read(editSessionProvider);
   final repo = ref.read(attendanceRepoProvider);
-  
+
   final updatedSession = activeSession.copyWith(
     records: records,
     version: activeSession.version + 1,
     lastModifiedAt: DateTime.now(),
   );
   final success = await repo.saveSession(updatedSession);
-  
+
   if (success) {
     // Invalidate history and active assigned classes so all screens update in real time
     ref.invalidate(facultyHistoryListProvider);
@@ -124,6 +137,6 @@ final saveEditedSessionProvider = FutureProvider<bool>((ref) async {
     ref.invalidate(activeStudentListProvider);
     ref.read(isEditModeProvider.notifier).state = false;
   }
-  
+
   return success;
 });

@@ -13,7 +13,8 @@ class AssignmentsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
 
-    if (authState is AuthAuthenticated && authState.user.role == AppRole.student) {
+    if (authState is AuthAuthenticated &&
+        authState.user.role == AppRole.student) {
       return const StudentAssignmentsScreen();
     }
 

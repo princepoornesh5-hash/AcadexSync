@@ -10,14 +10,18 @@ class MockAnalyticsRepository implements AnalyticsRepository {
 
   MockAnalyticsRepository(this.attendanceRepo);
 
-  Future<void> _delay() async => await Future.delayed(const Duration(milliseconds: 600));
+  Future<void> _delay() async =>
+      await Future.delayed(const Duration(milliseconds: 600));
 
   // --- Summary Metrics ---
 
   @override
-  Future<Map<String, String>> getSummaryMetrics(AppRole role, String userId) async {
+  Future<Map<String, String>> getSummaryMetrics(
+    AppRole role,
+    String userId,
+  ) async {
     await _delay();
-    
+
     switch (role) {
       case AppRole.student:
         return {
@@ -60,14 +64,17 @@ class MockAnalyticsRepository implements AnalyticsRepository {
   // --- Charts ---
 
   @override
-  Future<List<ChartDataPoint>> getTrendChartData(AppRole role, String userId) async {
+  Future<List<ChartDataPoint>> getTrendChartData(
+    AppRole role,
+    String userId,
+  ) async {
     await _delay();
     final random = Random(userId.hashCode); // deterministic based on user
 
     // Generate 6 months of trend data
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
     double base = role == AppRole.student ? 75.0 : 80.0;
-    
+
     return months.map((month) {
       base = base + (random.nextDouble() * 10 - 4);
       if (base > 100) base = 100;
@@ -77,9 +84,12 @@ class MockAnalyticsRepository implements AnalyticsRepository {
   }
 
   @override
-  Future<List<ChartDataPoint>> getComparisonChartData(AppRole role, String userId) async {
+  Future<List<ChartDataPoint>> getComparisonChartData(
+    AppRole role,
+    String userId,
+  ) async {
     await _delay();
-    
+
     if (role == AppRole.student || role == AppRole.faculty) {
       return [
         const ChartDataPoint(label: 'Math', value: 85),
@@ -106,56 +116,77 @@ class MockAnalyticsRepository implements AnalyticsRepository {
   // --- Insights ---
 
   @override
-  Future<List<AttendanceInsight>> getInsights(AppRole role, String userId) async {
+  Future<List<AttendanceInsight>> getInsights(
+    AppRole role,
+    String userId,
+  ) async {
     await _delay();
-    
+
     List<AttendanceInsight> insights = [];
 
     if (role == AppRole.student) {
-      insights.add(const AttendanceInsight(
-        id: 'i1',
-        title: 'Great Job!',
-        description: 'Your attendance improved by 5% this month compared to last month.',
-        severity: InsightSeverity.positive,
-        icon: LucideIcons.trendingUp,
-      ));
-      insights.add(const AttendanceInsight(
-        id: 'i2',
-        title: 'Physics Warning',
-        description: 'You missed the last 3 classes in Physics. You are close to the 75% threshold.',
-        severity: InsightSeverity.negative,
-        icon: LucideIcons.alertTriangle,
-      ));
+      insights.add(
+        const AttendanceInsight(
+          id: 'i1',
+          title: 'Great Job!',
+          description:
+              'Your attendance improved by 5% this month compared to last month.',
+          severity: InsightSeverity.positive,
+          icon: LucideIcons.trendingUp,
+        ),
+      );
+      insights.add(
+        const AttendanceInsight(
+          id: 'i2',
+          title: 'Physics Warning',
+          description:
+              'You missed the last 3 classes in Physics. You are close to the 75% threshold.',
+          severity: InsightSeverity.negative,
+          icon: LucideIcons.alertTriangle,
+        ),
+      );
     } else if (role == AppRole.hod || role == AppRole.collegeAdmin) {
-      insights.add(const AttendanceInsight(
-        id: 'i3',
-        title: 'Highest Attendance',
-        description: 'Computer Engineering (Sec A) has the highest attendance this week at 92%.',
-        severity: InsightSeverity.positive,
-        icon: LucideIcons.award,
-      ));
-      insights.add(const AttendanceInsight(
-        id: 'i4',
-        title: 'Completion Alert',
-        description: '3 faculty members have pending attendance submissions for today.',
-        severity: InsightSeverity.negative,
-        icon: LucideIcons.clock,
-      ));
-      insights.add(const AttendanceInsight(
-        id: 'i5',
-        title: 'Steady Trend',
-        description: 'Overall attendance has remained stable above 80% for 4 consecutive weeks.',
-        severity: InsightSeverity.neutral,
-        icon: LucideIcons.activity,
-      ));
+      insights.add(
+        const AttendanceInsight(
+          id: 'i3',
+          title: 'Highest Attendance',
+          description:
+              'Computer Engineering (Sec A) has the highest attendance this week at 92%.',
+          severity: InsightSeverity.positive,
+          icon: LucideIcons.award,
+        ),
+      );
+      insights.add(
+        const AttendanceInsight(
+          id: 'i4',
+          title: 'Completion Alert',
+          description:
+              '3 faculty members have pending attendance submissions for today.',
+          severity: InsightSeverity.negative,
+          icon: LucideIcons.clock,
+        ),
+      );
+      insights.add(
+        const AttendanceInsight(
+          id: 'i5',
+          title: 'Steady Trend',
+          description:
+              'Overall attendance has remained stable above 80% for 4 consecutive weeks.',
+          severity: InsightSeverity.neutral,
+          icon: LucideIcons.activity,
+        ),
+      );
     } else {
-      insights.add(const AttendanceInsight(
-        id: 'i6',
-        title: 'Platform Stability',
-        description: 'Attendance capture rate is operating normally across all institutions.',
-        severity: InsightSeverity.positive,
-        icon: LucideIcons.checkCircle2,
-      ));
+      insights.add(
+        const AttendanceInsight(
+          id: 'i6',
+          title: 'Platform Stability',
+          description:
+              'Attendance capture rate is operating normally across all institutions.',
+          severity: InsightSeverity.positive,
+          icon: LucideIcons.checkCircle2,
+        ),
+      );
     }
 
     return insights;
@@ -174,7 +205,8 @@ class MockAnalyticsRepository implements AnalyticsRepository {
         generatedAt: DateTime.now().subtract(const Duration(days: 2)),
         generatedBy: AppRole.hod,
         filtersApplied: {'Month': 'May 2026', 'Department': 'CSE'},
-        summary: 'Overall department attendance was 79%. 45 students fell below the 75% threshold.',
+        summary:
+            'Overall department attendance was 79%. 45 students fell below the 75% threshold.',
       ),
       AttendanceReport(
         id: 'rep_2',
@@ -183,7 +215,8 @@ class MockAnalyticsRepository implements AnalyticsRepository {
         generatedAt: DateTime.now().subtract(const Duration(days: 5)),
         generatedBy: AppRole.collegeAdmin,
         filtersApplied: {'Week': 'Week 24', 'Risk Level': 'Critical'},
-        summary: '215 students across the college are currently in the critical attendance band.',
+        summary:
+            '215 students across the college are currently in the critical attendance band.',
       ),
     ];
   }

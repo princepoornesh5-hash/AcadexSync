@@ -10,14 +10,16 @@ class RealtimeStatusPill extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statusAsync = ref.watch(realtimeStatusProvider);
-    final status = statusAsync.valueOrNull ?? RealtimeConnectionStatus.disconnected;
+    final status =
+        statusAsync.valueOrNull ?? RealtimeConnectionStatus.disconnected;
 
     if (status == RealtimeConnectionStatus.connected) {
       // Intentionally hidden when connected normally
       return const SizedBox.shrink();
     }
 
-    final isReconnecting = status == RealtimeConnectionStatus.reconnecting ||
+    final isReconnecting =
+        status == RealtimeConnectionStatus.reconnecting ||
         status == RealtimeConnectionStatus.connecting;
 
     return AnimatedContainer(
@@ -42,13 +44,17 @@ class RealtimeStatusPill extends ConsumerWidget {
           const SizedBox(width: 6),
           Flexible(
             child: Text(
-              isReconnecting ? 'Reconnecting live updates...' : 'Offline (HTTP active)',
+              isReconnecting
+                  ? 'Reconnecting live updates...'
+                  : 'Offline (HTTP active)',
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: isReconnecting ? Colors.amber.shade900 : Colors.red.shade900,
+                color: isReconnecting
+                    ? Colors.amber.shade900
+                    : Colors.red.shade900,
               ),
             ),
           ),

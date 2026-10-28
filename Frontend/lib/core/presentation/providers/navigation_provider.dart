@@ -36,8 +36,12 @@ class GlobalNavigationState {
       currentModule: currentModule ?? this.currentModule,
       selectedBottomTab: selectedBottomTab ?? this.selectedBottomTab,
       drawerOpen: drawerOpen ?? this.drawerOpen,
-      lastSelectedActionRoute: clearAction ? null : (lastSelectedActionRoute ?? this.lastSelectedActionRoute),
-      lastSelectedActionId: clearAction || clearActionId ? null : (lastSelectedActionId ?? this.lastSelectedActionId),
+      lastSelectedActionRoute: clearAction
+          ? null
+          : (lastSelectedActionRoute ?? this.lastSelectedActionRoute),
+      lastSelectedActionId: clearAction || clearActionId
+          ? null
+          : (lastSelectedActionId ?? this.lastSelectedActionId),
     );
   }
 }
@@ -100,7 +104,8 @@ class NavigationNotifier extends Notifier<GlobalNavigationState> {
     if (!route.startsWith('/dashboard') && route != '/' && route != '/login') {
       updatedActionRoute = route;
       // If the destination route does not match the previously clicked action route, clear the specific ID
-      if (state.lastSelectedActionRoute != null && !route.startsWith(state.lastSelectedActionRoute!)) {
+      if (state.lastSelectedActionRoute != null &&
+          !route.startsWith(state.lastSelectedActionRoute!)) {
         updatedActionId = null;
         clearActionId = true;
       }
@@ -126,9 +131,10 @@ class NavigationNotifier extends Notifier<GlobalNavigationState> {
   }
 }
 
-final navigationProvider = NotifierProvider<NavigationNotifier, GlobalNavigationState>(() {
-  return NavigationNotifier();
-});
+final navigationProvider =
+    NotifierProvider<NavigationNotifier, GlobalNavigationState>(() {
+      return NavigationNotifier();
+    });
 
 extension DashboardActionSelectionX on GlobalNavigationState {
   /// Determines whether a dashboard action card is currently selected.
@@ -145,26 +151,35 @@ extension DashboardActionSelectionX on GlobalNavigationState {
     List<String> allRoutes = const [],
   }) {
     // 1. If explicit action ID was stored:
-    if (id != null && id.isNotEmpty && lastSelectedActionId != null && lastSelectedActionId!.isNotEmpty) {
+    if (id != null &&
+        id.isNotEmpty &&
+        lastSelectedActionId != null &&
+        lastSelectedActionId!.isNotEmpty) {
       if (id == lastSelectedActionId) return true;
     }
 
     // 2. If route was tracked:
-    if (lastSelectedActionRoute != null && lastSelectedActionRoute!.isNotEmpty) {
+    if (lastSelectedActionRoute != null &&
+        lastSelectedActionRoute!.isNotEmpty) {
       final cleanActive = lastSelectedActionRoute!.split('?').first;
       final cleanRoute = route.split('?').first;
 
       if (cleanActive == cleanRoute) {
         // If an explicit action ID was also set and doesn't match this card, don't match
-        if (lastSelectedActionId != null && id != null && lastSelectedActionId != id) {
+        if (lastSelectedActionId != null &&
+            id != null &&
+            lastSelectedActionId != id) {
           return false;
         }
         // If multiple actions share the same route without a specific ID,
         // deterministically pick the primary or first matching action
-        if (allRoutes.isNotEmpty && allRoutes.where((r) => r == route).length > 1) {
+        if (allRoutes.isNotEmpty &&
+            allRoutes.where((r) => r == route).length > 1) {
           if (isPrimaryFallback) return true;
           final firstMatchingIndex = allRoutes.indexOf(route);
-          final currentIndex = id != null ? allRoutes.indexOf(route) : firstMatchingIndex;
+          final currentIndex = id != null
+              ? allRoutes.indexOf(route)
+              : firstMatchingIndex;
           return currentIndex == firstMatchingIndex;
         }
         return true;

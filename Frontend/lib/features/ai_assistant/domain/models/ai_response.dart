@@ -3,11 +3,7 @@ class AiResponse {
   final String? model;
   final Map<String, dynamic>? proposal;
 
-  const AiResponse({
-    required this.answer,
-    this.model,
-    this.proposal,
-  });
+  const AiResponse({required this.answer, this.model, this.proposal});
 
   factory AiResponse.fromJson(Map<String, dynamic> json) {
     return AiResponse(

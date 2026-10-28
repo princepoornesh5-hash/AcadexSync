@@ -37,23 +37,38 @@ class CertificateRequestsDashboardScreen extends ConsumerWidget {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
                   child: AcadexPageHeader(
-                    title: isStudent ? 'Official Certificate Requests' : 'Student Certificate Requests',
+                    title: isStudent
+                        ? 'Official Certificate Requests'
+                        : 'Student Certificate Requests',
                     subtitle: isStudent
                         ? 'Request official institutional documents such as Bonafide, Study, and Transfer certificates'
                         : 'Review, approve, and track institutional certificate requests submitted by students',
                     actions: [
                       OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          side: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          side: BorderSide(
+                            color: isDark
+                                ? AcadexColors.darkHairline
+                                : AcadexColors.hairline,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              AcadexRadius.md,
+                            ),
+                          ),
                         ),
                         icon: const Icon(LucideIcons.award, size: 16),
                         label: Text(
                           'Certificates Portfolio',
                           style: GoogleFonts.inter(
                             fontWeight: FontWeight.w600,
-                            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                            color: isDark
+                                ? AcadexColors.darkInkSecondary
+                                : AcadexColors.inkSecondary,
                           ),
                         ),
                         onPressed: () => context.go('/certificates'),
@@ -64,13 +79,26 @@ class CertificateRequestsDashboardScreen extends ConsumerWidget {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AcadexColors.primary,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                AcadexRadius.md,
+                              ),
+                            ),
                             elevation: 0,
                           ),
                           icon: const Icon(LucideIcons.filePlus2, size: 16),
-                          label: Text('New Request', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                          onPressed: () => context.go('/certificates/requests/new'),
+                          label: Text(
+                            'New Request',
+                            style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          onPressed: () =>
+                              context.go('/certificates/requests/new'),
                         ),
                       ],
                     ],
@@ -81,7 +109,10 @@ class CertificateRequestsDashboardScreen extends ConsumerWidget {
               // Filter toolbar
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 8,
+                  ),
                   child: _RequestsFilterBar(isStudent: isStudent),
                 ),
               ),
@@ -110,7 +141,9 @@ class _RequestsFilterBar extends ConsumerWidget {
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: BorderRadius.circular(AcadexRadius.lg),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Column(
         children: [
@@ -122,28 +155,50 @@ class _RequestsFilterBar extends ConsumerWidget {
               prefixIcon: Icon(
                 LucideIcons.search,
                 size: 18,
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
               filled: true,
-              fillColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvasSoft,
+              fillColor: isDark
+                  ? AcadexColors.darkCanvas
+                  : AcadexColors.canvasSoft,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AcadexRadius.md),
-                borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                borderSide: BorderSide(
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
+                ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AcadexRadius.md),
-                borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                borderSide: BorderSide(
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AcadexRadius.md),
-                borderSide: const BorderSide(color: AcadexColors.primary, width: 1.5),
+                borderSide: const BorderSide(
+                  color: AcadexColors.primary,
+                  width: 1.5,
+                ),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
               suffixIcon: filters.searchQuery.isNotEmpty
                   ? IconButton(
                       icon: const Icon(LucideIcons.x, size: 16),
-                      onPressed: () => ref.read(certificateRequestFilterProvider.notifier).state =
-                          filters.copyWith(searchQuery: ''),
+                      onPressed: () =>
+                          ref
+                              .read(certificateRequestFilterProvider.notifier)
+                              .state = filters.copyWith(
+                            searchQuery: '',
+                          ),
                     )
                   : null,
             ),
@@ -160,19 +215,30 @@ class _RequestsFilterBar extends ConsumerWidget {
                 _StatusFilterChip(
                   label: 'All Statuses',
                   isSelected: filters.status == null,
-                  onTap: () => ref.read(certificateRequestFilterProvider.notifier).state =
-                      filters.copyWith(clearStatus: true),
+                  onTap: () =>
+                      ref
+                          .read(certificateRequestFilterProvider.notifier)
+                          .state = filters.copyWith(
+                        clearStatus: true,
+                      ),
                 ),
                 const SizedBox(width: 8),
-                ...CertificateRequestStatus.values.map((s) => Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: _StatusFilterChip(
-                        label: s.displayName,
-                        isSelected: filters.status == s,
-                        onTap: () => ref.read(certificateRequestFilterProvider.notifier).state =
-                            filters.copyWith(status: filters.status == s ? null : s, clearStatus: filters.status == s),
-                      ),
-                    )),
+                ...CertificateRequestStatus.values.map(
+                  (s) => Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: _StatusFilterChip(
+                      label: s.displayName,
+                      isSelected: filters.status == s,
+                      onTap: () =>
+                          ref
+                              .read(certificateRequestFilterProvider.notifier)
+                              .state = filters.copyWith(
+                            status: filters.status == s ? null : s,
+                            clearStatus: filters.status == s,
+                          ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -221,7 +287,9 @@ class _StatusFilterChip extends StatelessWidget {
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             color: isSelected
                 ? Colors.white
-                : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                : (isDark
+                      ? AcadexColors.darkInkSecondary
+                      : AcadexColors.inkSecondary),
           ),
         ),
       ),
@@ -254,12 +322,16 @@ class _RequestsList extends ConsumerWidget {
           return SliverFillRemaining(
             child: AcadexEmptyState(
               icon: LucideIcons.fileClock,
-              title: isStudent ? 'No requests submitted' : 'No certificate requests',
+              title: isStudent
+                  ? 'No requests submitted'
+                  : 'No certificate requests',
               subtitle: isStudent
                   ? 'You have not submitted any official certificate requests. Click "New Request" to get started.'
                   : 'There are currently no student requests matching your search or filters.',
               actionLabel: isStudent ? 'Submit Request' : null,
-              onActionTap: isStudent ? () => context.go('/certificates/requests/new') : null,
+              onActionTap: isStudent
+                  ? () => context.go('/certificates/requests/new')
+                  : null,
             ),
           );
         }
@@ -267,13 +339,14 @@ class _RequestsList extends ConsumerWidget {
         return SliverPadding(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 80),
           sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final req = requests[index];
-                return _RequestItemCard(request: req, isStudent: isStudent, isDark: isDark);
-              },
-              childCount: requests.length,
-            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final req = requests[index];
+              return _RequestItemCard(
+                request: req,
+                isStudent: isStudent,
+                isDark: isDark,
+              );
+            }, childCount: requests.length),
           ),
         );
       },
@@ -320,10 +393,14 @@ class _RequestItemCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: BorderRadius.circular(AcadexRadius.lg),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.02),
+            color: isDark
+                ? Colors.black26
+                : Colors.black.withValues(alpha: 0.02),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -333,7 +410,10 @@ class _RequestItemCard extends StatelessWidget {
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(AcadexRadius.lg),
         child: InkWell(
-          onTap: () => context.go('/certificates/requests/${request.id}', extra: request),
+          onTap: () => context.go(
+            '/certificates/requests/${request.id}',
+            extra: request,
+          ),
           borderRadius: BorderRadius.circular(AcadexRadius.lg),
           child: Padding(
             padding: const EdgeInsets.all(18),
@@ -352,7 +432,9 @@ class _RequestItemCard extends StatelessWidget {
                             style: GoogleFonts.inter(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ),
                           ),
                           if (!isStudent) ...[
@@ -361,7 +443,9 @@ class _RequestItemCard extends StatelessWidget {
                               'Student ID: ${request.studentId}',
                               style: GoogleFonts.inter(
                                 fontSize: 13,
-                                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                                color: isDark
+                                    ? AcadexColors.darkInkSecondary
+                                    : AcadexColors.inkSecondary,
                               ),
                             ),
                           ],
@@ -369,12 +453,19 @@ class _RequestItemCard extends StatelessWidget {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: isDark ? statusColor.withValues(alpha: 0.2) : statusColor.withValues(alpha: 0.1),
+                        color: isDark
+                            ? statusColor.withValues(alpha: 0.2)
+                            : statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(AcadexRadius.full),
                         border: Border.all(
-                          color: isDark ? statusColor.withValues(alpha: 0.4) : statusColor.withValues(alpha: 0.25),
+                          color: isDark
+                              ? statusColor.withValues(alpha: 0.4)
+                              : statusColor.withValues(alpha: 0.25),
                         ),
                       ),
                       child: Text(
@@ -394,7 +485,9 @@ class _RequestItemCard extends StatelessWidget {
                     'Purpose: ${request.purpose}',
                     style: GoogleFonts.inter(
                       fontSize: 13,
-                      color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                      color: isDark
+                          ? AcadexColors.darkInkSecondary
+                          : AcadexColors.inkSecondary,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -406,21 +499,27 @@ class _RequestItemCard extends StatelessWidget {
                     Icon(
                       LucideIcons.clock,
                       size: 13,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       'Requested ${timeago.format(request.requestedAt)}',
                       style: GoogleFonts.inter(
                         fontSize: 11,
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                     ),
                     const Spacer(),
                     Icon(
                       LucideIcons.chevronRight,
                       size: 16,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                   ],
                 ),

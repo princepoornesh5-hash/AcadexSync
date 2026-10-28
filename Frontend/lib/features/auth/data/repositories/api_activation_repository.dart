@@ -10,13 +10,13 @@ class ApiActivationRepository implements ActivationRepository {
   ApiActivationRepository([ApiClient? client]) : _client = client ?? apiClient;
 
   @override
-  Future<ActivationValidationResult> validateActivationCode(String activationCode) async {
+  Future<ActivationValidationResult> validateActivationCode(
+    String activationCode,
+  ) async {
     try {
       final response = await _client.dio.post(
         '/auth/activate/validate-code',
-        data: {
-          'activationCode': activationCode.trim(),
-        },
+        data: {'activationCode': activationCode.trim()},
       );
       final body = response.data as Map<String, dynamic>;
       final data = body['data'] as Map<String, dynamic>? ?? body;
@@ -77,9 +77,7 @@ class ApiActivationRepository implements ActivationRepository {
     String? confirmPassword,
   }) async {
     try {
-      final payload = <String, dynamic>{
-        'activationToken': activationToken,
-      };
+      final payload = <String, dynamic>{'activationToken': activationToken};
       if (password != null) {
         payload['password'] = password;
       }
@@ -103,4 +101,3 @@ class ApiActivationRepository implements ActivationRepository {
     return NetworkErrorDiagnostic.toException(e, fallback);
   }
 }
-

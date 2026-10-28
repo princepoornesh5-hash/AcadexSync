@@ -48,10 +48,12 @@ class ProfilePictureConfirmDialog extends ConsumerStatefulWidget {
   }
 
   @override
-  ConsumerState<ProfilePictureConfirmDialog> createState() => _ProfilePictureConfirmDialogState();
+  ConsumerState<ProfilePictureConfirmDialog> createState() =>
+      _ProfilePictureConfirmDialogState();
 }
 
-class _ProfilePictureConfirmDialogState extends ConsumerState<ProfilePictureConfirmDialog> {
+class _ProfilePictureConfirmDialogState
+    extends ConsumerState<ProfilePictureConfirmDialog> {
   bool _isUploading = false;
   double _uploadProgress = 0.0;
   String? _errorMessage;
@@ -113,7 +115,9 @@ class _ProfilePictureConfirmDialogState extends ConsumerState<ProfilePictureConf
     final extension = widget.fileName.split('.').last.toUpperCase();
 
     return Dialog(
-      backgroundColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+      backgroundColor: isDark
+          ? AcadexColors.darkSurfaceCard
+          : AcadexColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: AcadexRadius.borderRadiusXl,
         side: BorderSide(
@@ -148,11 +152,16 @@ class _ProfilePictureConfirmDialogState extends ConsumerState<ProfilePictureConf
                       icon: Icon(
                         LucideIcons.x,
                         size: 18,
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                       onPressed: () => Navigator.of(context).pop(false),
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
                     ),
                 ],
               ),
@@ -183,9 +192,15 @@ class _ProfilePictureConfirmDialogState extends ConsumerState<ProfilePictureConf
                     height: 140,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Container(
-                      color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                      color: isDark
+                          ? AcadexColors.darkCanvasSoft
+                          : AcadexColors.canvasSoft,
                       child: const Center(
-                        child: Icon(LucideIcons.imageOff, size: 36, color: AcadexColors.error),
+                        child: Icon(
+                          LucideIcons.imageOff,
+                          size: 36,
+                          color: AcadexColors.error,
+                        ),
                       ),
                     ),
                   ),
@@ -195,12 +210,19 @@ class _ProfilePictureConfirmDialogState extends ConsumerState<ProfilePictureConf
 
               // File Metadata Chip
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                  color: isDark
+                      ? AcadexColors.darkCanvasSoft
+                      : AcadexColors.canvasSoft,
                   borderRadius: AcadexRadius.borderRadiusMd,
                   border: Border.all(
-                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
                   ),
                 ),
                 child: Row(
@@ -209,13 +231,17 @@ class _ProfilePictureConfirmDialogState extends ConsumerState<ProfilePictureConf
                     Icon(
                       LucideIcons.fileImage,
                       size: 14,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                     const SizedBox(width: 6),
                     Text(
                       '$extension • ${_formatFileSize(widget.fileSize)}',
                       style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                        color: isDark
+                            ? AcadexColors.darkInkSecondary
+                            : AcadexColors.inkSecondary,
                       ).copyWith(fontWeight: FontWeight.w600),
                     ),
                   ],
@@ -228,7 +254,9 @@ class _ProfilePictureConfirmDialogState extends ConsumerState<ProfilePictureConf
                 'This photo will be displayed across your profile, attendance sheets, and academic records.',
                 textAlign: TextAlign.center,
                 style: AcadexTypography.caption(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
 
@@ -239,8 +267,12 @@ class _ProfilePictureConfirmDialogState extends ConsumerState<ProfilePictureConf
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
                     value: _uploadProgress > 0 ? _uploadProgress : null,
-                    backgroundColor: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
-                    valueColor: const AlwaysStoppedAnimation<Color>(AcadexColors.primary),
+                    backgroundColor: isDark
+                        ? AcadexColors.darkCanvasSoft
+                        : AcadexColors.canvasSoft,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AcadexColors.primary,
+                    ),
                     minHeight: 6,
                   ),
                 ),
@@ -250,7 +282,9 @@ class _ProfilePictureConfirmDialogState extends ConsumerState<ProfilePictureConf
                       ? 'Uploading... ${(_uploadProgress * 100).toInt()}%'
                       : 'Preparing and verifying image...',
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                 ),
               ],
@@ -263,11 +297,17 @@ class _ProfilePictureConfirmDialogState extends ConsumerState<ProfilePictureConf
                   decoration: BoxDecoration(
                     color: AcadexColors.error.withValues(alpha: 0.1),
                     borderRadius: AcadexRadius.borderRadiusMd,
-                    border: Border.all(color: AcadexColors.error.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: AcadexColors.error.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 16),
+                      const Icon(
+                        LucideIcons.alertCircle,
+                        color: AcadexColors.error,
+                        size: 16,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -295,7 +335,9 @@ class _ProfilePictureConfirmDialogState extends ConsumerState<ProfilePictureConf
                   AcadexButton(
                     label: 'Cancel',
                     variant: AcadexButtonVariant.secondary,
-                    onPressed: _isUploading ? null : () => Navigator.of(context).pop(false),
+                    onPressed: _isUploading
+                        ? null
+                        : () => Navigator.of(context).pop(false),
                   ),
                   AcadexButton(
                     label: _isUploading ? 'Uploading...' : 'Confirm & Upload',

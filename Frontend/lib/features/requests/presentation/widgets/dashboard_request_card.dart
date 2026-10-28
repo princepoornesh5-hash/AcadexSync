@@ -45,7 +45,8 @@ class DashboardRequestCard extends ConsumerWidget {
         } else if (role == AppRole.faculty) {
           final count = counts.incomingCount;
           if (count > 0) {
-            title = '$count ${count == 1 ? "request needs" : "requests need"} your response';
+            title =
+                '$count ${count == 1 ? "request needs" : "requests need"} your response';
             subtitle = 'Student attendance and academic requests';
             icon = LucideIcons.alertCircle;
             accentColor = const Color(0xFFD97706); // amber-600
@@ -66,7 +67,8 @@ class DashboardRequestCard extends ConsumerWidget {
         } else if (role == AppRole.hod) {
           final count = counts.incomingCount;
           if (count > 0) {
-            title = '$count ${count == 1 ? "request needs" : "requests need"} attention';
+            title =
+                '$count ${count == 1 ? "request needs" : "requests need"} attention';
             subtitle = 'Department faculty and student requests';
             icon = LucideIcons.alertCircle;
             accentColor = const Color(0xFFD97706); // amber-600
@@ -86,7 +88,9 @@ class DashboardRequestCard extends ConsumerWidget {
           }
         } else {
           final count = counts.incomingCount;
-          title = count > 0 ? '$count requests need administrative action' : 'Request Center';
+          title = count > 0
+              ? '$count requests need administrative action'
+              : 'Request Center';
           subtitle = 'Review and resolve institutional requests';
           icon = LucideIcons.inbox;
           accentColor = AcadexColors.primary;
@@ -121,7 +125,10 @@ class DashboardRequestCard extends ConsumerWidget {
               onTap: () => context.push('/requests'),
               borderRadius: BorderRadius.circular(12),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     Container(
@@ -141,7 +148,9 @@ class DashboardRequestCard extends ConsumerWidget {
                             title,
                             style: AcadexTypography.bodySmall().copyWith(
                               fontWeight: FontWeight.w700,
-                              color: hasAttention ? accentColor : AcadexColors.ink,
+                              color: hasAttention
+                                  ? accentColor
+                                  : AcadexColors.ink,
                             ),
                           ),
                           const SizedBox(height: 2),

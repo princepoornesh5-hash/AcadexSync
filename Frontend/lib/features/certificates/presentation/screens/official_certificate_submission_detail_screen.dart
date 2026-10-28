@@ -71,7 +71,9 @@ class _OfficialCertificateSubmissionDetailScreenState
         _reasonController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('A reason is mandatory when rejecting or requesting re-upload.'),
+          content: Text(
+            'A reason is mandatory when rejecting or requesting re-upload.',
+          ),
           backgroundColor: AcadexColors.error,
         ),
       );
@@ -79,7 +81,9 @@ class _OfficialCertificateSubmissionDetailScreenState
     }
 
     final authState = ref.read(authProvider);
-    final verifierName = authState is AuthAuthenticated ? authState.user.name : 'Admin';
+    final verifierName = authState is AuthAuthenticated
+        ? authState.user.name
+        : 'Admin';
 
     setState(() => _isProcessing = true);
 
@@ -89,7 +93,9 @@ class _OfficialCertificateSubmissionDetailScreenState
         submissionId: widget.submissionId,
         verifiedBy: verifierName,
         status: status,
-        rejectionReason: _reasonController.text.trim().isNotEmpty ? _reasonController.text.trim() : null,
+        rejectionReason: _reasonController.text.trim().isNotEmpty
+            ? _reasonController.text.trim()
+            : null,
       );
 
       await _loadSubmission();
@@ -97,7 +103,9 @@ class _OfficialCertificateSubmissionDetailScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Submission status updated to: ${status.displayName}'),
+            content: Text(
+              'Submission status updated to: ${status.displayName}',
+            ),
             backgroundColor: AcadexColors.success,
           ),
         );
@@ -105,7 +113,10 @@ class _OfficialCertificateSubmissionDetailScreenState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating status: $e'), backgroundColor: AcadexColors.error),
+          SnackBar(
+            content: Text('Error updating status: $e'),
+            backgroundColor: AcadexColors.error,
+          ),
         );
       }
     } finally {
@@ -131,7 +142,11 @@ class _OfficialCertificateSubmissionDetailScreenState
             children: [
               const Text('Submission not found'),
               const SizedBox(height: 16),
-              AcadexButton(label: 'Back', onPressed: () => context.safePop(fallbackRoute: '/certificates/official')),
+              AcadexButton(
+                label: 'Back',
+                onPressed: () =>
+                    context.safePop(fallbackRoute: '/certificates/official'),
+              ),
             ],
           ),
         ),
@@ -149,13 +164,16 @@ class _OfficialCertificateSubmissionDetailScreenState
             children: [
               AcadexPageHeader(
                 title: 'Review Submission: ${sub.certificateName}',
-                subtitle: 'Verify document authenticity and update review status.',
+                subtitle:
+                    'Verify document authenticity and update review status.',
                 actions: [
                   AcadexButton(
                     label: 'Back to List',
                     icon: LucideIcons.arrowLeft,
                     variant: AcadexButtonVariant.secondary,
-                    onPressed: () => context.safePop(fallbackRoute: '/certificates/official'),
+                    onPressed: () => context.safePop(
+                      fallbackRoute: '/certificates/official',
+                    ),
                   ),
                 ],
               ),
@@ -173,17 +191,29 @@ class _OfficialCertificateSubmissionDetailScreenState
                         Text(
                           'Student Information',
                           style: AcadexTypography.heading3(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ),
                         ),
-                        OfficialCertificateStatusBadge(submissionStatus: sub.status),
+                        OfficialCertificateStatusBadge(
+                          submissionStatus: sub.status,
+                        ),
                       ],
                     ),
                     const SizedBox(height: AcadexSpacing.space16),
                     _infoRow('Student Name', sub.studentName, isDark),
                     _infoRow('Roll Number / ID', sub.studentId, isDark),
-                    _infoRow('Department', sub.departmentId.toUpperCase(), isDark),
-                    _infoRow('Course / Sem / Sec', 'Course: ${sub.courseId} • Sem: ${sub.semesterId} • Sec: ${sub.sectionId}', isDark),
+                    _infoRow(
+                      'Department',
+                      sub.departmentId.toUpperCase(),
+                      isDark,
+                    ),
+                    _infoRow(
+                      'Course / Sem / Sec',
+                      'Course: ${sub.courseId} • Sem: ${sub.semesterId} • Sec: ${sub.sectionId}',
+                      isDark,
+                    ),
                     const SizedBox(height: AcadexSpacing.space24),
                     const Divider(),
                     const SizedBox(height: AcadexSpacing.space16),
@@ -200,10 +230,18 @@ class _OfficialCertificateSubmissionDetailScreenState
                       _infoRow('Student Notes', sub.description!, isDark),
                     _infoRow('File Name', sub.fileName, isDark),
                     _infoRow('File Size', sub.fileSizeDisplay, isDark),
-                    _infoRow('Uploaded At', sub.uploadedAt.toString().substring(0, 16), isDark),
+                    _infoRow(
+                      'Uploaded At',
+                      sub.uploadedAt.toString().substring(0, 16),
+                      isDark,
+                    ),
                     if (sub.verifiedBy != null) ...[
                       _infoRow('Verified By', sub.verifiedBy!, isDark),
-                      _infoRow('Verified At', sub.verifiedAt?.toString().substring(0, 16) ?? 'N/A', isDark),
+                      _infoRow(
+                        'Verified At',
+                        sub.verifiedAt?.toString().substring(0, 16) ?? 'N/A',
+                        isDark,
+                      ),
                     ],
 
                     const SizedBox(height: AcadexSpacing.space24),
@@ -222,8 +260,11 @@ class _OfficialCertificateSubmissionDetailScreenState
                       controller: _reasonController,
                       maxLines: 3,
                       decoration: InputDecoration(
-                        hintText: 'Enter reason if rejecting or requesting re-upload (mandatory for re-upload/reject)...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                        hintText:
+                            'Enter reason if rejecting or requesting re-upload (mandatory for re-upload/reject)...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AcadexRadius.md),
+                        ),
                       ),
                     ),
                     const SizedBox(height: AcadexSpacing.space24),
@@ -239,7 +280,10 @@ class _OfficialCertificateSubmissionDetailScreenState
                           size: AcadexButtonSize.sm,
                           onPressed: _isProcessing
                               ? null
-                              : () => _updateStatus(OfficialCertificateStatus.resubmissionRequired),
+                              : () => _updateStatus(
+                                  OfficialCertificateStatus
+                                      .resubmissionRequired,
+                                ),
                         ),
                         const SizedBox(width: AcadexSpacing.space8),
                         AcadexButton(
@@ -249,7 +293,9 @@ class _OfficialCertificateSubmissionDetailScreenState
                           size: AcadexButtonSize.sm,
                           onPressed: _isProcessing
                               ? null
-                              : () => _updateStatus(OfficialCertificateStatus.rejected),
+                              : () => _updateStatus(
+                                  OfficialCertificateStatus.rejected,
+                                ),
                         ),
                         const SizedBox(width: AcadexSpacing.space8),
                         AcadexButton(
@@ -259,7 +305,9 @@ class _OfficialCertificateSubmissionDetailScreenState
                           size: AcadexButtonSize.sm,
                           onPressed: _isProcessing
                               ? null
-                              : () => _updateStatus(OfficialCertificateStatus.verified),
+                              : () => _updateStatus(
+                                  OfficialCertificateStatus.verified,
+                                ),
                         ),
                       ],
                     ),
@@ -284,7 +332,9 @@ class _OfficialCertificateSubmissionDetailScreenState
             child: Text(
               label,
               style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
             ),
           ),

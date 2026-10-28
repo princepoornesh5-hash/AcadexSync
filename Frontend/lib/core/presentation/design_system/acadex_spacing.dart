@@ -35,7 +35,10 @@ class AcadexSpacing {
 
   // ── Standard Insets & Padding ──
   /// Mobile horizontal page padding: 14px on small devices, 16px standard
-  static const EdgeInsets pagePaddingMobile = EdgeInsets.symmetric(horizontal: space14, vertical: space16);
+  static const EdgeInsets pagePaddingMobile = EdgeInsets.symmetric(
+    horizontal: space14,
+    vertical: space16,
+  );
   static const EdgeInsets pagePaddingTablet = EdgeInsets.all(space20);
   static const EdgeInsets pagePaddingDesktop = EdgeInsets.all(space28);
   static const EdgeInsets pagePadding = EdgeInsets.all(space16);
@@ -55,13 +58,13 @@ class AcadexSpacing {
 class AcadexRadius {
   AcadexRadius._();
 
-  static const double xs = 4.0;      // Tiny tags, inner badges
-  static const double sm = 6.0;      // List items, chips, small controls
-  static const double md = 10.0;     // Buttons, text inputs, selectors
-  static const double lg = 14.0;     // Cards, containers, panels
-  static const double xl = 18.0;     // Bottom sheets, dialogs, modals
-  static const double xxl = 24.0;    // Prominent hero sections
-  static const double full = 999.0;  // Pills, round action icons
+  static const double xs = 4.0; // Tiny tags, inner badges
+  static const double sm = 6.0; // List items, chips, small controls
+  static const double md = 10.0; // Buttons, text inputs, selectors
+  static const double lg = 14.0; // Cards, containers, panels
+  static const double xl = 18.0; // Bottom sheets, dialogs, modals
+  static const double xxl = 24.0; // Prominent hero sections
+  static const double full = 999.0; // Pills, round action icons
 
   // BorderRadius getters (CamelCase style)
   static BorderRadius get borderRadiusXs => BorderRadius.circular(xs);
@@ -79,7 +82,9 @@ class AcadexRadius {
   static const BorderRadius lgBorder = BorderRadius.all(Radius.circular(lg));
   static const BorderRadius xlBorder = BorderRadius.all(Radius.circular(xl));
   static const BorderRadius xxlBorder = BorderRadius.all(Radius.circular(xxl));
-  static const BorderRadius fullBorder = BorderRadius.all(Radius.circular(full));
+  static const BorderRadius fullBorder = BorderRadius.all(
+    Radius.circular(full),
+  );
 }
 
 /// Centralized Subtle Shadows (Reduced elevation to eliminate visual noise)

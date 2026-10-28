@@ -51,12 +51,14 @@ class AttendanceHeader extends StatelessWidget {
                 Text(
                   subtitle,
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );

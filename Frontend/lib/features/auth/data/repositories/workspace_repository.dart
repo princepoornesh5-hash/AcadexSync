@@ -22,10 +22,15 @@ class WorkspaceRepository {
       }
 
       return membershipsJson
-          .map((m) => WorkspaceMembershipModel.fromJson(m as Map<String, dynamic>))
+          .map(
+            (m) => WorkspaceMembershipModel.fromJson(m as Map<String, dynamic>),
+          )
           .toList();
     } on DioException catch (e) {
-      final errorMsg = e.response?.data?['message'] ?? e.message ?? 'Failed to load workspaces';
+      final errorMsg =
+          e.response?.data?['message'] ??
+          e.message ??
+          'Failed to load workspaces';
       throw Exception(errorMsg);
     }
   }
@@ -42,7 +47,10 @@ class WorkspaceRepository {
 
       return SwitchWorkspaceResult.fromJson(data);
     } on DioException catch (e) {
-      final errorMsg = e.response?.data?['message'] ?? e.message ?? 'Failed to switch workspace';
+      final errorMsg =
+          e.response?.data?['message'] ??
+          e.message ??
+          'Failed to switch workspace';
       throw Exception(errorMsg);
     }
   }

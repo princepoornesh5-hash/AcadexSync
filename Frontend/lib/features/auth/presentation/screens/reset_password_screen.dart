@@ -21,7 +21,8 @@ class ResetPasswordScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  ConsumerState<ResetPasswordScreen> createState() =>
+      _ResetPasswordScreenState();
 }
 
 class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
@@ -113,7 +114,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 28.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 28.0,
+              ),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 440),
                 child: Column(
@@ -126,7 +130,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                           icon: const Icon(LucideIcons.arrowLeft, size: 16),
                           label: const Text('Back to Sign In'),
                           style: TextButton.styleFrom(
-                            foregroundColor: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                            foregroundColor: isDark
+                                ? AcadexColors.darkInkSecondary
+                                : AcadexColors.inkSecondary,
                           ),
                           onPressed: () => context.go('/login'),
                         ),
@@ -166,7 +172,11 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     : AcadexColors.primaryLight,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(LucideIcons.lockKeyhole, size: 28, color: AcadexColors.primary),
+              child: const Icon(
+                LucideIcons.lockKeyhole,
+                size: 28,
+                color: AcadexColors.primary,
+              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -191,13 +201,19 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.errorDarkContainer : AcadexColors.errorLight,
+                color: isDark
+                    ? AcadexColors.errorDarkContainer
+                    : AcadexColors.errorLight,
                 borderRadius: AcadexRadius.borderRadiusMd,
                 border: Border.all(color: AcadexColors.error),
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.circleAlert, size: 16, color: AcadexColors.error),
+                  const Icon(
+                    LucideIcons.circleAlert,
+                    size: 16,
+                    color: AcadexColors.error,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -217,7 +233,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           Text(
             'New Password',
             style: AcadexTypography.caption(
-              color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+              color: isDark
+                  ? AcadexColors.darkInkSecondary
+                  : AcadexColors.inkSecondary,
             ).copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
@@ -226,21 +244,28 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             enabled: !_isLoading,
             obscureText: !_isPasswordVisible,
             onChanged: (v) => setState(() {}),
-            style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+            style: AcadexTypography.body(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ),
             decoration: InputDecoration(
               hintText: '••••••••',
               prefixIcon: Icon(
                 LucideIcons.lock,
                 size: 18,
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
               suffixIcon: IconButton(
                 icon: Icon(
                   _isPasswordVisible ? LucideIcons.eyeOff : LucideIcons.eye,
                   size: 18,
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
-                onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                onPressed: () =>
+                    setState(() => _isPasswordVisible = !_isPasswordVisible),
               ),
             ),
             validator: (v) {
@@ -258,7 +283,11 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               children: [
                 Text(
                   'Password Strength:',
-                  style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                  style: AcadexTypography.caption(
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
+                  ),
                 ),
                 Text(
                   _getPasswordStrengthLabel(strength),
@@ -273,8 +302,12 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               borderRadius: BorderRadius.circular(3),
               child: LinearProgressIndicator(
                 value: strength,
-                backgroundColor: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-                valueColor: AlwaysStoppedAnimation<Color>(_getPasswordStrengthColor(strength)),
+                backgroundColor: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  _getPasswordStrengthColor(strength),
+                ),
                 minHeight: 4,
               ),
             ),
@@ -288,17 +321,32 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               color: isDark ? AcadexColors.darkCanvas : AcadexColors.canvasSoft,
               borderRadius: AcadexRadius.borderRadiusMd,
               border: Border.all(
-                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
               ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildRequirementItem('At least 8 characters', password.length >= 8, isDark),
+                _buildRequirementItem(
+                  'At least 8 characters',
+                  password.length >= 8,
+                  isDark,
+                ),
                 const SizedBox(height: 4),
-                _buildRequirementItem('Letters & numbers', RegExp(r'[a-zA-Z]').hasMatch(password) && RegExp(r'[0-9]').hasMatch(password), isDark),
+                _buildRequirementItem(
+                  'Letters & numbers',
+                  RegExp(r'[a-zA-Z]').hasMatch(password) &&
+                      RegExp(r'[0-9]').hasMatch(password),
+                  isDark,
+                ),
                 const SizedBox(height: 4),
-                _buildRequirementItem('Special character (!@#\$%^&*)', RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password), isDark),
+                _buildRequirementItem(
+                  'Special character (!@#\$%^&*)',
+                  RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password),
+                  isDark,
+                ),
               ],
             ),
           ),
@@ -308,7 +356,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           Text(
             'Confirm New Password',
             style: AcadexTypography.caption(
-              color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+              color: isDark
+                  ? AcadexColors.darkInkSecondary
+                  : AcadexColors.inkSecondary,
             ).copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
@@ -316,26 +366,38 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             controller: _confirmPasswordController,
             enabled: !_isLoading,
             obscureText: !_isConfirmPasswordVisible,
-            style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+            style: AcadexTypography.body(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ),
             decoration: InputDecoration(
               hintText: '••••••••',
               prefixIcon: Icon(
                 LucideIcons.lock,
                 size: 18,
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _isConfirmPasswordVisible ? LucideIcons.eyeOff : LucideIcons.eye,
+                  _isConfirmPasswordVisible
+                      ? LucideIcons.eyeOff
+                      : LucideIcons.eye,
                   size: 18,
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
-                onPressed: () => setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible),
+                onPressed: () => setState(
+                  () => _isConfirmPasswordVisible = !_isConfirmPasswordVisible,
+                ),
               ),
             ),
             validator: (v) {
-              if (v == null || v.isEmpty) return "Please confirm your new password";
-              if (v != _newPasswordController.text) return "Passwords do not match";
+              if (v == null || v.isEmpty)
+                return "Please confirm your new password";
+              if (v != _newPasswordController.text)
+                return "Passwords do not match";
               return null;
             },
           ),
@@ -366,7 +428,11 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               color: AcadexColors.success.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: const Icon(LucideIcons.checkCircle2, size: 36, color: AcadexColors.success),
+            child: const Icon(
+              LucideIcons.checkCircle2,
+              size: 36,
+              color: AcadexColors.success,
+            ),
           ),
         ),
         const SizedBox(height: 20),

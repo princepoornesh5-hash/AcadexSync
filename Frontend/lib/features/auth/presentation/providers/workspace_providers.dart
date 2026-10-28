@@ -27,7 +27,9 @@ final workspaceRepositoryProvider = Provider<WorkspaceRepository>((ref) {
 });
 
 /// Authoritative list of active workspace memberships for the authenticated user
-final userWorkspacesProvider = FutureProvider<List<WorkspaceMembershipModel>>((ref) async {
+final userWorkspacesProvider = FutureProvider<List<WorkspaceMembershipModel>>((
+  ref,
+) async {
   final authState = ref.watch(authProvider);
   if (authState is! AuthAuthenticated) {
     return [];
@@ -69,7 +71,9 @@ final activeWorkspaceProvider = Provider<WorkspaceMembershipModel?>((ref) {
 
   // Fallback to user's collegeId if activeId not set
   if (authState is AuthAuthenticated && authState.user.collegeId != null) {
-    final match = memberships.where((m) => m.collegeId == authState.user.collegeId);
+    final match = memberships.where(
+      (m) => m.collegeId == authState.user.collegeId,
+    );
     if (match.isNotEmpty) return match.first;
   }
 
@@ -147,7 +151,9 @@ class WorkspaceSwitchController {
   Future<bool> switchWorkspace(String targetCollegeId) async {
     final isSwitching = _ref.read(isSwitchingWorkspaceProvider);
     if (isSwitching) {
-      debugPrint('[WORKSPACE] Switch already in progress. Ignoring duplicate request.');
+      debugPrint(
+        '[WORKSPACE] Switch already in progress. Ignoring duplicate request.',
+      );
       return false;
     }
 
@@ -157,9 +163,12 @@ class WorkspaceSwitchController {
       return false;
     }
 
-    final currentCollegeId = _ref.read(activeWorkspaceIdProvider) ?? authState.user.collegeId;
+    final currentCollegeId =
+        _ref.read(activeWorkspaceIdProvider) ?? authState.user.collegeId;
     if (currentCollegeId == targetCollegeId) {
-      debugPrint('[WORKSPACE] Target workspace is already active ($targetCollegeId).');
+      debugPrint(
+        '[WORKSPACE] Target workspace is already active ($targetCollegeId).',
+      );
       return true;
     }
 
@@ -167,7 +176,9 @@ class WorkspaceSwitchController {
 
     try {
       // 1. Authoritative membership validation check
-      final availableWorkspaces = await _ref.read(userWorkspacesProvider.future);
+      final availableWorkspaces = await _ref.read(
+        userWorkspacesProvider.future,
+      );
       final eligible = availableWorkspaces.any(
         (m) => m.collegeId == targetCollegeId && m.isActive,
       );
@@ -175,7 +186,9 @@ class WorkspaceSwitchController {
       // Super admins may enter college context without explicit membership
       final isSuperAdmin = authState.user.role == AppRole.superAdmin;
       if (!eligible && !isSuperAdmin) {
-        throw Exception('You do not hold an active membership in this college workspace.');
+        throw Exception(
+          'You do not hold an active membership in this college workspace.',
+        );
       }
 
       // 2. Execute secure backend switch
@@ -207,7 +220,9 @@ class WorkspaceSwitchController {
       _ref.read(activeWorkspaceIdProvider.notifier).state = targetCollegeId;
       _ref.read(authProvider.notifier).updateCurrentUser(updatedUser);
 
-      debugPrint('[WORKSPACE] Successfully switched to workspace $targetCollegeId (${updatedUser.role.displayName})');
+      debugPrint(
+        '[WORKSPACE] Successfully switched to workspace $targetCollegeId (${updatedUser.role.displayName})',
+      );
       return true;
     } catch (e) {
       debugPrint('[WORKSPACE] Failed to switch workspace: $e');
@@ -218,7 +233,9 @@ class WorkspaceSwitchController {
   }
 }
 
-final workspaceSwitchControllerProvider = Provider<WorkspaceSwitchController>((ref) {
+final workspaceSwitchControllerProvider = Provider<WorkspaceSwitchController>((
+  ref,
+) {
   return WorkspaceSwitchController(
     ref,
     ref.watch(workspaceRepositoryProvider),

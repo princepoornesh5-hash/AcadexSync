@@ -19,10 +19,12 @@ class AnnouncementListScreen extends ConsumerStatefulWidget {
   const AnnouncementListScreen({super.key});
 
   @override
-  ConsumerState<AnnouncementListScreen> createState() => _AnnouncementListScreenState();
+  ConsumerState<AnnouncementListScreen> createState() =>
+      _AnnouncementListScreenState();
 }
 
-class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen> with SingleTickerProviderStateMixin {
+class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -43,7 +45,8 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
     if (auth is! AuthAuthenticated) return const SizedBox.shrink();
     final user = auth.user;
 
-    final isAdmin = user.role == AppRole.superAdmin ||
+    final isAdmin =
+        user.role == AppRole.superAdmin ||
         user.role == AppRole.collegeAdmin ||
         user.role == AppRole.hod;
 
@@ -88,10 +91,12 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
                 indicatorWeight: 2.5,
                 labelColor: AcadexColors.primary,
                 unselectedLabelColor: AcadexColors.inkSecondary,
-                labelStyle: AcadexTypography.caption(color: AcadexColors.primary)
-                    .copyWith(fontWeight: FontWeight.bold),
-                unselectedLabelStyle:
-                    AcadexTypography.caption(color: AcadexColors.inkSecondary),
+                labelStyle: AcadexTypography.caption(
+                  color: AcadexColors.primary,
+                ).copyWith(fontWeight: FontWeight.bold),
+                unselectedLabelStyle: AcadexTypography.caption(
+                  color: AcadexColors.inkSecondary,
+                ),
                 tabs: const [
                   Tab(text: 'All (Admin)'),
                   Tab(text: 'Published'),
@@ -146,7 +151,8 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
             itemBuilder: (context, index) {
               return _AdminAnnouncementCard(
                 announcement: filtered[index],
-                onTap: () => context.push('/announcements/${filtered[index].id}'),
+                onTap: () =>
+                    context.push('/announcements/${filtered[index].id}'),
                 onPublish: () => _confirmPublish(filtered[index]),
                 onArchive: () => _confirmArchive(filtered[index]),
                 onDelete: () => _confirmDelete(filtered[index]),
@@ -156,7 +162,10 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => _buildErrorState(err, () => ref.invalidate(adminAnnouncementsProvider)),
+      error: (err, stack) => _buildErrorState(
+        err,
+        () => ref.invalidate(adminAnnouncementsProvider),
+      ),
     );
   }
 
@@ -168,7 +177,8 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
         if (announcements.isEmpty) {
           return _buildEmptyState(
             title: 'No announcements yet',
-            subtitle: 'You are all caught up! Check back later for institutional updates.',
+            subtitle:
+                'You are all caught up! Check back later for institutional updates.',
           );
         }
 
@@ -182,14 +192,16 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
             itemBuilder: (context, index) {
               return _UserAnnouncementCard(
                 announcement: announcements[index],
-                onTap: () => context.push('/announcements/${announcements[index].id}'),
+                onTap: () =>
+                    context.push('/announcements/${announcements[index].id}'),
               );
             },
           ),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => _buildErrorState(err, () => ref.invalidate(announcementsProvider)),
+      error: (err, stack) =>
+          _buildErrorState(err, () => ref.invalidate(announcementsProvider)),
     );
   }
 
@@ -207,10 +219,17 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
                 shape: BoxShape.circle,
                 border: Border.all(color: AcadexColors.hairline),
               ),
-              child: const Icon(LucideIcons.megaphone, size: 40, color: AcadexColors.inkSecondary),
+              child: const Icon(
+                LucideIcons.megaphone,
+                size: 40,
+                color: AcadexColors.inkSecondary,
+              ),
             ),
             const SizedBox(height: 16),
-            Text(title, style: AcadexTypography.heading3(color: AcadexColors.ink)),
+            Text(
+              title,
+              style: AcadexTypography.heading3(color: AcadexColors.ink),
+            ),
             const SizedBox(height: 6),
             Text(
               subtitle,
@@ -236,11 +255,18 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Publish Announcement'),
-        content: Text('Are you sure you want to publish "${announcement.title}"? This will resolve recipients and send push/in-app notifications immediately.'),
+        content: Text(
+          'Are you sure you want to publish "${announcement.title}"? This will resolve recipients and send push/in-app notifications immediately.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AcadexColors.primary),
+            style: FilledButton.styleFrom(
+              backgroundColor: AcadexColors.primary,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Publish Now'),
           ),
@@ -250,7 +276,9 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
 
     if (confirmed == true && mounted) {
       try {
-        await ref.read(announcementCreationProvider.notifier).publishAnnouncement(announcement.id);
+        await ref
+            .read(announcementCreationProvider.notifier)
+            .publishAnnouncement(announcement.id);
         if (mounted) {
           AcadexSnackBar.showSuccess(
             context,
@@ -274,11 +302,18 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Archive Announcement'),
-        content: Text('Archive "${announcement.title}"? It will no longer appear on active user feeds.'),
+        content: Text(
+          'Archive "${announcement.title}"? It will no longer appear on active user feeds.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AcadexColors.warning),
+            style: FilledButton.styleFrom(
+              backgroundColor: AcadexColors.warning,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Archive'),
           ),
@@ -288,7 +323,9 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
 
     if (confirmed == true && mounted) {
       try {
-        await ref.read(announcementCreationProvider.notifier).archiveAnnouncement(announcement.id);
+        await ref
+            .read(announcementCreationProvider.notifier)
+            .archiveAnnouncement(announcement.id);
         if (mounted) {
           AcadexSnackBar.showSuccess(
             context,
@@ -314,7 +351,10 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
         title: const Text('Delete Announcement'),
         content: Text('Permanently delete draft "${announcement.title}"?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AcadexColors.error),
             onPressed: () => Navigator.pop(ctx, true),
@@ -326,7 +366,9 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
 
     if (confirmed == true && mounted) {
       try {
-        await ref.read(announcementCreationProvider.notifier).deleteAnnouncement(announcement.id);
+        await ref
+            .read(announcementCreationProvider.notifier)
+            .deleteAnnouncement(announcement.id);
         if (mounted) {
           AcadexSnackBar.showSuccess(
             context,
@@ -394,7 +436,9 @@ class _AdminAnnouncementCard extends StatelessWidget {
         color: AcadexColors.surface,
         borderRadius: AcadexRadius.borderRadiusMd,
         border: Border.all(
-          color: announcement.isPinned ? AcadexColors.primary.withOpacity(0.5) : AcadexColors.hairline,
+          color: announcement.isPinned
+              ? AcadexColors.primary.withOpacity(0.5)
+              : AcadexColors.hairline,
           width: announcement.isPinned ? 1.5 : 1.0,
         ),
         boxShadow: AcadexShadows.lightSm,
@@ -414,7 +458,10 @@ class _AdminAnnouncementCard extends StatelessWidget {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: statusColor.withOpacity(0.12),
                       borderRadius: AcadexRadius.borderRadiusSm,
@@ -422,11 +469,16 @@ class _AdminAnnouncementCard extends StatelessWidget {
                     ),
                     child: Text(
                       announcement.status.label.toUpperCase(),
-                      style: AcadexTypography.caption(color: statusColor).copyWith(fontWeight: FontWeight.bold),
+                      style: AcadexTypography.caption(
+                        color: statusColor,
+                      ).copyWith(fontWeight: FontWeight.bold),
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: AcadexColors.canvas,
                       borderRadius: AcadexRadius.borderRadiusSm,
@@ -434,12 +486,17 @@ class _AdminAnnouncementCard extends StatelessWidget {
                     ),
                     child: Text(
                       announcement.audienceScope.displayName,
-                      style: AcadexTypography.caption(color: AcadexColors.inkSecondary),
+                      style: AcadexTypography.caption(
+                        color: AcadexColors.inkSecondary,
+                      ),
                     ),
                   ),
                   if (announcement.isPinned) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: AcadexColors.primaryLight,
                         borderRadius: AcadexRadius.borderRadiusSm,
@@ -447,16 +504,27 @@ class _AdminAnnouncementCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(LucideIcons.pin, size: 12, color: AcadexColors.primary),
+                          const Icon(
+                            LucideIcons.pin,
+                            size: 12,
+                            color: AcadexColors.primary,
+                          ),
                           const SizedBox(width: 4),
-                          Text('Pinned', style: AcadexTypography.caption(color: AcadexColors.primary)),
+                          Text(
+                            'Pinned',
+                            style: AcadexTypography.caption(
+                              color: AcadexColors.primary,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ],
                   Text(
                     DateFormat('d MMM, h:mm a').format(announcement.createdAt),
-                    style: AcadexTypography.caption(color: AcadexColors.inkSecondary),
+                    style: AcadexTypography.caption(
+                      color: AcadexColors.inkSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -484,18 +552,33 @@ class _AdminAnnouncementCard extends StatelessWidget {
               Row(
                 children: [
                   if (announcement.recipientCount > 0) ...[
-                    const Icon(LucideIcons.users, size: 14, color: AcadexColors.inkSecondary),
+                    const Icon(
+                      LucideIcons.users,
+                      size: 14,
+                      color: AcadexColors.inkSecondary,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '${announcement.recipientCount} recipients',
-                      style: AcadexTypography.caption(color: AcadexColors.inkSecondary),
+                      style: AcadexTypography.caption(
+                        color: AcadexColors.inkSecondary,
+                      ),
                     ),
                   ],
                   const Spacer(),
                   if (isDraft) ...[
                     TextButton.icon(
-                      icon: const Icon(LucideIcons.trash2, size: 14, color: AcadexColors.error),
-                      label: Text('Delete', style: AcadexTypography.caption(color: AcadexColors.error)),
+                      icon: const Icon(
+                        LucideIcons.trash2,
+                        size: 14,
+                        color: AcadexColors.error,
+                      ),
+                      label: Text(
+                        'Delete',
+                        style: AcadexTypography.caption(
+                          color: AcadexColors.error,
+                        ),
+                      ),
                       onPressed: onDelete,
                     ),
                     const SizedBox(width: 8),
@@ -504,7 +587,10 @@ class _AdminAnnouncementCard extends StatelessWidget {
                       label: const Text('Publish'),
                       style: FilledButton.styleFrom(
                         backgroundColor: AcadexColors.primary,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
                       ),
                       onPressed: onPublish,
                     ),
@@ -515,7 +601,10 @@ class _AdminAnnouncementCard extends StatelessWidget {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AcadexColors.inkSecondary,
                         side: const BorderSide(color: AcadexColors.hairline),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
                       ),
                       onPressed: onArchive,
                     ),
@@ -563,7 +652,9 @@ class _UserAnnouncementCard extends StatelessWidget {
         color: AcadexColors.surface,
         borderRadius: AcadexRadius.borderRadiusMd,
         border: Border.all(
-          color: announcement.isPinned ? AcadexColors.primary.withOpacity(0.5) : AcadexColors.hairline,
+          color: announcement.isPinned
+              ? AcadexColors.primary.withOpacity(0.5)
+              : AcadexColors.hairline,
           width: announcement.isPinned ? 1.5 : 1.0,
         ),
         boxShadow: AcadexShadows.lightSm,
@@ -583,19 +674,27 @@ class _UserAnnouncementCard extends StatelessWidget {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: priorityColor.withOpacity(0.12),
                       borderRadius: AcadexRadius.borderRadiusSm,
                     ),
                     child: Text(
                       announcement.category.toUpperCase(),
-                      style: AcadexTypography.caption(color: priorityColor).copyWith(fontWeight: FontWeight.bold),
+                      style: AcadexTypography.caption(
+                        color: priorityColor,
+                      ).copyWith(fontWeight: FontWeight.bold),
                     ),
                   ),
                   if (announcement.isPinned) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: AcadexColors.primaryLight,
                         borderRadius: AcadexRadius.borderRadiusSm,
@@ -603,16 +702,29 @@ class _UserAnnouncementCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(LucideIcons.pin, size: 12, color: AcadexColors.primary),
+                          const Icon(
+                            LucideIcons.pin,
+                            size: 12,
+                            color: AcadexColors.primary,
+                          ),
                           const SizedBox(width: 4),
-                          Text('Pinned', style: AcadexTypography.caption(color: AcadexColors.primary)),
+                          Text(
+                            'Pinned',
+                            style: AcadexTypography.caption(
+                              color: AcadexColors.primary,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ],
                   Text(
-                    DateFormat('d MMM, h:mm a').format(announcement.publishedAt ?? announcement.publishAt),
-                    style: AcadexTypography.caption(color: AcadexColors.inkSecondary),
+                    DateFormat('d MMM, h:mm a').format(
+                      announcement.publishedAt ?? announcement.publishAt,
+                    ),
+                    style: AcadexTypography.caption(
+                      color: AcadexColors.inkSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -640,7 +752,10 @@ class _UserAnnouncementCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: AcadexColors.canvas,
                       borderRadius: AcadexRadius.borderRadiusSm,
@@ -648,7 +763,9 @@ class _UserAnnouncementCard extends StatelessWidget {
                     ),
                     child: Text(
                       announcement.audienceScope.displayName,
-                      style: AcadexTypography.caption(color: AcadexColors.inkSecondary),
+                      style: AcadexTypography.caption(
+                        color: AcadexColors.inkSecondary,
+                      ),
                     ),
                   ),
                   const Spacer(),
@@ -656,10 +773,16 @@ class _UserAnnouncementCard extends StatelessWidget {
                     children: [
                       Text(
                         'Read more',
-                        style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(fontWeight: FontWeight.w600),
+                        style: AcadexTypography.caption(
+                          color: AcadexColors.primary,
+                        ).copyWith(fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(width: 4),
-                      const Icon(LucideIcons.arrowRight, size: 14, color: AcadexColors.primary),
+                      const Icon(
+                        LucideIcons.arrowRight,
+                        size: 14,
+                        color: AcadexColors.primary,
+                      ),
                     ],
                   ),
                 ],

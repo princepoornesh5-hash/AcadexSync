@@ -104,7 +104,8 @@ class StudentAssessmentEntryModel {
       }
     }
 
-    final singleMark = (json['marks'] as num?)?.toDouble() ??
+    final singleMark =
+        (json['marks'] as num?)?.toDouble() ??
         (json['obtainedMarks'] as num?)?.toDouble() ??
         (json['totalMarks'] as num?)?.toDouble();
 
@@ -116,7 +117,8 @@ class StudentAssessmentEntryModel {
       admissionNumber: json['admissionNumber']?.toString(),
       componentMarks: marks,
       marks: singleMark,
-      totalMarks: (json['totalMarks'] as num?)?.toDouble() ?? (singleMark ?? 0.0),
+      totalMarks:
+          (json['totalMarks'] as num?)?.toDouble() ?? (singleMark ?? 0.0),
       status: StudentMarkStatus.fromValue(json['status']?.toString()),
       remarks: json['remarks']?.toString(),
     );
@@ -204,7 +206,9 @@ class MarksRosterItemModel {
       status: StudentMarkStatus.fromValue(json['status']?.toString()),
       remarks: json['remarks']?.toString(),
       isLocked: json['isLocked'] as bool? ?? false,
-      lockedAt: json['lockedAt'] != null ? DateTime.tryParse(json['lockedAt'].toString()) : null,
+      lockedAt: json['lockedAt'] != null
+          ? DateTime.tryParse(json['lockedAt'].toString())
+          : null,
     );
   }
 }
@@ -255,12 +259,20 @@ class MarksRosterResponseModel {
   factory MarksRosterResponseModel.fromJson(Map<String, dynamic> json) {
     final rawRoster = json['roster'] as List? ?? [];
     return MarksRosterResponseModel(
-      assessment: json['assessment'] is Map ? Map<String, dynamic>.from(json['assessment'] as Map) : {},
+      assessment: json['assessment'] is Map
+          ? Map<String, dynamic>.from(json['assessment'] as Map)
+          : {},
       summary: MarksRosterSummaryModel.fromJson(
-        json['summary'] is Map ? Map<String, dynamic>.from(json['summary'] as Map) : {},
+        json['summary'] is Map
+            ? Map<String, dynamic>.from(json['summary'] as Map)
+            : {},
       ),
       roster: rawRoster
-          .map((r) => MarksRosterItemModel.fromJson(Map<String, dynamic>.from(r as Map)))
+          .map(
+            (r) => MarksRosterItemModel.fromJson(
+              Map<String, dynamic>.from(r as Map),
+            ),
+          )
           .toList(),
     );
   }
@@ -294,8 +306,12 @@ class AssessmentAuditEntryModel {
           ? DateTime.tryParse(json['timestamp'].toString()) ?? DateTime.now()
           : DateTime.now(),
       details: json['details']?.toString(),
-      previousValue: json['previousValue'] is Map ? Map<String, dynamic>.from(json['previousValue'] as Map) : null,
-      newValue: json['newValue'] is Map ? Map<String, dynamic>.from(json['newValue'] as Map) : null,
+      previousValue: json['previousValue'] is Map
+          ? Map<String, dynamic>.from(json['previousValue'] as Map)
+          : null,
+      newValue: json['newValue'] is Map
+          ? Map<String, dynamic>.from(json['newValue'] as Map)
+          : null,
     );
   }
 }
@@ -470,9 +486,22 @@ class ScopePreviewResponseModel {
     return ScopePreviewResponseModel(
       totalStudents: (json['totalStudents'] as num?)?.toInt() ?? 0,
       uniqueStudents: (json['uniqueStudents'] as num?)?.toInt() ?? 0,
-      duplicateEnrollments: (json['duplicateEnrollments'] as num?)?.toInt() ?? 0,
-      breakdown: rawBreakdown.map((b) => ScopePreviewBreakdownItem.fromJson(Map<String, dynamic>.from(b as Map))).toList(),
-      students: rawStudents.map((s) => ScopePreviewStudentItem.fromJson(Map<String, dynamic>.from(s as Map))).toList(),
+      duplicateEnrollments:
+          (json['duplicateEnrollments'] as num?)?.toInt() ?? 0,
+      breakdown: rawBreakdown
+          .map(
+            (b) => ScopePreviewBreakdownItem.fromJson(
+              Map<String, dynamic>.from(b as Map),
+            ),
+          )
+          .toList(),
+      students: rawStudents
+          .map(
+            (s) => ScopePreviewStudentItem.fromJson(
+              Map<String, dynamic>.from(s as Map),
+            ),
+          )
+          .toList(),
     );
   }
 }
@@ -491,7 +520,10 @@ class ScheduleConflictDetail {
   factory ScheduleConflictDetail.fromJson(Map<String, dynamic> json) {
     return ScheduleConflictDetail(
       type: json['type']?.toString() ?? 'CONFLICT',
-      description: json['description']?.toString() ?? json['message']?.toString() ?? 'Conflict detected',
+      description:
+          json['description']?.toString() ??
+          json['message']?.toString() ??
+          'Conflict detected',
       conflictingAssessmentId: json['conflictingAssessmentId']?.toString(),
     );
   }
@@ -510,7 +542,13 @@ class ScheduleConflictReportModel {
     final rawConflicts = json['conflicts'] as List? ?? [];
     return ScheduleConflictReportModel(
       hasConflict: json['hasConflict'] as bool? ?? rawConflicts.isNotEmpty,
-      conflicts: rawConflicts.map((c) => ScheduleConflictDetail.fromJson(Map<String, dynamic>.from(c as Map))).toList(),
+      conflicts: rawConflicts
+          .map(
+            (c) => ScheduleConflictDetail.fromJson(
+              Map<String, dynamic>.from(c as Map),
+            ),
+          )
+          .toList(),
     );
   }
 }
@@ -575,22 +613,38 @@ class InternalAssessmentModel {
   factory InternalAssessmentModel.fromJson(Map<String, dynamic> json) {
     final rawComps = json['components'] as List? ?? [];
     final comps = rawComps
-        .map((c) => AssessmentComponentModel.fromJson(Map<String, dynamic>.from(c as Map)))
+        .map(
+          (c) => AssessmentComponentModel.fromJson(
+            Map<String, dynamic>.from(c as Map),
+          ),
+        )
         .toList();
 
     final rawEntries = json['entries'] as List? ?? [];
     final entries = rawEntries
-        .map((e) => StudentAssessmentEntryModel.fromJson(Map<String, dynamic>.from(e as Map)))
+        .map(
+          (e) => StudentAssessmentEntryModel.fromJson(
+            Map<String, dynamic>.from(e as Map),
+          ),
+        )
         .toList();
 
     final rawAudit = json['auditLog'] as List? ?? [];
     final audit = rawAudit
-        .map((a) => AssessmentAuditEntryModel.fromJson(Map<String, dynamic>.from(a as Map)))
+        .map(
+          (a) => AssessmentAuditEntryModel.fromJson(
+            Map<String, dynamic>.from(a as Map),
+          ),
+        )
         .toList();
 
     final rawScopes = json['academicScopes'] as List? ?? [];
     final scopes = rawScopes
-        .map((s) => AcademicScopeTargetModel.fromJson(Map<String, dynamic>.from(s as Map)))
+        .map(
+          (s) => AcademicScopeTargetModel.fromJson(
+            Map<String, dynamic>.from(s as Map),
+          ),
+        )
         .toList();
 
     return InternalAssessmentModel(
@@ -612,7 +666,9 @@ class InternalAssessmentModel {
       assessmentDate: json['assessmentDate'] != null
           ? DateTime.tryParse(json['assessmentDate'].toString())
           : null,
-      schedule: json['schedule'] is Map ? Map<String, dynamic>.from(json['schedule'] as Map) : null,
+      schedule: json['schedule'] is Map
+          ? Map<String, dynamic>.from(json['schedule'] as Map)
+          : null,
       components: comps,
       entries: entries,
       status: InternalAssessmentStatus.fromValue(json['status']?.toString()),
@@ -647,7 +703,8 @@ class InternalAssessmentModel {
     'title': title,
     'assessmentType': assessmentType,
     'maximumMarks': maximumMarks,
-    if (assessmentDate != null) 'assessmentDate': assessmentDate!.toIso8601String(),
+    if (assessmentDate != null)
+      'assessmentDate': assessmentDate!.toIso8601String(),
     if (schedule != null) 'schedule': schedule,
     'components': components.map((c) => c.toJson()).toList(),
     'status': status.value,
@@ -683,18 +740,29 @@ class AssessmentContextModel {
 
     final rawComps = json['components'] as List? ?? [];
     final comps = rawComps
-        .map((c) => AssessmentComponentModel.fromJson(Map<String, dynamic>.from(c as Map)))
+        .map(
+          (c) => AssessmentComponentModel.fromJson(
+            Map<String, dynamic>.from(c as Map),
+          ),
+        )
         .toList();
 
     return AssessmentContextModel(
       assessment: assessment,
-      subject: json['subject'] != null ? Map<String, dynamic>.from(json['subject'] as Map) : {},
-      section: json['section'] != null ? Map<String, dynamic>.from(json['section'] as Map) : {},
+      subject: json['subject'] != null
+          ? Map<String, dynamic>.from(json['subject'] as Map)
+          : {},
+      section: json['section'] != null
+          ? Map<String, dynamic>.from(json['section'] as Map)
+          : {},
       facultyAssignment: json['facultyAssignment'] != null
           ? Map<String, dynamic>.from(json['facultyAssignment'] as Map)
           : null,
       components: comps,
-      isLocked: json['isLocked'] as bool? ?? (assessment?.status == InternalAssessmentStatus.published || assessment?.status == InternalAssessmentStatus.closed),
+      isLocked:
+          json['isLocked'] as bool? ??
+          (assessment?.status == InternalAssessmentStatus.published ||
+              assessment?.status == InternalAssessmentStatus.closed),
       gradingConfig: json['gradingConfig'] != null
           ? Map<String, dynamic>.from(json['gradingConfig'] as Map)
           : null,
@@ -730,7 +798,11 @@ class StudentPublishedMarksItem {
   factory StudentPublishedMarksItem.fromJson(Map<String, dynamic> json) {
     final rawComps = json['components'] as List? ?? [];
     final comps = rawComps
-        .map((c) => AssessmentComponentModel.fromJson(Map<String, dynamic>.from(c as Map)))
+        .map(
+          (c) => AssessmentComponentModel.fromJson(
+            Map<String, dynamic>.from(c as Map),
+          ),
+        )
         .toList();
 
     final rawMarks = json['marks'] as Map<String, dynamic>? ?? {};
@@ -747,9 +819,15 @@ class StudentPublishedMarksItem {
 
     return StudentPublishedMarksItem(
       id: json['id']?.toString() ?? '',
-      subject: json['subject'] != null ? Map<String, dynamic>.from(json['subject'] as Map) : {},
-      section: json['section'] != null ? Map<String, dynamic>.from(json['section'] as Map) : null,
-      semester: json['semester'] != null ? Map<String, dynamic>.from(json['semester'] as Map) : null,
+      subject: json['subject'] != null
+          ? Map<String, dynamic>.from(json['subject'] as Map)
+          : {},
+      section: json['section'] != null
+          ? Map<String, dynamic>.from(json['section'] as Map)
+          : null,
+      semester: json['semester'] != null
+          ? Map<String, dynamic>.from(json['semester'] as Map)
+          : null,
       publishedAt: json['publishedAt'] != null
           ? DateTime.tryParse(json['publishedAt'].toString())
           : null,
@@ -786,7 +864,9 @@ class SubjectAssessmentItemSummary {
       type: json['type']?.toString() ?? 'INTERNAL_EXAM',
       maxMarks: (json['maxMarks'] as num?)?.toDouble() ?? 50.0,
       obtainedMarks: (json['obtainedMarks'] as num?)?.toDouble(),
-      status: json['status'] != null ? StudentMarkStatus.fromValue(json['status'].toString()) : null,
+      status: json['status'] != null
+          ? StudentMarkStatus.fromValue(json['status'].toString())
+          : null,
     );
   }
 }
@@ -817,7 +897,11 @@ class SubjectAssessmentSummaryModel {
   factory SubjectAssessmentSummaryModel.fromJson(Map<String, dynamic> json) {
     final rawAssessments = json['assessments'] as List? ?? [];
     final items = rawAssessments
-        .map((a) => SubjectAssessmentItemSummary.fromJson(Map<String, dynamic>.from(a as Map)))
+        .map(
+          (a) => SubjectAssessmentItemSummary.fromJson(
+            Map<String, dynamic>.from(a as Map),
+          ),
+        )
         .toList();
 
     return SubjectAssessmentSummaryModel(
@@ -825,9 +909,11 @@ class SubjectAssessmentSummaryModel {
       semesterId: json['semesterId']?.toString() ?? '',
       studentId: json['studentId']?.toString(),
       totalAssessments: (json['totalAssessments'] as num?)?.toInt() ?? 0,
-      publishedAssessments: (json['publishedAssessments'] as num?)?.toInt() ?? 0,
+      publishedAssessments:
+          (json['publishedAssessments'] as num?)?.toInt() ?? 0,
       totalMaxMarks: (json['totalMaxMarks'] as num?)?.toDouble() ?? 0.0,
-      totalObtainedMarks: (json['totalObtainedMarks'] as num?)?.toDouble() ?? 0.0,
+      totalObtainedMarks:
+          (json['totalObtainedMarks'] as num?)?.toDouble() ?? 0.0,
       percentage: (json['percentage'] as num?)?.toDouble() ?? 0.0,
       assessments: items,
     );
@@ -871,9 +957,13 @@ class AssessmentScheduleModel {
 
   factory AssessmentScheduleModel.fromJson(Map<String, dynamic> json) {
     final rawSecs = json['targetSectionIds'] as List? ?? [];
-    final secIds = rawSecs.map((s) => s is Map ? s['_id']?.toString() ?? '' : s.toString()).toList();
+    final secIds = rawSecs
+        .map((s) => s is Map ? s['_id']?.toString() ?? '' : s.toString())
+        .toList();
     final rawDepts = json['targetDepartmentIds'] as List? ?? [];
-    final deptIds = rawDepts.map((d) => d is Map ? d['_id']?.toString() ?? '' : d.toString()).toList();
+    final deptIds = rawDepts
+        .map((d) => d is Map ? d['_id']?.toString() ?? '' : d.toString())
+        .toList();
 
     return AssessmentScheduleModel(
       id: json['id']?.toString() ?? json['_id']?.toString(),
@@ -890,7 +980,9 @@ class AssessmentScheduleModel {
       roomId: json['roomId'] is Map
           ? (json['roomId']['_id']?.toString() ?? '')
           : json['roomId']?.toString(),
-      roomName: json['roomId'] is Map ? json['roomId']['name']?.toString() : null,
+      roomName: json['roomId'] is Map
+          ? json['roomId']['name']?.toString()
+          : null,
       invigilatorFacultyId: json['invigilatorFacultyId'] is Map
           ? (json['invigilatorFacultyId']['_id']?.toString() ?? '')
           : json['invigilatorFacultyId']?.toString(),
@@ -911,7 +1003,8 @@ class AssessmentScheduleModel {
     'startTime': startTime,
     'endTime': endTime,
     if (roomId != null) 'roomId': roomId,
-    if (invigilatorFacultyId != null) 'invigilatorFacultyId': invigilatorFacultyId,
+    if (invigilatorFacultyId != null)
+      'invigilatorFacultyId': invigilatorFacultyId,
     if (instructions != null) 'instructions': instructions,
     'targetSectionIds': targetSectionIds,
     'targetDepartmentIds': targetDepartmentIds,

@@ -3,17 +3,17 @@ import '../observability/logger.dart';
 
 /// Authoritative category classification for application-level errors
 enum ErrorCategory {
-  validation,      // 400, 422: Invalid user input or rule violation
+  validation, // 400, 422: Invalid user input or rule violation
   unauthenticated, // 401: Expired session or missing credentials
-  forbidden,       // 403: Role or scope permission denied
-  notFound,        // 404: Resource no longer exists
-  conflict,        // 409: Duplicate key or operation blocked by dependencies
-  rateLimited,     // 429: Too many requests
-  serverError,     // 500+: Internal backend failure
-  networkTimeout,  // Connect, send, or receive timeout
-  offline,         // Socket error, host lookup failure, no internet
-  routeError,      // Router resolution failure or unmapped route
-  unknown,         // Unclassified fallback
+  forbidden, // 403: Role or scope permission denied
+  notFound, // 404: Resource no longer exists
+  conflict, // 409: Duplicate key or operation blocked by dependencies
+  rateLimited, // 429: Too many requests
+  serverError, // 500+: Internal backend failure
+  networkTimeout, // Connect, send, or receive timeout
+  offline, // Socket error, host lookup failure, no internet
+  routeError, // Router resolution failure or unmapped route
+  unknown, // Unclassified fallback
 }
 
 /// Central typed exception that converts technical network/backend failures
@@ -36,10 +36,14 @@ class AcadexException implements Exception {
   });
 
   /// Factory from a [DioException]
-  factory AcadexException.fromDio(DioException error, {String? context, String? fallback}) {
+  factory AcadexException.fromDio(
+    DioException error, {
+    String? context,
+    String? fallback,
+  }) {
     final statusCode = error.response?.statusCode;
     final dynamic responseData = error.response?.data;
-    
+
     // Extract raw backend error string if present
     String rawBackendMessage = '';
     if (responseData is Map<String, dynamic>) {
@@ -48,7 +52,11 @@ class AcadexException implements Exception {
         final details = errMap['details'];
         if (details is List && details.isNotEmpty) {
           final msgs = details
-              .map((d) => d is Map ? (d['message'] ?? d['field'] ?? '').toString() : d.toString())
+              .map(
+                (d) => d is Map
+                    ? (d['message'] ?? d['field'] ?? '').toString()
+                    : d.toString(),
+              )
               .where((m) => m.isNotEmpty)
               .toList();
           if (msgs.isNotEmpty) {
@@ -89,7 +97,8 @@ class AcadexException implements Exception {
         category: ErrorCategory.networkTimeout,
         statusCode: statusCode,
         technicalMessage: technicalMsg,
-        userMessage: 'Connection timed out. Please check your network connection and try again.',
+        userMessage:
+            'Connection timed out. Please check your network connection and try again.',
         context: context,
         isRetryable: true,
       );
@@ -100,7 +109,8 @@ class AcadexException implements Exception {
         category: ErrorCategory.offline,
         statusCode: statusCode,
         technicalMessage: technicalMsg,
-        userMessage: 'Unable to connect to the server. Please check your internet connection.',
+        userMessage:
+            'Unable to connect to the server. Please check your internet connection.',
         context: context,
         isRetryable: true,
       );
@@ -113,7 +123,10 @@ class AcadexException implements Exception {
           category: ErrorCategory.validation,
           statusCode: 400,
           technicalMessage: technicalMsg,
-          userMessage: _scrubTechnicalTerms(rawBackendMessage, fallback: 'Invalid request. Please check the entered information.'),
+          userMessage: _scrubTechnicalTerms(
+            rawBackendMessage,
+            fallback: 'Invalid request. Please check the entered information.',
+          ),
           context: context,
           isRetryable: false,
         );
@@ -131,17 +144,25 @@ class AcadexException implements Exception {
           category: ErrorCategory.forbidden,
           statusCode: 403,
           technicalMessage: technicalMsg,
-          userMessage: _scrubTechnicalTerms(rawBackendMessage, fallback: 'You do not have permission to perform this action.'),
+          userMessage: _scrubTechnicalTerms(
+            rawBackendMessage,
+            fallback: 'You do not have permission to perform this action.',
+          ),
           context: context,
           isRetryable: false,
         );
       case 404:
-        final entity = context != null ? '$context not found.' : 'The requested record could not be found.';
+        final entity = context != null
+            ? '$context not found.'
+            : 'The requested record could not be found.';
         return AcadexException(
           category: ErrorCategory.notFound,
           statusCode: 404,
           technicalMessage: technicalMsg,
-          userMessage: _scrubTechnicalTerms(rawBackendMessage, fallback: entity),
+          userMessage: _scrubTechnicalTerms(
+            rawBackendMessage,
+            fallback: entity,
+          ),
           context: context,
           isRetryable: false,
         );
@@ -150,7 +171,11 @@ class AcadexException implements Exception {
           category: ErrorCategory.conflict,
           statusCode: 409,
           technicalMessage: technicalMsg,
-          userMessage: _scrubTechnicalTerms(rawBackendMessage, fallback: 'This operation could not be completed because the record already exists or is currently in use.'),
+          userMessage: _scrubTechnicalTerms(
+            rawBackendMessage,
+            fallback:
+                'This operation could not be completed because the record already exists or is currently in use.',
+          ),
           context: context,
           isRetryable: false,
         );
@@ -159,7 +184,10 @@ class AcadexException implements Exception {
           category: ErrorCategory.validation,
           statusCode: 422,
           technicalMessage: technicalMsg,
-          userMessage: _scrubTechnicalTerms(rawBackendMessage, fallback: 'Validation failed. Please verify your entered details.'),
+          userMessage: _scrubTechnicalTerms(
+            rawBackendMessage,
+            fallback: 'Validation failed. Please verify your entered details.',
+          ),
           context: context,
           isRetryable: false,
         );
@@ -168,7 +196,8 @@ class AcadexException implements Exception {
           category: ErrorCategory.rateLimited,
           statusCode: 429,
           technicalMessage: technicalMsg,
-          userMessage: 'Too many requests. Please wait a moment before trying again.',
+          userMessage:
+              'Too many requests. Please wait a moment before trying again.',
           context: context,
           isRetryable: true,
         );
@@ -178,7 +207,8 @@ class AcadexException implements Exception {
             category: ErrorCategory.serverError,
             statusCode: statusCode,
             technicalMessage: technicalMsg,
-            userMessage: 'The server is temporarily unavailable. Please try again in a few moments.',
+            userMessage:
+                'The server is temporarily unavailable. Please try again in a few moments.',
             context: context,
             isRetryable: true,
           );
@@ -187,7 +217,10 @@ class AcadexException implements Exception {
           category: ErrorCategory.unknown,
           statusCode: statusCode,
           technicalMessage: technicalMsg,
-          userMessage: _scrubTechnicalTerms(rawBackendMessage, fallback: 'An unexpected error occurred. Please try again.'),
+          userMessage: _scrubTechnicalTerms(
+            rawBackendMessage,
+            fallback: 'An unexpected error occurred. Please try again.',
+          ),
           context: context,
           isRetryable: true,
         );
@@ -204,7 +237,11 @@ class AcadexException implements Exception {
     if (error is AcadexException) return error;
 
     if (error is DioException) {
-      return AcadexException.fromDio(error, context: context, fallback: fallback);
+      return AcadexException.fromDio(
+        error,
+        context: context,
+        fallback: fallback,
+      );
     }
 
     final raw = error.toString();
@@ -227,7 +264,9 @@ class AcadexException implements Exception {
     }
 
     // Permission / Authorization
-    if (raw.toLowerCase().contains('permission') || raw.toLowerCase().contains('forbidden') || raw.toLowerCase().contains('unauthorized')) {
+    if (raw.toLowerCase().contains('permission') ||
+        raw.toLowerCase().contains('forbidden') ||
+        raw.toLowerCase().contains('unauthorized')) {
       return AcadexException(
         category: ErrorCategory.forbidden,
         technicalMessage: raw,
@@ -247,18 +286,22 @@ class AcadexException implements Exception {
       return AcadexException(
         category: ErrorCategory.networkTimeout,
         technicalMessage: raw,
-        userMessage: 'Connection timed out. Please check your network connection and try again.',
+        userMessage:
+            'Connection timed out. Please check your network connection and try again.',
         context: context,
         isRetryable: true,
       );
     }
 
     // Network / Socket
-    if (raw.contains('SocketException') || raw.contains('HandshakeException') || raw.contains('Failed host lookup')) {
+    if (raw.contains('SocketException') ||
+        raw.contains('HandshakeException') ||
+        raw.contains('Failed host lookup')) {
       return AcadexException(
         category: ErrorCategory.offline,
         technicalMessage: raw,
-        userMessage: 'Unable to connect to the server. Please check your internet connection.',
+        userMessage:
+            'Unable to connect to the server. Please check your internet connection.',
         context: context,
         isRetryable: true,
       );
@@ -274,7 +317,11 @@ class AcadexException implements Exception {
         category: ErrorCategory.conflict,
         statusCode: 409,
         technicalMessage: raw,
-        userMessage: _scrubTechnicalTerms(raw, fallback: 'This record already exists or conflicts with existing data.'),
+        userMessage: _scrubTechnicalTerms(
+          raw,
+          fallback:
+              'This record already exists or conflicts with existing data.',
+        ),
         context: context,
         isRetryable: false,
       );
@@ -283,26 +330,38 @@ class AcadexException implements Exception {
     return AcadexException(
       category: ErrorCategory.unknown,
       technicalMessage: raw,
-      userMessage: _scrubTechnicalTerms(raw, fallback: fallback ?? 'We couldn\'t load this right now.'),
+      userMessage: _scrubTechnicalTerms(
+        raw,
+        fallback: fallback ?? 'We couldn\'t load this right now.',
+      ),
       context: context,
       isRetryable: true,
     );
   }
 
   /// Central message sanitizer for any UI component, dialog, or SnackBar
-  static String sanitizedMessage(dynamic error, {String fallback = 'An unexpected error occurred. Please try again.'}) {
+  static String sanitizedMessage(
+    dynamic error, {
+    String fallback = 'An unexpected error occurred. Please try again.',
+  }) {
     if (error == null) return fallback;
     if (error is AcadexException) return error.userMessage;
-    if (error is DioException) return AcadexException.fromDio(error).userMessage;
+    if (error is DioException)
+      return AcadexException.fromDio(error).userMessage;
 
     final raw = error.toString();
     return _scrubTechnicalTerms(raw, fallback: fallback);
   }
 
   /// Contextual user-friendly action failure message
-  static String contextualMessage(dynamic error, {required String actionContext}) {
+  static String contextualMessage(
+    dynamic error, {
+    required String actionContext,
+  }) {
     final sanitized = sanitizedMessage(error);
-    if (sanitized.contains('timed out') || sanitized.contains('connect to the server') || sanitized.contains('permission')) {
+    if (sanitized.contains('timed out') ||
+        sanitized.contains('connect to the server') ||
+        sanitized.contains('permission')) {
       return sanitized;
     }
     return 'Unable to $actionContext. Please try again.';
@@ -337,33 +396,61 @@ class AcadexException implements Exception {
     if (lower.contains('startdate must be before enddate')) {
       return 'Start Date must be before End Date.';
     }
-    if (lower.contains('invalid start date') || lower.contains('invalid end date')) {
+    if (lower.contains('invalid start date') ||
+        lower.contains('invalid end date')) {
       return 'Please enter valid calendar dates.';
     }
 
     // Map backend duplicate/conflict messages to clear human-readable domain explanations (Prompt 15)
-    if ((lower.contains('subject') || lower.contains('subjects')) && (lower.contains('already exist') || lower.contains('duplicate') || lower.contains('code_1'))) {
+    if ((lower.contains('subject') || lower.contains('subjects')) &&
+        (lower.contains('already exist') ||
+            lower.contains('duplicate') ||
+            lower.contains('code_1'))) {
       return 'A subject with this code already exists for this semester.';
     }
-    if ((lower.contains('section') || lower.contains('sections')) && (lower.contains('already exist') || lower.contains('duplicate'))) {
+    if ((lower.contains('section') || lower.contains('sections')) &&
+        (lower.contains('already exist') || lower.contains('duplicate'))) {
       return 'A section with this name already exists for this semester.';
     }
-    if ((lower.contains('student') || lower.contains('enroll')) && (lower.contains('already enroll') || lower.contains('already exist') || lower.contains('duplicate') || lower.contains('enrollment'))) {
+    if ((lower.contains('student') || lower.contains('enroll')) &&
+        (lower.contains('already enroll') ||
+            lower.contains('already exist') ||
+            lower.contains('duplicate') ||
+            lower.contains('enrollment'))) {
       return 'That student is already enrolled in this section.';
     }
-    if ((lower.contains('faculty') || lower.contains('assignment')) && (lower.contains('already assign') || lower.contains('already exist') || lower.contains('duplicate') || lower.contains('facultyassignment'))) {
+    if ((lower.contains('faculty') || lower.contains('assignment')) &&
+        (lower.contains('already assign') ||
+            lower.contains('already exist') ||
+            lower.contains('duplicate') ||
+            lower.contains('facultyassignment'))) {
       return 'This faculty assignment already exists.';
     }
-    if (lower.contains('course') && !lower.contains('subject') && !lower.contains('subjects') && (lower.contains('already exist') || lower.contains('duplicate'))) {
+    if (lower.contains('course') &&
+        !lower.contains('subject') &&
+        !lower.contains('subjects') &&
+        (lower.contains('already exist') || lower.contains('duplicate'))) {
       return 'A course with this code already exists.';
     }
-    if (lower.contains('semester') && !lower.contains('subject') && !lower.contains('subjects') && !lower.contains('section') && !lower.contains('code_1') && (lower.contains('already exist') || lower.contains('duplicate') || (lower.contains('e11000') && lower.contains('semesters')))) {
+    if (lower.contains('semester') &&
+        !lower.contains('subject') &&
+        !lower.contains('subjects') &&
+        !lower.contains('section') &&
+        !lower.contains('code_1') &&
+        (lower.contains('already exist') ||
+            lower.contains('duplicate') ||
+            (lower.contains('e11000') && lower.contains('semesters')))) {
       return 'That semester already exists for this academic year.';
     }
-    if (lower.contains('academic year') && !lower.contains('semester') && (lower.contains('already exist') || lower.contains('duplicate'))) {
+    if (lower.contains('academic year') &&
+        !lower.contains('semester') &&
+        (lower.contains('already exist') || lower.contains('duplicate'))) {
       return 'That academic year already exists.';
     }
-    if (lower.contains('timetable') && (lower.contains('conflict') || lower.contains('overlap') || lower.contains('already exist'))) {
+    if (lower.contains('timetable') &&
+        (lower.contains('conflict') ||
+            lower.contains('overlap') ||
+            lower.contains('already exist'))) {
       return 'A timetable schedule conflict exists for this time slot.';
     }
     // Map technical runtime crashes to friendly user messages
@@ -377,16 +464,28 @@ class AcadexException implements Exception {
     if (lower.contains('circulardependencyerror')) {
       return 'We could not complete this operation due to a temporary state update conflict. Please try again.';
     }
-    if (lower.contains('faculty') && (lower.contains('not found') || lower.contains('unavailable') || lower.contains('no longer available'))) {
+    if (lower.contains('faculty') &&
+        (lower.contains('not found') ||
+            lower.contains('unavailable') ||
+            lower.contains('no longer available'))) {
       return 'The selected faculty member is no longer available. Refresh the faculty list and try again.';
     }
-    if (lower.contains('subject') && (lower.contains('not found') || lower.contains('unavailable') || lower.contains('no longer available'))) {
+    if (lower.contains('subject') &&
+        (lower.contains('not found') ||
+            lower.contains('unavailable') ||
+            lower.contains('no longer available'))) {
       return 'The selected subject is no longer available. Refresh Subjects and try again.';
     }
-    if (lower.contains('room') && (lower.contains('not found') || lower.contains('unavailable') || lower.contains('no longer available'))) {
+    if (lower.contains('room') &&
+        (lower.contains('not found') ||
+            lower.contains('unavailable') ||
+            lower.contains('no longer available'))) {
       return 'The selected room is no longer available. Refresh Rooms and try again.';
     }
-    if (lower.contains('section') && (lower.contains('not found') || lower.contains('unavailable') || lower.contains('no longer available'))) {
+    if (lower.contains('section') &&
+        (lower.contains('not found') ||
+            lower.contains('unavailable') ||
+            lower.contains('no longer available'))) {
       return 'The selected section is no longer available. Refresh the section list and try again.';
     }
 

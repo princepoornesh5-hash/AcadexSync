@@ -16,6 +16,7 @@ import {
   CollegeStatus,
   InvitationStatus,
   MembershipStatus,
+  MembershipType,
   RoleAssignmentStatus,
   OtpPurpose,
   OtpDeliveryMethod,
@@ -29,9 +30,12 @@ import {
   verifyActivationFlowToken,
   signActivationCompletionToken,
   verifyActivationCompletionToken,
+  signEmailVerificationToken,
+  verifyEmailVerificationToken,
 } from '../utils/token';
-import { maskEmail, maskPhone } from '../utils/identifier';
+import { maskEmail, maskPhone, normalizeEmail } from '../utils/identifier';
 import { ApiError } from '../utils/apiError';
+import { Logger } from '../utils/logger';
 import { env } from '../config/env';
 
 export interface ValidateCodeResult {
@@ -540,6 +544,317 @@ export class ActivationService {
           status: InvitationStatus.PENDING,
           usedAt: null,
           'metadata.activeActivationTokenId': payload.tokenId,
+        },
+      }).catch(() => {});
+      throw persistenceError;
+    }
+
+    const completionMessage = isExistingUser
+      ? 'College workspace access has been activated successfully. Please log in with your existing credentials.'
+      : 'Account activated successfully. You may now log in with your credentials.';
+
+    return {
+      success: true,
+      message: completionMessage,
+      data: {
+        message: completionMessage,
+        user: {
+          id: user.id,
+          instituteId: user.instituteId,
+          name: user.name,
+          role: invitation.role,
+          collegeCode: college.code,
+          accountStatus: user.accountStatus,
+        },
+      },
+    };
+  }
+
+  /**
+   * Institutional Account Activation - Step 1: Request OTP for registered email.
+   * Generic response prevents account enumeration.
+   */
+  static async requestInstitutionalActivationOtp(rawEmail: string): Promise<{ message: string }> {
+    const genericResponse = {
+      message: 'If an institutional invitation is associated with this email, a verification code has been sent.',
+    };
+
+    if (!rawEmail || typeof rawEmail !== 'string' || !rawEmail.includes('@')) {
+      return genericResponse;
+    }
+
+    const normalizedEmail = normalizeEmail(rawEmail);
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return genericResponse;
+    }
+
+    // Check for an eligible pending invitation
+    const invitation = await Invitation.findOne({
+      userId: user._id,
+      status: InvitationStatus.PENDING,
+    }).sort({ createdAt: -1 });
+
+    if (!invitation || invitation.isExpired()) {
+      return genericResponse;
+    }
+
+    // Verify institution is active
+    const college = await College.findById(invitation.collegeId);
+    if (!college || college.status === CollegeStatus.INACTIVE || !college.isActive) {
+      return genericResponse;
+    }
+
+    try {
+      await OtpService.requestOtp({
+        destination: normalizedEmail,
+        purpose: OtpPurpose.ACCOUNT_ACTIVATION,
+        userId: user._id,
+        invitationId: invitation._id,
+        deliveryMethod: OtpDeliveryMethod.EMAIL,
+        expiresInSeconds: env.OTP_EXPIRES_IN || 300,
+      });
+    } catch (err: unknown) {
+      if (err instanceof ApiError && err.statusCode === 429) {
+        throw err;
+      }
+      Logger.error('[ACTIVATION] Institutional activation OTP dispatch failed', err);
+      throw ApiError.internal('Failed to deliver verification code. Please try again later.');
+    }
+
+    return genericResponse;
+  }
+
+  /**
+   * Institutional Account Activation - Step 2: Verify OTP and issue emailVerificationToken.
+   */
+  static async verifyInstitutionalActivationOtp(
+    rawEmail: string,
+    rawOtp: string
+  ): Promise<{ success: boolean; message: string; emailVerificationToken: string }> {
+    if (!rawEmail || typeof rawEmail !== 'string') {
+      throw ApiError.badRequest('Email is required');
+    }
+    if (!rawOtp || typeof rawOtp !== 'string') {
+      throw ApiError.badRequest('Verification code is required');
+    }
+
+    const normalizedEmail = normalizeEmail(rawEmail);
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      throw ApiError.badRequest('Invalid verification code or email');
+    }
+
+    await OtpService.verifyAndConsumeOtp({
+      destination: normalizedEmail,
+      purpose: OtpPurpose.ACCOUNT_ACTIVATION,
+      otp: rawOtp.trim(),
+      userId: user._id,
+    });
+
+    const emailVerificationToken = signEmailVerificationToken({ email: normalizedEmail }, 900);
+
+    return {
+      success: true,
+      message: 'Email ownership verified successfully.',
+      emailVerificationToken,
+    };
+  }
+
+  /**
+   * Institutional Account Activation - Step 3: Validate activation code and complete activation.
+   * Strictly enforces verified email === invitation email.
+   * Attaches workspace membership without creating duplicate identities for existing users.
+   * Preserves institution-scoped PIN numbers.
+   */
+  static async completeInstitutionalActivation(
+    emailVerificationToken: string,
+    rawCode: string,
+    password?: string,
+    confirmPassword?: string
+  ): Promise<CompleteActivationResult> {
+    if (!emailVerificationToken || typeof emailVerificationToken !== 'string') {
+      throw ApiError.badRequest('emailVerificationToken is required');
+    }
+    if (!rawCode || typeof rawCode !== 'string' || rawCode.trim() === '') {
+      throw ApiError.badRequest('Activation code is required');
+    }
+
+    // Cryptographically verify token
+    const payload = verifyEmailVerificationToken(emailVerificationToken);
+    const verifiedEmail = normalizeEmail(payload.email);
+
+    // Validate activation code format
+    const normalizedCode = normalizeActivationCode(rawCode);
+    if (!normalizedCode || normalizedCode.length !== 12) {
+      throw ApiError.badRequest('Activation code must be formatted as XXXX-XXXX-XXXX');
+    }
+
+    const codeHash = hashActivationCode(normalizedCode);
+    const invitation = await Invitation.findOne({ codeHash });
+
+    if (!invitation) {
+      throw ApiError.badRequest('Invalid or unknown activation code');
+    }
+
+    if (invitation.status === InvitationStatus.USED) {
+      throw ApiError.badRequest('This activation code has already been used. Please log in with your credentials.');
+    }
+
+    if (invitation.status === InvitationStatus.REVOKED) {
+      throw ApiError.badRequest('This activation code has been revoked. Please contact your campus administrator.');
+    }
+
+    if (invitation.status === InvitationStatus.EXPIRED || invitation.isExpired()) {
+      if (invitation.status !== InvitationStatus.EXPIRED) {
+        invitation.status = InvitationStatus.EXPIRED;
+        await invitation.save();
+      }
+      throw ApiError.badRequest('This activation code has expired. Please contact your campus administrator for a new code.');
+    }
+
+    // Locate invited user
+    const user = await User.findById(invitation.userId);
+    if (!user) {
+      throw ApiError.badRequest('Associated user account could not be located');
+    }
+
+    if (user.accountStatus === AccountStatus.DEACTIVATED) {
+      throw ApiError.forbidden('Account has been deactivated. Please contact your administrator.');
+    }
+
+    if (user.accountStatus === AccountStatus.SUSPENDED) {
+      throw ApiError.forbidden('Account is currently suspended. Please contact your administrator.');
+    }
+
+    // STRICT VALIDATION: Verified email MUST match the invitation's associated user email!
+    if (!user.email || normalizeEmail(user.email) !== verifiedEmail) {
+      throw ApiError.forbidden('The verified email does not match the invitation email.');
+    }
+
+    // Verify institution
+    const college = await College.findById(invitation.collegeId);
+    if (!college || college.status === CollegeStatus.INACTIVE || !college.isActive) {
+      throw ApiError.forbidden('The associated institution is currently inactive. Please contact your administrator.');
+    }
+
+    const isExistingUser = user.accountStatus === AccountStatus.ACTIVE && !!user.passwordHash;
+    let newPasswordHash: string | null = null;
+
+    if (!isExistingUser) {
+      if (!password || !confirmPassword) {
+        throw ApiError.badRequest('Password and Confirm Password are required to activate your account.');
+      }
+      if (password !== confirmPassword) {
+        throw ApiError.badRequest('Passwords do not match');
+      }
+      const policyValidation = PasswordService.validatePassword(password);
+      if (!policyValidation.valid) {
+        throw ApiError.badRequest(policyValidation.message || 'Password does not meet security requirements.');
+      }
+      newPasswordHash = await PasswordService.hashPassword(password);
+    }
+
+    // Atomic consumption lock: prevents concurrent duplicate activations
+    const consumedInvitation = await Invitation.findOneAndUpdate(
+      {
+        _id: invitation._id,
+        status: InvitationStatus.PENDING,
+      },
+      {
+        $set: {
+          status: InvitationStatus.USED,
+          usedAt: new Date(),
+          'metadata.activationCompletedAt': new Date(),
+          'metadata.verifiedEmail': verifiedEmail,
+        },
+      },
+      { new: true }
+    );
+
+    if (!consumedInvitation) {
+      throw ApiError.conflict('This invitation has already been consumed.');
+    }
+
+    try {
+      if (!isExistingUser && newPasswordHash) {
+        user.passwordHash = newPasswordHash;
+        user.accountStatus = AccountStatus.ACTIVE;
+        user.activationStatus = 'activated';
+        if (!user.collegeId) {
+          user.collegeId = college._id;
+          user.role = invitation.role;
+          user.departmentId = invitation.departmentId;
+        }
+        await user.save();
+      }
+
+      // Activate only the intended membership for this college
+      const membership = await WorkspaceMembership.findOneAndUpdate(
+        {
+          userId: user._id,
+          collegeId: college._id,
+        },
+        {
+          $set: {
+            status: MembershipStatus.ACTIVE,
+            joinedAt: new Date(),
+          },
+          $setOnInsert: {
+            instituteId: user.instituteId,
+            memberType:
+              invitation.role === AppRole.STUDENT
+                ? MembershipType.STUDENT
+                : invitation.role === AppRole.FACULTY || invitation.role === AppRole.HOD
+                ? MembershipType.FACULTY
+                : MembershipType.ADMINISTRATOR,
+            isDefault: !isExistingUser,
+            effectiveStartDate: new Date(),
+          },
+        },
+        { new: true, upsert: true }
+      );
+
+      // Activate only the intended role assignment in this workspace
+      await WorkspaceRoleAssignment.findOneAndUpdate(
+        {
+          membershipId: membership._id,
+          role: invitation.role,
+          departmentId: invitation.departmentId || null,
+        },
+        {
+          $set: {
+            status: RoleAssignmentStatus.ACTIVE,
+            assignedAt: new Date(),
+          },
+          $setOnInsert: {
+            userId: user._id,
+            collegeId: college._id,
+            effectiveStartDate: new Date(),
+          },
+        },
+        { new: true, upsert: true }
+      );
+
+      await AuditLog.create({
+        collegeId: college.id,
+        workspaceMembershipId: membership.id,
+        actorUserId: user.id,
+        action: isExistingUser ? 'WORKSPACE_MEMBERSHIP_ACTIVATED' : 'ACCOUNT_ACTIVATED',
+        entityType: 'User',
+        entityId: user.id,
+        newValue: {
+          instituteId: user.instituteId,
+          role: invitation.role,
+          collegeId: college.id,
+          isExistingUser,
+        },
+      });
+    } catch (persistenceError) {
+      await Invitation.findByIdAndUpdate(invitation._id, {
+        $set: {
+          status: InvitationStatus.PENDING,
+          usedAt: null,
         },
       }).catch(() => {});
       throw persistenceError;

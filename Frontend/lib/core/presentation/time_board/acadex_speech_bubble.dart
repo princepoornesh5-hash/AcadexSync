@@ -65,10 +65,7 @@ class AcadexSpeechBubble extends StatelessWidget {
             // Bubble Tail Pointer
             CustomPaint(
               size: const Size(10, 5),
-              painter: _SpeechBubbleTailPainter(
-                color: bg,
-                borderColor: border,
-              ),
+              painter: _SpeechBubbleTailPainter(color: bg, borderColor: border),
             ),
           ],
         ),
@@ -81,10 +78,7 @@ class _SpeechBubbleTailPainter extends CustomPainter {
   final Color color;
   final Color borderColor;
 
-  _SpeechBubbleTailPainter({
-    required this.color,
-    required this.borderColor,
-  });
+  _SpeechBubbleTailPainter({required this.color, required this.borderColor});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -97,7 +91,12 @@ class _SpeechBubbleTailPainter extends CustomPainter {
       ..lineTo(w, 0)
       ..close();
 
-    canvas.drawPath(path, Paint()..color = color..style = PaintingStyle.fill);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.fill,
+    );
 
     final borderPath = Path()
       ..moveTo(0, 0)

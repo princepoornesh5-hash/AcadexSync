@@ -40,6 +40,8 @@ describe('ACADEX PROMPT 6: Production Environment Security & Configuration Valid
     GEMINI_MODEL: 'gemini-3.5-flash-lite',
     AI_RATE_LIMIT_MAX: 30,
     AI_TIMEOUT_MS: 15000,
+    RESEND_FROM_EMAIL: 'onboarding@resend.dev',
+    RESEND_TIMEOUT_MS: 10000,
   };
 
   test('1. Valid production configuration passes validation without error', () => {

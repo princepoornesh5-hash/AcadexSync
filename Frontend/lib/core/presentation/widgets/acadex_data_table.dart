@@ -56,16 +56,18 @@ class AcadexDataTable extends StatelessWidget {
             return SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minWidth: constraints.maxWidth,
-                ),
+                constraints: BoxConstraints(minWidth: constraints.maxWidth),
                 child: DataTable(
                   showCheckboxColumn: showCheckboxColumn,
                   headingRowColor: WidgetStateProperty.all(
-                    isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+                    isDark
+                        ? AcadexColors.darkSurfaceHover
+                        : AcadexColors.canvasSoft,
                   ),
                   headingTextStyle: AcadexTypography.eyebrow(
-                    color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                    color: isDark
+                        ? AcadexColors.darkInkSecondary
+                        : AcadexColors.inkSecondary,
                   ),
                   dataTextStyle: AcadexTypography.body(
                     color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
@@ -74,9 +76,7 @@ class AcadexDataTable extends StatelessWidget {
                   columnSpacing: 28,
                   dividerThickness: 1,
                   columns: columns
-                      .map((col) => DataColumn(
-                            label: Text(col),
-                          ))
+                      .map((col) => DataColumn(label: Text(col)))
                       .toList(),
                   rows: rows,
                 ),

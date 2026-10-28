@@ -18,7 +18,8 @@ class AchievementAdminScreen extends ConsumerStatefulWidget {
   const AchievementAdminScreen({super.key});
 
   @override
-  ConsumerState<AchievementAdminScreen> createState() => _AchievementAdminScreenState();
+  ConsumerState<AchievementAdminScreen> createState() =>
+      _AchievementAdminScreenState();
 }
 
 class _AchievementAdminScreenState extends ConsumerState<AchievementAdminScreen>
@@ -44,7 +45,8 @@ class _AchievementAdminScreenState extends ConsumerState<AchievementAdminScreen>
 
     final metrics = ref.watch(adminAchievementMetricsProvider);
     final authState = ref.watch(authProvider);
-    final isHod = authState is AuthAuthenticated && authState.user.role == AppRole.hod;
+    final isHod =
+        authState is AuthAuthenticated && authState.user.role == AppRole.hod;
 
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
@@ -72,7 +74,8 @@ class _AchievementAdminScreenState extends ConsumerState<AchievementAdminScreen>
                     runSpacing: AcadexSpacing.space16,
                     children: [
                       SizedBox(
-                        width: (constraints.maxWidth - AcadexSpacing.space16) / 2,
+                        width:
+                            (constraints.maxWidth - AcadexSpacing.space16) / 2,
                         child: AchievementMetricCard(
                           label: 'Total Achievements',
                           value: '${metrics.total}',
@@ -81,7 +84,8 @@ class _AchievementAdminScreenState extends ConsumerState<AchievementAdminScreen>
                         ),
                       ),
                       SizedBox(
-                        width: (constraints.maxWidth - AcadexSpacing.space16) / 2,
+                        width:
+                            (constraints.maxWidth - AcadexSpacing.space16) / 2,
                         child: AchievementMetricCard(
                           label: 'Pending Verification',
                           value: '${metrics.pending}',
@@ -90,7 +94,8 @@ class _AchievementAdminScreenState extends ConsumerState<AchievementAdminScreen>
                         ),
                       ),
                       SizedBox(
-                        width: (constraints.maxWidth - AcadexSpacing.space16) / 2,
+                        width:
+                            (constraints.maxWidth - AcadexSpacing.space16) / 2,
                         child: AchievementMetricCard(
                           label: 'Verified',
                           value: '${metrics.verified}',
@@ -99,7 +104,8 @@ class _AchievementAdminScreenState extends ConsumerState<AchievementAdminScreen>
                         ),
                       ),
                       SizedBox(
-                        width: (constraints.maxWidth - AcadexSpacing.space16) / 2,
+                        width:
+                            (constraints.maxWidth - AcadexSpacing.space16) / 2,
                         child: AchievementMetricCard(
                           label: 'Rejected',
                           value: '${metrics.rejected}',
@@ -159,7 +165,9 @@ class _AchievementAdminScreenState extends ConsumerState<AchievementAdminScreen>
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
                   ),
                 ),
               ),
@@ -167,7 +175,9 @@ class _AchievementAdminScreenState extends ConsumerState<AchievementAdminScreen>
                 controller: _tabController,
                 indicatorColor: AcadexColors.primary,
                 labelColor: AcadexColors.primary,
-                unselectedLabelColor: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                unselectedLabelColor: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
                 tabs: const [
                   Tab(text: 'Pending Verification Queue'),
                   Tab(text: 'All Achievements'),
@@ -211,7 +221,8 @@ class _AchievementAdminScreenState extends ConsumerState<AchievementAdminScreen>
           return const Center(
             child: AcadexEmptyState(
               title: 'Verification Queue Clean',
-              subtitle: 'There are no student achievements currently awaiting verification.',
+              subtitle:
+                  'There are no student achievements currently awaiting verification.',
               icon: LucideIcons.checkCheck,
             ),
           );
@@ -230,19 +241,29 @@ class _AchievementAdminScreenState extends ConsumerState<AchievementAdminScreen>
           rows: pending.map((a) {
             return DataRow(
               cells: [
-                DataCell(Text(a.studentName, style: const TextStyle(fontWeight: FontWeight.w600))),
+                DataCell(
+                  Text(
+                    a.studentName,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
                 DataCell(Text(a.departmentId.toUpperCase())),
                 DataCell(AchievementCategoryBadge(category: a.category)),
                 DataCell(Text(a.title)),
                 DataCell(Text(a.issuer)),
-                DataCell(Text('${a.achievementDate.day}/${a.achievementDate.month}/${a.achievementDate.year}')),
+                DataCell(
+                  Text(
+                    '${a.achievementDate.day}/${a.achievementDate.month}/${a.achievementDate.year}',
+                  ),
+                ),
                 DataCell(
                   AcadexButton(
                     label: 'Review',
                     icon: LucideIcons.eye,
                     variant: AcadexButtonVariant.primary,
                     size: AcadexButtonSize.sm,
-                    onPressed: () => context.push('/achievements/${a.id}', extra: a),
+                    onPressed: () =>
+                        context.push('/achievements/${a.id}', extra: a),
                   ),
                 ),
               ],
@@ -265,13 +286,20 @@ class _AchievementAdminScreenState extends ConsumerState<AchievementAdminScreen>
             Expanded(
               child: TextField(
                 decoration: InputDecoration(
-                  hintText: 'Search by student name, title, issuer, or skills...',
+                  hintText:
+                      'Search by student name, title, issuer, or skills...',
                   prefixIcon: const Icon(LucideIcons.search, size: 20),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AcadexRadius.md),
+                  ),
                 ),
                 onChanged: (val) {
-                  ref.read(achievementFilterProvider.notifier).state = filter.copyWith(searchQuery: val);
+                  ref.read(achievementFilterProvider.notifier).state = filter
+                      .copyWith(searchQuery: val);
                 },
               ),
             ),
@@ -301,19 +329,33 @@ class _AchievementAdminScreenState extends ConsumerState<AchievementAdminScreen>
                   rows: filtered.map((a) {
                     return DataRow(
                       cells: [
-                        DataCell(Text(a.studentName, style: const TextStyle(fontWeight: FontWeight.w600))),
+                        DataCell(
+                          Text(
+                            a.studentName,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
                         DataCell(Text(a.departmentId.toUpperCase())),
-                        DataCell(AchievementCategoryBadge(category: a.category)),
+                        DataCell(
+                          AchievementCategoryBadge(category: a.category),
+                        ),
                         DataCell(Text(a.title)),
-                        DataCell(AchievementStatusBadge(status: a.verificationStatus)),
-                        DataCell(Text('${a.achievementDate.day}/${a.achievementDate.month}/${a.achievementDate.year}')),
+                        DataCell(
+                          AchievementStatusBadge(status: a.verificationStatus),
+                        ),
+                        DataCell(
+                          Text(
+                            '${a.achievementDate.day}/${a.achievementDate.month}/${a.achievementDate.year}',
+                          ),
+                        ),
                         DataCell(
                           AcadexButton(
                             label: 'Details',
                             icon: LucideIcons.eye,
                             variant: AcadexButtonVariant.secondary,
                             size: AcadexButtonSize.sm,
-                            onPressed: () => context.push('/achievements/${a.id}', extra: a),
+                            onPressed: () =>
+                                context.push('/achievements/${a.id}', extra: a),
                           ),
                         ),
                       ],

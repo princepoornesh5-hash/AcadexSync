@@ -65,7 +65,9 @@ abstract class AcadexSuperAdminGradient {
     for (int i = 0; i < stops.length - 1; i++) {
       if (clampedT >= stops[i] && clampedT <= stops[i + 1]) {
         final double segmentSpan = stops[i + 1] - stops[i];
-        final double u = segmentSpan == 0 ? 0.0 : (clampedT - stops[i]) / segmentSpan;
+        final double u = segmentSpan == 0
+            ? 0.0
+            : (clampedT - stops[i]) / segmentSpan;
         return Color.lerp(colors[i], colors[i + 1], u) ?? colors[i];
       }
     }
@@ -88,8 +90,10 @@ abstract class AcadexSuperAdminGradient {
     final double darkLuminance = darkColor.computeLuminance();
 
     // Standard WCAG contrast ratios:
-    final double contrastWithLight = (lightLuminance + 0.05) / (bgLuminance + 0.05);
-    final double contrastWithDark = (bgLuminance + 0.05) / (darkLuminance + 0.05);
+    final double contrastWithLight =
+        (lightLuminance + 0.05) / (bgLuminance + 0.05);
+    final double contrastWithDark =
+        (bgLuminance + 0.05) / (darkLuminance + 0.05);
 
     return contrastWithLight >= contrastWithDark ? lightColor : darkColor;
   }
@@ -145,7 +149,7 @@ abstract class AcadexSuperAdminGradient {
 /// Strict two-state mode for adaptive gradient typography.
 enum AcadexAdaptiveTextMode {
   light, // White typography for dark regions
-  dark,  // Dark navy typography for light regions
+  dark, // Dark navy typography for light regions
 }
 
 /// Inherited scope indicating that content is rendered directly over
@@ -173,19 +177,18 @@ class AcadexGradientScope extends InheritedWidget {
 class SuperAdminGradientBackground extends StatefulWidget {
   final Widget child;
 
-  const SuperAdminGradientBackground({
-    super.key,
-    required this.child,
-  });
+  const SuperAdminGradientBackground({super.key, required this.child});
 
   /// Official Super Admin prototype vertical linear gradient.
   static const LinearGradient gradient = AcadexSuperAdminGradient.gradient;
 
   @override
-  State<SuperAdminGradientBackground> createState() => _SuperAdminGradientBackgroundState();
+  State<SuperAdminGradientBackground> createState() =>
+      _SuperAdminGradientBackgroundState();
 }
 
-class _SuperAdminGradientBackgroundState extends State<SuperAdminGradientBackground> {
+class _SuperAdminGradientBackgroundState
+    extends State<SuperAdminGradientBackground> {
   final GlobalKey _gradientKey = GlobalKey();
 
   @override
@@ -225,4 +228,3 @@ class AcadexAuthenticatedBackground extends StatelessWidget {
     );
   }
 }
-

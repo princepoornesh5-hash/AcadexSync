@@ -39,14 +39,25 @@ export class DevOtpDeliveryAdapter implements IOtpDeliveryAdapter {
   }
 }
 
+import { EmailService } from './email.service';
+
 /**
- * Production Email Delivery Adapter placeholder
+ * Production Resend Email Delivery Adapter
  */
 export class EmailDeliveryAdapter implements IOtpDeliveryAdapter {
   async sendOtp(options: SendOtpOptions): Promise<boolean> {
-    Logger.info(`[EMAIL OTP] Sending OTP to ${options.destination}`);
-    // Future integration: AWS SES / Sendgrid / Nodemailer
-    return true;
+    if (!EmailService.isConfigured()) {
+      Logger.error('[EMAIL OTP] Delivery failed: Email service is not configured (RESEND_API_KEY is missing).');
+      return false;
+    }
+
+    const result = await EmailService.sendOtpEmail({
+      to: options.destination,
+      otp: options.otp,
+      purpose: options.purpose,
+    });
+
+    return result.success;
   }
 }
 
@@ -55,7 +66,7 @@ export class EmailDeliveryAdapter implements IOtpDeliveryAdapter {
  */
 export class SmsDeliveryAdapter implements IOtpDeliveryAdapter {
   async sendOtp(options: SendOtpOptions): Promise<boolean> {
-    Logger.info(`[SMS OTP] Sending OTP to ${options.destination}`);
+    Logger.info(`[SMS OTP] Sending OTP to ${Logger.maskEmail(options.destination)}`);
     // Future integration: Twilio / AWS SNS / MSG91
     return true;
   }
@@ -74,21 +85,27 @@ export class OtpDeliveryService {
     return this.adapter;
   }
 
-  static isConfigured(_deliveryMethod: OtpDeliveryMethod): boolean {
-    if (process.env.NODE_ENV !== 'production') {
-      return true; // dev and test environments utilize the testing adapter
-    }
-    // In production, placeholder development adapter is strictly rejected
+  static isConfigured(deliveryMethod: OtpDeliveryMethod): boolean {
     if (this.adapter instanceof DevOtpDeliveryAdapter) {
-      return false;
+      // In production, placeholder development adapter is strictly rejected
+      return process.env.NODE_ENV !== 'production';
     }
+
+    if (this.adapter instanceof EmailDeliveryAdapter) {
+      return EmailService.isConfigured();
+    }
+
+    if (process.env.NODE_ENV === 'production' && deliveryMethod === OtpDeliveryMethod.EMAIL) {
+      return EmailService.isConfigured();
+    }
+
     return true;
   }
 
   static assertConfigured(deliveryMethod: OtpDeliveryMethod): void {
     if (!this.isConfigured(deliveryMethod)) {
       Logger.error(
-        `[OTP DELIVERY ERROR] Production delivery adapter for ${deliveryMethod} is not configured.`
+        `[OTP DELIVERY ERROR] Delivery provider for ${deliveryMethod} is not configured.`
       );
       throw ApiError.internal(
         `Contact delivery service for ${deliveryMethod} is not configured in this environment. Please contact your campus administrator.`

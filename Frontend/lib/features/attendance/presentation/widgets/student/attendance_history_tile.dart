@@ -7,10 +7,7 @@ import 'attendance_badge.dart';
 class AttendanceHistoryTile extends StatelessWidget {
   final AttendanceHistoryRecord record;
 
-  const AttendanceHistoryTile({
-    super.key,
-    required this.record,
-  });
+  const AttendanceHistoryTile({super.key, required this.record});
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +32,9 @@ class AttendanceHistoryTile extends StatelessWidget {
             width: 58,
             padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+              color: isDark
+                  ? AcadexColors.darkSurfaceHover
+                  : AcadexColors.canvasSoft,
               borderRadius: AcadexRadius.borderRadiusMd,
             ),
             child: Column(
@@ -43,7 +42,9 @@ class AttendanceHistoryTile extends StatelessWidget {
                 Text(
                   DateFormat('MMM').format(record.date).toUpperCase(),
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ).copyWith(fontSize: 10, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 2),
@@ -57,7 +58,7 @@ class AttendanceHistoryTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 14),
-          
+
           // Info Block
           Expanded(
             child: Column(
@@ -73,14 +74,16 @@ class AttendanceHistoryTile extends StatelessWidget {
                 Text(
                   "${record.facultyName} • ${record.timeSlot}",
                   style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 10),
-          
+
           // Badge
           AttendanceBadge(status: record.status),
         ],

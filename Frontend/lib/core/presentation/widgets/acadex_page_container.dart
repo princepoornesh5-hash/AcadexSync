@@ -77,7 +77,9 @@ class AcadexPageContainer extends ConsumerWidget {
     final bgColor = backgroundColor ?? defaultBg;
 
     final isMobile = AcadexBreakpoints.isMobile(context);
-    final hPad = horizontalPadding ?? AcadexBreakpoints.responsiveHorizontalPadding(context);
+    final hPad =
+        horizontalPadding ??
+        AcadexBreakpoints.responsiveHorizontalPadding(context);
     final mediaTop = MediaQuery.paddingOf(context).top;
     final mediaBottom = MediaQuery.paddingOf(context).bottom;
 
@@ -89,10 +91,12 @@ class AcadexPageContainer extends ConsumerWidget {
     final baseTop = isMobile ? AcadexSpacing.space12 : AcadexSpacing.space16;
     final effectiveTop = topPadding ?? (mediaTop + baseTop);
 
-    final baseBottom = bottomPadding ??
+    final baseBottom =
+        bottomPadding ??
         (effectiveHasBottomNav
             ? (isMobile ? AcadexSpacing.space16 : AcadexSpacing.space24)
-            : (mediaBottom + (isMobile ? AcadexSpacing.space20 : AcadexSpacing.space28)));
+            : (mediaBottom +
+                  (isMobile ? AcadexSpacing.space20 : AcadexSpacing.space28)));
 
     final content = Center(
       child: ConstrainedBox(
@@ -105,7 +109,9 @@ class AcadexPageContainer extends ConsumerWidget {
     if (scrollable) {
       final scrollContent = SingleChildScrollView(
         controller: scrollController,
-        physics: physics ?? (onRefresh != null ? const AlwaysScrollableScrollPhysics() : null),
+        physics:
+            physics ??
+            (onRefresh != null ? const AlwaysScrollableScrollPhysics() : null),
         padding: EdgeInsets.fromLTRB(hPad, effectiveTop, hPad, baseBottom),
         child: content,
       );
@@ -133,10 +139,7 @@ class AcadexPageContainer extends ConsumerWidget {
         child: AnimatedParticleSphereBackground(
           variant: particleSphereVariant!,
           drawBackground: false,
-          child: Material(
-            color: Colors.transparent,
-            child: containerBody,
-          ),
+          child: Material(color: Colors.transparent, child: containerBody),
         ),
       );
     } else if (ambientDensity != AcadexAmbientDensity.none && !isMobile) {
@@ -144,17 +147,11 @@ class AcadexPageContainer extends ConsumerWidget {
         color: bgColor,
         child: AcadexAmbientBackground(
           density: ambientDensity,
-          child: Material(
-            color: Colors.transparent,
-            child: containerBody,
-          ),
+          child: Material(color: Colors.transparent, child: containerBody),
         ),
       );
     } else {
-      result = Material(
-        color: bgColor,
-        child: containerBody,
-      );
+      result = Material(color: bgColor, child: containerBody);
     }
 
     return result;

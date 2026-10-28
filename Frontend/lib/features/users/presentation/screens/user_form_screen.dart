@@ -75,7 +75,9 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
   Future<void> _loadExistingUser() async {
     setState(() => _isLoading = true);
     try {
-      final user = await ref.read(userRepositoryProvider).getUserById(widget.userId!);
+      final user = await ref
+          .read(userRepositoryProvider)
+          .getUserById(widget.userId!);
       if (user != null && mounted) {
         _existingUser = user;
         _nameCtrl.text = user.name;
@@ -111,9 +113,14 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
     });
 
     final authState = ref.read(authProvider);
-    final currentUser = (authState is AuthAuthenticated) ? authState.user : null;
+    final currentUser = (authState is AuthAuthenticated)
+        ? authState.user
+        : null;
 
-    final targetCollegeId = _existingUser?.collegeId ?? _selectedCollegeId ?? currentUser?.collegeId;
+    final targetCollegeId =
+        _existingUser?.collegeId ??
+        _selectedCollegeId ??
+        currentUser?.collegeId;
 
     final user = UserProfileModel(
       id: widget.userId ?? '',
@@ -127,15 +134,21 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
       departmentId: _selectedDepartmentId,
       sectionId: _selectedSectionId,
       semesterId: _selectedSemesterId,
-      employeeId: _selectedRole != AppRole.student ? _instituteIdCtrl.text.trim() : null,
-      rollNumber: _selectedRole == AppRole.student ? _rollNoCtrl.text.trim() : null,
+      employeeId: _selectedRole != AppRole.student
+          ? _instituteIdCtrl.text.trim()
+          : null,
+      rollNumber: _selectedRole == AppRole.student
+          ? _rollNoCtrl.text.trim()
+          : null,
       profilePictureUrl: _profilePictureUrl,
     );
 
     try {
       if (widget.userId == null) {
         // Provisioning Mode
-        final result = await ref.read(userManagementProvider.notifier).createUser(user);
+        final result = await ref
+            .read(userManagementProvider.notifier)
+            .createUser(user);
         if (mounted) {
           setState(() => _isSubmitting = false);
           UserActivationResultDialog.show(context, result);
@@ -176,7 +189,9 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final currentUser = (authState is AuthAuthenticated) ? authState.user : null;
+    final currentUser = (authState is AuthAuthenticated)
+        ? authState.user
+        : null;
     final isSuperAdmin = currentUser?.role == AppRole.superAdmin;
     final isEditMode = widget.userId != null;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -191,7 +206,13 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
 
     final allowedRoles = <AppRole>[];
     if (isSuperAdmin) {
-      allowedRoles.addAll([AppRole.superAdmin, AppRole.collegeAdmin, AppRole.hod, AppRole.faculty, AppRole.student]);
+      allowedRoles.addAll([
+        AppRole.superAdmin,
+        AppRole.collegeAdmin,
+        AppRole.hod,
+        AppRole.faculty,
+        AppRole.student,
+      ]);
     } else if (isCollegeAdmin) {
       allowedRoles.addAll([AppRole.hod, AppRole.faculty, AppRole.student]);
     } else if (isHod) {
@@ -204,7 +225,8 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
       if (_selectedRole != AppRole.student) {
         _selectedRole = AppRole.student;
       }
-      if (currentUser?.departmentId != null && currentUser!.departmentId!.isNotEmpty) {
+      if (currentUser?.departmentId != null &&
+          currentUser!.departmentId!.isNotEmpty) {
         _selectedDepartmentId ??= currentUser.departmentId;
       }
     }
@@ -213,12 +235,18 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
       allowedRoles.add(_selectedRole);
     }
 
-    final activeDepts = (departmentsAsync.valueOrNull ?? []).where((d) => d.isActive).toList();
-    final hasSelectedDept = _selectedDepartmentId != null && activeDepts.any((d) => d.id == _selectedDepartmentId);
+    final activeDepts = (departmentsAsync.valueOrNull ?? [])
+        .where((d) => d.isActive)
+        .toList();
+    final hasSelectedDept =
+        _selectedDepartmentId != null &&
+        activeDepts.any((d) => d.id == _selectedDepartmentId);
     final deptDropdownValue = hasSelectedDept ? _selectedDepartmentId : null;
 
     final collegeList = collegesAsync?.valueOrNull ?? [];
-    final hasSelectedCollege = _selectedCollegeId != null && collegeList.any((c) => c.id == _selectedCollegeId);
+    final hasSelectedCollege =
+        _selectedCollegeId != null &&
+        collegeList.any((c) => c.id == _selectedCollegeId);
     final collegeDropdownValue = hasSelectedCollege ? _selectedCollegeId : null;
 
     return Scaffold(
@@ -227,7 +255,10 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/users'),
         ),
         title: Text(
@@ -252,16 +283,25 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                         decoration: BoxDecoration(
                           color: AcadexColors.error.withValues(alpha: 0.1),
                           borderRadius: AcadexRadius.borderRadiusMd,
-                          border: Border.all(color: AcadexColors.error.withValues(alpha: 0.3)),
+                          border: Border.all(
+                            color: AcadexColors.error.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Row(
                           children: [
-                            const Icon(LucideIcons.circleAlert, color: AcadexColors.error, size: 20),
+                            const Icon(
+                              LucideIcons.circleAlert,
+                              color: AcadexColors.error,
+                              size: 20,
+                            ),
                             const SizedBox(width: AcadexSpacing.space8),
                             Expanded(
                               child: Text(
                                 _errorMessage!,
-                                style: const TextStyle(color: AcadexColors.error, fontWeight: FontWeight.w500),
+                                style: const TextStyle(
+                                  color: AcadexColors.error,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                           ],
@@ -281,42 +321,78 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                             label: 'System Role *',
                             child: allowedRoles.length == 1
                                 ? Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 12,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                                      color: isDark
+                                          ? AcadexColors.darkCanvasSoft
+                                          : AcadexColors.canvasSoft,
                                       borderRadius: AcadexRadius.borderRadiusMd,
-                                      border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                                      border: Border.all(
+                                        color: isDark
+                                            ? AcadexColors.darkHairline
+                                            : AcadexColors.hairline,
+                                      ),
                                     ),
                                     child: Row(
                                       children: [
-                                        const Icon(LucideIcons.graduationCap, size: 18, color: AcadexColors.primary),
+                                        const Icon(
+                                          LucideIcons.graduationCap,
+                                          size: 18,
+                                          color: AcadexColors.primary,
+                                        ),
                                         const SizedBox(width: 10),
                                         Expanded(
                                           child: Text(
                                             allowedRoles.first.displayName,
-                                            style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+                                            style:
+                                                AcadexTypography.body(
+                                                  color: isDark
+                                                      ? AcadexColors.darkInk
+                                                      : AcadexColors.ink,
+                                                ).copyWith(
+                                                  fontWeight: FontWeight.w600,
+                                                ),
                                           ),
                                         ),
-                                        const AcadexBadge(label: 'FIXED ROLE', variant: AcadexBadgeVariant.neutral),
+                                        const AcadexBadge(
+                                          label: 'FIXED ROLE',
+                                          variant: AcadexBadgeVariant.neutral,
+                                        ),
                                       ],
                                     ),
                                   )
                                 : DropdownButtonFormField<AppRole>(
-                                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                    dropdownColor: isDark
+                                        ? AcadexColors.darkSurfaceCard
+                                        : AcadexColors.surface,
                                     value: _selectedRole,
                                     decoration: const InputDecoration(
                                       hintText: 'Select System Role',
-                                      prefixIcon: Icon(LucideIcons.shieldCheck, size: 18),
+                                      prefixIcon: Icon(
+                                        LucideIcons.shieldCheck,
+                                        size: 18,
+                                      ),
                                     ),
-                                    items: allowedRoles.map((r) => DropdownMenuItem(
-                                      value: r,
-                                      child: Text(r.displayName),
-                                    )).toList(),
-                                    onChanged: isEditMode ? null : (val) {
-                                      if (val != null) {
-                                        setState(() => _selectedRole = val);
-                                      }
-                                    },
+                                    items: allowedRoles
+                                        .map(
+                                          (r) => DropdownMenuItem(
+                                            value: r,
+                                            child: Text(r.displayName),
+                                          ),
+                                        )
+                                        .toList(),
+                                    onChanged: isEditMode
+                                        ? null
+                                        : (val) {
+                                            if (val != null) {
+                                              setState(
+                                                () => _selectedRole = val,
+                                              );
+                                            }
+                                          },
                                   ),
                           ),
                         ],
@@ -335,12 +411,19 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                             label: 'Full Name *',
                             child: TextFormField(
                               controller: _nameCtrl,
-                              style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                              style: AcadexTypography.body(
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
+                              ),
                               decoration: const InputDecoration(
                                 hintText: 'e.g. Dr. Jane Smith',
                                 prefixIcon: Icon(LucideIcons.user, size: 18),
                               ),
-                              validator: (val) => (val == null || val.trim().isEmpty) ? 'Please enter a full name' : null,
+                              validator: (val) =>
+                                  (val == null || val.trim().isEmpty)
+                                  ? 'Please enter a full name'
+                                  : null,
                             ),
                           ),
                           const SizedBox(height: AcadexSpacing.space16),
@@ -349,14 +432,20 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                             child: TextFormField(
                               controller: _emailCtrl,
                               keyboardType: TextInputType.emailAddress,
-                              style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                              style: AcadexTypography.body(
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
+                              ),
                               decoration: const InputDecoration(
                                 hintText: 'e.g. janesmith@acadex.edu',
                                 prefixIcon: Icon(LucideIcons.mail, size: 18),
                               ),
                               validator: (val) {
-                                if (val == null || val.trim().isEmpty) return 'Please enter an email address';
-                                if (!val.contains('@') || !val.contains('.')) return 'Please enter a valid email';
+                                if (val == null || val.trim().isEmpty)
+                                  return 'Please enter an email address';
+                                if (!val.contains('@') || !val.contains('.'))
+                                  return 'Please enter a valid email';
                                 return null;
                               },
                             ),
@@ -367,12 +456,19 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                             child: TextFormField(
                               controller: _phoneCtrl,
                               keyboardType: TextInputType.phone,
-                              style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                              style: AcadexTypography.body(
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
+                              ),
                               decoration: const InputDecoration(
                                 hintText: 'e.g. +91 9876543210',
                                 prefixIcon: Icon(LucideIcons.phone, size: 18),
                               ),
-                              validator: (val) => (val == null || val.trim().isEmpty) ? 'Please enter a phone number' : null,
+                              validator: (val) =>
+                                  (val == null || val.trim().isEmpty)
+                                  ? 'Please enter a phone number'
+                                  : null,
                             ),
                           ),
                         ],
@@ -388,28 +484,50 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Super Admin College Selector
-                          if (isSuperAdmin && collegesAsync != null && !isEditMode) ...[
+                          if (isSuperAdmin &&
+                              collegesAsync != null &&
+                              !isEditMode) ...[
                             AcadexFormField(
                               label: 'Assigned College *',
                               child: collegesAsync.when(
                                 loading: () => const LinearProgressIndicator(),
-                                error: (e, _) => Text('Error loading colleges: $e', style: const TextStyle(color: AcadexColors.error)),
-                                data: (colleges) => DropdownButtonFormField<String?>(
-                                  dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                                  value: collegeDropdownValue,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Select College',
-                                    prefixIcon: Icon(LucideIcons.building, size: 18),
+                                error: (e, _) => Text(
+                                  'Error loading colleges: $e',
+                                  style: const TextStyle(
+                                    color: AcadexColors.error,
                                   ),
-                                  items: [
-                                    const DropdownMenuItem(value: null, child: Text('No College Assignment')),
-                                    ...colleges.map((c) => DropdownMenuItem(
-                                      value: c.id,
-                                      child: Text('${c.name} (${c.code})'),
-                                    )),
-                                  ],
-                                  onChanged: (val) => setState(() => _selectedCollegeId = val),
                                 ),
+                                data: (colleges) =>
+                                    DropdownButtonFormField<String?>(
+                                      dropdownColor: isDark
+                                          ? AcadexColors.darkSurfaceCard
+                                          : AcadexColors.surface,
+                                      value: collegeDropdownValue,
+                                      decoration: const InputDecoration(
+                                        hintText: 'Select College',
+                                        prefixIcon: Icon(
+                                          LucideIcons.building,
+                                          size: 18,
+                                        ),
+                                      ),
+                                      items: [
+                                        const DropdownMenuItem(
+                                          value: null,
+                                          child: Text('No College Assignment'),
+                                        ),
+                                        ...colleges.map(
+                                          (c) => DropdownMenuItem(
+                                            value: c.id,
+                                            child: Text(
+                                              '${c.name} (${c.code})',
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                      onChanged: (val) => setState(
+                                        () => _selectedCollegeId = val,
+                                      ),
+                                    ),
                               ),
                             ),
                             const SizedBox(height: AcadexSpacing.space16),
@@ -420,12 +538,20 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                               label: 'PIN Number / Employee ID *',
                               child: TextFormField(
                                 controller: _instituteIdCtrl,
-                                style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                                style: AcadexTypography.body(
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
+                                ),
                                 decoration: const InputDecoration(
                                   hintText: 'e.g. FAC-2026-001',
-                                  prefixIcon: Icon(LucideIcons.idCard, size: 18),
+                                  prefixIcon: Icon(
+                                    LucideIcons.idCard,
+                                    size: 18,
+                                  ),
                                 ),
-                                validator: (val) => (val == null || val.trim().isEmpty)
+                                validator: (val) =>
+                                    (val == null || val.trim().isEmpty)
                                     ? 'Please enter a PIN Number'
                                     : null,
                               ),
@@ -435,12 +561,17 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                               label: 'Student Roll Number / Registration ID *',
                               child: TextFormField(
                                 controller: _rollNoCtrl,
-                                style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                                style: AcadexTypography.body(
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
+                                ),
                                 decoration: const InputDecoration(
                                   hintText: 'e.g. 2026-CSE-042',
                                   prefixIcon: Icon(LucideIcons.hash, size: 18),
                                 ),
-                                validator: (val) => (val == null || val.trim().isEmpty)
+                                validator: (val) =>
+                                    (val == null || val.trim().isEmpty)
                                     ? 'Please enter a roll number'
                                     : null,
                               ),
@@ -448,28 +579,40 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                           const SizedBox(height: AcadexSpacing.space16),
 
                           // Department Dropdown for HOD, Faculty, and Student
-                          if (_selectedRole != AppRole.superAdmin && _selectedRole != AppRole.collegeAdmin)
+                          if (_selectedRole != AppRole.superAdmin &&
+                              _selectedRole != AppRole.collegeAdmin)
                             AcadexFormField(
                               label: 'Assigned Department',
                               child: DropdownButtonFormField<String?>(
-                                dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                dropdownColor: isDark
+                                    ? AcadexColors.darkSurfaceCard
+                                    : AcadexColors.surface,
                                 value: deptDropdownValue,
                                 decoration: const InputDecoration(
                                   hintText: 'Select Department',
-                                  prefixIcon: Icon(LucideIcons.layers, size: 18),
+                                  prefixIcon: Icon(
+                                    LucideIcons.layers,
+                                    size: 18,
+                                  ),
                                 ),
                                 items: [
-                                  const DropdownMenuItem(value: null, child: Text('Select Department')),
-                                  ...activeDepts.map((d) => DropdownMenuItem(
-                                    value: d.id,
-                                    child: Text('${d.name} (${d.code})'),
-                                  )),
+                                  const DropdownMenuItem(
+                                    value: null,
+                                    child: Text('Select Department'),
+                                  ),
+                                  ...activeDepts.map(
+                                    (d) => DropdownMenuItem(
+                                      value: d.id,
+                                      child: Text('${d.name} (${d.code})'),
+                                    ),
+                                  ),
                                 ],
                                 onChanged: (val) {
                                   setState(() => _selectedDepartmentId = val);
                                 },
                                 validator: (val) {
-                                  if (_selectedRole == AppRole.hod && val == null) {
+                                  if (_selectedRole == AppRole.hod &&
+                                      val == null) {
                                     return 'HOD must be assigned to a department';
                                   }
                                   return null;
@@ -488,12 +631,16 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                         AcadexButton(
                           label: 'Cancel',
                           variant: AcadexButtonVariant.secondary,
-                          onPressed: _isSubmitting ? null : () => context.safePop(fallbackRoute: '/users'),
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => context.safePop(fallbackRoute: '/users'),
                         ),
                         const SizedBox(width: AcadexSpacing.space16),
                         AcadexButton(
                           label: isEditMode ? 'Save Changes' : 'Register User',
-                          icon: isEditMode ? LucideIcons.check : LucideIcons.userPlus,
+                          icon: isEditMode
+                              ? LucideIcons.check
+                              : LucideIcons.userPlus,
                           variant: AcadexButtonVariant.primary,
                           isLoading: _isSubmitting,
                           onPressed: _isSubmitting ? null : _handleSubmit,

@@ -10,6 +10,8 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/notification_models.dart';
 import '../providers/notification_providers.dart';
 import '../widgets/notification_card.dart';
+import '../../../../core/presentation/widgets/acadex_sliver_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_sliver_page_header.dart';
 import '../../../../core/presentation/widgets/acadex_chip.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_snackbar.dart';
@@ -26,181 +28,121 @@ class NotificationCenterScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final hasEnclosingScaffold = Scaffold.maybeOf(context) != null;
-
-    final bodyList = notificationsAsync.when(
-      loading: () => const AcadexLoadingState(message: "Loading notifications..."),
-      error: (err, stack) => Center(
-        child: AcadexErrorState(
-          message: "Couldn't load notifications.",
-          retryLabel: 'Retry',
-          onRetry: () => ref.refresh(notificationsProvider),
-        ),
-      ),
-      data: (_) {
-        if (filteredNotifications.isEmpty) {
-          return RefreshIndicator(
-            onRefresh: () async => ref.refresh(notificationsProvider),
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              children: const [
-                SizedBox(height: 120),
-                Center(
-                  child: AcadexEmptyState(
-                    icon: LucideIcons.bellRing,
-                    title: "No new notifications",
-                    subtitle: "You're all caught up with your updates and requests.",
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        final grouped = _groupNotificationsByDate(filteredNotifications);
-
-        return RefreshIndicator(
-          onRefresh: () async => ref.refresh(notificationsProvider),
-          child: ListView.builder(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: grouped.length,
-            itemBuilder: (context, index) {
-              final item = grouped[index];
-              if (item is _GroupHeader) {
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Text(
-                    item.title.toUpperCase(),
-                    style: AcadexTypography.eyebrow(
-                      color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                    ),
-                  ),
-                );
-              } else if (item is _GroupItem) {
-                return AcadexFadeSlide(
-                  delay: Duration(milliseconds: (index * 25).clamp(0, 400)),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    child: ClipRRect(
-                      borderRadius: AcadexRadius.borderRadiusMd,
-                      child: NotificationCard(
-                        notification: item.notification,
-                        onReadToggle: () {
-                          if (item.notification.isRead) {
-                            ref.read(notificationsProvider.notifier).markAsUnread(item.notification.id);
-                          } else {
-                            ref.read(notificationsProvider.notifier).markAsRead(item.notification.id);
-                          }
-                        },
-                        onDelete: () {
-                          ref.read(notificationsProvider.notifier).deleteNotification(item.notification.id);
-                        },
-                      ),
-                    ),
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-        );
-      },
-    );
-
-    final isAdmin = authState is AuthAuthenticated &&
+    final isAdmin =
+        authState is AuthAuthenticated &&
         (authState.user.role == AppRole.superAdmin ||
             authState.user.role == AppRole.collegeAdmin ||
             authState.user.role == AppRole.hod);
 
     final fab = isAdmin
         ? FloatingActionButton.extended(
+            heroTag: 'notification_admin_fab',
             onPressed: () => context.push('/announcements/create'),
             icon: const Icon(LucideIcons.plus),
             label: const Text('New Announcement'),
+            backgroundColor: AcadexColors.primary,
+            foregroundColor: Colors.white,
           )
         : null;
 
-    if (hasEnclosingScaffold) {
-      return Stack(
-        children: [
-          Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _FilterBar(isDark: isDark),
-                    ),
-                    const SizedBox(width: 8),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (unreadCount > 0)
-                          TextButton.icon(
-                            onPressed: () {
-                              ref.read(notificationsProvider.notifier).markAllAsRead();
-                              AcadexSnackBar.showSuccess(
-                                context,
-                                'All notifications marked as read',
-                              );
-                            },
-                            icon: const Icon(
-                              LucideIcons.checkCheck,
-                              size: 16,
-                              color: AcadexColors.primary,
-                            ),
-                            label: const Text(
-                              'Mark all as read',
-                              style: TextStyle(
-                                color: AcadexColors.primary,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        IconButton(
-                          icon: Icon(
-                            LucideIcons.settings,
-                            size: 19,
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                          ),
-                          tooltip: 'Notification Settings',
-                          onPressed: () => context.push('/settings/notifications/preferences'),
-                        ),
-                      ],
-                    ),
-                  ],
+    final List<Widget> slivers = [
+      notificationsAsync.when(
+        loading: () => const SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.only(top: 48),
+            child: AcadexLoadingState(message: "Loading notifications..."),
+          ),
+        ),
+        error: (err, stack) => SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 48),
+            child: Center(
+              child: AcadexErrorState(
+                message: "Couldn't load notifications.",
+                retryLabel: 'Retry',
+                onRetry: () => ref.refresh(notificationsProvider),
+              ),
+            ),
+          ),
+        ),
+        data: (_) {
+          if (filteredNotifications.isEmpty) {
+            return const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.only(top: 48),
+                child: Center(
+                  child: AcadexEmptyState(
+                    icon: LucideIcons.bellRing,
+                    title: "All caught up!",
+                    subtitle: "You don't have any notifications right now.",
+                  ),
                 ),
               ),
-              Expanded(child: bodyList),
-            ],
-          ),
-          if (fab != null)
-            Positioned(
-              bottom: 24,
-              right: 24,
-              child: fab,
-            ),
-        ],
-      );
-    }
+            );
+          }
 
-    return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-          onPressed: () => context.safePop(fallbackRoute: '/dashboard'),
-        ),
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
-        title: Text(
-          'Notification Center',
-          style: AcadexTypography.title(
-            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-          ),
-        ),
+          final grouped = _groupNotificationsByDate(filteredNotifications);
+
+          return SliverList(
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final item = grouped[index];
+              if (item is _GroupHeader) {
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
+                  child: Text(
+                    item.title.toUpperCase(),
+                    style: AcadexTypography.eyebrow(
+                      color: isDark
+                          ? AcadexColors.darkInkSecondary
+                          : AcadexColors.inkSecondary,
+                    ),
+                  ),
+                );
+              } else if (item is _GroupItem) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 4,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: AcadexRadius.borderRadiusMd,
+                    child: NotificationCard(
+                      notification: item.notification,
+                      onReadToggle: () {
+                        if (item.notification.isRead) {
+                          ref
+                              .read(notificationsProvider.notifier)
+                              .markAsUnread(item.notification.id);
+                        } else {
+                          ref
+                              .read(notificationsProvider.notifier)
+                              .markAsRead(item.notification.id);
+                        }
+                      },
+                      onDelete: () {
+                        ref
+                            .read(notificationsProvider.notifier)
+                            .deleteNotification(item.notification.id);
+                      },
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            }, childCount: grouped.length),
+          );
+        },
+      ),
+    ];
+
+    final bodyContent = AcadexSliverPageContainer(
+      onRefresh: () async => ref.refresh(notificationsProvider),
+      header: AcadexSliverPageHeader(
+        title: 'Notification Center',
+        subtitle: unreadCount > 0
+            ? '$unreadCount unread updates'
+            : 'All caught up',
+        onBack: () => context.safePop(fallbackRoute: '/dashboard'),
         actions: [
           if (unreadCount > 0)
             TextButton.icon(
@@ -217,10 +159,11 @@ class NotificationCenterScreen extends ConsumerWidget {
                 color: AcadexColors.primary,
               ),
               label: const Text(
-                'Mark all as read',
+                'Mark all read',
                 style: TextStyle(
                   color: AcadexColors.primary,
                   fontWeight: FontWeight.w600,
+                  fontSize: 13,
                 ),
               ),
             ),
@@ -231,21 +174,32 @@ class NotificationCenterScreen extends ConsumerWidget {
               color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
             ),
             tooltip: 'Notification Settings',
-            onPressed: () => context.push('/settings/notifications/preferences'),
+            onPressed: () =>
+                context.push('/settings/notifications/preferences'),
           ),
           const SizedBox(width: 8),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
-          child: _FilterBar(isDark: isDark),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: _FilterBar(isDark: isDark),
+          ),
         ),
       ),
+      slivers: slivers,
+    );
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
       floatingActionButton: fab,
-      body: bodyList,
+      body: bodyContent,
     );
   }
 
-  List<dynamic> _groupNotificationsByDate(List<NotificationModel> notifications) {
+  List<dynamic> _groupNotificationsByDate(
+    List<NotificationModel> notifications,
+  ) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
@@ -257,7 +211,11 @@ class NotificationCenterScreen extends ConsumerWidget {
     final earlierItems = <NotificationModel>[];
 
     for (final n in notifications) {
-      final nDate = DateTime(n.timestamp.year, n.timestamp.month, n.timestamp.day);
+      final nDate = DateTime(
+        n.timestamp.year,
+        n.timestamp.month,
+        n.timestamp.day,
+      );
       if (nDate.isAtSameMomentAs(today)) {
         todayItems.add(n);
       } else if (nDate.isAtSameMomentAs(yesterday)) {

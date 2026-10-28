@@ -19,12 +19,14 @@ class MarkAttendanceScreen extends ConsumerStatefulWidget {
   const MarkAttendanceScreen({super.key});
 
   @override
-  ConsumerState<MarkAttendanceScreen> createState() => _MarkAttendanceScreenState();
+  ConsumerState<MarkAttendanceScreen> createState() =>
+      _MarkAttendanceScreenState();
 }
 
 class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
   String _searchQuery = '';
-  String _statusFilter = 'all'; // 'all', 'present', 'late', 'excused', 'absent', 'unmarked'
+  String _statusFilter =
+      'all'; // 'all', 'present', 'late', 'excused', 'absent', 'unmarked'
   final TextEditingController _searchController = TextEditingController();
   bool _isSaving = false;
   bool _isDirty = false;
@@ -57,7 +59,10 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
               backgroundColor: AcadexColors.error,
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text("Discard Changes", style: TextStyle(color: Colors.white)),
+            child: const Text(
+              "Discard Changes",
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -109,12 +114,17 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
               child: const Text("Continue Marking"),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.error),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AcadexColors.error,
+              ),
               onPressed: () {
                 notifier.markUnmarked(AttendanceStatus.absent);
                 Navigator.of(ctx).pop(true);
               },
-              child: const Text("Mark Absent & Save", style: TextStyle(color: Colors.white)),
+              child: const Text(
+                "Mark Absent & Save",
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),
@@ -147,19 +157,42 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Subject: ${activeClass.subjectName}", style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.bold)),
-                  Text("Section: ${activeClass.sectionName} • ${activeClass.timeSlot}", style: AcadexTypography.caption()),
+                  Text(
+                    "Subject: ${activeClass.subjectName}",
+                    style: AcadexTypography.caption().copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    "Section: ${activeClass.sectionName} • ${activeClass.timeSlot}",
+                    style: AcadexTypography.caption(),
+                  ),
                 ],
               ),
             ),
             const SizedBox(height: 12),
             Text("Summary Totals:", style: AcadexTypography.bodyMedium()),
             const SizedBox(height: 4),
-            Text("• Total Students: ${records.length}", style: AcadexTypography.bodySmall()),
-            Text("• Present: ${notifier.summary[AttendanceStatus.present] ?? 0}", style: AcadexTypography.bodySmall(color: AcadexColors.success)),
-            Text("• Absent: ${notifier.summary[AttendanceStatus.absent] ?? 0}", style: AcadexTypography.bodySmall(color: AcadexColors.error)),
-            Text("• Late: ${notifier.summary[AttendanceStatus.late] ?? 0}", style: AcadexTypography.bodySmall(color: AcadexColors.warning)),
-            Text("• Excused: ${notifier.summary[AttendanceStatus.excused] ?? 0}", style: AcadexTypography.bodySmall(color: const Color(0xFF6366F1))),
+            Text(
+              "• Total Students: ${records.length}",
+              style: AcadexTypography.bodySmall(),
+            ),
+            Text(
+              "• Present: ${notifier.summary[AttendanceStatus.present] ?? 0}",
+              style: AcadexTypography.bodySmall(color: AcadexColors.success),
+            ),
+            Text(
+              "• Absent: ${notifier.summary[AttendanceStatus.absent] ?? 0}",
+              style: AcadexTypography.bodySmall(color: AcadexColors.error),
+            ),
+            Text(
+              "• Late: ${notifier.summary[AttendanceStatus.late] ?? 0}",
+              style: AcadexTypography.bodySmall(color: AcadexColors.warning),
+            ),
+            Text(
+              "• Excused: ${notifier.summary[AttendanceStatus.excused] ?? 0}",
+              style: AcadexTypography.bodySmall(color: const Color(0xFF6366F1)),
+            ),
           ],
         ),
         actions: [
@@ -168,9 +201,14 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
             child: const Text("Cancel"),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.primary,
+            ),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text("Confirm & Submit", style: TextStyle(color: Colors.white)),
+            child: const Text(
+              "Confirm & Submit",
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -180,7 +218,9 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
 
     setState(() => _isSaving = true);
     try {
-      final success = await ref.read(saveSessionProvider(activeClass.id).future);
+      final success = await ref.read(
+        saveSessionProvider(activeClass.id).future,
+      );
       if (mounted) {
         setState(() {
           _isSaving = false;
@@ -228,14 +268,18 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
         backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
         appBar: AppBar(
           leading: IconButton(
-            icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+            icon: Icon(
+              LucideIcons.arrowLeft,
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ),
             onPressed: () => context.safePop(fallbackRoute: '/attendance'),
           ),
         ),
         body: Center(
           child: AcadexEmptyState(
             title: "No Class Selected",
-            subtitle: "Please select a teaching class from your schedule first.",
+            subtitle:
+                "Please select a teaching class from your schedule first.",
             icon: LucideIcons.calendarX,
             actionLabel: "View Schedule",
             onActionTap: () => context.safePop(fallbackRoute: '/attendance'),
@@ -246,14 +290,17 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
 
     // Filter records by local search query and status filter
     final filteredRecords = records.where((r) {
-      final matchesSearch = _searchQuery.isEmpty ||
+      final matchesSearch =
+          _searchQuery.isEmpty ||
           r.studentName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           r.rollNumber.toLowerCase().contains(_searchQuery.toLowerCase());
       if (!matchesSearch) return false;
 
-      if (_statusFilter == 'present') return r.status == AttendanceStatus.present;
+      if (_statusFilter == 'present')
+        return r.status == AttendanceStatus.present;
       if (_statusFilter == 'late') return r.status == AttendanceStatus.late;
-      if (_statusFilter == 'excused') return r.status == AttendanceStatus.excused;
+      if (_statusFilter == 'excused')
+        return r.status == AttendanceStatus.excused;
       if (_statusFilter == 'absent') return r.status == AttendanceStatus.absent;
       if (_statusFilter == 'unmarked') return r.status == null;
       return true;
@@ -314,11 +361,10 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
           }
         },
         child: Scaffold(
-          backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-          body: SafeArea(
-            bottom: false,
-            child: bodyContent,
-          ),
+          backgroundColor: isDark
+              ? AcadexColors.darkCanvas
+              : AcadexColors.canvas,
+          body: SafeArea(bottom: false, child: bodyContent),
         ),
       );
     }
@@ -343,31 +389,33 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
             ),
             onPressed: _handleBackPress,
           ),
-        title: Text(
-          "Mark Attendance",
-          style: AcadexTypography.title(
-            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              LucideIcons.refreshCw,
-              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-              size: 18,
+          title: Text(
+            "Mark Attendance",
+            style: AcadexTypography.title(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
             ),
-            tooltip: "Refresh Roster",
-            onPressed: () {
-              ref.invalidate(activeStudentListProvider);
-            },
           ),
-          const SizedBox(width: 8),
-        ],
+          actions: [
+            IconButton(
+              icon: Icon(
+                LucideIcons.refreshCw,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+                size: 18,
+              ),
+              tooltip: "Refresh Roster",
+              onPressed: () {
+                ref.invalidate(activeStudentListProvider);
+              },
+            ),
+            const SizedBox(width: 8),
+          ],
+        ),
+        body: bodyContent,
       ),
-      body: bodyContent,
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildDesktopLayout(
     BuildContext context,
@@ -395,7 +443,8 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
                     activeClass: activeClass,
                     totalStudents: records.length,
                     isMarked: isMarked,
-                    onRefreshRoster: () => ref.invalidate(activeStudentListProvider),
+                    onRefreshRoster: () =>
+                        ref.invalidate(activeStudentListProvider),
                   ),
                   const SizedBox(height: 12),
                   _buildSearchBar(isDark),
@@ -403,13 +452,18 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
                   _buildFilterChips(isDark),
                   const SizedBox(height: 14),
                   Expanded(
-                    child: _buildStudentList(records, filteredRecords, notifier, isDark),
+                    child: _buildStudentList(
+                      records,
+                      filteredRecords,
+                      notifier,
+                      isDark,
+                    ),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 24),
-            
+
             // Right: Sticky Side Panel
             Expanded(
               flex: 4,
@@ -464,7 +518,8 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
                 activeClass: activeClass,
                 totalStudents: records.length,
                 isMarked: isMarked,
-                onRefreshRoster: () => ref.invalidate(activeStudentListProvider),
+                onRefreshRoster: () =>
+                    ref.invalidate(activeStudentListProvider),
               ),
               const SizedBox(height: 8),
               AttendanceSummaryCard(
@@ -487,7 +542,12 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _buildStudentList(records, filteredRecords, notifier, isDark),
+            child: _buildStudentList(
+              records,
+              filteredRecords,
+              notifier,
+              isDark,
+            ),
           ),
         ),
 
@@ -498,7 +558,9 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
             color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
             border: Border(
               top: BorderSide(
-                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                color: isDark
+                    ? AcadexColors.darkHairline
+                    : AcadexColors.hairline,
               ),
             ),
           ),
@@ -566,7 +628,9 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
                   icon: Icon(
                     LucideIcons.x,
                     size: 16,
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                   onPressed: () {
                     _searchController.clear();
@@ -575,7 +639,10 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
                 )
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 12,
+          ),
         ),
         onChanged: (val) => setState(() => _searchQuery = val),
       ),
@@ -627,7 +694,10 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
     );
   }
 
-  Widget _buildQuickActionButtons(MarkingSessionNotifier notifier, bool isDark) {
+  Widget _buildQuickActionButtons(
+    MarkingSessionNotifier notifier,
+    bool isDark,
+  ) {
     return Row(
       children: [
         Expanded(

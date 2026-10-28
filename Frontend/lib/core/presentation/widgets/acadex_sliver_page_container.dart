@@ -41,15 +41,19 @@ class AcadexSliverPageContainer extends ConsumerWidget {
     final bgColor = backgroundColor ?? defaultBg;
 
     final isMobile = AcadexBreakpoints.isMobile(context);
-    final hPad = horizontalPadding ?? AcadexBreakpoints.responsiveHorizontalPadding(context);
+    final hPad =
+        horizontalPadding ??
+        AcadexBreakpoints.responsiveHorizontalPadding(context);
     final mediaBottom = MediaQuery.paddingOf(context).bottom;
 
     final effectiveHasBottomNav = hasBottomNav ?? isMobile;
 
-    final baseBottom = bottomPadding ??
+    final baseBottom =
+        bottomPadding ??
         (effectiveHasBottomNav
             ? (isMobile ? AcadexSpacing.space16 : AcadexSpacing.space24)
-            : (mediaBottom + (isMobile ? AcadexSpacing.space20 : AcadexSpacing.space28)));
+            : (mediaBottom +
+                  (isMobile ? AcadexSpacing.space20 : AcadexSpacing.space28)));
 
     final List<Widget> sliverWidgets = slivers.map((item) {
       return SliverPadding(
@@ -60,7 +64,9 @@ class AcadexSliverPageContainer extends ConsumerWidget {
 
     final scrollContent = CustomScrollView(
       controller: scrollController,
-      physics: physics ?? (onRefresh != null ? const AlwaysScrollableScrollPhysics() : null),
+      physics:
+          physics ??
+          (onRefresh != null ? const AlwaysScrollableScrollPhysics() : null),
       slivers: [
         header,
         ...sliverWidgets,
@@ -86,10 +92,7 @@ class AcadexSliverPageContainer extends ConsumerWidget {
         child: AnimatedParticleSphereBackground(
           variant: particleSphereVariant!,
           drawBackground: false,
-          child: Material(
-            color: Colors.transparent,
-            child: containerBody,
-          ),
+          child: Material(color: Colors.transparent, child: containerBody),
         ),
       );
     } else if (ambientDensity != AcadexAmbientDensity.none && !isMobile) {
@@ -97,17 +100,11 @@ class AcadexSliverPageContainer extends ConsumerWidget {
         color: bgColor,
         child: AcadexAmbientBackground(
           density: ambientDensity,
-          child: Material(
-            color: Colors.transparent,
-            child: containerBody,
-          ),
+          child: Material(color: Colors.transparent, child: containerBody),
         ),
       );
     } else {
-      result = Material(
-        color: bgColor,
-        child: containerBody,
-      );
+      result = Material(color: bgColor, child: containerBody);
     }
 
     return result;

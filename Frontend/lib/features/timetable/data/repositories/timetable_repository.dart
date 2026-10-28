@@ -97,7 +97,10 @@ abstract class TimetableRepository {
   Future<void> savePeriod(String timetableId, TimetablePeriodModel period);
 
   /// Saves multiple period definitions atomically in batch.
-  Future<void> savePeriodsBatch(String timetableId, List<TimetablePeriodModel> periods);
+  Future<void> savePeriodsBatch(
+    String timetableId,
+    List<TimetablePeriodModel> periods,
+  );
 
   /// Deletes a period definition.
   Future<void> deletePeriod(String timetableId, String periodId);
@@ -114,7 +117,10 @@ abstract class TimetableRepository {
   Future<void> saveBreak(String timetableId, TimetableBreakModel breakModel);
 
   /// Saves multiple break definitions atomically in batch.
-  Future<void> saveBreaksBatch(String timetableId, List<TimetableBreakModel> breaks);
+  Future<void> saveBreaksBatch(
+    String timetableId,
+    List<TimetableBreakModel> breaks,
+  );
 
   /// Deletes a break definition.
   Future<void> deleteBreak(String timetableId, String breakId);
@@ -131,7 +137,10 @@ abstract class TimetableRepository {
   Future<void> saveGridEntry(String timetableId, TimetableGridEntryModel entry);
 
   /// Saves multiple teaching grid entries atomically in batch.
-  Future<void> saveGridEntriesBatch(String timetableId, List<TimetableGridEntryModel> entries);
+  Future<void> saveGridEntriesBatch(
+    String timetableId,
+    List<TimetableGridEntryModel> entries,
+  );
 
   /// Deletes a teaching grid entry.
   Future<void> deleteGridEntry(String timetableId, String entryId);
@@ -149,7 +158,10 @@ abstract class TimetableRepository {
   Future<void> validateTimetableForPublishing(String timetableId);
 
   /// Atomically validates, projects teaching entries into `/timetable`, and marks status `published`.
-  Future<void> publishTimetable(String timetableId, {required String publishedBy});
+  Future<void> publishTimetable(
+    String timetableId, {
+    required String publishedBy,
+  });
 
   /// Reverts a published timetable back to draft and removes legacy `/timetable` projection.
   Future<void> unpublishTimetable(String timetableId);
@@ -157,7 +169,11 @@ abstract class TimetableRepository {
   // --- Calendar Overrides & Exceptions ---
 
   /// Fetches active calendar overrides (holidays / cancellations).
-  Future<List<CalendarOverride>> getCalendarOverrides({String? date, String? from, String? to});
+  Future<List<CalendarOverride>> getCalendarOverrides({
+    String? date,
+    String? from,
+    String? to,
+  });
 
   /// Creates a calendar override.
   Future<CalendarOverride> createCalendarOverride(CalendarOverride override);
@@ -175,9 +191,10 @@ abstract class TimetableRepository {
   });
 
   /// Creates a date-specific teacher substitution.
-  Future<TeacherSubstitution> createTeacherSubstitution(TeacherSubstitution substitution);
+  Future<TeacherSubstitution> createTeacherSubstitution(
+    TeacherSubstitution substitution,
+  );
 
   /// Deletes a teacher substitution, restoring the operational teacher to original faculty.
   Future<void> deleteTeacherSubstitution(String id);
 }
-

@@ -71,10 +71,18 @@ class _AcadexSearchBarState extends State<AcadexSearchBar> {
           fontWeight: FontWeight.w400,
           color: AcadexColors.inkMuted,
         ),
-        prefixIcon: const Icon(LucideIcons.search, size: 18, color: AcadexColors.inkMuted),
+        prefixIcon: const Icon(
+          LucideIcons.search,
+          size: 18,
+          color: AcadexColors.inkMuted,
+        ),
         suffixIcon: _hasText
             ? IconButton(
-                icon: const Icon(LucideIcons.x, size: 16, color: AcadexColors.inkMuted),
+                icon: const Icon(
+                  LucideIcons.x,
+                  size: 16,
+                  color: AcadexColors.inkMuted,
+                ),
                 tooltip: 'Clear search',
                 onPressed: () {
                   _controller.clear();
@@ -83,7 +91,10 @@ class _AcadexSearchBarState extends State<AcadexSearchBar> {
                 },
               )
             : null,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 10,
+        ),
         filled: true,
         fillColor: AcadexColors.surface,
         border: OutlineInputBorder(
@@ -122,7 +133,8 @@ class AcadexSearchFilterBar extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<AcadexSearchFilterBar> createState() => _AcadexSearchFilterBarState();
+  ConsumerState<AcadexSearchFilterBar> createState() =>
+      _AcadexSearchFilterBarState();
 }
 
 class _AcadexSearchFilterBarState extends ConsumerState<AcadexSearchFilterBar> {
@@ -156,7 +168,8 @@ class _AcadexSearchFilterBarState extends ConsumerState<AcadexSearchFilterBar> {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final textScale = MediaQuery.textScalerOf(context).scale(1.0);
-    final isCompact = AcadexBreakpoints.isSmallMobile(context) ||
+    final isCompact =
+        AcadexBreakpoints.isSmallMobile(context) ||
         width < 480 ||
         (width <= 600 && textScale > 1.1);
 
@@ -203,7 +216,10 @@ class _AcadexSearchFilterBarState extends ConsumerState<AcadexSearchFilterBar> {
                   IconButton(
                     icon: const Icon(LucideIcons.x, size: 16, color: hintColor),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                    constraints: const BoxConstraints(
+                      minWidth: 28,
+                      minHeight: 28,
+                    ),
                     tooltip: 'Clear search',
                     onPressed: () {
                       _controller.clear();
@@ -234,7 +250,9 @@ class _AcadexSearchFilterBarState extends ConsumerState<AcadexSearchFilterBar> {
                     const SizedBox(width: 6),
                     Text(
                       "Filter",
-                      style: AcadexTypography.bodySmall(color: textColor).copyWith(fontWeight: FontWeight.w600),
+                      style: AcadexTypography.bodySmall(
+                        color: textColor,
+                      ).copyWith(fontWeight: FontWeight.w600),
                     ),
                   ],
                 ],
@@ -251,8 +269,13 @@ class _AcadexSearchFilterBarState extends ConsumerState<AcadexSearchFilterBar> {
               foregroundColor: Colors.white,
               elevation: 0,
               minimumSize: const Size(44, 46),
-              padding: EdgeInsets.symmetric(horizontal: isCompact ? 12 : 16, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+              padding: EdgeInsets.symmetric(
+                horizontal: isCompact ? 12 : 16,
+                vertical: 12,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: AcadexRadius.borderRadiusMd,
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -262,13 +285,15 @@ class _AcadexSearchFilterBarState extends ConsumerState<AcadexSearchFilterBar> {
                   const SizedBox(width: 6),
                   Text(
                     widget.actionLabel,
-                    style: AcadexTypography.button(color: Colors.white).copyWith(fontSize: 13),
+                    style: AcadexTypography.button(
+                      color: Colors.white,
+                    ).copyWith(fontSize: 13),
                   ),
                 ],
               ],
             ),
           ),
-        ]
+        ],
       ],
     );
   }

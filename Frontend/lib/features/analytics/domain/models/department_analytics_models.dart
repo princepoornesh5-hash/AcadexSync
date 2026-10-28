@@ -32,7 +32,8 @@ class CourseBreakdownModel {
       courseCode: json['courseCode']?.toString() ?? '',
       studentCount: (json['studentCount'] as num?)?.toInt() ?? 0,
       sessionCount: (json['sessionCount'] as num?)?.toInt() ?? 0,
-      attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      attendancePercentage:
+          (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
       present: (json['present'] as num?)?.toInt() ?? 0,
       absent: (json['absent'] as num?)?.toInt() ?? 0,
       atRiskCount: (json['atRiskCount'] as num?)?.toInt() ?? 0,
@@ -70,7 +71,8 @@ class SemesterBreakdownModel {
       courseId: json['courseId']?.toString(),
       studentCount: (json['studentCount'] as num?)?.toInt() ?? 0,
       sessionCount: (json['sessionCount'] as num?)?.toInt() ?? 0,
-      attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      attendancePercentage:
+          (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
       present: (json['present'] as num?)?.toInt() ?? 0,
       absent: (json['absent'] as num?)?.toInt() ?? 0,
       atRiskCount: (json['atRiskCount'] as num?)?.toInt() ?? 0,
@@ -111,7 +113,8 @@ class SectionBreakdownModel {
       semesterId: json['semesterId']?.toString(),
       studentCount: (json['studentCount'] as num?)?.toInt() ?? 0,
       sessionCount: (json['sessionCount'] as num?)?.toInt() ?? 0,
-      attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      attendancePercentage:
+          (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
       present: (json['present'] as num?)?.toInt() ?? 0,
       absent: (json['absent'] as num?)?.toInt() ?? 0,
       atRiskCount: (json['atRiskCount'] as num?)?.toInt() ?? 0,
@@ -146,7 +149,8 @@ class SubjectBreakdownModel {
       subjectName: json['subjectName']?.toString() ?? '',
       subjectCode: json['subjectCode']?.toString() ?? '',
       sessionCount: (json['sessionCount'] as num?)?.toInt() ?? 0,
-      attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      attendancePercentage:
+          (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
       present: (json['present'] as num?)?.toInt() ?? 0,
       absent: (json['absent'] as num?)?.toInt() ?? 0,
       atRiskCount: (json['atRiskCount'] as num?)?.toInt() ?? 0,
@@ -202,7 +206,8 @@ class DepartmentOverviewModel {
       collegeId: json['collegeId']?.toString() ?? '',
       departmentId: json['departmentId']?.toString() ?? '',
       departmentName: json['departmentName']?.toString() ?? 'Department',
-      overallAttendancePercentage: (json['overallAttendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      overallAttendancePercentage:
+          (json['overallAttendancePercentage'] as num?)?.toDouble() ?? 0.0,
       totalStudents: (json['totalStudents'] as num?)?.toInt() ?? 0,
       totalSessions: (json['totalSessions'] as num?)?.toInt() ?? 0,
       totalRecords: (json['totalRecords'] as num?)?.toInt() ?? 0,
@@ -214,20 +219,35 @@ class DepartmentOverviewModel {
       onDutyCount: (json['onDutyCount'] as num?)?.toInt() ?? 0,
       atRiskCount: (json['atRiskCount'] as num?)?.toInt() ?? 0,
       atRiskThreshold: (json['atRiskThreshold'] as num?)?.toDouble() ?? 75.0,
-      courseBreakdown: (json['courseBreakdown'] as List<dynamic>?)
-              ?.map((e) => CourseBreakdownModel.fromJson(e as Map<String, dynamic>))
+      courseBreakdown:
+          (json['courseBreakdown'] as List<dynamic>?)
+              ?.map(
+                (e) => CourseBreakdownModel.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           [],
-      semesterBreakdown: (json['semesterBreakdown'] as List<dynamic>?)
-              ?.map((e) => SemesterBreakdownModel.fromJson(e as Map<String, dynamic>))
+      semesterBreakdown:
+          (json['semesterBreakdown'] as List<dynamic>?)
+              ?.map(
+                (e) =>
+                    SemesterBreakdownModel.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           [],
-      sectionBreakdown: (json['sectionBreakdown'] as List<dynamic>?)
-              ?.map((e) => SectionBreakdownModel.fromJson(e as Map<String, dynamic>))
+      sectionBreakdown:
+          (json['sectionBreakdown'] as List<dynamic>?)
+              ?.map(
+                (e) =>
+                    SectionBreakdownModel.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           [],
-      subjectBreakdown: (json['subjectBreakdown'] as List<dynamic>?)
-              ?.map((e) => SubjectBreakdownModel.fromJson(e as Map<String, dynamic>))
+      subjectBreakdown:
+          (json['subjectBreakdown'] as List<dynamic>?)
+              ?.map(
+                (e) =>
+                    SubjectBreakdownModel.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           [],
     );
@@ -272,7 +292,8 @@ class CourseAnalyticsModel {
       courseCode: json['courseCode']?.toString() ?? '',
       studentCount: (json['studentCount'] as num?)?.toInt() ?? 0,
       sessionCount: (json['sessionCount'] as num?)?.toInt() ?? 0,
-      attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      attendancePercentage:
+          (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
       present: (json['present'] as num?)?.toInt() ?? 0,
       absent: (json['absent'] as num?)?.toInt() ?? 0,
       late: (json['late'] as num?)?.toInt() ?? 0,
@@ -331,7 +352,8 @@ class SectionAnalyticsModel {
       semesterNumber: (json['semesterNumber'] as num?)?.toInt() ?? 0,
       enrolledStudents: (json['enrolledStudents'] as num?)?.toInt() ?? 0,
       totalSessions: (json['totalSessions'] as num?)?.toInt() ?? 0,
-      attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      attendancePercentage:
+          (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
       present: (json['present'] as num?)?.toInt() ?? 0,
       absent: (json['absent'] as num?)?.toInt() ?? 0,
       late: (json['late'] as num?)?.toInt() ?? 0,
@@ -391,12 +413,14 @@ class SubjectAnalyticsModel {
       courseName: json['courseName']?.toString() ?? '',
       semesterId: json['semesterId']?.toString(),
       semesterNumber: (json['semesterNumber'] as num?)?.toInt() ?? 0,
-      assignedSections: (json['assignedSections'] as List<dynamic>?)
+      assignedSections:
+          (json['assignedSections'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           [],
       sessionCount: (json['sessionCount'] as num?)?.toInt() ?? 0,
-      attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      attendancePercentage:
+          (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
       present: (json['present'] as num?)?.toInt() ?? 0,
       absent: (json['absent'] as num?)?.toInt() ?? 0,
       late: (json['late'] as num?)?.toInt() ?? 0,
@@ -463,7 +487,8 @@ class StudentAttendanceAnalyticsModel {
       semesterNumber: (json['semesterNumber'] as num?)?.toInt() ?? 0,
       sectionId: json['sectionId']?.toString() ?? '',
       sectionName: json['sectionName']?.toString() ?? '',
-      overallAttendancePercentage: (json['overallAttendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      overallAttendancePercentage:
+          (json['overallAttendancePercentage'] as num?)?.toDouble() ?? 0.0,
       present: (json['present'] as num?)?.toInt() ?? 0,
       absent: (json['absent'] as num?)?.toInt() ?? 0,
       late: (json['late'] as num?)?.toInt() ?? 0,
@@ -493,8 +518,13 @@ class DepartmentStudentsResult {
 
   factory DepartmentStudentsResult.fromJson(Map<String, dynamic> json) {
     return DepartmentStudentsResult(
-      students: (json['students'] as List<dynamic>?)
-              ?.map((e) => StudentAttendanceAnalyticsModel.fromJson(e as Map<String, dynamic>))
+      students:
+          (json['students'] as List<dynamic>?)
+              ?.map(
+                (e) => StudentAttendanceAnalyticsModel.fromJson(
+                  e as Map<String, dynamic>,
+                ),
+              )
               .toList() ??
           [],
       total: (json['total'] as num?)?.toInt() ?? 0,
@@ -532,7 +562,8 @@ class TrendAnalyticsModel {
       totalRecords: (json['totalRecords'] as num?)?.toInt() ?? 0,
       present: (json['present'] as num?)?.toInt() ?? 0,
       absent: (json['absent'] as num?)?.toInt() ?? 0,
-      attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      attendancePercentage:
+          (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
@@ -576,7 +607,9 @@ class DepartmentAnalyticsFilter {
   }) {
     return DepartmentAnalyticsFilter(
       courseId: courseId != null ? courseId() : this.courseId,
-      academicYearId: academicYearId != null ? academicYearId() : this.academicYearId,
+      academicYearId: academicYearId != null
+          ? academicYearId()
+          : this.academicYearId,
       semesterId: semesterId != null ? semesterId() : this.semesterId,
       sectionId: sectionId != null ? sectionId() : this.sectionId,
       subjectId: subjectId != null ? subjectId() : this.subjectId,
@@ -591,12 +624,18 @@ class DepartmentAnalyticsFilter {
   Map<String, dynamic> toQueryParameters() {
     final params = <String, dynamic>{};
     if (courseId != null && courseId!.isNotEmpty) params['courseId'] = courseId;
-    if (academicYearId != null && academicYearId!.isNotEmpty) params['academicYearId'] = academicYearId;
-    if (semesterId != null && semesterId!.isNotEmpty) params['semesterId'] = semesterId;
-    if (sectionId != null && sectionId!.isNotEmpty) params['sectionId'] = sectionId;
-    if (subjectId != null && subjectId!.isNotEmpty) params['subjectId'] = subjectId;
-    if (startDate != null) params['startDate'] = startDate!.toIso8601String().split('T').first;
-    if (endDate != null) params['endDate'] = endDate!.toIso8601String().split('T').first;
+    if (academicYearId != null && academicYearId!.isNotEmpty)
+      params['academicYearId'] = academicYearId;
+    if (semesterId != null && semesterId!.isNotEmpty)
+      params['semesterId'] = semesterId;
+    if (sectionId != null && sectionId!.isNotEmpty)
+      params['sectionId'] = sectionId;
+    if (subjectId != null && subjectId!.isNotEmpty)
+      params['subjectId'] = subjectId;
+    if (startDate != null)
+      params['startDate'] = startDate!.toIso8601String().split('T').first;
+    if (endDate != null)
+      params['endDate'] = endDate!.toIso8601String().split('T').first;
     if (atRiskOnly) params['atRiskOnly'] = 'true';
     if (search != null && search!.isNotEmpty) params['search'] = search;
     if (atRiskThreshold != 75.0) params['atRiskThreshold'] = atRiskThreshold;

@@ -15,7 +15,8 @@ import 'package:campus_management/features/academic_structure/domain/models/acad
 import 'package:campus_management/features/academic_structure/presentation/providers/academic_providers.dart';
 import 'package:campus_management/features/notes/data/repositories/mock_notes_repository.dart';
 
-class MockAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier {
+class MockAuthNotifier extends StateNotifier<AuthState>
+    implements AuthNotifier {
   MockAuthNotifier(super.state);
 
   @override
@@ -64,7 +65,8 @@ void main() {
     fileType: 'pdf',
     fileSize: 2097152, // 2MB
     fileUrl: 'https://storage.example.com/relational_algebra.pdf',
-    storagePath: 'colleges/col-1/faculty/fac-prof-1/notes/relational_algebra.pdf',
+    storagePath:
+        'colleges/col-1/faculty/fac-prof-1/notes/relational_algebra.pdf',
     subjectId: 'sub-dbms',
     sectionId: 'sec-3a',
     courseId: 'crs-cse',
@@ -105,42 +107,43 @@ void main() {
   );
 
   group('Notes UI & Widget Rendering Tests', () {
-    testWidgets('NoteCard renders subject badge, preview indicator, and chapter title', (tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            notesSubjectMapProvider.overrideWithValue({'sub-dbms': sampleSubject}),
-          ],
-          child: MaterialApp(
-            home: Scaffold(
-              body: NoteCard(
-                note: samplePdfNote,
-                onTap: () {},
+    testWidgets(
+      'NoteCard renders subject badge, preview indicator, and chapter title',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              notesSubjectMapProvider.overrideWithValue({
+                'sub-dbms': sampleSubject,
+              }),
+            ],
+            child: MaterialApp(
+              home: Scaffold(
+                body: NoteCard(note: samplePdfNote, onTap: () {}),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.text('CS301'), findsOneWidget);
-      expect(find.text('Relational Algebra Notes'), findsOneWidget);
-      expect(find.text('Chapter 2: Relational Model'), findsOneWidget);
-      expect(find.text('PDF'), findsOneWidget);
-      expect(find.text('Preview'), findsOneWidget);
-    });
+        expect(find.text('CS301'), findsOneWidget);
+        expect(find.text('Relational Algebra Notes'), findsOneWidget);
+        expect(find.text('Chapter 2: Relational Model'), findsOneWidget);
+        expect(find.text('PDF'), findsOneWidget);
+        expect(find.text('Preview'), findsOneWidget);
+      },
+    );
 
     testWidgets('NoteCard for PPTX displays Download badge', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            notesSubjectMapProvider.overrideWithValue({'sub-dbms': sampleSubject}),
+            notesSubjectMapProvider.overrideWithValue({
+              'sub-dbms': sampleSubject,
+            }),
           ],
           child: MaterialApp(
             home: Scaffold(
-              body: NoteCard(
-                note: samplePptxNote,
-                onTap: () {},
-              ),
+              body: NoteCard(note: samplePptxNote, onTap: () {}),
             ),
           ),
         ),
@@ -150,15 +153,17 @@ void main() {
       expect(find.text('Download'), findsOneWidget);
     });
 
-    testWidgets('NoteDetailScreen displays file preview button and metadata', (tester) async {
+    testWidgets('NoteDetailScreen displays file preview button and metadata', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            notesSubjectMapProvider.overrideWithValue({'sub-dbms': sampleSubject}),
+            notesSubjectMapProvider.overrideWithValue({
+              'sub-dbms': sampleSubject,
+            }),
           ],
-          child: MaterialApp(
-            home: NoteDetailScreen(note: samplePdfNote),
-          ),
+          child: MaterialApp(home: NoteDetailScreen(note: samplePdfNote)),
         ),
       );
 
@@ -170,30 +175,42 @@ void main() {
       expect(find.text('Preview / View File'), findsOneWidget);
     });
 
-    testWidgets('NotesDashboardScreen renders search, filter chips, and empty state', (tester) async {
-      final mockRepo = MockNotesRepository();
+    testWidgets(
+      'NotesDashboardScreen renders search, filter chips, and empty state',
+      (tester) async {
+        final mockRepo = MockNotesRepository();
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authProvider.overrideWith((ref) => MockAuthNotifier(AuthAuthenticated(user: sampleFacultyUser, token: 'token-123'))),
-            notesRepositoryProvider.overrideWithValue(mockRepo),
-            userNotesProvider.overrideWith((ref) => Stream.value([])),
-            subjectsProvider.overrideWith(() => MockSubjectNotifier([sampleSubject])),
-            notesSubjectMapProvider.overrideWithValue({'sub-dbms': sampleSubject}),
-          ],
-          child: const MaterialApp(
-            home: NotesDashboardScreen(),
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              authProvider.overrideWith(
+                (ref) => MockAuthNotifier(
+                  AuthAuthenticated(
+                    user: sampleFacultyUser,
+                    token: 'token-123',
+                  ),
+                ),
+              ),
+              notesRepositoryProvider.overrideWithValue(mockRepo),
+              userNotesProvider.overrideWith((ref) => Stream.value([])),
+              subjectsProvider.overrideWith(
+                () => MockSubjectNotifier([sampleSubject]),
+              ),
+              notesSubjectMapProvider.overrideWithValue({
+                'sub-dbms': sampleSubject,
+              }),
+            ],
+            child: const MaterialApp(home: NotesDashboardScreen()),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      expect(find.text('My Notes'), findsOneWidget);
-      expect(find.text('Create Note'), findsWidgets);
-      expect(find.text('All Types'), findsOneWidget);
-      expect(find.text('No Notes Found'), findsOneWidget);
-    });
+        expect(find.text('My Notes'), findsOneWidget);
+        expect(find.text('Create Note'), findsOneWidget);
+        expect(find.text('All Types'), findsOneWidget);
+        expect(find.text('No Notes Found'), findsOneWidget);
+      },
+    );
   });
 }

@@ -17,5 +17,6 @@ class SubjectAttendance {
     required this.missedClasses,
   });
 
-  double get percentage => totalClasses == 0 ? 0 : (attendedClasses / totalClasses) * 100;
+  double get percentage =>
+      totalClasses == 0 ? 0 : (attendedClasses / totalClasses) * 100;
 }

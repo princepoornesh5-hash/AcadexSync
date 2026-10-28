@@ -13,14 +13,17 @@ class FirebaseCertificateRepository implements CertificateRepository {
   FirebaseCertificateRepository(
     this._firestoreService, {
     FileStorageRepository? fileStorageRepository,
-  })  : _fileStorageRepository = fileStorageRepository;
+  }) : _fileStorageRepository = fileStorageRepository;
 
   @override
   Stream<List<Certificate>> watchStudentCertificates(String studentUid) {
-    return _firestoreService.watchQuery('certificates', {
-      'studentUid': studentUid,
-    }).map((docs) => docs.map((d) => Certificate.fromJson(d)).toList()
-      ..sort((a, b) => b.issueDate.compareTo(a.issueDate)));
+    return _firestoreService
+        .watchQuery('certificates', {'studentUid': studentUid})
+        .map(
+          (docs) =>
+              docs.map((d) => Certificate.fromJson(d)).toList()
+                ..sort((a, b) => b.issueDate.compareTo(a.issueDate)),
+        );
   }
 
   @override
@@ -34,30 +37,48 @@ class FirebaseCertificateRepository implements CertificateRepository {
 
   @override
   Future<Certificate?> getCertificate(String certificateId) async {
-    final doc = await _firestoreService.getDocument('certificates', certificateId);
+    final doc = await _firestoreService.getDocument(
+      'certificates',
+      certificateId,
+    );
     if (doc == null) return null;
     return Certificate.fromJson(doc);
   }
 
   @override
   Future<Certificate> createCertificate(Certificate certificate) async {
-    final docId = certificate.id.isNotEmpty ? certificate.id : const Uuid().v4();
+    final docId = certificate.id.isNotEmpty
+        ? certificate.id
+        : const Uuid().v4();
     final newCert = certificate.copyWith(id: docId);
-    await _firestoreService.setDocument('certificates', docId, newCert.toJson());
+    await _firestoreService.setDocument(
+      'certificates',
+      docId,
+      newCert.toJson(),
+    );
     return newCert;
   }
 
   @override
   Future<Certificate> updateCertificate(Certificate certificate) async {
-    await _firestoreService.setDocument('certificates', certificate.id, certificate.toJson());
+    await _firestoreService.setDocument(
+      'certificates',
+      certificate.id,
+      certificate.toJson(),
+    );
     return certificate;
   }
 
   @override
-  Future<void> deleteCertificate(String certificateId, String requestingUid) async {
+  Future<void> deleteCertificate(
+    String certificateId,
+    String requestingUid,
+  ) async {
     try {
       final cert = await getCertificate(certificateId);
-      if (cert != null && cert.storagePath.isNotEmpty && _fileStorageRepository != null) {
+      if (cert != null &&
+          cert.storagePath.isNotEmpty &&
+          _fileStorageRepository != null) {
         try {
           await _fileStorageRepository.deleteFile(cert.storagePath);
         } catch (_) {
@@ -71,21 +92,32 @@ class FirebaseCertificateRepository implements CertificateRepository {
   }
 
   @override
-  Future<List<Certificate>> searchCertificates(String query, {String? scopeStudentUid, String? scopeCollegeId, String? scopeDepartmentId}) async {
+  Future<List<Certificate>> searchCertificates(
+    String query, {
+    String? scopeStudentUid,
+    String? scopeCollegeId,
+    String? scopeDepartmentId,
+  }) async {
     final filters = <String, dynamic>{};
     if (scopeStudentUid != null) filters['studentUid'] = scopeStudentUid;
     if (scopeCollegeId != null) filters['collegeId'] = scopeCollegeId;
     if (scopeDepartmentId != null) filters['departmentId'] = scopeDepartmentId;
-    
-    final docs = await _firestoreService.queryCollection('certificates', filters);
+
+    final docs = await _firestoreService.queryCollection(
+      'certificates',
+      filters,
+    );
     final results = docs.map((d) => Certificate.fromJson(d)).toList();
-    
+
     final q = query.toLowerCase();
-    return results.where((c) => 
-      c.title.toLowerCase().contains(q) || 
-      c.issuer.toLowerCase().contains(q) || 
-      c.studentName.toLowerCase().contains(q)
-    ).toList();
+    return results
+        .where(
+          (c) =>
+              c.title.toLowerCase().contains(q) ||
+              c.issuer.toLowerCase().contains(q) ||
+              c.studentName.toLowerCase().contains(q),
+        )
+        .toList();
   }
 
   @override
@@ -107,14 +139,19 @@ class FirebaseCertificateRepository implements CertificateRepository {
     if (type != null) filters['type'] = type.name;
     if (status != null) filters['status'] = status.name;
 
-    final docs = await _firestoreService.queryCollection('certificates', filters);
+    final docs = await _firestoreService.queryCollection(
+      'certificates',
+      filters,
+    );
     var results = docs.map((d) => Certificate.fromJson(d)).toList();
 
     if (issuedAfter != null) {
       results = results.where((c) => c.issueDate.isAfter(issuedAfter)).toList();
     }
     if (issuedBefore != null) {
-      results = results.where((c) => c.issueDate.isBefore(issuedBefore)).toList();
+      results = results
+          .where((c) => c.issueDate.isBefore(issuedBefore))
+          .toList();
     }
 
     return results;
@@ -133,9 +170,13 @@ class FirebaseCertificateRepository implements CertificateRepository {
     };
     if (sectionId != null) filters['sectionId'] = sectionId;
 
-    return _firestoreService.watchQuery('certificates', filters)
-      .map((docs) => docs.map((d) => Certificate.fromJson(d)).toList()
-        ..sort((a, b) => b.issueDate.compareTo(a.issueDate)));
+    return _firestoreService
+        .watchQuery('certificates', filters)
+        .map(
+          (docs) =>
+              docs.map((d) => Certificate.fromJson(d)).toList()
+                ..sort((a, b) => b.issueDate.compareTo(a.issueDate)),
+        );
   }
 
   @override
@@ -151,7 +192,10 @@ class FirebaseCertificateRepository implements CertificateRepository {
     };
     if (sectionId != null) filters['sectionId'] = sectionId;
 
-    final docs = await _firestoreService.queryCollection('certificates', filters);
+    final docs = await _firestoreService.queryCollection(
+      'certificates',
+      filters,
+    );
     return docs.map((d) => Certificate.fromJson(d)).toList()
       ..sort((a, b) => b.issueDate.compareTo(a.issueDate));
   }
@@ -175,7 +219,11 @@ class FirebaseCertificateRepository implements CertificateRepository {
       updatedAt: now,
       updatedBy: verifierUid,
     );
-    await _firestoreService.setDocument('certificates', certificateId, verified.toJson());
+    await _firestoreService.setDocument(
+      'certificates',
+      certificateId,
+      verified.toJson(),
+    );
     return verified;
   }
 }

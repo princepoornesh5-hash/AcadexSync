@@ -19,10 +19,12 @@ class CreateAnnouncementScreen extends ConsumerStatefulWidget {
   const CreateAnnouncementScreen({super.key});
 
   @override
-  ConsumerState<CreateAnnouncementScreen> createState() => _CreateAnnouncementScreenState();
+  ConsumerState<CreateAnnouncementScreen> createState() =>
+      _CreateAnnouncementScreenState();
 }
 
-class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScreen> {
+class _CreateAnnouncementScreenState
+    extends ConsumerState<CreateAnnouncementScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _bodyController = TextEditingController();
@@ -52,12 +54,7 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
     'ADMINISTRATIVE',
   ];
 
-  final List<String> _priorities = [
-    'LOW',
-    'NORMAL',
-    'HIGH',
-    'URGENT',
-  ];
+  final List<String> _priorities = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
 
   @override
   void initState() {
@@ -97,27 +94,33 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
     final user = auth.user;
 
     // Audience targeting validation
-    if (_scope == AnnouncementAudienceScope.department && _selectedDepartmentId == null) {
+    if (_scope == AnnouncementAudienceScope.department &&
+        _selectedDepartmentId == null) {
       setState(() => _errorMessage = 'Please select a target department');
       return;
     }
-    if (_scope == AnnouncementAudienceScope.course && _selectedCourseId == null) {
+    if (_scope == AnnouncementAudienceScope.course &&
+        _selectedCourseId == null) {
       setState(() => _errorMessage = 'Please select a target course');
       return;
     }
-    if (_scope == AnnouncementAudienceScope.semester && _selectedSemesterId == null) {
+    if (_scope == AnnouncementAudienceScope.semester &&
+        _selectedSemesterId == null) {
       setState(() => _errorMessage = 'Please select a target semester');
       return;
     }
-    if (_scope == AnnouncementAudienceScope.section && _selectedSectionId == null) {
+    if (_scope == AnnouncementAudienceScope.section &&
+        _selectedSectionId == null) {
       setState(() => _errorMessage = 'Please select a target section');
       return;
     }
-    if (_scope == AnnouncementAudienceScope.role && _selectedTargetRole == null) {
+    if (_scope == AnnouncementAudienceScope.role &&
+        _selectedTargetRole == null) {
       setState(() => _errorMessage = 'Please select a target role');
       return;
     }
-    if (_scope == AnnouncementAudienceScope.individual && _targetUserIdController.text.trim().isEmpty) {
+    if (_scope == AnnouncementAudienceScope.individual &&
+        _targetUserIdController.text.trim().isEmpty) {
       setState(() => _errorMessage = 'Please enter a target recipient User ID');
       return;
     }
@@ -144,27 +147,34 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
         payload['departmentId'] = _selectedDepartmentId ?? user.departmentId;
       } else if (_scope == AnnouncementAudienceScope.course) {
         payload['targetCourseId'] = _selectedCourseId;
-        if (_selectedDepartmentId != null) payload['departmentId'] = _selectedDepartmentId;
+        if (_selectedDepartmentId != null)
+          payload['departmentId'] = _selectedDepartmentId;
       } else if (_scope == AnnouncementAudienceScope.semester) {
         payload['targetCourseId'] = _selectedCourseId;
         payload['targetSemesterId'] = _selectedSemesterId;
-        if (_selectedDepartmentId != null) payload['departmentId'] = _selectedDepartmentId;
+        if (_selectedDepartmentId != null)
+          payload['departmentId'] = _selectedDepartmentId;
       } else if (_scope == AnnouncementAudienceScope.section) {
         payload['targetCourseId'] = _selectedCourseId;
         payload['targetSemesterId'] = _selectedSemesterId;
         payload['targetSectionId'] = _selectedSectionId;
-        if (_selectedDepartmentId != null) payload['departmentId'] = _selectedDepartmentId;
+        if (_selectedDepartmentId != null)
+          payload['departmentId'] = _selectedDepartmentId;
       } else if (_scope == AnnouncementAudienceScope.role) {
         payload['targetRole'] = _selectedTargetRole!.value;
-        if (_selectedDepartmentId != null) payload['departmentId'] = _selectedDepartmentId;
+        if (_selectedDepartmentId != null)
+          payload['departmentId'] = _selectedDepartmentId;
       } else if (_scope == AnnouncementAudienceScope.individual) {
         final targetId = _targetUserIdController.text.trim();
         payload['targetUserId'] = targetId;
         payload['targetUserIds'] = [targetId];
-        if (_selectedDepartmentId != null) payload['departmentId'] = _selectedDepartmentId;
+        if (_selectedDepartmentId != null)
+          payload['departmentId'] = _selectedDepartmentId;
       }
 
-      await ref.read(announcementCreationProvider.notifier).createAnnouncement(payload);
+      await ref
+          .read(announcementCreationProvider.notifier)
+          .createAnnouncement(payload);
 
       if (mounted) {
         AcadexSnackBar.showSuccess(
@@ -180,26 +190,34 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
         String msg = e.toString().replaceAll('Exception: ', '').trim();
         if (msg.contains('Only administrators and HODs')) {
           msg = 'You do not have permission to publish announcements.';
-        } else if (msg.contains('HOD is not authorized to publish college-wide')) {
-          msg = 'HODs cannot publish college-wide announcements. Please select your department.';
-        } else if (msg.contains('HOD can only target announcements within their assigned department')) {
-          msg = 'You can only publish announcements for your assigned department.';
-        } else if (msg.contains('HOD cannot target courses outside their department')) {
+        } else if (msg.contains(
+          'HOD is not authorized to publish college-wide',
+        )) {
+          msg =
+              'HODs cannot publish college-wide announcements. Please select your department.';
+        } else if (msg.contains(
+          'HOD can only target announcements within their assigned department',
+        )) {
+          msg =
+              'You can only publish announcements for your assigned department.';
+        } else if (msg.contains(
+          'HOD cannot target courses outside their department',
+        )) {
           msg = 'You cannot target courses outside your department.';
-        } else if (msg.contains('HOD cannot target sections outside their department')) {
+        } else if (msg.contains(
+          'HOD cannot target sections outside their department',
+        )) {
           msg = 'You cannot target sections outside your department.';
-        } else if (msg.contains('HOD cannot target users outside their department')) {
+        } else if (msg.contains(
+          'HOD cannot target users outside their department',
+        )) {
           msg = 'You cannot target users outside your department.';
         }
         setState(() {
           _errorMessage = msg;
           _isSubmitting = false;
         });
-        AcadexSnackBar.showError(
-          context,
-          e,
-          fallbackMessage: msg,
-        );
+        AcadexSnackBar.showError(context, e, fallbackMessage: msg);
       }
     }
   }
@@ -229,7 +247,9 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
     if (pickedDate != null && mounted) {
       final pickedTime = await showTimePicker(
         context: context,
-        initialTime: TimeOfDay.fromDateTime(_expiresAt ?? now.add(const Duration(hours: 1))),
+        initialTime: TimeOfDay.fromDateTime(
+          _expiresAt ?? now.add(const Duration(hours: 1)),
+        ),
       );
 
       if (pickedTime != null) {
@@ -244,7 +264,13 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
         });
       } else {
         setState(() {
-          _expiresAt = DateTime(pickedDate.year, pickedDate.month, pickedDate.day, 23, 59);
+          _expiresAt = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            23,
+            59,
+          );
         });
       }
     }
@@ -257,7 +283,8 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
     final user = auth.user;
 
     // Check authority: Only SuperAdmin, CollegeAdmin, and HOD can access
-    final isAuthorized = user.role == AppRole.superAdmin ||
+    final isAuthorized =
+        user.role == AppRole.superAdmin ||
         user.role == AppRole.collegeAdmin ||
         user.role == AppRole.hod;
 
@@ -265,7 +292,10 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
       return Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          title: Text('Create Announcement', style: AcadexTypography.heading3(color: AcadexColors.ink)),
+          title: Text(
+            'Create Announcement',
+            style: AcadexTypography.heading3(color: AcadexColors.ink),
+          ),
           backgroundColor: Colors.white,
           elevation: 0,
         ),
@@ -292,7 +322,9 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
     ];
 
     if (!availableScopes.contains(_scope)) {
-      _scope = isHod ? AnnouncementAudienceScope.department : availableScopes.first;
+      _scope = isHod
+          ? AnnouncementAudienceScope.department
+          : availableScopes.first;
       if (isHod && _selectedDepartmentId == null) {
         _selectedDepartmentId = user.departmentId;
       }
@@ -366,7 +398,9 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                     isHod
                         ? 'Publish an official department announcement or target specific courses/sections.'
                         : 'Broadcast an official announcement across your institution or targeted audience.',
-                    style: AcadexTypography.bodySmall(color: AcadexColors.inkSecondary),
+                    style: AcadexTypography.bodySmall(
+                      color: AcadexColors.inkSecondary,
+                    ),
                   ),
                   const SizedBox(height: 24),
 
@@ -380,12 +414,18 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                       ),
                       child: Row(
                         children: [
-                          const Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 20),
+                          const Icon(
+                            LucideIcons.alertCircle,
+                            color: AcadexColors.error,
+                            size: 20,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               _errorMessage!,
-                              style: AcadexTypography.bodySmall(color: AcadexColors.error),
+                              style: AcadexTypography.bodySmall(
+                                color: AcadexColors.error,
+                              ),
                             ),
                           ),
                         ],
@@ -400,27 +440,41 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                     style: AcadexTypography.body(color: AcadexColors.ink),
                     decoration: InputDecoration(
                       labelText: 'Announcement Title *',
-                      labelStyle: AcadexTypography.bodySmall(color: AcadexColors.inkSecondary),
-                      hintText: 'e.g., End Semester Examination Schedule Published',
-                      hintStyle: AcadexTypography.body(color: AcadexColors.inkFaint),
+                      labelStyle: AcadexTypography.bodySmall(
+                        color: AcadexColors.inkSecondary,
+                      ),
+                      hintText:
+                          'e.g., End Semester Examination Schedule Published',
+                      hintStyle: AcadexTypography.body(
+                        color: AcadexColors.inkFaint,
+                      ),
                       filled: true,
                       fillColor: AcadexColors.canvas,
                       border: OutlineInputBorder(
                         borderRadius: AcadexRadius.borderRadiusMd,
-                        borderSide: const BorderSide(color: AcadexColors.hairline),
+                        borderSide: const BorderSide(
+                          color: AcadexColors.hairline,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: AcadexRadius.borderRadiusMd,
-                        borderSide: const BorderSide(color: AcadexColors.hairline),
+                        borderSide: const BorderSide(
+                          color: AcadexColors.hairline,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: AcadexRadius.borderRadiusMd,
-                        borderSide: const BorderSide(color: AcadexColors.primary, width: 1.5),
+                        borderSide: const BorderSide(
+                          color: AcadexColors.primary,
+                          width: 1.5,
+                        ),
                       ),
                     ),
                     validator: (val) {
-                      if (val == null || val.trim().isEmpty) return 'Title is required';
-                      if (val.trim().length < 3) return 'Title must be at least 3 characters';
+                      if (val == null || val.trim().isEmpty)
+                        return 'Title is required';
+                      if (val.trim().length < 3)
+                        return 'Title must be at least 3 characters';
                       return null;
                     },
                   ),
@@ -433,27 +487,41 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                     style: AcadexTypography.body(color: AcadexColors.ink),
                     decoration: InputDecoration(
                       labelText: 'Announcement Body *',
-                      labelStyle: AcadexTypography.bodySmall(color: AcadexColors.inkSecondary),
-                      hintText: 'Write the complete announcement details, instructions, or notes...',
-                      hintStyle: AcadexTypography.body(color: AcadexColors.inkFaint),
+                      labelStyle: AcadexTypography.bodySmall(
+                        color: AcadexColors.inkSecondary,
+                      ),
+                      hintText:
+                          'Write the complete announcement details, instructions, or notes...',
+                      hintStyle: AcadexTypography.body(
+                        color: AcadexColors.inkFaint,
+                      ),
                       filled: true,
                       fillColor: AcadexColors.canvas,
                       border: OutlineInputBorder(
                         borderRadius: AcadexRadius.borderRadiusMd,
-                        borderSide: const BorderSide(color: AcadexColors.hairline),
+                        borderSide: const BorderSide(
+                          color: AcadexColors.hairline,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: AcadexRadius.borderRadiusMd,
-                        borderSide: const BorderSide(color: AcadexColors.hairline),
+                        borderSide: const BorderSide(
+                          color: AcadexColors.hairline,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: AcadexRadius.borderRadiusMd,
-                        borderSide: const BorderSide(color: AcadexColors.primary, width: 1.5),
+                        borderSide: const BorderSide(
+                          color: AcadexColors.primary,
+                          width: 1.5,
+                        ),
                       ),
                     ),
                     validator: (val) {
-                      if (val == null || val.trim().isEmpty) return 'Body is required';
-                      if (val.trim().length < 5) return 'Body must be at least 5 characters';
+                      if (val == null || val.trim().isEmpty)
+                        return 'Body is required';
+                      if (val.trim().length < 5)
+                        return 'Body must be at least 5 characters';
                       return null;
                     },
                   ),
@@ -467,26 +535,38 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                     iconEnabledColor: AcadexColors.inkSecondary,
                     decoration: InputDecoration(
                       labelText: 'Audience Scope *',
-                      labelStyle: AcadexTypography.bodySmall(color: AcadexColors.inkSecondary),
+                      labelStyle: AcadexTypography.bodySmall(
+                        color: AcadexColors.inkSecondary,
+                      ),
                       filled: true,
                       fillColor: AcadexColors.canvas,
                       border: OutlineInputBorder(
                         borderRadius: AcadexRadius.borderRadiusMd,
-                        borderSide: const BorderSide(color: AcadexColors.hairline),
+                        borderSide: const BorderSide(
+                          color: AcadexColors.hairline,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: AcadexRadius.borderRadiusMd,
-                        borderSide: const BorderSide(color: AcadexColors.hairline),
+                        borderSide: const BorderSide(
+                          color: AcadexColors.hairline,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: AcadexRadius.borderRadiusMd,
-                        borderSide: const BorderSide(color: AcadexColors.primary, width: 1.5),
+                        borderSide: const BorderSide(
+                          color: AcadexColors.primary,
+                          width: 1.5,
+                        ),
                       ),
                     ),
                     items: availableScopes.map((scope) {
                       return DropdownMenuItem(
                         value: scope,
-                        child: Text(scope.displayName, style: AcadexTypography.body(color: AcadexColors.ink)),
+                        child: Text(
+                          scope.displayName,
+                          style: AcadexTypography.body(color: AcadexColors.ink),
+                        ),
                       );
                     }).toList(),
                     onChanged: (val) {
@@ -511,16 +591,24 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                       decoration: BoxDecoration(
                         color: AcadexColors.primaryLight,
                         borderRadius: AcadexRadius.borderRadiusMd,
-                        border: Border.all(color: AcadexColors.primary.withOpacity(0.3)),
+                        border: Border.all(
+                          color: AcadexColors.primary.withOpacity(0.3),
+                        ),
                       ),
                       child: Row(
                         children: [
-                          const Icon(LucideIcons.globe, color: AcadexColors.primary, size: 20),
+                          const Icon(
+                            LucideIcons.globe,
+                            color: AcadexColors.primary,
+                            size: 20,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               'This announcement will be broadcast college-wide to all students, faculty, and administrators.',
-                              style: AcadexTypography.bodySmall(color: AcadexColors.primary),
+                              style: AcadexTypography.bodySmall(
+                                color: AcadexColors.primary,
+                              ),
                             ),
                           ),
                         ],
@@ -541,26 +629,40 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                         iconEnabledColor: AcadexColors.inkSecondary,
                         decoration: InputDecoration(
                           labelText: 'Select Department *',
-                          labelStyle: AcadexTypography.bodySmall(color: AcadexColors.inkSecondary),
+                          labelStyle: AcadexTypography.bodySmall(
+                            color: AcadexColors.inkSecondary,
+                          ),
                           filled: true,
                           fillColor: AcadexColors.canvas,
                           border: OutlineInputBorder(
                             borderRadius: AcadexRadius.borderRadiusMd,
-                            borderSide: const BorderSide(color: AcadexColors.hairline),
+                            borderSide: const BorderSide(
+                              color: AcadexColors.hairline,
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: AcadexRadius.borderRadiusMd,
-                            borderSide: const BorderSide(color: AcadexColors.hairline),
+                            borderSide: const BorderSide(
+                              color: AcadexColors.hairline,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: AcadexRadius.borderRadiusMd,
-                            borderSide: const BorderSide(color: AcadexColors.primary, width: 1.5),
+                            borderSide: const BorderSide(
+                              color: AcadexColors.primary,
+                              width: 1.5,
+                            ),
                           ),
                         ),
                         items: departments.map((d) {
                           return DropdownMenuItem(
                             value: d.id,
-                            child: Text('${d.name} (${d.code})', style: AcadexTypography.body(color: AcadexColors.ink)),
+                            child: Text(
+                              '${d.name} (${d.code})',
+                              style: AcadexTypography.body(
+                                color: AcadexColors.ink,
+                              ),
+                            ),
                           );
                         }).toList(),
                         onChanged: (val) {
@@ -571,7 +673,8 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                             _selectedSectionId = null;
                           });
                         },
-                        validator: (val) => val == null ? 'Please select a department' : null,
+                        validator: (val) =>
+                            val == null ? 'Please select a department' : null,
                       ),
                       const SizedBox(height: 18),
                     ] else ...[
@@ -584,12 +687,18 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                         ),
                         child: Row(
                           children: [
-                            const Icon(LucideIcons.building, color: AcadexColors.inkSecondary, size: 20),
+                            const Icon(
+                              LucideIcons.building,
+                              color: AcadexColors.inkSecondary,
+                              size: 20,
+                            ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 'Department: Your assigned department (ID: ${user.departmentId ?? 'Default'})',
-                                style: AcadexTypography.body(color: AcadexColors.ink),
+                                style: AcadexTypography.body(
+                                  color: AcadexColors.ink,
+                                ),
                               ),
                             ),
                           ],
@@ -609,26 +718,40 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                       iconEnabledColor: AcadexColors.inkSecondary,
                       decoration: InputDecoration(
                         labelText: 'Select Course *',
-                        labelStyle: AcadexTypography.bodySmall(color: AcadexColors.inkSecondary),
+                        labelStyle: AcadexTypography.bodySmall(
+                          color: AcadexColors.inkSecondary,
+                        ),
                         filled: true,
                         fillColor: AcadexColors.canvas,
                         border: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
-                          borderSide: const BorderSide(color: AcadexColors.hairline),
+                          borderSide: const BorderSide(
+                            color: AcadexColors.hairline,
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
-                          borderSide: const BorderSide(color: AcadexColors.hairline),
+                          borderSide: const BorderSide(
+                            color: AcadexColors.hairline,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
-                          borderSide: const BorderSide(color: AcadexColors.primary, width: 1.5),
+                          borderSide: const BorderSide(
+                            color: AcadexColors.primary,
+                            width: 1.5,
+                          ),
                         ),
                       ),
                       items: filteredCourses.map((c) {
                         return DropdownMenuItem(
                           value: c.id,
-                          child: Text('${c.name} (${c.code})', style: AcadexTypography.body(color: AcadexColors.ink)),
+                          child: Text(
+                            '${c.name} (${c.code})',
+                            style: AcadexTypography.body(
+                              color: AcadexColors.ink,
+                            ),
+                          ),
                         );
                       }).toList(),
                       onChanged: (val) {
@@ -638,7 +761,8 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                           _selectedSectionId = null;
                         });
                       },
-                      validator: (val) => val == null ? 'Please select a course' : null,
+                      validator: (val) =>
+                          val == null ? 'Please select a course' : null,
                     ),
                     const SizedBox(height: 18),
                   ],
@@ -652,26 +776,40 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                       iconEnabledColor: AcadexColors.inkSecondary,
                       decoration: InputDecoration(
                         labelText: 'Select Semester *',
-                        labelStyle: AcadexTypography.bodySmall(color: AcadexColors.inkSecondary),
+                        labelStyle: AcadexTypography.bodySmall(
+                          color: AcadexColors.inkSecondary,
+                        ),
                         filled: true,
                         fillColor: AcadexColors.canvas,
                         border: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
-                          borderSide: const BorderSide(color: AcadexColors.hairline),
+                          borderSide: const BorderSide(
+                            color: AcadexColors.hairline,
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
-                          borderSide: const BorderSide(color: AcadexColors.hairline),
+                          borderSide: const BorderSide(
+                            color: AcadexColors.hairline,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
-                          borderSide: const BorderSide(color: AcadexColors.primary, width: 1.5),
+                          borderSide: const BorderSide(
+                            color: AcadexColors.primary,
+                            width: 1.5,
+                          ),
                         ),
                       ),
                       items: filteredSemesters.map((s) {
                         return DropdownMenuItem(
                           value: s.id,
-                          child: Text(s.name.isNotEmpty ? s.name : 'Semester ${s.number}', style: AcadexTypography.body(color: AcadexColors.ink)),
+                          child: Text(
+                            s.name.isNotEmpty ? s.name : 'Semester ${s.number}',
+                            style: AcadexTypography.body(
+                              color: AcadexColors.ink,
+                            ),
+                          ),
                         );
                       }).toList(),
                       onChanged: (val) {
@@ -680,7 +818,8 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                           _selectedSectionId = null;
                         });
                       },
-                      validator: (val) => val == null ? 'Please select a semester' : null,
+                      validator: (val) =>
+                          val == null ? 'Please select a semester' : null,
                     ),
                     const SizedBox(height: 18),
                   ],
@@ -693,30 +832,46 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                       iconEnabledColor: AcadexColors.inkSecondary,
                       decoration: InputDecoration(
                         labelText: 'Select Section *',
-                        labelStyle: AcadexTypography.bodySmall(color: AcadexColors.inkSecondary),
+                        labelStyle: AcadexTypography.bodySmall(
+                          color: AcadexColors.inkSecondary,
+                        ),
                         filled: true,
                         fillColor: AcadexColors.canvas,
                         border: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
-                          borderSide: const BorderSide(color: AcadexColors.hairline),
+                          borderSide: const BorderSide(
+                            color: AcadexColors.hairline,
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
-                          borderSide: const BorderSide(color: AcadexColors.hairline),
+                          borderSide: const BorderSide(
+                            color: AcadexColors.hairline,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
-                          borderSide: const BorderSide(color: AcadexColors.primary, width: 1.5),
+                          borderSide: const BorderSide(
+                            color: AcadexColors.primary,
+                            width: 1.5,
+                          ),
                         ),
                       ),
                       items: filteredSections.map((sec) {
                         return DropdownMenuItem(
                           value: sec.id,
-                          child: Text('Section ${sec.name}', style: AcadexTypography.body(color: AcadexColors.ink)),
+                          child: Text(
+                            'Section ${sec.name}',
+                            style: AcadexTypography.body(
+                              color: AcadexColors.ink,
+                            ),
+                          ),
                         );
                       }).toList(),
-                      onChanged: (val) => setState(() => _selectedSectionId = val),
-                      validator: (val) => val == null ? 'Please select a section' : null,
+                      onChanged: (val) =>
+                          setState(() => _selectedSectionId = val),
+                      validator: (val) =>
+                          val == null ? 'Please select a section' : null,
                     ),
                     const SizedBox(height: 18),
                   ],
@@ -729,29 +884,64 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                       iconEnabledColor: AcadexColors.inkSecondary,
                       decoration: InputDecoration(
                         labelText: 'Target Role *',
-                        labelStyle: AcadexTypography.bodySmall(color: AcadexColors.inkSecondary),
+                        labelStyle: AcadexTypography.bodySmall(
+                          color: AcadexColors.inkSecondary,
+                        ),
                         filled: true,
                         fillColor: AcadexColors.canvas,
                         border: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
-                          borderSide: const BorderSide(color: AcadexColors.hairline),
+                          borderSide: const BorderSide(
+                            color: AcadexColors.hairline,
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
-                          borderSide: const BorderSide(color: AcadexColors.hairline),
+                          borderSide: const BorderSide(
+                            color: AcadexColors.hairline,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
-                          borderSide: const BorderSide(color: AcadexColors.primary, width: 1.5),
+                          borderSide: const BorderSide(
+                            color: AcadexColors.primary,
+                            width: 1.5,
+                          ),
                         ),
                       ),
                       items: [
-                        DropdownMenuItem(value: AppRole.student, child: Text('Students', style: AcadexTypography.body(color: AcadexColors.ink))),
-                        DropdownMenuItem(value: AppRole.faculty, child: Text('Faculty', style: AcadexTypography.body(color: AcadexColors.ink))),
-                        DropdownMenuItem(value: AppRole.hod, child: Text('Heads of Department', style: AcadexTypography.body(color: AcadexColors.ink))),
+                        DropdownMenuItem(
+                          value: AppRole.student,
+                          child: Text(
+                            'Students',
+                            style: AcadexTypography.body(
+                              color: AcadexColors.ink,
+                            ),
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: AppRole.faculty,
+                          child: Text(
+                            'Faculty',
+                            style: AcadexTypography.body(
+                              color: AcadexColors.ink,
+                            ),
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: AppRole.hod,
+                          child: Text(
+                            'Heads of Department',
+                            style: AcadexTypography.body(
+                              color: AcadexColors.ink,
+                            ),
+                          ),
+                        ),
                       ],
-                      onChanged: (val) => setState(() => _selectedTargetRole = val),
-                      validator: (val) => val == null ? 'Please select a target role' : null,
+                      onChanged: (val) =>
+                          setState(() => _selectedTargetRole = val),
+                      validator: (val) =>
+                          val == null ? 'Please select a target role' : null,
                     ),
                     const SizedBox(height: 18),
                   ],
@@ -762,25 +952,38 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                       style: AcadexTypography.body(color: AcadexColors.ink),
                       decoration: InputDecoration(
                         labelText: 'Recipient User ID *',
-                        labelStyle: AcadexTypography.bodySmall(color: AcadexColors.inkSecondary),
+                        labelStyle: AcadexTypography.bodySmall(
+                          color: AcadexColors.inkSecondary,
+                        ),
                         hintText: 'Enter user ID / registration ID',
-                        hintStyle: AcadexTypography.body(color: AcadexColors.inkFaint),
+                        hintStyle: AcadexTypography.body(
+                          color: AcadexColors.inkFaint,
+                        ),
                         filled: true,
                         fillColor: AcadexColors.canvas,
                         border: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
-                          borderSide: const BorderSide(color: AcadexColors.hairline),
+                          borderSide: const BorderSide(
+                            color: AcadexColors.hairline,
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
-                          borderSide: const BorderSide(color: AcadexColors.hairline),
+                          borderSide: const BorderSide(
+                            color: AcadexColors.hairline,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: AcadexRadius.borderRadiusMd,
-                          borderSide: const BorderSide(color: AcadexColors.primary, width: 1.5),
+                          borderSide: const BorderSide(
+                            color: AcadexColors.primary,
+                            width: 1.5,
+                          ),
                         ),
                       ),
-                      validator: (val) => val == null || val.trim().isEmpty ? 'User ID is required' : null,
+                      validator: (val) => val == null || val.trim().isEmpty
+                          ? 'User ID is required'
+                          : null,
                     ),
                     const SizedBox(height: 18),
                   ],
@@ -796,29 +999,44 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                           iconEnabledColor: AcadexColors.inkSecondary,
                           decoration: InputDecoration(
                             labelText: 'Category',
-                            labelStyle: AcadexTypography.bodySmall(color: AcadexColors.inkSecondary),
+                            labelStyle: AcadexTypography.bodySmall(
+                              color: AcadexColors.inkSecondary,
+                            ),
                             filled: true,
                             fillColor: AcadexColors.canvas,
                             border: OutlineInputBorder(
                               borderRadius: AcadexRadius.borderRadiusMd,
-                              borderSide: const BorderSide(color: AcadexColors.hairline),
+                              borderSide: const BorderSide(
+                                color: AcadexColors.hairline,
+                              ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: AcadexRadius.borderRadiusMd,
-                              borderSide: const BorderSide(color: AcadexColors.hairline),
+                              borderSide: const BorderSide(
+                                color: AcadexColors.hairline,
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: AcadexRadius.borderRadiusMd,
-                              borderSide: const BorderSide(color: AcadexColors.primary, width: 1.5),
+                              borderSide: const BorderSide(
+                                color: AcadexColors.primary,
+                                width: 1.5,
+                              ),
                             ),
                           ),
                           items: _categories.map((c) {
                             return DropdownMenuItem(
                               value: c,
-                              child: Text(c, style: AcadexTypography.body(color: AcadexColors.ink)),
+                              child: Text(
+                                c,
+                                style: AcadexTypography.body(
+                                  color: AcadexColors.ink,
+                                ),
+                              ),
                             );
                           }).toList(),
-                          onChanged: (val) => setState(() => _category = val ?? 'GENERAL'),
+                          onChanged: (val) =>
+                              setState(() => _category = val ?? 'GENERAL'),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -830,29 +1048,44 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                           iconEnabledColor: AcadexColors.inkSecondary,
                           decoration: InputDecoration(
                             labelText: 'Priority',
-                            labelStyle: AcadexTypography.bodySmall(color: AcadexColors.inkSecondary),
+                            labelStyle: AcadexTypography.bodySmall(
+                              color: AcadexColors.inkSecondary,
+                            ),
                             filled: true,
                             fillColor: AcadexColors.canvas,
                             border: OutlineInputBorder(
                               borderRadius: AcadexRadius.borderRadiusMd,
-                              borderSide: const BorderSide(color: AcadexColors.hairline),
+                              borderSide: const BorderSide(
+                                color: AcadexColors.hairline,
+                              ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: AcadexRadius.borderRadiusMd,
-                              borderSide: const BorderSide(color: AcadexColors.hairline),
+                              borderSide: const BorderSide(
+                                color: AcadexColors.hairline,
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: AcadexRadius.borderRadiusMd,
-                              borderSide: const BorderSide(color: AcadexColors.primary, width: 1.5),
+                              borderSide: const BorderSide(
+                                color: AcadexColors.primary,
+                                width: 1.5,
+                              ),
                             ),
                           ),
                           items: _priorities.map((p) {
                             return DropdownMenuItem(
                               value: p,
-                              child: Text(p, style: AcadexTypography.body(color: AcadexColors.ink)),
+                              child: Text(
+                                p,
+                                style: AcadexTypography.body(
+                                  color: AcadexColors.ink,
+                                ),
+                              ),
                             );
                           }).toList(),
-                          onChanged: (val) => setState(() => _priority = val ?? 'NORMAL'),
+                          onChanged: (val) =>
+                              setState(() => _priority = val ?? 'NORMAL'),
                         ),
                       ),
                     ],
@@ -864,7 +1097,10 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                     onTap: _pickExpiryDate,
                     borderRadius: AcadexRadius.borderRadiusMd,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
                         color: AcadexColors.canvas,
                         borderRadius: AcadexRadius.borderRadiusMd,
@@ -872,27 +1108,45 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                       ),
                       child: Row(
                         children: [
-                          const Icon(LucideIcons.calendar, size: 20, color: AcadexColors.inkSecondary),
+                          const Icon(
+                            LucideIcons.calendar,
+                            size: 20,
+                            color: AcadexColors.inkSecondary,
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Expires At (Optional)', style: AcadexTypography.caption(color: AcadexColors.inkSecondary)),
+                                Text(
+                                  'Expires At (Optional)',
+                                  style: AcadexTypography.caption(
+                                    color: AcadexColors.inkSecondary,
+                                  ),
+                                ),
                                 const SizedBox(height: 2),
                                 Text(
                                   _expiresAt != null
-                                      ? DateFormat('EEE, d MMM yyyy, h:mm a').format(_expiresAt!)
+                                      ? DateFormat(
+                                          'EEE, d MMM yyyy, h:mm a',
+                                        ).format(_expiresAt!)
                                       : 'No expiration set (Never expires)',
-                                  style: AcadexTypography.body(color: AcadexColors.ink),
+                                  style: AcadexTypography.body(
+                                    color: AcadexColors.ink,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                           if (_expiresAt != null)
                             IconButton(
-                              icon: const Icon(LucideIcons.x, size: 16, color: AcadexColors.inkSecondary),
-                              onPressed: () => setState(() => _expiresAt = null),
+                              icon: const Icon(
+                                LucideIcons.x,
+                                size: 16,
+                                color: AcadexColors.inkSecondary,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _expiresAt = null),
                               tooltip: 'Clear expiry',
                             ),
                         ],
@@ -904,8 +1158,16 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                   Material(
                     color: Colors.transparent,
                     child: SwitchListTile(
-                      title: Text('Pin Announcement', style: AcadexTypography.body(color: AcadexColors.ink)),
-                      subtitle: Text('Keep this announcement prominently at top of feeds', style: AcadexTypography.caption(color: AcadexColors.inkSecondary)),
+                      title: Text(
+                        'Pin Announcement',
+                        style: AcadexTypography.body(color: AcadexColors.ink),
+                      ),
+                      subtitle: Text(
+                        'Keep this announcement prominently at top of feeds',
+                        style: AcadexTypography.caption(
+                          color: AcadexColors.inkSecondary,
+                        ),
+                      ),
                       value: _isPinned,
                       activeColor: AcadexColors.primary,
                       contentPadding: EdgeInsets.zero,
@@ -923,11 +1185,17 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                           label: const Text('Save Draft'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AcadexColors.ink,
-                            side: const BorderSide(color: AcadexColors.hairline),
+                            side: const BorderSide(
+                              color: AcadexColors.hairline,
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: AcadexRadius.borderRadiusMd,
+                            ),
                           ),
-                          onPressed: _isSubmitting ? null : () => _submit('DRAFT'),
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => _submit('DRAFT'),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -936,7 +1204,9 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                           label: 'Publish Now',
                           icon: LucideIcons.send,
                           isLoading: _isSubmitting,
-                          onPressed: _isSubmitting ? null : () => _submit('PUBLISHED'),
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => _submit('PUBLISHED'),
                           isFullWidth: true,
                         ),
                       ),

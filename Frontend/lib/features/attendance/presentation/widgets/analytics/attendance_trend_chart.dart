@@ -34,7 +34,11 @@ class AttendanceTrendChart extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(LucideIcons.trendingUp, size: 18, color: AcadexColors.primary),
+              const Icon(
+                LucideIcons.trendingUp,
+                size: 18,
+                color: AcadexColors.primary,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -57,13 +61,17 @@ class AttendanceTrendChart extends StatelessWidget {
                     Icon(
                       LucideIcons.trendingUp,
                       size: 40,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'No trend data available for selected period',
                       style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                     ),
                   ],
@@ -81,14 +89,20 @@ class AttendanceTrendChart extends StatelessWidget {
                     horizontalInterval: 25,
                     getDrawingHorizontalLine: (value) {
                       return FlLine(
-                        color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                        color: isDark
+                            ? AcadexColors.darkHairline
+                            : AcadexColors.hairline,
                         strokeWidth: 1,
                       );
                     },
                   ),
                   titlesData: FlTitlesData(
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
@@ -102,7 +116,9 @@ class AttendanceTrendChart extends StatelessWidget {
                               child: Text(
                                 trendData[idx].label,
                                 style: AcadexTypography.caption(
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
                                 ).copyWith(fontSize: 10),
                               ),
                             );
@@ -120,7 +136,9 @@ class AttendanceTrendChart extends StatelessWidget {
                           return Text(
                             '${value.toInt()}%',
                             style: AcadexTypography.caption(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
                             ).copyWith(fontSize: 10),
                             textAlign: TextAlign.right,
                           );
@@ -130,7 +148,10 @@ class AttendanceTrendChart extends StatelessWidget {
                   ),
                   borderData: FlBorderData(show: false),
                   minX: 0,
-                  maxX: (trendData.length - 1).toDouble().clamp(0.0, double.infinity),
+                  maxX: (trendData.length - 1).toDouble().clamp(
+                    0.0,
+                    double.infinity,
+                  ),
                   minY: 0,
                   maxY: 100,
                   extraLinesData: ExtraLinesData(
@@ -144,10 +165,9 @@ class AttendanceTrendChart extends StatelessWidget {
                           show: true,
                           alignment: Alignment.topRight,
                           padding: const EdgeInsets.only(right: 6, bottom: 4),
-                          style: AcadexTypography.caption(color: AcadexColors.error).copyWith(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 9,
-                          ),
+                          style: AcadexTypography.caption(
+                            color: AcadexColors.error,
+                          ).copyWith(fontWeight: FontWeight.w700, fontSize: 9),
                           labelResolver: (line) => '75% Threshold',
                         ),
                       ),
@@ -170,7 +190,9 @@ class AttendanceTrendChart extends StatelessWidget {
                           final isLow = spot.y < threshold;
                           return FlDotCirclePainter(
                             radius: 4,
-                            color: isLow ? AcadexColors.error : AcadexColors.primary,
+                            color: isLow
+                                ? AcadexColors.error
+                                : AcadexColors.primary,
                             strokeWidth: 2,
                             strokeColor: Colors.white,
                           );

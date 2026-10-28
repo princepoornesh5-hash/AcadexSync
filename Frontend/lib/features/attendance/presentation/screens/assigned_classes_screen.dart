@@ -16,9 +16,16 @@ import '../../../../core/presentation/widgets/acadex_feedback.dart';
 class AssignedClassesScreen extends ConsumerWidget {
   const AssignedClassesScreen({super.key});
 
-  void _openTakeAttendance(BuildContext context, WidgetRef ref, List<AssignedClass> classes) {
+  void _openTakeAttendance(
+    BuildContext context,
+    WidgetRef ref,
+    List<AssignedClass> classes,
+  ) {
     if (classes.isEmpty) {
-      AcadexSnackBar.showInfo(context, "No attendance sessions are available right now.");
+      AcadexSnackBar.showInfo(
+        context,
+        "No attendance sessions are available right now.",
+      );
       return;
     }
     if (classes.length == 1) {
@@ -30,7 +37,10 @@ class AssignedClassesScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text("Select Scheduled Class", style: AcadexTypography.heading3()),
+        title: Text(
+          "Select Scheduled Class",
+          style: AcadexTypography.heading3(),
+        ),
         content: SizedBox(
           width: 440,
           child: Column(
@@ -60,13 +70,21 @@ class AssignedClassesScreen extends ConsumerWidget {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AcadexColors.primaryLight.withValues(alpha: 0.5),
+                          color: AcadexColors.primaryLight.withValues(
+                            alpha: 0.5,
+                          ),
                           borderRadius: AcadexRadius.borderRadiusMd,
-                          border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.2)),
+                          border: Border.all(
+                            color: AcadexColors.primary.withValues(alpha: 0.2),
+                          ),
                         ),
                         child: Row(
                           children: [
-                            const Icon(LucideIcons.clock, size: 16, color: AcadexColors.primary),
+                            const Icon(
+                              LucideIcons.clock,
+                              size: 16,
+                              color: AcadexColors.primary,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Column(
@@ -74,7 +92,9 @@ class AssignedClassesScreen extends ConsumerWidget {
                                 children: [
                                   Text(
                                     "${c.subjectName} (${c.sectionName})",
-                                    style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.bold),
+                                    style: AcadexTypography.caption().copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   Text(
                                     c.isSubstitution
@@ -85,7 +105,11 @@ class AssignedClassesScreen extends ConsumerWidget {
                                 ],
                               ),
                             ),
-                            const Icon(LucideIcons.chevronRight, size: 16, color: AcadexColors.primary),
+                            const Icon(
+                              LucideIcons.chevronRight,
+                              size: 16,
+                              color: AcadexColors.primary,
+                            ),
                           ],
                         ),
                       ),
@@ -126,13 +150,18 @@ class AssignedClassesScreen extends ConsumerWidget {
             // Page Header with History Action
             AcadexPageHeader(
               title: "Today's Classes",
-              subtitle: "Manage assigned sections, timetable slots, and student attendance rosters.",
+              subtitle:
+                  "Manage assigned sections, timetable slots, and student attendance rosters.",
               actions: [
                 AcadexButton(
                   label: "Take Attendance",
                   icon: LucideIcons.userCheck,
                   variant: AcadexButtonVariant.primary,
-                  onPressed: () => _openTakeAttendance(context, ref, assignedClassesAsync.valueOrNull ?? []),
+                  onPressed: () => _openTakeAttendance(
+                    context,
+                    ref,
+                    assignedClassesAsync.valueOrNull ?? [],
+                  ),
                 ),
                 const SizedBox(width: 8),
                 AcadexButton(
@@ -156,13 +185,19 @@ class AssignedClassesScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               margin: const EdgeInsets.only(bottom: 24),
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                color: isDark
+                    ? AcadexColors.darkSurfaceCard
+                    : AcadexColors.surface,
                 borderRadius: AcadexRadius.borderRadiusLg,
                 border: Border.all(
-                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
                   width: 1,
                 ),
-                boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+                boxShadow: isDark
+                    ? AcadexShadows.darkSm
+                    : AcadexShadows.lightSm,
               ),
               child: Row(
                 children: [
@@ -170,16 +205,18 @@ class AssignedClassesScreen extends ConsumerWidget {
                   IconButton(
                     icon: Icon(
                       LucideIcons.chevronLeft,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                       size: 18,
                     ),
                     tooltip: "Previous Day",
                     onPressed: () {
-                      ref.read(selectedDateProvider.notifier).state =
-                          date.subtract(const Duration(days: 1));
+                      ref.read(selectedDateProvider.notifier).state = date
+                          .subtract(const Duration(days: 1));
                     },
                   ),
-                  
+
                   // Today Button
                   if (!isToday)
                     Padding(
@@ -188,7 +225,8 @@ class AssignedClassesScreen extends ConsumerWidget {
                         label: "Today",
                         variant: AcadexButtonVariant.secondary,
                         onPressed: () {
-                          ref.read(selectedDateProvider.notifier).state = DateTime.now();
+                          ref.read(selectedDateProvider.notifier).state =
+                              DateTime.now();
                         },
                       ),
                     ),
@@ -200,16 +238,24 @@ class AssignedClassesScreen extends ConsumerWidget {
                         final picked = await showDatePicker(
                           context: context,
                           initialDate: date,
-                          firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                          firstDate: DateTime.now().subtract(
+                            const Duration(days: 365),
+                          ),
+                          lastDate: DateTime.now().add(
+                            const Duration(days: 365),
+                          ),
                         );
                         if (picked != null) {
-                          ref.read(selectedDateProvider.notifier).state = picked;
+                          ref.read(selectedDateProvider.notifier).state =
+                              picked;
                         }
                       },
                       borderRadius: AcadexRadius.borderRadiusMd,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 6,
+                          horizontal: 10,
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -222,7 +268,9 @@ class AssignedClassesScreen extends ConsumerWidget {
                             Text(
                               formattedDate,
                               style: AcadexTypography.body(
-                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
                               ).copyWith(fontWeight: FontWeight.w600),
                             ),
                           ],
@@ -235,13 +283,16 @@ class AssignedClassesScreen extends ConsumerWidget {
                   IconButton(
                     icon: Icon(
                       LucideIcons.chevronRight,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
                       size: 18,
                     ),
                     tooltip: "Next Day",
                     onPressed: () {
-                      ref.read(selectedDateProvider.notifier).state =
-                          date.add(const Duration(days: 1));
+                      ref.read(selectedDateProvider.notifier).state = date.add(
+                        const Duration(days: 1),
+                      );
                     },
                   ),
                 ],
@@ -253,7 +304,9 @@ class AssignedClassesScreen extends ConsumerWidget {
               loading: () => const Center(
                 child: Padding(
                   padding: EdgeInsets.all(40),
-                  child: AcadexLoadingState(message: "Loading scheduled classes..."),
+                  child: AcadexLoadingState(
+                    message: "Loading scheduled classes...",
+                  ),
                 ),
               ),
               error: (err, stack) => Center(
@@ -267,7 +320,8 @@ class AssignedClassesScreen extends ConsumerWidget {
                   return const Center(
                     child: AcadexEmptyState(
                       title: "No Attendance Sessions Available",
-                      subtitle: "You don't have any teaching sessions or approved substitutions scheduled for this date.",
+                      subtitle:
+                          "You don't have any teaching sessions or approved substitutions scheduled for this date.",
                       icon: LucideIcons.calendarOff,
                     ),
                   );
@@ -300,12 +354,13 @@ class AssignedClassesScreen extends ConsumerWidget {
                       physics: const NeverScrollableScrollPhysics(),
                       shrinkWrap: true,
                       itemCount: classes.length,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: 2.3,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: 2.3,
+                          ),
                       itemBuilder: (context, index) {
                         final c = classes[index];
                         return AssignedClassCard(

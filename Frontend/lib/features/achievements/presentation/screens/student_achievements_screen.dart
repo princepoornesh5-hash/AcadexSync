@@ -34,7 +34,8 @@ class StudentAchievementsScreen extends ConsumerWidget {
             // Page Header
             AcadexPageHeader(
               title: 'Achievements',
-              subtitle: 'Showcase your accomplishments, skills and recognitions.',
+              subtitle:
+                  'Showcase your accomplishments, skills and recognitions.',
               actions: [
                 AcadexButton(
                   label: 'Add Achievement',
@@ -56,7 +57,8 @@ class StudentAchievementsScreen extends ConsumerWidget {
                     runSpacing: AcadexSpacing.space16,
                     children: [
                       SizedBox(
-                        width: (constraints.maxWidth - AcadexSpacing.space16) / 2,
+                        width:
+                            (constraints.maxWidth - AcadexSpacing.space16) / 2,
                         child: AchievementMetricCard(
                           label: 'Total Achievements',
                           value: '${metrics.total}',
@@ -65,7 +67,8 @@ class StudentAchievementsScreen extends ConsumerWidget {
                         ),
                       ),
                       SizedBox(
-                        width: (constraints.maxWidth - AcadexSpacing.space16) / 2,
+                        width:
+                            (constraints.maxWidth - AcadexSpacing.space16) / 2,
                         child: AchievementMetricCard(
                           label: 'Verified',
                           value: '${metrics.verified}',
@@ -74,7 +77,8 @@ class StudentAchievementsScreen extends ConsumerWidget {
                         ),
                       ),
                       SizedBox(
-                        width: (constraints.maxWidth - AcadexSpacing.space16) / 2,
+                        width:
+                            (constraints.maxWidth - AcadexSpacing.space16) / 2,
                         child: AchievementMetricCard(
                           label: 'Pending Verification',
                           value: '${metrics.pending}',
@@ -83,7 +87,8 @@ class StudentAchievementsScreen extends ConsumerWidget {
                         ),
                       ),
                       SizedBox(
-                        width: (constraints.maxWidth - AcadexSpacing.space16) / 2,
+                        width:
+                            (constraints.maxWidth - AcadexSpacing.space16) / 2,
                         child: AchievementMetricCard(
                           label: '${DateTime.now().year} Achievements',
                           value: '${metrics.currentYearCount}',
@@ -144,13 +149,20 @@ class StudentAchievementsScreen extends ConsumerWidget {
                 Expanded(
                   child: TextField(
                     decoration: InputDecoration(
-                      hintText: 'Search achievements by title, issuer, skills, description...',
+                      hintText:
+                          'Search achievements by title, issuer, skills, description...',
                       prefixIcon: const Icon(LucideIcons.search, size: 20),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AcadexRadius.md),
+                      ),
                     ),
                     onChanged: (val) {
-                      ref.read(achievementFilterProvider.notifier).state = filter.copyWith(searchQuery: val);
+                      ref.read(achievementFilterProvider.notifier).state =
+                          filter.copyWith(searchQuery: val);
                     },
                   ),
                 ),
@@ -173,7 +185,8 @@ class StudentAchievementsScreen extends ConsumerWidget {
                     icon: LucideIcons.layers,
                     isSelected: filter.category == null,
                     onTap: () {
-                      ref.read(achievementFilterProvider.notifier).state = filter.copyWith(clearCategory: true);
+                      ref.read(achievementFilterProvider.notifier).state =
+                          filter.copyWith(clearCategory: true);
                     },
                     isDark: isDark,
                   ),
@@ -187,7 +200,9 @@ class StudentAchievementsScreen extends ConsumerWidget {
                         icon: cat.icon,
                         isSelected: isSelected,
                         onTap: () {
-                          ref.read(achievementFilterProvider.notifier).state = isSelected
+                          ref
+                              .read(achievementFilterProvider.notifier)
+                              .state = isSelected
                               ? filter.copyWith(clearCategory: true)
                               : filter.copyWith(category: cat);
                         },
@@ -216,7 +231,8 @@ class StudentAchievementsScreen extends ConsumerWidget {
                     return Center(
                       child: AcadexEmptyState(
                         title: 'No achievements yet',
-                        subtitle: 'Your accomplishments deserve a place here. Add your first achievement to build your portfolio.',
+                        subtitle:
+                            'Your accomplishments deserve a place here. Add your first achievement to build your portfolio.',
                         icon: LucideIcons.trophy,
                         actionLabel: 'Add Achievement',
                         onActionTap: () => context.push('/achievements/new'),
@@ -228,11 +244,13 @@ class StudentAchievementsScreen extends ConsumerWidget {
                     return Center(
                       child: AcadexEmptyState(
                         title: 'No Matching Achievements',
-                        subtitle: 'No achievements match your current search and filter criteria.',
+                        subtitle:
+                            'No achievements match your current search and filter criteria.',
                         icon: LucideIcons.searchX,
                         actionLabel: 'Clear Filters',
                         onActionTap: () {
-                          ref.read(achievementFilterProvider.notifier).state = const AchievementFilter();
+                          ref.read(achievementFilterProvider.notifier).state =
+                              const AchievementFilter();
                         },
                       ),
                     );
@@ -244,7 +262,9 @@ class StudentAchievementsScreen extends ConsumerWidget {
                       final crossAxisCount = isSingleCol ? 1 : 2;
 
                       return GridView.builder(
-                        padding: const EdgeInsets.only(bottom: AcadexSpacing.space48),
+                        padding: const EdgeInsets.only(
+                          bottom: AcadexSpacing.space48,
+                        ),
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: crossAxisCount,
                           mainAxisExtent: 310,
@@ -256,8 +276,12 @@ class StudentAchievementsScreen extends ConsumerWidget {
                           final a = filteredAchievements[index];
                           return AchievementCard(
                             achievement: a,
-                            onView: () => context.push('/achievements/${a.id}', extra: a),
-                            onEdit: () => context.push('/achievements/${a.id}/edit', extra: a),
+                            onView: () =>
+                                context.push('/achievements/${a.id}', extra: a),
+                            onEdit: () => context.push(
+                              '/achievements/${a.id}/edit',
+                              extra: a,
+                            ),
                           );
                         },
                       );
@@ -304,7 +328,9 @@ class StudentAchievementsScreen extends ConsumerWidget {
               size: 14,
               color: isSelected
                   ? Colors.white
-                  : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                  : (isDark
+                        ? AcadexColors.darkInkSecondary
+                        : AcadexColors.inkSecondary),
             ),
             const SizedBox(width: 6),
             Text(
@@ -323,13 +349,20 @@ class StudentAchievementsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _statusDropdown(BuildContext context, WidgetRef ref, AchievementFilter filter, bool isDark) {
+  Widget _statusDropdown(
+    BuildContext context,
+    WidgetRef ref,
+    AchievementFilter filter,
+    bool isDark,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: AcadexSpacing.space16),
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: BorderRadius.circular(AcadexRadius.md),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<AchievementVerificationStatus?>(
@@ -342,21 +375,29 @@ class StudentAchievementsScreen extends ConsumerWidget {
             }),
           ],
           onChanged: (val) {
-            ref.read(achievementFilterProvider.notifier).state =
-                val == null ? filter.copyWith(clearVerificationStatus: true) : filter.copyWith(verificationStatus: val);
+            ref.read(achievementFilterProvider.notifier).state = val == null
+                ? filter.copyWith(clearVerificationStatus: true)
+                : filter.copyWith(verificationStatus: val);
           },
         ),
       ),
     );
   }
 
-  Widget _sortDropdown(BuildContext context, WidgetRef ref, AchievementFilter filter, bool isDark) {
+  Widget _sortDropdown(
+    BuildContext context,
+    WidgetRef ref,
+    AchievementFilter filter,
+    bool isDark,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: AcadexSpacing.space16),
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: BorderRadius.circular(AcadexRadius.md),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<AchievementSortOption>(
@@ -366,7 +407,8 @@ class StudentAchievementsScreen extends ConsumerWidget {
           }).toList(),
           onChanged: (val) {
             if (val != null) {
-              ref.read(achievementFilterProvider.notifier).state = filter.copyWith(sortOption: val);
+              ref.read(achievementFilterProvider.notifier).state = filter
+                  .copyWith(sortOption: val);
             }
           },
         ),

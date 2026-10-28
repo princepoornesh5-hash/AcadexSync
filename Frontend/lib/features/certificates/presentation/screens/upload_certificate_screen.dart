@@ -25,10 +25,12 @@ class UploadCertificateScreen extends ConsumerStatefulWidget {
   const UploadCertificateScreen({super.key, this.existing});
 
   @override
-  ConsumerState<UploadCertificateScreen> createState() => _UploadCertificateScreenState();
+  ConsumerState<UploadCertificateScreen> createState() =>
+      _UploadCertificateScreenState();
 }
 
-class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScreen> {
+class _UploadCertificateScreenState
+    extends ConsumerState<UploadCertificateScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _titleCtrl;
   late TextEditingController _issuerCtrl;
@@ -88,7 +90,9 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
       final err = validateCertificateFile(
         fileName: file.name,
         fileSizeBytes: file.size,
-        mimeType: file.extension != null ? _mimeTypeForExt(file.extension!) : null,
+        mimeType: file.extension != null
+            ? _mimeTypeForExt(file.extension!)
+            : null,
       );
       if (err != null) {
         setState(() {
@@ -180,7 +184,9 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
         await certRepo.updateCertificate(cert);
 
         // Clean up previous storage file if a new file was uploaded
-        if (fileRef != null && oldStoragePath.isNotEmpty && oldStoragePath != fileRef.path) {
+        if (fileRef != null &&
+            oldStoragePath.isNotEmpty &&
+            oldStoragePath != fileRef.path) {
           try {
             await storageRepo.deleteFile(oldStoragePath);
           } catch (_) {}
@@ -198,7 +204,9 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
           title: _titleCtrl.text.trim(),
           type: _type,
           issuer: _issuerCtrl.text.trim(),
-          description: _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
+          description: _descCtrl.text.trim().isEmpty
+              ? null
+              : _descCtrl.text.trim(),
           issueDate: _issueDate,
           fileName: fileRef!.name,
           fileType: fileRef.ext,
@@ -221,7 +229,11 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(existing != null ? 'Certificate updated successfully.' : 'Certificate uploaded successfully.'),
+            content: Text(
+              existing != null
+                  ? 'Certificate updated successfully.'
+                  : 'Certificate uploaded successfully.',
+            ),
             backgroundColor: AcadexColors.success,
           ),
         );
@@ -260,7 +272,9 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
   }
 
   bool get _isLoading =>
-      _stage == UploadStage.uploading || _stage == UploadStage.saving || _stage == UploadStage.completed;
+      _stage == UploadStage.uploading ||
+      _stage == UploadStage.saving ||
+      _stage == UploadStage.completed;
 
   @override
   Widget build(BuildContext context) {
@@ -276,7 +290,9 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
     final deptMap = ref.watch(certificateDepartmentMapProvider);
     final courseMap = ref.watch(certificateCourseMapProvider);
 
-    final departmentName = user.departmentId != null ? deptMap[user.departmentId]?.name ?? user.departmentId : 'General';
+    final departmentName = user.departmentId != null
+        ? deptMap[user.departmentId]?.name ?? user.departmentId
+        : 'General';
     final courseName = courseMap.values.firstOrNull?.name ?? 'Academic Program';
 
     return Scaffold(
@@ -289,7 +305,9 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
         ),
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -323,18 +341,32 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
                     children: [
                       TextFormField(
                         controller: _titleCtrl,
-                        decoration: _inputDecoration('Certificate Title *', isDark, hintText: 'e.g. AWS Certified Solutions Architect'),
-                        validator: (v) => v == null || v.trim().isEmpty ? 'Title is required' : null,
+                        decoration: _inputDecoration(
+                          'Certificate Title *',
+                          isDark,
+                          hintText: 'e.g. AWS Certified Solutions Architect',
+                        ),
+                        validator: (v) => v == null || v.trim().isEmpty
+                            ? 'Title is required'
+                            : null,
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<CertificateType>(
                         initialValue: _type,
-                        decoration: _inputDecoration('Certificate Category *', isDark),
-                        dropdownColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                        decoration: _inputDecoration(
+                          'Certificate Category *',
+                          isDark,
+                        ),
+                        dropdownColor: isDark
+                            ? AcadexColors.darkSurface
+                            : AcadexColors.surface,
                         items: CertificateType.values.map((t) {
                           return DropdownMenuItem(
                             value: t,
-                            child: Text(t.displayName, style: GoogleFonts.inter()),
+                            child: Text(
+                              t.displayName,
+                              style: GoogleFonts.inter(),
+                            ),
                           );
                         }).toList(),
                         onChanged: (val) {
@@ -344,8 +376,15 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _issuerCtrl,
-                        decoration: _inputDecoration('Issuing Authority *', isDark, hintText: 'e.g. Amazon Web Services, IEEE, Harvard Online'),
-                        validator: (v) => v == null || v.trim().isEmpty ? 'Issuer is required' : null,
+                        decoration: _inputDecoration(
+                          'Issuing Authority *',
+                          isDark,
+                          hintText:
+                              'e.g. Amazon Web Services, IEEE, Harvard Online',
+                        ),
+                        validator: (v) => v == null || v.trim().isEmpty
+                            ? 'Issuer is required'
+                            : null,
                       ),
                       const SizedBox(height: 16),
                       // Issue Date Picker
@@ -357,15 +396,25 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
                             firstDate: DateTime(2000),
                             lastDate: DateTime.now(),
                           );
-                          if (picked != null) setState(() => _issueDate = picked);
+                          if (picked != null)
+                            setState(() => _issueDate = picked);
                         },
                         child: InputDecorator(
                           decoration: _inputDecoration('Issue Date *', isDark),
                           child: Row(
                             children: [
-                              Icon(LucideIcons.calendar, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                              Icon(
+                                LucideIcons.calendar,
+                                size: 16,
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
+                              ),
                               const SizedBox(width: 8),
-                              Text(DateFormat('dd MMMM yyyy').format(_issueDate), style: GoogleFonts.inter()),
+                              Text(
+                                DateFormat('dd MMMM yyyy').format(_issueDate),
+                                style: GoogleFonts.inter(),
+                              ),
                             ],
                           ),
                         ),
@@ -373,7 +422,12 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _descCtrl,
-                        decoration: _inputDecoration('Description / Learnings (Optional)', isDark, hintText: 'Key skills acquired, score/grade achieved, or project details...'),
+                        decoration: _inputDecoration(
+                          'Description / Learnings (Optional)',
+                          isDark,
+                          hintText:
+                              'Key skills acquired, score/grade achieved, or project details...',
+                        ),
                         maxLines: 3,
                       ),
                     ],
@@ -446,15 +500,29 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
                         child: OutlinedButton(
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            side: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                            side: BorderSide(
+                              color: isDark
+                                  ? AcadexColors.darkHairline
+                                  : AcadexColors.hairline,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                AcadexRadius.md,
+                              ),
+                            ),
                           ),
-                          onPressed: _isLoading ? null : () => context.safePop(fallbackRoute: '/certificates'),
+                          onPressed: _isLoading
+                              ? null
+                              : () => context.safePop(
+                                  fallbackRoute: '/certificates',
+                                ),
                           child: Text(
                             'Cancel',
                             style: GoogleFonts.inter(
                               fontWeight: FontWeight.w600,
-                              color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                              color: isDark
+                                  ? AcadexColors.darkInkSecondary
+                                  : AcadexColors.inkSecondary,
                             ),
                           ),
                         ),
@@ -467,7 +535,11 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
                             backgroundColor: AcadexColors.primary,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                AcadexRadius.md,
+                              ),
+                            ),
                             elevation: 0,
                           ),
                           onPressed: _isLoading ? null : () => _submit(user),
@@ -475,11 +547,19 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
                               ? const SizedBox(
                                   height: 20,
                                   width: 20,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.2),
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.2,
+                                  ),
                                 )
                               : Text(
-                                  isEdit ? 'Save Changes' : 'Upload Certificate',
-                                  style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
+                                  isEdit
+                                      ? 'Save Changes'
+                                      : 'Upload Certificate',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                         ),
                       ),
@@ -511,7 +591,9 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: BorderRadius.circular(AcadexRadius.lg),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -541,13 +623,21 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.primary.withValues(alpha: 0.15) : AcadexColors.primaryLight,
+                color: isDark
+                    ? AcadexColors.primary.withValues(alpha: 0.15)
+                    : AcadexColors.primaryLight,
                 borderRadius: BorderRadius.circular(AcadexRadius.md),
-                border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: AcadexColors.primary.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.fileCheck2, color: AcadexColors.primary, size: 28),
+                  const Icon(
+                    LucideIcons.fileCheck2,
+                    color: AcadexColors.primary,
+                    size: 28,
+                  ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
@@ -557,7 +647,9 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
                           selected.name,
                           style: GoogleFonts.inter(
                             fontWeight: FontWeight.w600,
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -566,7 +658,9 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
                           '${(selected.size / 1024).toStringAsFixed(1)} KB · Ready to upload',
                           style: GoogleFonts.inter(
                             fontSize: 12,
-                            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                            color: isDark
+                                ? AcadexColors.darkInkSecondary
+                                : AcadexColors.inkSecondary,
                           ),
                         ),
                       ],
@@ -586,11 +680,19 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
               decoration: BoxDecoration(
                 color: isDark ? Colors.white10 : AcadexColors.secondaryLight,
                 borderRadius: BorderRadius.circular(AcadexRadius.md),
-                border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                border: Border.all(
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.fileText, color: AcadexColors.primary, size: 28),
+                  const Icon(
+                    LucideIcons.fileText,
+                    color: AcadexColors.primary,
+                    size: 28,
+                  ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
@@ -600,7 +702,9 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
                           existing.fileName,
                           style: GoogleFonts.inter(
                             fontWeight: FontWeight.w600,
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -609,7 +713,9 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
                           '${existing.fileSizeDisplay} · Existing file',
                           style: GoogleFonts.inter(
                             fontSize: 12,
-                            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                            color: isDark
+                                ? AcadexColors.darkInkSecondary
+                                : AcadexColors.inkSecondary,
                           ),
                         ),
                       ],
@@ -619,7 +725,10 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AcadexColors.primary,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                     ),
                     onPressed: _pickFile,
                     icon: const Icon(LucideIcons.upload, size: 14),
@@ -634,12 +743,19 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
               borderRadius: BorderRadius.circular(AcadexRadius.md),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 36,
+                  horizontal: 20,
+                ),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withValues(alpha: 0.02) : AcadexColors.canvasSoft,
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.02)
+                      : AcadexColors.canvasSoft,
                   borderRadius: BorderRadius.circular(AcadexRadius.md),
                   border: Border.all(
-                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
                     style: BorderStyle.solid,
                   ),
                 ),
@@ -651,7 +767,11 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
                         color: AcadexColors.primary.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(LucideIcons.uploadCloud, size: 28, color: AcadexColors.primary),
+                      child: const Icon(
+                        LucideIcons.uploadCloud,
+                        size: 28,
+                        color: AcadexColors.primary,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -667,7 +787,9 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
                       'PDF, JPG, PNG, DOC, DOCX up to 10 MB',
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                     ),
                   ],
@@ -679,12 +801,20 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
             const SizedBox(height: 10),
             Row(
               children: [
-                const Icon(LucideIcons.alertCircle, size: 14, color: AcadexColors.error),
+                const Icon(
+                  LucideIcons.alertCircle,
+                  size: 14,
+                  color: AcadexColors.error,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     _fileError!,
-                    style: GoogleFonts.inter(fontSize: 12, color: AcadexColors.error, fontWeight: FontWeight.w500),
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: AcadexColors.error,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],
@@ -698,9 +828,12 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
   Widget _buildProgressBanner(bool isDark) {
     String text = 'Processing...';
     Color color = AcadexColors.primary;
-    if (_stage == UploadStage.uploading) text = 'Uploading certificate document to secure storage...';
-    if (_stage == UploadStage.saving) text = 'Persisting certificate metadata to academic record...';
-    if (_stage == UploadStage.completed) text = 'Certificate uploaded successfully!';
+    if (_stage == UploadStage.uploading)
+      text = 'Uploading certificate document to secure storage...';
+    if (_stage == UploadStage.saving)
+      text = 'Persisting certificate metadata to academic record...';
+    if (_stage == UploadStage.completed)
+      text = 'Certificate uploaded successfully!';
     if (_stage == UploadStage.failed) {
       text = _errorMsg ?? 'Upload failed. Please try again.';
       color = AcadexColors.error;
@@ -723,7 +856,9 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
             )
           else
             Icon(
-              _stage == UploadStage.completed ? LucideIcons.checkCircle : LucideIcons.alertCircle,
+              _stage == UploadStage.completed
+                  ? LucideIcons.checkCircle
+                  : LucideIcons.alertCircle,
               color: color,
               size: 18,
             ),
@@ -731,7 +866,11 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
           Expanded(
             child: Text(
               text,
-              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: color),
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
             ),
           ),
         ],
@@ -739,7 +878,11 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
     );
   }
 
-  InputDecoration _inputDecoration(String label, bool isDark, {String? hintText}) {
+  InputDecoration _inputDecoration(
+    String label,
+    bool isDark, {
+    String? hintText,
+  }) {
     return InputDecoration(
       labelText: label,
       hintText: hintText,
@@ -747,11 +890,15 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
       fillColor: isDark ? AcadexColors.darkCanvas : Colors.white,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AcadexRadius.md),
-        borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        borderSide: BorderSide(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AcadexRadius.md),
-        borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        borderSide: BorderSide(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AcadexRadius.md),
@@ -782,11 +929,17 @@ class _ContextItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkCanvas : AcadexColors.canvasSoft,
         borderRadius: BorderRadius.circular(AcadexRadius.sm),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+          Icon(
+            icon,
+            size: 16,
+            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -794,7 +947,12 @@ class _ContextItem extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: GoogleFonts.inter(fontSize: 10, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
+                  ),
                 ),
                 Text(
                   value,

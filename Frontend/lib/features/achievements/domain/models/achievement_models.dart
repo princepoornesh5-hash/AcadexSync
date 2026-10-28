@@ -91,7 +91,9 @@ enum AchievementCategory {
 
   static AchievementCategory fromString(String val) {
     return AchievementCategory.values.firstWhere(
-      (e) => e.name.toLowerCase() == val.toLowerCase() || e.displayName.toLowerCase() == val.toLowerCase(),
+      (e) =>
+          e.name.toLowerCase() == val.toLowerCase() ||
+          e.displayName.toLowerCase() == val.toLowerCase(),
       orElse: () => AchievementCategory.other,
     );
   }
@@ -235,17 +237,22 @@ class Achievement {
     this.verificationNote,
   });
 
-  bool get isVerified => verificationStatus == AchievementVerificationStatus.verified;
-  bool get isPending => verificationStatus == AchievementVerificationStatus.pending;
-  bool get isRejected => verificationStatus == AchievementVerificationStatus.rejected;
-  bool get isUnverified => verificationStatus == AchievementVerificationStatus.unverified;
+  bool get isVerified =>
+      verificationStatus == AchievementVerificationStatus.verified;
+  bool get isPending =>
+      verificationStatus == AchievementVerificationStatus.pending;
+  bool get isRejected =>
+      verificationStatus == AchievementVerificationStatus.rejected;
+  bool get isUnverified =>
+      verificationStatus == AchievementVerificationStatus.unverified;
   bool get hasFile => fileUrl != null && fileUrl!.isNotEmpty;
   int get year => achievementDate.year;
 
   String get fileSizeDisplay {
     if (fileSizeBytes <= 0) return '0 B';
     if (fileSizeBytes < 1024) return '$fileSizeBytes B';
-    if (fileSizeBytes < 1024 * 1024) return '${(fileSizeBytes / 1024).toStringAsFixed(1)} KB';
+    if (fileSizeBytes < 1024 * 1024)
+      return '${(fileSizeBytes / 1024).toStringAsFixed(1)} KB';
     return '${(fileSizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
@@ -317,7 +324,8 @@ class Achievement {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       createdBy: createdBy ?? this.createdBy,
-      isVerificationRequested: isVerificationRequested ?? this.isVerificationRequested,
+      isVerificationRequested:
+          isVerificationRequested ?? this.isVerificationRequested,
       verificationStatus: verificationStatus ?? this.verificationStatus,
       verifiedBy: verifiedBy ?? this.verifiedBy,
       verifiedAt: verifiedAt ?? this.verifiedAt,
@@ -372,31 +380,45 @@ class Achievement {
       semesterId: json['semesterId'] as String? ?? '',
       sectionId: json['sectionId'] as String? ?? '',
       academicYearId: json['academicYearId'] as String? ?? '',
-      category: AchievementCategory.fromString(json['category'] as String? ?? 'other'),
+      category: AchievementCategory.fromString(
+        json['category'] as String? ?? 'other',
+      ),
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
       issuer: json['issuer'] as String? ?? '',
       achievementDate: json['achievementDate'] != null
-          ? DateTime.tryParse(json['achievementDate'] as String) ?? DateTime.now()
+          ? DateTime.tryParse(json['achievementDate'] as String) ??
+                DateTime.now()
           : DateTime.now(),
-      skills: (json['skills'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+      skills:
+          (json['skills'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
       fileName: json['fileName'] as String?,
       fileType: json['fileType'] as String?,
       fileSizeBytes: (json['fileSizeBytes'] as num?)?.toInt() ?? 0,
       storagePath: json['storagePath'] as String?,
       fileUrl: json['fileUrl'] as String?,
-      status: AchievementStatus.fromString(json['status'] as String? ?? 'active'),
+      status: AchievementStatus.fromString(
+        json['status'] as String? ?? 'active',
+      ),
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now()
           : DateTime.now(),
-      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'] as String) : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'] as String)
+          : null,
       createdBy: json['createdBy'] as String? ?? '',
-      isVerificationRequested: json['isVerificationRequested'] as bool? ?? false,
+      isVerificationRequested:
+          json['isVerificationRequested'] as bool? ?? false,
       verificationStatus: AchievementVerificationStatus.fromString(
         json['verificationStatus'] as String? ?? 'unverified',
       ),
       verifiedBy: json['verifiedBy'] as String?,
-      verifiedAt: json['verifiedAt'] != null ? DateTime.tryParse(json['verifiedAt'] as String) : null,
+      verifiedAt: json['verifiedAt'] != null
+          ? DateTime.tryParse(json['verifiedAt'] as String)
+          : null,
       verificationNote: json['verificationNote'] as String?,
     );
   }
@@ -450,7 +472,9 @@ class AchievementFilter {
     return AchievementFilter(
       searchQuery: searchQuery ?? this.searchQuery,
       category: clearCategory ? null : (category ?? this.category),
-      verificationStatus: clearVerificationStatus ? null : (verificationStatus ?? this.verificationStatus),
+      verificationStatus: clearVerificationStatus
+          ? null
+          : (verificationStatus ?? this.verificationStatus),
       year: clearYear ? null : (year ?? this.year),
       sortOption: sortOption ?? this.sortOption,
     );

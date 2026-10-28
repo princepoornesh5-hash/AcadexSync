@@ -25,7 +25,8 @@ class OfficialCertificatesAdminDashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _OfficialCertificatesAdminDashboardScreenState
-    extends ConsumerState<OfficialCertificatesAdminDashboardScreen> with SingleTickerProviderStateMixin {
+    extends ConsumerState<OfficialCertificatesAdminDashboardScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -47,7 +48,8 @@ class _OfficialCertificatesAdminDashboardScreenState
 
     final metrics = ref.watch(adminOfficialCertificateMetricsProvider);
     final authState = ref.watch(authProvider);
-    final isHod = authState is AuthAuthenticated && authState.user.role == AppRole.hod;
+    final isHod =
+        authState is AuthAuthenticated && authState.user.role == AppRole.hod;
 
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
@@ -67,7 +69,8 @@ class _OfficialCertificatesAdminDashboardScreenState
                   label: 'New Requirement',
                   icon: LucideIcons.plus,
                   variant: AcadexButtonVariant.primary,
-                  onPressed: () => context.push('/official-certificates/requirements/new'),
+                  onPressed: () =>
+                      context.push('/official-certificates/requirements/new'),
                 ),
               ],
             ),
@@ -83,7 +86,8 @@ class _OfficialCertificatesAdminDashboardScreenState
                     runSpacing: AcadexSpacing.space16,
                     children: [
                       SizedBox(
-                        width: (constraints.maxWidth - AcadexSpacing.space16) / 2,
+                        width:
+                            (constraints.maxWidth - AcadexSpacing.space16) / 2,
                         child: OfficialCertificateMetricCard(
                           label: 'Required Documents',
                           value: '${metrics.totalRequirements}',
@@ -92,7 +96,8 @@ class _OfficialCertificatesAdminDashboardScreenState
                         ),
                       ),
                       SizedBox(
-                        width: (constraints.maxWidth - AcadexSpacing.space16) / 2,
+                        width:
+                            (constraints.maxWidth - AcadexSpacing.space16) / 2,
                         child: OfficialCertificateMetricCard(
                           label: 'Pending Verification',
                           value: '${metrics.pendingVerification}',
@@ -101,7 +106,8 @@ class _OfficialCertificatesAdminDashboardScreenState
                         ),
                       ),
                       SizedBox(
-                        width: (constraints.maxWidth - AcadexSpacing.space16) / 2,
+                        width:
+                            (constraints.maxWidth - AcadexSpacing.space16) / 2,
                         child: OfficialCertificateMetricCard(
                           label: 'Verified Submissions',
                           value: '${metrics.verified}',
@@ -110,7 +116,8 @@ class _OfficialCertificatesAdminDashboardScreenState
                         ),
                       ),
                       SizedBox(
-                        width: (constraints.maxWidth - AcadexSpacing.space16) / 2,
+                        width:
+                            (constraints.maxWidth - AcadexSpacing.space16) / 2,
                         child: OfficialCertificateMetricCard(
                           label: 'Resubmission Req.',
                           value: '${metrics.resubmissionRequired}',
@@ -170,7 +177,9 @@ class _OfficialCertificatesAdminDashboardScreenState
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
                   ),
                 ),
               ),
@@ -178,7 +187,9 @@ class _OfficialCertificatesAdminDashboardScreenState
                 controller: _tabController,
                 indicatorColor: AcadexColors.primary,
                 labelColor: AcadexColors.primary,
-                unselectedLabelColor: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                unselectedLabelColor: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
                 tabs: const [
                   Tab(text: 'Requirements'),
                   Tab(text: 'Submissions Queue'),
@@ -213,7 +224,8 @@ class _OfficialCertificatesAdminDashboardScreenState
         child: AcadexErrorState(
           title: 'Error loading requirements',
           message: err.toString(),
-          onRetry: () => ref.invalidate(officialCertificateRequirementsListProvider),
+          onRetry: () =>
+              ref.invalidate(officialCertificateRequirementsListProvider),
         ),
       ),
       data: (reqs) {
@@ -221,10 +233,12 @@ class _OfficialCertificatesAdminDashboardScreenState
           return Center(
             child: AcadexEmptyState(
               title: 'No Requirements Defined',
-              subtitle: 'Create official document requirements that students must upload for verification.',
+              subtitle:
+                  'Create official document requirements that students must upload for verification.',
               icon: LucideIcons.fileCheck2,
               actionLabel: 'Create First Requirement',
-              onActionTap: () => context.push('/official-certificates/requirements/new'),
+              onActionTap: () =>
+                  context.push('/official-certificates/requirements/new'),
             ),
           );
         }
@@ -232,7 +246,8 @@ class _OfficialCertificatesAdminDashboardScreenState
         return ListView.separated(
           padding: const EdgeInsets.only(bottom: AcadexSpacing.space48),
           itemCount: reqs.length,
-          separatorBuilder: (_, __) => const SizedBox(height: AcadexSpacing.space16),
+          separatorBuilder: (_, __) =>
+              const SizedBox(height: AcadexSpacing.space16),
           itemBuilder: (context, index) {
             final req = reqs[index];
             return _buildRequirementAdminCard(context, req);
@@ -242,7 +257,10 @@ class _OfficialCertificatesAdminDashboardScreenState
     );
   }
 
-  Widget _buildRequirementAdminCard(BuildContext context, OfficialCertificateRequirement req) {
+  Widget _buildRequirementAdminCard(
+    BuildContext context,
+    OfficialCertificateRequirement req,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AcadexCard(
@@ -259,7 +277,11 @@ class _OfficialCertificatesAdminDashboardScreenState
                   color: AcadexColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AcadexRadius.md),
                 ),
-                child: const Icon(LucideIcons.fileCheck2, color: AcadexColors.primary, size: 22),
+                child: const Icon(
+                  LucideIcons.fileCheck2,
+                  color: AcadexColors.primary,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: AcadexSpacing.space16),
               Expanded(
@@ -272,22 +294,35 @@ class _OfficialCertificatesAdminDashboardScreenState
                           child: Text(
                             req.name,
                             style: AcadexTypography.heading3(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ),
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: req.isActive
                                 ? AcadexColors.success.withValues(alpha: 0.1)
-                                : (isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft),
-                            borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                                : (isDark
+                                      ? AcadexColors.darkSurfaceCard
+                                      : AcadexColors.canvasSoft),
+                            borderRadius: BorderRadius.circular(
+                              AcadexRadius.xs,
+                            ),
                           ),
                           child: Text(
                             req.isActive ? 'Active' : 'Inactive',
                             style: TextStyle(
-                              color: req.isActive ? AcadexColors.success : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                              color: req.isActive
+                                  ? AcadexColors.success
+                                  : (isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted),
                               fontWeight: FontWeight.w600,
                               fontSize: 11,
                             ),
@@ -299,7 +334,9 @@ class _OfficialCertificatesAdminDashboardScreenState
                     Text(
                       'Applicable To: ${req.targetScopeDisplay}  •  Category: ${req.category}  •  ${req.required ? 'Mandatory' : 'Optional'}',
                       style: AcadexTypography.bodySmall(
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                     ),
                   ],
@@ -312,7 +349,9 @@ class _OfficialCertificatesAdminDashboardScreenState
             Text(
               req.description,
               style: AcadexTypography.body(
-                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                color: isDark
+                    ? AcadexColors.darkInkSecondary
+                    : AcadexColors.inkSecondary,
               ),
             ),
           ],
@@ -325,7 +364,9 @@ class _OfficialCertificatesAdminDashboardScreenState
               Text(
                 'Allowed: ${req.allowedFileTypes.join(', ').toUpperCase()} (Max ${(req.maxFileSizeBytes / (1024 * 1024)).toStringAsFixed(0)}MB)',
                 style: AcadexTypography.bodySmall(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
                 ),
               ),
               Row(
@@ -336,9 +377,13 @@ class _OfficialCertificatesAdminDashboardScreenState
                     size: AcadexButtonSize.sm,
                     onPressed: () async {
                       final updated = req.copyWith(
-                        status: req.isActive ? RequirementStatus.inactive : RequirementStatus.active,
+                        status: req.isActive
+                            ? RequirementStatus.inactive
+                            : RequirementStatus.active,
                       );
-                      await ref.read(officialCertificateRepositoryProvider).updateRequirement(updated);
+                      await ref
+                          .read(officialCertificateRepositoryProvider)
+                          .updateRequirement(updated);
                     },
                   ),
                   const SizedBox(width: 8),
@@ -347,7 +392,10 @@ class _OfficialCertificatesAdminDashboardScreenState
                     icon: LucideIcons.pencil,
                     variant: AcadexButtonVariant.secondary,
                     size: AcadexButtonSize.sm,
-                    onPressed: () => context.push('/official-certificates/requirements/${req.id}/edit', extra: req),
+                    onPressed: () => context.push(
+                      '/official-certificates/requirements/${req.id}/edit',
+                      extra: req,
+                    ),
                   ),
                 ],
               ),
@@ -371,13 +419,20 @@ class _OfficialCertificatesAdminDashboardScreenState
             Expanded(
               child: TextField(
                 decoration: InputDecoration(
-                  hintText: 'Search by student name, roll number, or document...',
+                  hintText:
+                      'Search by student name, roll number, or document...',
                   prefixIcon: const Icon(LucideIcons.search, size: 20),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AcadexRadius.md),
+                  ),
                 ),
                 onChanged: (val) {
-                  ref.read(officialCertificateFilterProvider.notifier).state = filter.copyWith(searchQuery: val);
+                  ref.read(officialCertificateFilterProvider.notifier).state =
+                      filter.copyWith(searchQuery: val);
                 },
               ),
             ),
@@ -393,7 +448,8 @@ class _OfficialCertificatesAdminDashboardScreenState
               ? const Center(
                   child: AcadexEmptyState(
                     title: 'No Submissions Found',
-                    subtitle: 'No student certificate submissions match the selected filters.',
+                    subtitle:
+                        'No student certificate submissions match the selected filters.',
                     icon: LucideIcons.inbox,
                   ),
                 )
@@ -410,12 +466,23 @@ class _OfficialCertificatesAdminDashboardScreenState
                   rows: submissions.map((sub) {
                     return DataRow(
                       cells: [
-                        DataCell(Text(sub.studentName, style: const TextStyle(fontWeight: FontWeight.w600))),
+                        DataCell(
+                          Text(
+                            sub.studentName,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
                         DataCell(Text(sub.studentId)),
                         DataCell(Text(sub.departmentId.toUpperCase())),
                         DataCell(Text(sub.certificateName)),
-                        DataCell(Text(sub.uploadedAt.toString().substring(0, 10))),
-                        DataCell(OfficialCertificateStatusBadge(submissionStatus: sub.status)),
+                        DataCell(
+                          Text(sub.uploadedAt.toString().substring(0, 10)),
+                        ),
+                        DataCell(
+                          OfficialCertificateStatusBadge(
+                            submissionStatus: sub.status,
+                          ),
+                        ),
                         DataCell(
                           AcadexButton(
                             label: 'Review',
@@ -434,7 +501,10 @@ class _OfficialCertificatesAdminDashboardScreenState
     );
   }
 
-  Widget _statusFilterDropdown(BuildContext context, OfficialCertificateFilter filter) {
+  Widget _statusFilterDropdown(
+    BuildContext context,
+    OfficialCertificateFilter filter,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -442,7 +512,9 @@ class _OfficialCertificatesAdminDashboardScreenState
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: BorderRadius.circular(AcadexRadius.md),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<OfficialCertificateStatus?>(
@@ -455,8 +527,11 @@ class _OfficialCertificatesAdminDashboardScreenState
             }),
           ],
           onChanged: (val) {
-            ref.read(officialCertificateFilterProvider.notifier).state =
-                val == null ? filter.copyWith(clearStatus: true) : filter.copyWith(statusFilter: val);
+            ref
+                .read(officialCertificateFilterProvider.notifier)
+                .state = val == null
+                ? filter.copyWith(clearStatus: true)
+                : filter.copyWith(statusFilter: val);
           },
         ),
       ),
@@ -477,10 +552,12 @@ class _ReviewSubmissionDialog extends ConsumerStatefulWidget {
   const _ReviewSubmissionDialog({required this.submission});
 
   @override
-  ConsumerState<_ReviewSubmissionDialog> createState() => _ReviewSubmissionDialogState();
+  ConsumerState<_ReviewSubmissionDialog> createState() =>
+      _ReviewSubmissionDialogState();
 }
 
-class _ReviewSubmissionDialogState extends ConsumerState<_ReviewSubmissionDialog> {
+class _ReviewSubmissionDialogState
+    extends ConsumerState<_ReviewSubmissionDialog> {
   final _reasonController = TextEditingController();
   bool _isProcessing = false;
 
@@ -496,7 +573,9 @@ class _ReviewSubmissionDialogState extends ConsumerState<_ReviewSubmissionDialog
         _reasonController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('A reason is mandatory when rejecting or requesting re-upload.'),
+          content: Text(
+            'A reason is mandatory when rejecting or requesting re-upload.',
+          ),
           backgroundColor: AcadexColors.error,
         ),
       );
@@ -504,7 +583,9 @@ class _ReviewSubmissionDialogState extends ConsumerState<_ReviewSubmissionDialog
     }
 
     final authState = ref.read(authProvider);
-    final verifierName = authState is AuthAuthenticated ? authState.user.name : 'Admin';
+    final verifierName = authState is AuthAuthenticated
+        ? authState.user.name
+        : 'Admin';
 
     setState(() => _isProcessing = true);
 
@@ -514,7 +595,9 @@ class _ReviewSubmissionDialogState extends ConsumerState<_ReviewSubmissionDialog
         submissionId: widget.submission.id,
         verifiedBy: verifierName,
         status: status,
-        rejectionReason: _reasonController.text.trim().isNotEmpty ? _reasonController.text.trim() : null,
+        rejectionReason: _reasonController.text.trim().isNotEmpty
+            ? _reasonController.text.trim()
+            : null,
       );
 
       if (mounted) {
@@ -530,7 +613,10 @@ class _ReviewSubmissionDialogState extends ConsumerState<_ReviewSubmissionDialog
       if (mounted) {
         setState(() => _isProcessing = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AcadexColors.error),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AcadexColors.error,
+          ),
         );
       }
     }
@@ -542,7 +628,9 @@ class _ReviewSubmissionDialogState extends ConsumerState<_ReviewSubmissionDialog
     final sub = widget.submission;
 
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.lg)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AcadexRadius.lg),
+      ),
       title: Row(
         children: [
           const Icon(LucideIcons.fileCheck2, color: AcadexColors.primary),
@@ -559,24 +647,41 @@ class _ReviewSubmissionDialogState extends ConsumerState<_ReviewSubmissionDialog
             children: [
               _infoRow('Student Name', sub.studentName, isDark),
               _infoRow('Roll Number', sub.studentId, isDark),
-              _infoRow('Academic Placement', 'Dept: ${sub.departmentId.toUpperCase()} • Sem: ${sub.semesterId} • Sec: ${sub.sectionId}', isDark),
-              _infoRow('File Attached', '${sub.fileName} (${sub.fileSizeDisplay})', isDark),
-              _infoRow('Uploaded Date', sub.uploadedAt.toString().substring(0, 16), isDark),
+              _infoRow(
+                'Academic Placement',
+                'Dept: ${sub.departmentId.toUpperCase()} • Sem: ${sub.semesterId} • Sec: ${sub.sectionId}',
+                isDark,
+              ),
+              _infoRow(
+                'File Attached',
+                '${sub.fileName} (${sub.fileSizeDisplay})',
+                isDark,
+              ),
+              _infoRow(
+                'Uploaded Date',
+                sub.uploadedAt.toString().substring(0, 16),
+                isDark,
+              ),
               _infoRow('Current Status', sub.status.displayName, isDark),
               const SizedBox(height: AcadexSpacing.space16),
               const Divider(),
               const SizedBox(height: AcadexSpacing.space8),
               Text(
                 'Feedback / Rejection Reason',
-                style: AcadexTypography.title(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                style: AcadexTypography.title(
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ),
               ),
               const SizedBox(height: AcadexSpacing.space4),
               TextField(
                 controller: _reasonController,
                 maxLines: 3,
                 decoration: InputDecoration(
-                  hintText: 'e.g. Document is blurry. Please upload a clearer scan.',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                  hintText:
+                      'e.g. Document is blurry. Please upload a clearer scan.',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AcadexRadius.md),
+                  ),
                 ),
               ),
             ],
@@ -593,21 +698,29 @@ class _ReviewSubmissionDialogState extends ConsumerState<_ReviewSubmissionDialog
           icon: LucideIcons.alertTriangle,
           variant: AcadexButtonVariant.secondary,
           size: AcadexButtonSize.sm,
-          onPressed: _isProcessing ? null : () => _updateStatus(OfficialCertificateStatus.resubmissionRequired),
+          onPressed: _isProcessing
+              ? null
+              : () => _updateStatus(
+                  OfficialCertificateStatus.resubmissionRequired,
+                ),
         ),
         AcadexButton(
           label: 'Reject',
           icon: LucideIcons.xCircle,
           variant: AcadexButtonVariant.secondary,
           size: AcadexButtonSize.sm,
-          onPressed: _isProcessing ? null : () => _updateStatus(OfficialCertificateStatus.rejected),
+          onPressed: _isProcessing
+              ? null
+              : () => _updateStatus(OfficialCertificateStatus.rejected),
         ),
         AcadexButton(
           label: 'Approve',
           icon: LucideIcons.checkCircle2,
           variant: AcadexButtonVariant.primary,
           size: AcadexButtonSize.sm,
-          onPressed: _isProcessing ? null : () => _updateStatus(OfficialCertificateStatus.verified),
+          onPressed: _isProcessing
+              ? null
+              : () => _updateStatus(OfficialCertificateStatus.verified),
         ),
       ],
     );
@@ -623,7 +736,11 @@ class _ReviewSubmissionDialogState extends ConsumerState<_ReviewSubmissionDialog
             width: 140,
             child: Text(
               label,
-              style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              style: AcadexTypography.caption(
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
             ),
           ),
           Expanded(

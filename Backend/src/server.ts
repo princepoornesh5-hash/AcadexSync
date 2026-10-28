@@ -71,6 +71,16 @@ async function startServer(): Promise<http.Server | void> {
           Logger.info(`🤖 Gemini AI service configured (Model: ${env.GEMINI_MODEL})`);
         }
 
+        // Validate Resend Email Configuration at startup
+        if (!env.RESEND_API_KEY || env.RESEND_API_KEY.trim() === '') {
+          Logger.warn(
+            '⚠️ [EMAIL CONFIG] RESEND_API_KEY is not configured in Backend/.env. ' +
+            'Transactional email delivery will be unavailable until a valid RESEND_API_KEY is provided.'
+          );
+        } else {
+          Logger.info(`📧 Resend email service configured (Sender: ${env.RESEND_FROM_EMAIL})`);
+        }
+
         Logger.info(`🚀 ACADEX Backend running on port ${env.PORT}`);
         Logger.info(`   Health check: http://localhost:${env.PORT}/health`);
         Logger.info(`   API v1 Root:  http://localhost:${env.PORT}/api/v1`);

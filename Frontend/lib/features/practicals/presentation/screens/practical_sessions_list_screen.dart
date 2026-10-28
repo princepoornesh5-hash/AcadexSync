@@ -15,10 +15,12 @@ class PracticalSessionsListScreen extends ConsumerStatefulWidget {
   const PracticalSessionsListScreen({super.key});
 
   @override
-  ConsumerState<PracticalSessionsListScreen> createState() => _PracticalSessionsListScreenState();
+  ConsumerState<PracticalSessionsListScreen> createState() =>
+      _PracticalSessionsListScreenState();
 }
 
-class _PracticalSessionsListScreenState extends ConsumerState<PracticalSessionsListScreen> {
+class _PracticalSessionsListScreenState
+    extends ConsumerState<PracticalSessionsListScreen> {
   String? _selectedStatusFilter;
 
   @override
@@ -34,9 +36,14 @@ class _PracticalSessionsListScreenState extends ConsumerState<PracticalSessionsL
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/dashboard'),
         ),
         title: Text(
@@ -61,7 +68,10 @@ class _PracticalSessionsListScreenState extends ConsumerState<PracticalSessionsL
               icon: const Icon(LucideIcons.plus, color: Colors.white),
               label: const Text(
                 'Schedule Lab',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             )
           : null,
@@ -74,7 +84,9 @@ class _PracticalSessionsListScreenState extends ConsumerState<PracticalSessionsL
               color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
               border: Border(
                 bottom: BorderSide(
-                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
                 ),
               ),
             ),
@@ -97,12 +109,15 @@ class _PracticalSessionsListScreenState extends ConsumerState<PracticalSessionsL
           // Session List
           Expanded(
             child: sessionsAsync.when(
-              loading: () => const AcadexLoadingState(message: 'Loading practical lab sessions...'),
+              loading: () => const AcadexLoadingState(
+                message: 'Loading practical lab sessions...',
+              ),
               error: (err, stack) => Center(
                 child: AcadexErrorState(
                   message: "Couldn't load practical lab sessions.",
                   retryLabel: 'Retry',
-                  onRetry: () => ref.refresh(practicalSessionsListProvider(filter)),
+                  onRetry: () =>
+                      ref.refresh(practicalSessionsListProvider(filter)),
                 ),
               ),
               data: (sessions) {
@@ -111,7 +126,8 @@ class _PracticalSessionsListScreenState extends ConsumerState<PracticalSessionsL
                     child: AcadexEmptyState(
                       icon: LucideIcons.flaskConical,
                       title: 'No Practical Sessions',
-                      subtitle: 'No practical lab sessions match the selected filter.',
+                      subtitle:
+                          'No practical lab sessions match the selected filter.',
                     ),
                   );
                 }
@@ -142,7 +158,9 @@ class _PracticalSessionsListScreenState extends ConsumerState<PracticalSessionsL
         decoration: BoxDecoration(
           color: isSelected
               ? AcadexColors.primary
-              : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
+              : (isDark
+                    ? AcadexColors.darkCanvasSoft
+                    : AcadexColors.canvasSoft),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -152,14 +170,20 @@ class _PracticalSessionsListScreenState extends ConsumerState<PracticalSessionsL
             fontWeight: FontWeight.w600,
             color: isSelected
                 ? Colors.white
-                : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                : (isDark
+                      ? AcadexColors.darkInkSecondary
+                      : AcadexColors.inkSecondary),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildSessionCard(PracticalSessionModel sess, bool isDark, bool isStudent) {
+  Widget _buildSessionCard(
+    PracticalSessionModel sess,
+    bool isDark,
+    bool isStudent,
+  ) {
     Color statusColor;
     Color statusBg;
     switch (sess.status) {
@@ -177,7 +201,9 @@ class _PracticalSessionsListScreenState extends ConsumerState<PracticalSessionsL
         break;
       case PracticalSessionStatus.planned:
         statusColor = AcadexColors.inkSecondary;
-        statusBg = isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft;
+        statusBg = isDark
+            ? AcadexColors.darkCanvasSoft
+            : AcadexColors.canvasSoft;
     }
 
     return Container(
@@ -203,9 +229,13 @@ class _PracticalSessionsListScreenState extends ConsumerState<PracticalSessionsL
                 children: [
                   Expanded(
                     child: Text(
-                      sess.subjectName ?? sess.subjectCode ?? 'Practical Subject',
+                      sess.subjectName ??
+                          sess.subjectCode ??
+                          'Practical Subject',
                       style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -213,7 +243,10 @@ class _PracticalSessionsListScreenState extends ConsumerState<PracticalSessionsL
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: statusBg,
                       borderRadius: BorderRadius.circular(4),
@@ -249,35 +282,59 @@ class _PracticalSessionsListScreenState extends ConsumerState<PracticalSessionsL
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    Icon(LucideIcons.calendar, size: 13, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                    Icon(
+                      LucideIcons.calendar,
+                      size: 13,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       sess.scheduledDate.toLocal().toString().substring(0, 10),
                       style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
                       ),
                     ),
                     if (sess.roomNumber != null) ...[
                       const SizedBox(width: 10),
-                      Icon(LucideIcons.doorClosed, size: 13, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                      Icon(
+                        LucideIcons.doorClosed,
+                        size: 13,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         sess.roomNumber!,
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                       ),
                     ],
                     if (sess.totalEnrolled > 0) ...[
                       const SizedBox(width: 10),
-                      Icon(LucideIcons.users, size: 13, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                      Icon(
+                        LucideIcons.users,
+                        size: 13,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         '${sess.completedCount}/${sess.totalEnrolled} completed',
                         style: AcadexTypography.caption(
                           color: sess.completedCount == sess.totalEnrolled
                               ? const Color(0xFF15803D)
-                              : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                              : (isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted),
                         ),
                       ),
                     ],

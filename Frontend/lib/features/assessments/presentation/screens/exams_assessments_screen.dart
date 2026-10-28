@@ -19,7 +19,8 @@ class ExamsAssessmentsScreen extends ConsumerStatefulWidget {
   const ExamsAssessmentsScreen({super.key});
 
   @override
-  ConsumerState<ExamsAssessmentsScreen> createState() => _ExamsAssessmentsScreenState();
+  ConsumerState<ExamsAssessmentsScreen> createState() =>
+      _ExamsAssessmentsScreenState();
 }
 
 class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
@@ -59,7 +60,8 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final authState = ref.watch(authProvider);
 
-    final isStudent = authState is AuthAuthenticated &&
+    final isStudent =
+        authState is AuthAuthenticated &&
         authState.user.role == AppRole.student;
 
     if (isStudent) {
@@ -91,9 +93,15 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
             // Tab Bar
             Container(
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                color: isDark
+                    ? AcadexColors.darkSurfaceCard
+                    : AcadexColors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                border: Border.all(
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
+                ),
               ),
               child: TabBar(
                 controller: _tabController,
@@ -102,14 +110,34 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
                 indicatorColor: AcadexColors.primary,
                 indicatorWeight: 3,
                 labelColor: AcadexColors.primary,
-                unselectedLabelColor: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                labelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
+                unselectedLabelColor: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+                labelStyle: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
                 tabs: const [
-                  Tab(icon: Icon(LucideIcons.calendarDays, size: 16), text: 'Overview & Upcoming'),
-                  Tab(icon: Icon(LucideIcons.clock, size: 16), text: 'Exam Schedule & Timetable'),
-                  Tab(icon: Icon(LucideIcons.fileText, size: 16), text: 'Conduct Assessments / Marks Entry'),
-                  Tab(icon: Icon(LucideIcons.flaskConical, size: 16), text: 'Lab & Practical Evaluations'),
-                  Tab(icon: Icon(LucideIcons.award, size: 16), text: 'Results & Publication'),
+                  Tab(
+                    icon: Icon(LucideIcons.calendarDays, size: 16),
+                    text: 'Overview & Upcoming',
+                  ),
+                  Tab(
+                    icon: Icon(LucideIcons.clock, size: 16),
+                    text: 'Exam Schedule & Timetable',
+                  ),
+                  Tab(
+                    icon: Icon(LucideIcons.fileText, size: 16),
+                    text: 'Conduct Assessments / Marks Entry',
+                  ),
+                  Tab(
+                    icon: Icon(LucideIcons.flaskConical, size: 16),
+                    text: 'Lab & Practical Evaluations',
+                  ),
+                  Tab(
+                    icon: Icon(LucideIcons.award, size: 16),
+                    text: 'Results & Publication',
+                  ),
                 ],
               ),
             ),
@@ -154,7 +182,9 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
               'Scheduling, multi-department common exams, marks entry workflows & official results',
               style: GoogleFonts.inter(
                 fontSize: 13,
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
             ),
           ],
@@ -167,7 +197,9 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
             backgroundColor: AcadexColors.primary,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         ),
       ],
@@ -177,26 +209,74 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
   Widget _buildKpiOverview(bool isDark) {
     return Row(
       children: [
-        Expanded(child: _buildMetricCard('Total Assessments', '14', LucideIcons.bookOpen, AcadexColors.primary, isDark)),
+        Expanded(
+          child: _buildMetricCard(
+            'Total Assessments',
+            '14',
+            LucideIcons.bookOpen,
+            AcadexColors.primary,
+            isDark,
+          ),
+        ),
         const SizedBox(width: 12),
-        Expanded(child: _buildMetricCard('Scheduled Exams', '6', LucideIcons.calendarCheck, AcadexColors.info, isDark)),
+        Expanded(
+          child: _buildMetricCard(
+            'Scheduled Exams',
+            '6',
+            LucideIcons.calendarCheck,
+            AcadexColors.info,
+            isDark,
+          ),
+        ),
         const SizedBox(width: 12),
-        Expanded(child: _buildMetricCard('In Marks Entry', '4', LucideIcons.edit3, AcadexColors.warning, isDark)),
+        Expanded(
+          child: _buildMetricCard(
+            'In Marks Entry',
+            '4',
+            LucideIcons.edit3,
+            AcadexColors.warning,
+            isDark,
+          ),
+        ),
         const SizedBox(width: 12),
-        Expanded(child: _buildMetricCard('Lab Evals Active', '3', LucideIcons.flaskConical, AcadexColors.secondary, isDark)),
+        Expanded(
+          child: _buildMetricCard(
+            'Lab Evals Active',
+            '3',
+            LucideIcons.flaskConical,
+            AcadexColors.secondary,
+            isDark,
+          ),
+        ),
         const SizedBox(width: 12),
-        Expanded(child: _buildMetricCard('Published & Locked', '8', LucideIcons.lock, AcadexColors.success, isDark)),
+        Expanded(
+          child: _buildMetricCard(
+            'Published & Locked',
+            '8',
+            LucideIcons.lock,
+            AcadexColors.success,
+            isDark,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildMetricCard(String label, String value, IconData icon, Color color, bool isDark) {
+  Widget _buildMetricCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+    bool isDark,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Row(
         children: [
@@ -225,7 +305,9 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
                   label,
                   style: GoogleFonts.inter(
                     fontSize: 11,
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -243,16 +325,23 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
 
     return listAsync.when(
       data: (assessments) {
-        final upcoming = assessments.where((a) =>
-            a.status == InternalAssessmentStatus.scheduled ||
-            a.status == InternalAssessmentStatus.open ||
-            a.status == InternalAssessmentStatus.draft).toList();
+        final upcoming = assessments
+            .where(
+              (a) =>
+                  a.status == InternalAssessmentStatus.scheduled ||
+                  a.status == InternalAssessmentStatus.open ||
+                  a.status == InternalAssessmentStatus.draft,
+            )
+            .toList();
 
         return ListView(
           children: [
             Text(
               'Upcoming Scheduled Examinations & Tasks',
-              style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 12),
 
@@ -263,7 +352,9 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
                 isDark,
               )
             else
-              ...upcoming.map((assessment) => _buildUpcomingExamCard(assessment, isDark)),
+              ...upcoming.map(
+                (assessment) => _buildUpcomingExamCard(assessment, isDark),
+              ),
           ],
         );
       },
@@ -285,7 +376,9 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -301,11 +394,21 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
               children: [
                 Text(
                   a.assessmentDate != null ? '${a.assessmentDate!.day}' : '25',
-                  style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AcadexColors.primary),
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: AcadexColors.primary,
+                  ),
                 ),
                 Text(
-                  a.assessmentDate != null ? _monthName(a.assessmentDate!.month) : 'NOV',
-                  style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AcadexColors.primary),
+                  a.assessmentDate != null
+                      ? _monthName(a.assessmentDate!.month)
+                      : 'NOV',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AcadexColors.primary,
+                  ),
                 ),
               ],
             ),
@@ -322,11 +425,17 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
                     Expanded(
                       child: Text(
                         a.title,
-                        style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     if (isCommon) ...[
-                      const AcadexBadge(label: 'Common Exam', variant: AcadexBadgeVariant.warning),
+                      const AcadexBadge(
+                        label: 'Common Exam',
+                        variant: AcadexBadgeVariant.warning,
+                      ),
                       const SizedBox(width: 8),
                     ],
                     AcadexBadge(
@@ -340,7 +449,12 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
                 const SizedBox(height: 6),
                 Text(
                   'Assessment Type: ${a.assessmentType.replaceAll('_', ' ')} • Maximum Marks: ${a.maximumMarks.toStringAsFixed(0)}',
-                  style: GoogleFonts.inter(fontSize: 12, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
+                  ),
                 ),
                 const SizedBox(height: 8),
 
@@ -350,15 +464,27 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
                     spacing: 6,
                     children: a.academicScopes.map((scope) {
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
-                          color: isDark ? AcadexColors.darkSurface : AcadexColors.canvasSoft,
+                          color: isDark
+                              ? AcadexColors.darkSurface
+                              : AcadexColors.canvasSoft,
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                          border: Border.all(
+                            color: isDark
+                                ? AcadexColors.darkHairline
+                                : AcadexColors.hairline,
+                          ),
                         ),
                         child: Text(
                           '${scope.departmentName ?? 'Dept'} - ${scope.sectionName ?? 'Sec'}',
-                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500),
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       );
                     }).toList(),
@@ -381,7 +507,10 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AcadexColors.primary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                 ),
               ),
               const SizedBox(height: 6),
@@ -389,9 +518,14 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
                 OutlinedButton.icon(
                   onPressed: () async {
                     if (a.id != null) {
-                      await ref.read(assessmentRepositoryProvider).publishAssessmentExam(a.id!);
+                      await ref
+                          .read(assessmentRepositoryProvider)
+                          .publishAssessmentExam(a.id!);
                       ref.invalidate(assessmentsListProvider);
-                      AcadexSnackBar.showSuccess(context, 'Exam published to students with notifications!');
+                      AcadexSnackBar.showSuccess(
+                        context,
+                        'Exam published to students with notifications!',
+                      );
                     }
                   },
                   icon: const Icon(LucideIcons.send, size: 14),
@@ -399,7 +533,10 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AcadexColors.secondary,
                     side: const BorderSide(color: AcadexColors.secondary),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                   ),
                 ),
             ],
@@ -431,9 +568,15 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                color: isDark
+                    ? AcadexColors.darkSurfaceCard
+                    : AcadexColors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                border: Border.all(
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
+                ),
               ),
               child: Row(
                 children: [
@@ -448,17 +591,29 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          item.dateString.isNotEmpty ? item.dateString : '${item.date.day}/${item.date.month}/${item.date.year}',
-                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+                          item.dateString.isNotEmpty
+                              ? item.dateString
+                              : '${item.date.day}/${item.date.month}/${item.date.year}',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(LucideIcons.clock, size: 12, color: AcadexColors.primary),
+                            const Icon(
+                              LucideIcons.clock,
+                              size: 12,
+                              color: AcadexColors.primary,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               '${item.startTime} - ${item.endTime}',
-                              style: GoogleFonts.inter(fontSize: 11, color: AcadexColors.primary),
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: AcadexColors.primary,
+                              ),
                             ),
                           ],
                         ),
@@ -472,24 +627,38 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
                       children: [
                         Text(
                           item.roomName ?? 'Venue: Main Auditorium',
-                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Invigilator: ${item.invigilatorName ?? 'Assigned Faculty'}',
-                          style: GoogleFonts.inter(fontSize: 12, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
+                          ),
                         ),
                         if (item.instructions != null) ...[
                           const SizedBox(height: 4),
                           Text(
                             'Instructions: ${item.instructions}',
-                            style: GoogleFonts.inter(fontSize: 11, fontStyle: FontStyle.italic),
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontStyle: FontStyle.italic,
+                            ),
                           ),
                         ],
                       ],
                     ),
                   ),
-                  AcadexBadge(label: item.status, variant: AcadexBadgeVariant.success),
+                  AcadexBadge(
+                    label: item.status,
+                    variant: AcadexBadgeVariant.success,
+                  ),
                 ],
               ),
             );
@@ -507,10 +676,12 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
 
   // TAB 3: CONDUCT ASSESSMENTS / MARKS ENTRY
   Widget _buildTabAssessmentsList(bool isDark) {
-    final listAsync = ref.watch(assessmentsListProvider({
-      if (_selectedType != 'ALL') 'assessmentType': _selectedType,
-      if (_selectedStatus != 'ALL') 'status': _selectedStatus,
-    }));
+    final listAsync = ref.watch(
+      assessmentsListProvider({
+        if (_selectedType != 'ALL') 'assessmentType': _selectedType,
+        if (_selectedStatus != 'ALL') 'status': _selectedStatus,
+      }),
+    );
 
     return Column(
       children: [
@@ -521,13 +692,20 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
               child: TextFormField(
                 onChanged: (val) => setState(() => _searchQuery = val),
                 decoration: InputDecoration(
-                  hintText: 'Search assessments by title, subject, or department...',
+                  hintText:
+                      'Search assessments by title, subject, or department...',
                   prefixIcon: const Icon(LucideIcons.search, size: 18),
                   filled: true,
-                  fillColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                  fillColor: isDark
+                      ? AcadexColors.darkSurfaceCard
+                      : AcadexColors.surface,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                    borderSide: BorderSide(
+                      color: isDark
+                          ? AcadexColors.darkHairline
+                          : AcadexColors.hairline,
+                    ),
                   ),
                 ),
               ),
@@ -535,13 +713,24 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
             const SizedBox(width: 12),
             DropdownButton<String>(
               value: _selectedType,
-              dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+              dropdownColor: isDark
+                  ? AcadexColors.darkSurfaceCard
+                  : AcadexColors.surface,
               items: const [
                 DropdownMenuItem(value: 'ALL', child: Text('All Types')),
-                DropdownMenuItem(value: 'INTERNAL', child: Text('Internal Exams')),
+                DropdownMenuItem(
+                  value: 'INTERNAL',
+                  child: Text('Internal Exams'),
+                ),
                 DropdownMenuItem(value: 'SLIP_TEST', child: Text('Slip Tests')),
-                DropdownMenuItem(value: 'SEMESTER_EXAM', child: Text('Semester End Exams')),
-                DropdownMenuItem(value: 'LAB_INTERNAL', child: Text('Lab Internals')),
+                DropdownMenuItem(
+                  value: 'SEMESTER_EXAM',
+                  child: Text('Semester End Exams'),
+                ),
+                DropdownMenuItem(
+                  value: 'LAB_INTERNAL',
+                  child: Text('Lab Internals'),
+                ),
                 DropdownMenuItem(value: 'VIVA_VOCE', child: Text('Viva Voce')),
               ],
               onChanged: (val) {
@@ -551,14 +740,19 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
             const SizedBox(width: 12),
             DropdownButton<String>(
               value: _selectedStatus,
-              dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+              dropdownColor: isDark
+                  ? AcadexColors.darkSurfaceCard
+                  : AcadexColors.surface,
               items: const [
                 DropdownMenuItem(value: 'ALL', child: Text('All Statuses')),
                 DropdownMenuItem(value: 'DRAFT', child: Text('Draft')),
                 DropdownMenuItem(value: 'SCHEDULED', child: Text('Scheduled')),
                 DropdownMenuItem(value: 'OPEN', child: Text('Open for Entry')),
                 DropdownMenuItem(value: 'SUBMITTED', child: Text('Submitted')),
-                DropdownMenuItem(value: 'PUBLISHED', child: Text('Published & Locked')),
+                DropdownMenuItem(
+                  value: 'PUBLISHED',
+                  child: Text('Published & Locked'),
+                ),
               ],
               onChanged: (val) {
                 if (val != null) setState(() => _selectedStatus = val);
@@ -573,7 +767,9 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
             data: (assessments) {
               final filtered = assessments.where((a) {
                 if (_searchQuery.isEmpty) return true;
-                return a.title.toLowerCase().contains(_searchQuery.toLowerCase());
+                return a.title.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                );
               }).toList();
 
               if (filtered.isEmpty) {
@@ -611,7 +807,9 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Row(
         children: [
@@ -621,18 +819,35 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
               children: [
                 Row(
                   children: [
-                    Text(a.title, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
+                    Text(
+                      a.title,
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     if (a.isCommonExam)
-                      const AcadexBadge(label: 'Common Exam', variant: AcadexBadgeVariant.warning),
+                      const AcadexBadge(
+                        label: 'Common Exam',
+                        variant: AcadexBadgeVariant.warning,
+                      ),
                     const SizedBox(width: 6),
-                    AcadexBadge(label: a.status.label, variant: AcadexBadgeVariant.info),
+                    AcadexBadge(
+                      label: a.status.label,
+                      variant: AcadexBadgeVariant.info,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 6),
                 Text(
                   'Max Marks: ${a.maximumMarks.toStringAsFixed(0)} • Type: ${a.assessmentType.replaceAll('_', ' ')} • Scopes: ${a.academicScopes.length} targets',
-                  style: GoogleFonts.inter(fontSize: 12, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
+                  ),
                 ),
               ],
             ),
@@ -665,41 +880,77 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
               children: [
                 Text(
                   'Practical & Laboratory Continuous Evaluations',
-                  style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 Text(
                   'Per-experiment observation scores, record notebooks, viva voce, and internal practicals',
-                  style: GoogleFonts.inter(fontSize: 12, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
+                  ),
                 ),
               ],
             ),
             ElevatedButton.icon(
               onPressed: () {
-                AcadexSnackBar.showSuccess(context, 'Lab experiment sync initiated.');
+                AcadexSnackBar.showSuccess(
+                  context,
+                  'Lab experiment sync initiated.',
+                );
               },
               icon: const Icon(LucideIcons.refreshCw, size: 14),
               label: const Text('Sync Lab Marks to IA'),
-              style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.secondary, foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AcadexColors.secondary,
+                foregroundColor: Colors.white,
+              ),
             ),
           ],
         ),
         const SizedBox(height: 16),
 
-        _buildLabExperimentCard('Experiment 1: Matrix Inversion & Gaussian Elimination', 'Max: 20', '60 Submissions', isDark),
-        _buildLabExperimentCard('Experiment 2: Differential Equations Simulation in MATLAB', 'Max: 20', '58 Submissions', isDark),
-        _buildLabExperimentCard('Experiment 3: Numerical Integration & Simpson Rule', 'Max: 20', '60 Submissions', isDark),
+        _buildLabExperimentCard(
+          'Experiment 1: Matrix Inversion & Gaussian Elimination',
+          'Max: 20',
+          '60 Submissions',
+          isDark,
+        ),
+        _buildLabExperimentCard(
+          'Experiment 2: Differential Equations Simulation in MATLAB',
+          'Max: 20',
+          '58 Submissions',
+          isDark,
+        ),
+        _buildLabExperimentCard(
+          'Experiment 3: Numerical Integration & Simpson Rule',
+          'Max: 20',
+          '60 Submissions',
+          isDark,
+        ),
       ],
     );
   }
 
-  Widget _buildLabExperimentCard(String title, String marks, String submissions, bool isDark) {
+  Widget _buildLabExperimentCard(
+    String title,
+    String marks,
+    String submissions,
+    bool isDark,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -712,16 +963,31 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
                   color: AcadexColors.secondary.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(LucideIcons.flaskConical, color: AcadexColors.secondary, size: 20),
+                child: const Icon(
+                  LucideIcons.flaskConical,
+                  color: AcadexColors.secondary,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 14),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600)),
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   Text(
                     '$marks • $submissions',
-                    style: GoogleFonts.inter(fontSize: 12, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
+                    ),
                   ),
                 ],
               ),
@@ -729,7 +995,10 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
           ),
           OutlinedButton(
             onPressed: () {
-              AcadexSnackBar.showInfo(context, 'Opening lab grading rubric matrix.');
+              AcadexSnackBar.showInfo(
+                context,
+                'Opening lab grading rubric matrix.',
+              );
             },
             child: const Text('Evaluate Rubric'),
           ),
@@ -749,25 +1018,50 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
         const SizedBox(height: 4),
         Text(
           'Published assessments are cryptographically locked. Unlocking requires HOD or Admin audit reason.',
-          style: GoogleFonts.inter(fontSize: 12, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          ),
         ),
         const SizedBox(height: 16),
 
-        _buildResultPublicationItem('Continuous Internal Assessment I (Engineering Math III)', 'Published on 15 Oct 2026', true, isDark),
-        _buildResultPublicationItem('Slip Test 1 (Data Structures)', 'Published on 20 Oct 2026', true, isDark),
-        _buildResultPublicationItem('Lab Practical Mid-Term', 'Marks Entry Complete • Pending HOD Review', false, isDark),
+        _buildResultPublicationItem(
+          'Continuous Internal Assessment I (Engineering Math III)',
+          'Published on 15 Oct 2026',
+          true,
+          isDark,
+        ),
+        _buildResultPublicationItem(
+          'Slip Test 1 (Data Structures)',
+          'Published on 20 Oct 2026',
+          true,
+          isDark,
+        ),
+        _buildResultPublicationItem(
+          'Lab Practical Mid-Term',
+          'Marks Entry Complete • Pending HOD Review',
+          false,
+          isDark,
+        ),
       ],
     );
   }
 
-  Widget _buildResultPublicationItem(String title, String subtitle, bool isPublished, bool isDark) {
+  Widget _buildResultPublicationItem(
+    String title,
+    String subtitle,
+    bool isPublished,
+    bool isDark,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -776,22 +1070,40 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
             children: [
               Icon(
                 isPublished ? LucideIcons.lock : LucideIcons.unlock,
-                color: isPublished ? AcadexColors.success : AcadexColors.warning,
+                color: isPublished
+                    ? AcadexColors.success
+                    : AcadexColors.warning,
                 size: 20,
               ),
               const SizedBox(width: 14),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600)),
-                  Text(subtitle, style: GoogleFonts.inter(fontSize: 12, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted)),
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
+                    ),
+                  ),
                 ],
               ),
             ],
           ),
           AcadexBadge(
             label: isPublished ? 'Published & Locked' : 'Pending Publication',
-            variant: isPublished ? AcadexBadgeVariant.success : AcadexBadgeVariant.warning,
+            variant: isPublished
+                ? AcadexBadgeVariant.success
+                : AcadexBadgeVariant.warning,
           ),
         ],
       ),
@@ -812,11 +1124,19 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
             const SizedBox(height: 16),
             Text(
               'My Examinations & Assessments',
-              style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800),
+              style: GoogleFonts.inter(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+              ),
             ),
             Text(
               'View upcoming exam schedules, hall venues, and published academic marks',
-              style: GoogleFonts.inter(fontSize: 13, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
             ),
             const SizedBox(height: 20),
 
@@ -831,11 +1151,17 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
                   ],
                 ),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AcadexColors.primary.withOpacity(0.3)),
+                border: Border.all(
+                  color: AcadexColors.primary.withOpacity(0.3),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.calendarCheck2, size: 28, color: AcadexColors.primary),
+                  const Icon(
+                    LucideIcons.calendarCheck2,
+                    size: 28,
+                    color: AcadexColors.primary,
+                  ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
@@ -843,16 +1169,27 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
                       children: [
                         Text(
                           'Next Scheduled Exam: Engineering Mathematics III',
-                          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         Text(
                           'Date: 25 Nov 2026 • 10:00 AM - 12:00 PM • Venue: Auditorium Hall 101',
-                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500),
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Instructions: Scientific calculators permitted. Bring valid ID card.',
-                          style: GoogleFonts.inter(fontSize: 11, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
+                          ),
                         ),
                       ],
                     ),
@@ -864,7 +1201,10 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
 
             Text(
               'Official Published Assessment Marks',
-              style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 12),
 
@@ -880,14 +1220,21 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
 
                 return Column(
                   children: marks.map((m) {
-                    final subjectName = m.subject['name']?.toString() ?? 'Subject';
+                    final subjectName =
+                        m.subject['name']?.toString() ?? 'Subject';
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                        color: isDark
+                            ? AcadexColors.darkSurfaceCard
+                            : AcadexColors.surface,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                        border: Border.all(
+                          color: isDark
+                              ? AcadexColors.darkHairline
+                              : AcadexColors.hairline,
+                        ),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -895,14 +1242,27 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(subjectName, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600)),
+                              Text(
+                                subjectName,
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                               const SizedBox(height: 4),
-                              Text('Status: ${m.status.label}', style: GoogleFonts.inter(fontSize: 12)),
+                              Text(
+                                'Status: ${m.status.label}',
+                                style: GoogleFonts.inter(fontSize: 12),
+                              ),
                             ],
                           ),
                           Text(
                             '${m.totalMarks.toStringAsFixed(1)} Marks',
-                            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: AcadexColors.primary),
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AcadexColors.primary,
+                            ),
                           ),
                         ],
                       ),
@@ -930,18 +1290,30 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Column(
         children: [
-          Icon(LucideIcons.fileQuestion, size: 40, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+          Icon(
+            LucideIcons.fileQuestion,
+            size: 40,
+            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          ),
           const SizedBox(height: 12),
-          Text(title, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600)),
+          Text(
+            title,
+            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 4),
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(fontSize: 12, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            ),
           ),
         ],
       ),
@@ -949,7 +1321,20 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
   }
 
   String _monthName(int month) {
-    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const months = [
+      'JAN',
+      'FEB',
+      'MAR',
+      'APR',
+      'MAY',
+      'JUN',
+      'JUL',
+      'AUG',
+      'SEP',
+      'OCT',
+      'NOV',
+      'DEC',
+    ];
     if (month >= 1 && month <= 12) return months[month - 1];
     return 'NOV';
   }

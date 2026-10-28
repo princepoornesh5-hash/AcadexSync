@@ -81,7 +81,8 @@ class AcadexAmbientBackground extends StatefulWidget {
   });
 
   @override
-  State<AcadexAmbientBackground> createState() => _AcadexAmbientBackgroundState();
+  State<AcadexAmbientBackground> createState() =>
+      _AcadexAmbientBackgroundState();
 }
 
 class _AcadexAmbientBackgroundState extends State<AcadexAmbientBackground>
@@ -175,7 +176,8 @@ class _AcadexAmbientBackgroundState extends State<AcadexAmbientBackground>
     }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final reduceMotion = MediaQuery.of(context).disableAnimations || _isTestEnvironment;
+    final reduceMotion =
+        MediaQuery.of(context).disableAnimations || _isTestEnvironment;
 
     // Respect reduced motion accessibility & test environment
     if (reduceMotion && _controller.isAnimating) {
@@ -184,7 +186,8 @@ class _AcadexAmbientBackgroundState extends State<AcadexAmbientBackground>
       _controller.repeat();
     }
 
-    final baseParticleColor = widget.particleColor ??
+    final baseParticleColor =
+        widget.particleColor ??
         (isDark ? const Color(0xFF818CF8) : AcadexColors.primary);
 
     final content = LayoutBuilder(
@@ -205,7 +208,9 @@ class _AcadexAmbientBackgroundState extends State<AcadexAmbientBackground>
                   progress: reduceMotion ? 0.0 : _controller.value,
                   particles: particles,
                   baseColor: baseParticleColor,
-                  pointerPos: widget.enablePointerInteraction ? _pointerPos : null,
+                  pointerPos: widget.enablePointerInteraction
+                      ? _pointerPos
+                      : null,
                   isDark: isDark,
                 ),
               );
@@ -213,13 +218,12 @@ class _AcadexAmbientBackgroundState extends State<AcadexAmbientBackground>
           ),
         );
 
-        return IgnorePointer(
-          child: canvasWidget,
-        );
+        return IgnorePointer(child: canvasWidget);
       },
     );
 
-    final hasPointerSupport = widget.enablePointerInteraction &&
+    final hasPointerSupport =
+        widget.enablePointerInteraction &&
         (kIsWeb ||
             defaultTargetPlatform == TargetPlatform.macOS ||
             defaultTargetPlatform == TargetPlatform.windows ||
@@ -250,10 +254,7 @@ class _AcadexAmbientBackgroundState extends State<AcadexAmbientBackground>
 
     return Stack(
       fit: StackFit.expand,
-      children: [
-        backgroundLayer,
-        widget.child!,
-      ],
+      children: [backgroundLayer, widget.child!],
     );
   }
 }
@@ -314,7 +315,10 @@ class _AcadexParticlePainter extends CustomPainter {
 
       // Subtle opacity breathing based on depth and harmonic
       final breath = math.sin(speedT * 0.5 + p.phaseX) * 0.15;
-      final effectiveOpacity = (p.opacity + (p.opacity * breath)).clamp(0.04, 0.28);
+      final effectiveOpacity = (p.opacity + (p.opacity * breath)).clamp(
+        0.04,
+        0.28,
+      );
 
       paint.color = baseColor.withValues(alpha: effectiveOpacity);
       canvas.drawCircle(Offset(px, py), p.radius, paint);

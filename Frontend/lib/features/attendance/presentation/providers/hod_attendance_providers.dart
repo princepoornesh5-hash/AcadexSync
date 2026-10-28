@@ -11,32 +11,36 @@ final currentDepartmentIdProvider = Provider<String>((ref) {
   return user?.departmentId ?? '';
 });
 
-final hodDepartmentSummaryProvider = FutureProvider<DepartmentAttendanceSummary>((ref) async {
-  final deptId = ref.watch(currentDepartmentIdProvider);
-  if (deptId.isEmpty) {
-    return DepartmentAttendanceSummary(
-      overallPercentage: 0,
-      studentsBelow75: 0,
-      facultyCompleted: 0,
-      facultyPending: 0,
-      todayClasses: 0,
-      totalStudents: 0,
-      totalFaculty: 0,
-    );
-  }
-  final repo = ref.watch(attendanceRepoProvider);
-  return repo.getDepartmentSummary(deptId);
-});
+final hodDepartmentSummaryProvider =
+    FutureProvider<DepartmentAttendanceSummary>((ref) async {
+      final deptId = ref.watch(currentDepartmentIdProvider);
+      if (deptId.isEmpty) {
+        return DepartmentAttendanceSummary(
+          overallPercentage: 0,
+          studentsBelow75: 0,
+          facultyCompleted: 0,
+          facultyPending: 0,
+          todayClasses: 0,
+          totalStudents: 0,
+          totalFaculty: 0,
+        );
+      }
+      final repo = ref.watch(attendanceRepoProvider);
+      return repo.getDepartmentSummary(deptId);
+    });
 
-final hodFacultyCompletionProvider = FutureProvider<List<FacultyAttendanceCompletion>>((ref) async {
-  final deptId = ref.watch(currentDepartmentIdProvider);
-  if (deptId.isEmpty) return [];
+final hodFacultyCompletionProvider =
+    FutureProvider<List<FacultyAttendanceCompletion>>((ref) async {
+      final deptId = ref.watch(currentDepartmentIdProvider);
+      if (deptId.isEmpty) return [];
 
-  final repo = ref.watch(attendanceRepoProvider);
-  return repo.getFacultyCompletionStatus(deptId, DateTime.now());
-});
+      final repo = ref.watch(attendanceRepoProvider);
+      return repo.getFacultyCompletionStatus(deptId, DateTime.now());
+    });
 
-final hodStudentShortageProvider = FutureProvider<List<StudentShortage>>((ref) async {
+final hodStudentShortageProvider = FutureProvider<List<StudentShortage>>((
+  ref,
+) async {
   final deptId = ref.watch(currentDepartmentIdProvider);
   if (deptId.isEmpty) return [];
 
@@ -44,10 +48,11 @@ final hodStudentShortageProvider = FutureProvider<List<StudentShortage>>((ref) a
   return repo.getStudentShortages(deptId);
 });
 
-final hodSectionAttendanceProvider = FutureProvider<List<SectionAttendanceSummary>>((ref) async {
-  final deptId = ref.watch(currentDepartmentIdProvider);
-  if (deptId.isEmpty) return [];
+final hodSectionAttendanceProvider =
+    FutureProvider<List<SectionAttendanceSummary>>((ref) async {
+      final deptId = ref.watch(currentDepartmentIdProvider);
+      if (deptId.isEmpty) return [];
 
-  final repo = ref.watch(attendanceRepoProvider);
-  return repo.getSectionAttendance(deptId, DateTime.now());
-});
+      final repo = ref.watch(attendanceRepoProvider);
+      return repo.getSectionAttendance(deptId, DateTime.now());
+    });

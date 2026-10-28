@@ -7,17 +7,14 @@ class StatCard extends StatefulWidget {
   final DashboardStatModel stat;
   final int animationDelay;
 
-  const StatCard({
-    super.key,
-    required this.stat,
-    this.animationDelay = 0,
-  });
+  const StatCard({super.key, required this.stat, this.animationDelay = 0});
 
   @override
   State<StatCard> createState() => _StatCardState();
 }
 
-class _StatCardState extends State<StatCard> with SingleTickerProviderStateMixin {
+class _StatCardState extends State<StatCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
@@ -48,10 +45,13 @@ class _StatCardState extends State<StatCard> with SingleTickerProviderStateMixin
   Widget build(BuildContext context) {
     final isMobile = AcadexBreakpoints.isMobile(context);
     final isSmallMobile = AcadexBreakpoints.isSmallMobile(context);
-    final isPrimaryMetric = widget.stat.iconColor == DashboardColors.primary ||
+    final isPrimaryMetric =
+        widget.stat.iconColor == DashboardColors.primary ||
         widget.stat.iconColor == AcadexColors.primary;
 
-    final textScaler = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.2);
+    final textScaler = MediaQuery.textScalerOf(
+      context,
+    ).clamp(maxScaleFactor: 1.2);
 
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(textScaler: textScaler),
@@ -135,7 +135,8 @@ class _StatCardState extends State<StatCard> with SingleTickerProviderStateMixin
                 ),
 
                 // 4. Centered Supporting Description
-                if (widget.stat.subtitle != null && widget.stat.subtitle!.isNotEmpty) ...[
+                if (widget.stat.subtitle != null &&
+                    widget.stat.subtitle!.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
                     widget.stat.subtitle!,
@@ -166,7 +167,9 @@ class _StatCardState extends State<StatCard> with SingleTickerProviderStateMixin
   Widget _buildChangePill(double change, bool isDark) {
     final isPositive = change >= 0;
     final bg = isPositive
-        ? (isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight)
+        ? (isDark
+              ? AcadexColors.successDarkContainer
+              : AcadexColors.successLight)
         : (isDark ? AcadexColors.errorDarkContainer : AcadexColors.errorLight);
     final fg = isPositive ? AcadexColors.success : AcadexColors.error;
 

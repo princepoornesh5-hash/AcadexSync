@@ -19,7 +19,9 @@ class SubjectAttendanceCard extends StatelessWidget {
     final perc = subject.percentage;
     final isGood = perc >= 75;
     final isWarning = perc >= 60 && perc < 75;
-    final color = isGood ? AcadexColors.success : (isWarning ? AcadexColors.warning : AcadexColors.error);
+    final color = isGood
+        ? AcadexColors.success
+        : (isWarning ? AcadexColors.warning : AcadexColors.error);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -53,7 +55,9 @@ class SubjectAttendanceCard extends StatelessWidget {
                           Text(
                             subject.subjectName,
                             style: AcadexTypography.title(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ),
                           ),
                           const SizedBox(height: 3),
@@ -69,7 +73,9 @@ class SubjectAttendanceCard extends StatelessWidget {
                                 Text(
                                   " • ",
                                   style: TextStyle(
-                                    color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                                    color: isDark
+                                        ? AcadexColors.darkInkFaint
+                                        : AcadexColors.inkFaint,
                                   ),
                                 ),
                               ],
@@ -77,7 +83,9 @@ class SubjectAttendanceCard extends StatelessWidget {
                                 child: Text(
                                   subject.facultyName,
                                   style: AcadexTypography.caption(
-                                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -101,7 +109,9 @@ class SubjectAttendanceCard extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: (perc / 100.0).clamp(0.0, 1.0),
                     minHeight: 6,
-                    backgroundColor: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+                    backgroundColor: isDark
+                        ? AcadexColors.darkSurfaceHover
+                        : AcadexColors.canvasSoft,
                     valueColor: AlwaysStoppedAnimation<Color>(color),
                   ),
                 ),
@@ -109,13 +119,30 @@ class SubjectAttendanceCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildStatItem("Attended", subject.attendedClasses.toString(), AcadexColors.success, isDark),
-                    _buildStatItem("Missed", subject.missedClasses.toString(), AcadexColors.error, isDark),
-                    _buildStatItem("Total", subject.totalClasses.toString(), isDark ? AcadexColors.darkInk : AcadexColors.ink, isDark),
+                    _buildStatItem(
+                      "Attended",
+                      subject.attendedClasses.toString(),
+                      AcadexColors.success,
+                      isDark,
+                    ),
+                    _buildStatItem(
+                      "Missed",
+                      subject.missedClasses.toString(),
+                      AcadexColors.error,
+                      isDark,
+                    ),
+                    _buildStatItem(
+                      "Total",
+                      subject.totalClasses.toString(),
+                      isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      isDark,
+                    ),
                     Icon(
                       LucideIcons.chevronRight,
                       size: 16,
-                      color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                      color: isDark
+                          ? AcadexColors.darkInkFaint
+                          : AcadexColors.inkFaint,
                     ),
                   ],
                 ),
@@ -127,7 +154,12 @@ class SubjectAttendanceCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(String label, String value, Color valueColor, bool isDark) {
+  Widget _buildStatItem(
+    String label,
+    String value,
+    Color valueColor,
+    bool isDark,
+  ) {
     return Row(
       children: [
         Text(

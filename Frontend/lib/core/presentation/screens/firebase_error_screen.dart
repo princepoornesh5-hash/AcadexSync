@@ -21,7 +21,7 @@ class _FirebaseErrorScreenState extends State<FirebaseErrorScreen> {
     // Attempt re-initialization
     await FirebaseInitializer.initialize(FirebaseEnv.production);
     setState(() => _isRetrying = false);
-    
+
     // Call parent to rebuild and check state
     widget.onRetry();
   }
@@ -48,7 +48,7 @@ class _FirebaseErrorScreenState extends State<FirebaseErrorScreen> {
                     color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
-                  )
+                  ),
                 ],
               ),
               child: Column(
@@ -70,7 +70,7 @@ class _FirebaseErrorScreenState extends State<FirebaseErrorScreen> {
                   ),
                   const SizedBox(height: 12),
                   const Text(
-                    'Acadex could not connect to its backend. Please check your internet connection or contact the system administrator.',
+                    'ACADEXSYNC could not connect to its backend. Please check your internet connection or contact the system administrator.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
@@ -98,7 +98,9 @@ class _FirebaseErrorScreenState extends State<FirebaseErrorScreen> {
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             )
                           : const Text(

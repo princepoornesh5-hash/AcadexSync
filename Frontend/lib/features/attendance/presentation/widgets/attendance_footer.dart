@@ -32,7 +32,9 @@ class AttendanceFooter extends StatelessWidget {
           children: [
             AcadexButton(
               label: "Review & Save",
-              variant: isReadyToSave ? AcadexButtonVariant.primary : AcadexButtonVariant.secondary,
+              variant: isReadyToSave
+                  ? AcadexButtonVariant.primary
+                  : AcadexButtonVariant.secondary,
               onPressed: isReadyToSave ? onSave : null,
             ),
           ],

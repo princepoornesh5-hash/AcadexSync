@@ -237,7 +237,8 @@ class AcadexLiveTimeBoardState extends State<AcadexLiveTimeBoard>
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Live clock. Current time $_currentHours:$_currentMinutes $_currentPeriod India Standard Time',
+      label:
+          'Live clock. Current time $_currentHours:$_currentMinutes $_currentPeriod India Standard Time',
       child: AcadexScoreboardCard(
         hours: _currentHours,
         minutes: _currentMinutes,

@@ -64,12 +64,20 @@ class DashboardColors {
   static const Color orangeLight = AcadexColors.accentOrangeLight;
   static const Color teal = AcadexColors.accentTeal;
   static const Color tealLight = AcadexColors.accentTealLight;
+  static const Color blue = AcadexColors.accentBlue;
+  static const Color blueLight = AcadexColors.accentBlueLight;
+  static const Color pink = AcadexColors.accentPink;
+  static const Color pinkLight = AcadexColors.accentPinkLight;
+  static const Color yellow = AcadexColors.accentYellow;
+  static const Color yellowLight = AcadexColors.accentYellowLight;
 }
 
 /// Main Application Theme Engine
 class AppTheme {
   static ThemeData get lightTheme {
-    final baseTextTheme = GoogleFonts.interTextTheme(ThemeData.light().textTheme);
+    final baseTextTheme = GoogleFonts.interTextTheme(
+      ThemeData.light().textTheme,
+    );
 
     return ThemeData(
       useMaterial3: true,
@@ -106,10 +114,7 @@ class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: AcadexRadius.borderRadiusLg,
-          side: const BorderSide(
-            color: AcadexColors.hairline,
-            width: 1,
-          ),
+          side: const BorderSide(color: AcadexColors.hairline, width: 1),
         ),
         margin: EdgeInsets.zero,
       ),
@@ -126,7 +131,10 @@ class AppTheme {
           color: AcadexColors.ink,
           letterSpacing: -0.2,
         ),
-        iconTheme: const IconThemeData(color: AcadexColors.inkSecondary, size: 20),
+        iconTheme: const IconThemeData(
+          color: AcadexColors.inkSecondary,
+          size: 20,
+        ),
       ),
 
       // Button System - Uniform 44px minimum tap targets
@@ -185,7 +193,10 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
         border: OutlineInputBorder(
           borderRadius: AcadexRadius.borderRadiusMd,
           borderSide: const BorderSide(color: AcadexColors.hairline, width: 1),
@@ -268,11 +279,13 @@ class AppTheme {
         todayForegroundColor: WidgetStateProperty.all(AcadexColors.primary),
         dayForegroundColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) return Colors.white;
-          if (states.contains(WidgetState.disabled)) return AcadexColors.inkFaint;
+          if (states.contains(WidgetState.disabled))
+            return AcadexColors.inkFaint;
           return AcadexColors.ink;
         }),
         dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return AcadexColors.primary;
+          if (states.contains(WidgetState.selected))
+            return AcadexColors.primary;
           return Colors.transparent;
         }),
       ),
@@ -290,8 +303,14 @@ class AppTheme {
 
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: AcadexColors.surface,
-        selectedIconTheme: const IconThemeData(color: AcadexColors.primary, size: 22),
-        unselectedIconTheme: const IconThemeData(color: AcadexColors.inkMuted, size: 22),
+        selectedIconTheme: const IconThemeData(
+          color: AcadexColors.primary,
+          size: 22,
+        ),
+        unselectedIconTheme: const IconThemeData(
+          color: AcadexColors.inkMuted,
+          size: 22,
+        ),
         selectedLabelTextStyle: GoogleFonts.inter(
           color: AcadexColors.primary,
           fontSize: 12,
@@ -308,8 +327,14 @@ class AppTheme {
         backgroundColor: AcadexColors.surface,
         selectedItemColor: AcadexColors.primary,
         unselectedItemColor: AcadexColors.inkMuted,
-        selectedLabelStyle: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500),
+        selectedLabelStyle: GoogleFonts.inter(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: GoogleFonts.inter(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+        ),
         elevation: 4,
         type: BottomNavigationBarType.fixed,
       ),
@@ -338,7 +363,9 @@ class AppTheme {
         backgroundColor: AcadexColors.surface,
         elevation: 4,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AcadexRadius.xl)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AcadexRadius.xl),
+          ),
         ),
       ),
 
@@ -352,7 +379,11 @@ class AppTheme {
           borderRadius: AcadexRadius.borderRadiusFull,
           side: const BorderSide(color: AcadexColors.hairline, width: 1),
         ),
-        labelStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: AcadexColors.ink),
+        labelStyle: GoogleFonts.inter(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: AcadexColors.ink,
+        ),
       ),
 
       dataTableTheme: DataTableThemeData(
@@ -378,41 +409,48 @@ class AppTheme {
         indicatorSize: TabBarIndicatorSize.tab,
         labelColor: AcadexColors.primary,
         unselectedLabelColor: AcadexColors.inkMuted,
-        labelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
+        labelStyle: GoogleFonts.inter(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: GoogleFonts.inter(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
         dividerColor: AcadexColors.hairline,
       ),
 
-      textTheme: baseTextTheme.copyWith(
-        titleMedium: GoogleFonts.inter(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: AcadexColors.ink,
-        ),
-        bodyLarge: GoogleFonts.inter(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          color: AcadexColors.ink,
-        ),
-        bodyMedium: GoogleFonts.inter(
-          fontSize: 13.5,
-          fontWeight: FontWeight.w400,
-          color: AcadexColors.ink,
-        ),
-        bodySmall: GoogleFonts.inter(
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
-          color: AcadexColors.inkSecondary,
-        ),
-      ).apply(
-        bodyColor: AcadexColors.ink,
-        displayColor: AcadexColors.ink,
-      ),
+      textTheme: baseTextTheme
+          .copyWith(
+            titleMedium: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AcadexColors.ink,
+            ),
+            bodyLarge: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: AcadexColors.ink,
+            ),
+            bodyMedium: GoogleFonts.inter(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w400,
+              color: AcadexColors.ink,
+            ),
+            bodySmall: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+              color: AcadexColors.inkSecondary,
+            ),
+          )
+          .apply(bodyColor: AcadexColors.ink, displayColor: AcadexColors.ink),
     );
   }
 
   static ThemeData get darkTheme {
-    final baseTextTheme = GoogleFonts.interTextTheme(ThemeData.dark().textTheme);
+    final baseTextTheme = GoogleFonts.interTextTheme(
+      ThemeData.dark().textTheme,
+    );
 
     return ThemeData(
       useMaterial3: true,
@@ -448,10 +486,7 @@ class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: AcadexRadius.borderRadiusLg,
-          side: const BorderSide(
-            color: AcadexColors.darkHairline,
-            width: 1,
-          ),
+          side: const BorderSide(color: AcadexColors.darkHairline, width: 1),
         ),
         margin: EdgeInsets.zero,
       ),
@@ -467,7 +502,10 @@ class AppTheme {
           color: AcadexColors.darkInk,
           letterSpacing: -0.2,
         ),
-        iconTheme: const IconThemeData(color: AcadexColors.darkInkSecondary, size: 20),
+        iconTheme: const IconThemeData(
+          color: AcadexColors.darkInkSecondary,
+          size: 20,
+        ),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -524,18 +562,30 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AcadexColors.darkSurfaceCard,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
         border: OutlineInputBorder(
           borderRadius: AcadexRadius.borderRadiusMd,
-          borderSide: const BorderSide(color: AcadexColors.darkHairline, width: 1),
+          borderSide: const BorderSide(
+            color: AcadexColors.darkHairline,
+            width: 1,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: AcadexRadius.borderRadiusMd,
-          borderSide: const BorderSide(color: AcadexColors.darkHairline, width: 1),
+          borderSide: const BorderSide(
+            color: AcadexColors.darkHairline,
+            width: 1,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AcadexRadius.borderRadiusMd,
-          borderSide: const BorderSide(color: AcadexColors.primaryMuted, width: 1.5),
+          borderSide: const BorderSide(
+            color: AcadexColors.primaryMuted,
+            width: 1.5,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: AcadexRadius.borderRadiusMd,
@@ -547,7 +597,10 @@ class AppTheme {
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: AcadexRadius.borderRadiusMd,
-          borderSide: const BorderSide(color: AcadexColors.darkHairline, width: 1),
+          borderSide: const BorderSide(
+            color: AcadexColors.darkHairline,
+            width: 1,
+          ),
         ),
         labelStyle: GoogleFonts.inter(
           color: AcadexColors.darkInkSecondary,
@@ -590,8 +643,14 @@ class AppTheme {
 
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: AcadexColors.darkSurface,
-        selectedIconTheme: const IconThemeData(color: AcadexColors.primaryMuted, size: 22),
-        unselectedIconTheme: const IconThemeData(color: AcadexColors.darkInkMuted, size: 22),
+        selectedIconTheme: const IconThemeData(
+          color: AcadexColors.primaryMuted,
+          size: 22,
+        ),
+        unselectedIconTheme: const IconThemeData(
+          color: AcadexColors.darkInkMuted,
+          size: 22,
+        ),
         selectedLabelTextStyle: GoogleFonts.inter(
           color: AcadexColors.primaryMuted,
           fontSize: 12,
@@ -608,8 +667,14 @@ class AppTheme {
         backgroundColor: AcadexColors.darkSurface,
         selectedItemColor: AcadexColors.primaryMuted,
         unselectedItemColor: AcadexColors.darkInkMuted,
-        selectedLabelStyle: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500),
+        selectedLabelStyle: GoogleFonts.inter(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: GoogleFonts.inter(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+        ),
         elevation: 4,
         type: BottomNavigationBarType.fixed,
       ),
@@ -638,7 +703,9 @@ class AppTheme {
         backgroundColor: AcadexColors.darkSurface,
         elevation: 4,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AcadexRadius.xl)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AcadexRadius.xl),
+          ),
         ),
       ),
 
@@ -652,7 +719,11 @@ class AppTheme {
           borderRadius: AcadexRadius.borderRadiusFull,
           side: const BorderSide(color: AcadexColors.darkHairline, width: 1),
         ),
-        labelStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: AcadexColors.darkInk),
+        labelStyle: GoogleFonts.inter(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: AcadexColors.darkInk,
+        ),
       ),
 
       tabBarTheme: TabBarThemeData(
@@ -660,8 +731,14 @@ class AppTheme {
         indicatorSize: TabBarIndicatorSize.tab,
         labelColor: AcadexColors.primaryMuted,
         unselectedLabelColor: AcadexColors.darkInkMuted,
-        labelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
+        labelStyle: GoogleFonts.inter(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: GoogleFonts.inter(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
         dividerColor: AcadexColors.darkHairline,
       ),
 
@@ -679,10 +756,18 @@ class AcadexMotion {
 
   // Standardized Durations
   static const Duration instant = Duration.zero;
-  static const Duration micro = Duration(milliseconds: 120);   // Press, hover, icon tweaks
-  static const Duration fast = Duration(milliseconds: 180);    // Card entrance, chip toggle, fade
-  static const Duration normal = Duration(milliseconds: 240);  // Views, tabs, accordions
-  static const Duration page = Duration(milliseconds: 280);    // Page transitions, modal sheets
+  static const Duration micro = Duration(
+    milliseconds: 120,
+  ); // Press, hover, icon tweaks
+  static const Duration fast = Duration(
+    milliseconds: 180,
+  ); // Card entrance, chip toggle, fade
+  static const Duration normal = Duration(
+    milliseconds: 240,
+  ); // Views, tabs, accordions
+  static const Duration page = Duration(
+    milliseconds: 280,
+  ); // Page transitions, modal sheets
 
   // Standardized Curves
   static const Curve curveStandard = Curves.easeOutCubic;
@@ -696,7 +781,10 @@ class AcadexMotion {
   }
 
   // Duration resolver respecting accessibility reduced motion
-  static Duration resolveDuration(BuildContext context, Duration standardDuration) {
+  static Duration resolveDuration(
+    BuildContext context,
+    Duration standardDuration,
+  ) {
     if (isReducedMotion(context)) return Duration.zero;
     return standardDuration;
   }

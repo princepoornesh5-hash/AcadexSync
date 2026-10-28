@@ -1,9 +1,4 @@
-enum FileCategory {
-  profileImage,
-  certificate,
-  noteAttachment,
-  other
-}
+enum FileCategory { profileImage, certificate, noteAttachment, other }
 
 extension FileCategoryExtension on FileCategory {
   String get value {

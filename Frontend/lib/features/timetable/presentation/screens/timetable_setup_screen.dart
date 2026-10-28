@@ -31,13 +31,11 @@ export 'timetable_creation_screen.dart';
 class TimetableSetupScreen extends ConsumerStatefulWidget {
   final TimetableContainerModel? initialContainer;
 
-  const TimetableSetupScreen({
-    super.key,
-    this.initialContainer,
-  });
+  const TimetableSetupScreen({super.key, this.initialContainer});
 
   @override
-  ConsumerState<TimetableSetupScreen> createState() => _TimetableSetupScreenState();
+  ConsumerState<TimetableSetupScreen> createState() =>
+      _TimetableSetupScreenState();
 }
 
 class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
@@ -182,12 +180,15 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
     );
 
     setState(() {
-      _existingDraftContainer = containers.where((c) => c.status == TimetableStatus.draft).firstOrNull;
+      _existingDraftContainer = containers
+          .where((c) => c.status == TimetableStatus.draft)
+          .firstOrNull;
     });
   }
 
   void _autoGenerateName() {
-    if (_nameController.text.trim().isNotEmpty && _nameController.text != _lastAutoName) {
+    if (_nameController.text.trim().isNotEmpty &&
+        _nameController.text != _lastAutoName) {
       return;
     }
     final courseMap = ref.read(timetableCourseMapProvider);
@@ -196,13 +197,22 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
     final termHelper = ref.read(terminologyProvider);
     final semLabel = termHelper.semesterName();
     final secLabel = termHelper.sectionName();
-    final course = courseMap[_selectedCourseId]?.name ?? courseMap[_selectedCourseId]?.code ?? '';
+    final course =
+        courseMap[_selectedCourseId]?.name ??
+        courseMap[_selectedCourseId]?.code ??
+        '';
     final section = sectionMap[_selectedSectionId]?.name ?? '';
     final semObj = ref.read(timetableSemesterMapProvider)[_selectedSemesterId];
-    final sem = semObj != null ? '$semLabel ${semObj.number}' : (_selectedSemesterId != null ? '$semLabel $_selectedSemesterId' : '');
+    final sem = semObj != null
+        ? '$semLabel ${semObj.number}'
+        : (_selectedSemesterId != null ? '$semLabel $_selectedSemesterId' : '');
 
     if (course.isNotEmpty || section.isNotEmpty) {
-      final generated = [course, sem, section.isNotEmpty ? '$secLabel $section' : ''].where((s) => s.isNotEmpty).join(' - ');
+      final generated = [
+        course,
+        sem,
+        section.isNotEmpty ? '$secLabel $section' : '',
+      ].where((s) => s.isNotEmpty).join(' - ');
       _nameController.text = generated;
       _lastAutoName = generated;
     }
@@ -220,10 +230,16 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
     final user = authState.user;
 
     // Permissions check
-    if (user.role != AppRole.collegeAdmin && user.role != AppRole.hod && user.role != AppRole.faculty) {
+    if (user.role != AppRole.collegeAdmin &&
+        user.role != AppRole.hod &&
+        user.role != AppRole.faculty) {
       return Scaffold(
         appBar: AppBar(title: const Text('Unauthorized')),
-        body: const Center(child: Text('Unauthorized: Only administrators and HODs can create timetables.')),
+        body: const Center(
+          child: Text(
+            'Unauthorized: Only administrators and HODs can create timetables.',
+          ),
+        ),
       );
     }
 
@@ -251,7 +267,8 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                   ),
                   child: AcadexPageHeader(
                     title: 'Create Timetable',
-                    subtitle: 'Configure academic scope, periods, breaks and generate spreadsheet designer',
+                    subtitle:
+                        'Configure academic scope, periods, breaks and generate spreadsheet designer',
                     onBack: () => Navigator.of(context).maybePop(),
                   ),
                 ),
@@ -264,7 +281,10 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                 // Active Step Content
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 8),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isMobile ? 16 : 24,
+                      vertical: 8,
+                    ),
                     child: _buildCurrentStepView(isDark, isMobile, user),
                   ),
                 ),
@@ -297,7 +317,9 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: AcadexRadius.borderRadiusMd,
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -306,9 +328,15 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
             final isCompleted = index < _currentStep;
             final isCurrent = index == _currentStep;
 
-            Color circleColor = isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft;
-            Color textColor = isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted;
-            Color iconColor = isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted;
+            Color circleColor = isDark
+                ? AcadexColors.darkCanvasSoft
+                : AcadexColors.canvasSoft;
+            Color textColor = isDark
+                ? AcadexColors.darkInkMuted
+                : AcadexColors.inkMuted;
+            Color iconColor = isDark
+                ? AcadexColors.darkInkMuted
+                : AcadexColors.inkMuted;
 
             if (isCompleted) {
               circleColor = AcadexColors.success;
@@ -324,10 +352,15 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 InkWell(
-                  onTap: isCompleted ? () => setState(() => _currentStep = index) : null,
+                  onTap: isCompleted
+                      ? () => setState(() => _currentStep = index)
+                      : null,
                   borderRadius: AcadexRadius.borderRadiusSm,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 4,
+                    ),
                     child: Row(
                       children: [
                         Container(
@@ -339,7 +372,11 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                             shape: BoxShape.circle,
                           ),
                           child: isCompleted
-                              ? const Icon(LucideIcons.check, size: 14, color: Colors.white)
+                              ? const Icon(
+                                  LucideIcons.check,
+                                  size: 14,
+                                  color: Colors.white,
+                                )
                               : Text(
                                   '${index + 1}',
                                   style: TextStyle(
@@ -352,9 +389,12 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                         const SizedBox(width: 8),
                         Text(
                           steps[index],
-                          style: AcadexTypography.caption(color: textColor).copyWith(
-                            fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
-                          ),
+                          style: AcadexTypography.caption(color: textColor)
+                              .copyWith(
+                                fontWeight: isCurrent
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
                         ),
                       ],
                     ),
@@ -364,7 +404,9 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                   Container(
                     width: isMobile ? 16 : 32,
                     height: 1,
-                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                   ),
               ],
@@ -408,7 +450,8 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
     final assignmentsAsync = ref.watch(facultyAssignmentsProvider);
     final roomsAsync = ref.watch(roomsProvider);
 
-    final isPrereqLoading = deptsAsync.isLoading ||
+    final isPrereqLoading =
+        deptsAsync.isLoading ||
         coursesAsync.isLoading ||
         academicYearsAsync.isLoading ||
         semestersAsync.isLoading ||
@@ -421,13 +464,18 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(40),
-          child: AcadexLoadingState(message: 'Validating academic prerequisites...'),
+          child: AcadexLoadingState(
+            message: 'Validating academic prerequisites...',
+          ),
         ),
       );
     }
 
     final isHod = user.role == AppRole.hod;
-    if (isHod && _selectedDepartmentId == null && user.departmentId != null && user.departmentId!.isNotEmpty) {
+    if (isHod &&
+        _selectedDepartmentId == null &&
+        user.departmentId != null &&
+        user.departmentId!.isNotEmpty) {
       _selectedDepartmentId = user.departmentId;
     }
 
@@ -463,7 +511,9 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
     }).toList();
 
     final availableCourses = _selectedDepartmentId != null
-        ? allCourses.where((c) => c.departmentId == _selectedDepartmentId).toList()
+        ? allCourses
+              .where((c) => c.departmentId == _selectedDepartmentId)
+              .toList()
         : <Course>[];
 
     final availableYears = allYears;
@@ -473,7 +523,14 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
         : <Semester>[];
 
     final availableSections = _selectedSemesterId != null
-        ? allSections.where((s) => s.semesterId == _selectedSemesterId && (_selectedCourseId == null || s.courseId == _selectedCourseId)).toList()
+        ? allSections
+              .where(
+                (s) =>
+                    s.semesterId == _selectedSemesterId &&
+                    (_selectedCourseId == null ||
+                        s.courseId == _selectedCourseId),
+              )
+              .toList()
         : <Section>[];
 
     return Container(
@@ -481,7 +538,9 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: AcadexRadius.borderRadiusLg,
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -491,10 +550,16 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                  color: isDark
+                      ? AcadexColors.primary.withValues(alpha: 0.2)
+                      : AcadexColors.primaryLight,
                   borderRadius: AcadexRadius.borderRadiusSm,
                 ),
-                child: const Icon(LucideIcons.graduationCap, size: 20, color: AcadexColors.primary),
+                child: const Icon(
+                  LucideIcons.graduationCap,
+                  size: 20,
+                  color: AcadexColors.primary,
+                ),
               ),
               const SizedBox(width: 12),
               Column(
@@ -502,11 +567,17 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                 children: [
                   Text(
                     'Step 1: Academic Hierarchy',
-                    style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                    style: AcadexTypography.heading3(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ),
                   ),
                   Text(
                     'Select the department, $courseLabel, and $sectionLabel for this timetable',
-                    style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                    style: AcadexTypography.caption(
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
+                    ),
                   ),
                 ],
               ),
@@ -528,26 +599,45 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkCanvas : AcadexColors.canvasSoft,
+                color: isDark
+                    ? AcadexColors.darkCanvas
+                    : AcadexColors.canvasSoft,
                 borderRadius: AcadexRadius.borderRadiusMd,
-                border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                border: Border.all(
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.building2, size: 18, color: AcadexColors.primary),
+                  const Icon(
+                    LucideIcons.building2,
+                    size: 18,
+                    color: AcadexColors.primary,
+                  ),
                   const SizedBox(width: 10),
                   Text(
                     'Department: ',
-                    style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                    style: AcadexTypography.caption(
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
+                    ),
                   ),
                   Text(
                     availableDepts.isNotEmpty
                         ? '${availableDepts.first.name} (${availableDepts.first.code})'
                         : 'Department Context Auto-Resolved',
-                    style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+                    style: AcadexTypography.body(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ).copyWith(fontWeight: FontWeight.w600),
                   ),
                   const Spacer(),
-                  const AcadexBadge(label: 'AUTO-RESOLVED', variant: AcadexBadgeVariant.success),
+                  const AcadexBadge(
+                    label: 'AUTO-RESOLVED',
+                    variant: AcadexBadgeVariant.success,
+                  ),
                 ],
               ),
             ),
@@ -556,7 +646,10 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
               value: _selectedDepartmentId,
               decoration: const InputDecoration(labelText: 'Department *'),
               items: availableDepts.map((d) {
-                return DropdownMenuItem(value: d.id, child: Text('${d.name} (${d.code})'));
+                return DropdownMenuItem(
+                  value: d.id,
+                  child: Text('${d.name} (${d.code})'),
+                );
               }).toList(),
               onChanged: isHod
                   ? null
@@ -577,15 +670,22 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
 
           // Course Dropdown (Dependent on Department)
           DropdownButtonFormField<String>(
-            value: _selectedCourseId != null && availableCourses.any((c) => c.id == _selectedCourseId)
+            value:
+                _selectedCourseId != null &&
+                    availableCourses.any((c) => c.id == _selectedCourseId)
                 ? _selectedCourseId
                 : null,
             decoration: InputDecoration(
               labelText: '$courseLabel *',
-              hintText: _selectedDepartmentId == null ? 'Select Department first' : 'Select $courseLabel',
+              hintText: _selectedDepartmentId == null
+                  ? 'Select Department first'
+                  : 'Select $courseLabel',
             ),
             items: availableCourses.map((c) {
-              return DropdownMenuItem(value: c.id, child: Text('${c.name} (${c.code})'));
+              return DropdownMenuItem(
+                value: c.id,
+                child: Text('${c.name} (${c.code})'),
+              );
             }).toList(),
             onChanged: _selectedDepartmentId == null
                 ? null
@@ -604,12 +704,16 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
 
           // Academic Year Dropdown
           DropdownButtonFormField<String>(
-            value: _selectedAcademicYearId != null && availableYears.any((y) => y.id == _selectedAcademicYearId)
+            value:
+                _selectedAcademicYearId != null &&
+                    availableYears.any((y) => y.id == _selectedAcademicYearId)
                 ? _selectedAcademicYearId
                 : null,
             decoration: InputDecoration(
               labelText: 'Academic Year *',
-              hintText: availableYears.isEmpty ? 'No Academic Years available' : 'Select Academic Session',
+              hintText: availableYears.isEmpty
+                  ? 'No Academic Years available'
+                  : 'Select Academic Session',
             ),
             items: availableYears.map((y) {
               return DropdownMenuItem(value: y.id, child: Text(y.name));
@@ -627,15 +731,24 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _selectedSemesterId != null && availableSemesters.any((s) => s.id == _selectedSemesterId)
+                  value:
+                      _selectedSemesterId != null &&
+                          availableSemesters.any(
+                            (s) => s.id == _selectedSemesterId,
+                          )
                       ? _selectedSemesterId
                       : null,
                   decoration: InputDecoration(
                     labelText: '$semesterLabel *',
-                    hintText: _selectedCourseId == null ? 'Select $courseLabel first' : 'Select $semesterLabel',
+                    hintText: _selectedCourseId == null
+                        ? 'Select $courseLabel first'
+                        : 'Select $semesterLabel',
                   ),
                   items: availableSemesters.map((s) {
-                    return DropdownMenuItem(value: s.id, child: Text('$semesterLabel ${s.number}'));
+                    return DropdownMenuItem(
+                      value: s.id,
+                      child: Text('$semesterLabel ${s.number}'),
+                    );
                   }).toList(),
                   onChanged: _selectedCourseId == null
                       ? null
@@ -653,12 +766,18 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedSectionId != null && availableSections.any((s) => s.id == _selectedSectionId)
+                    value:
+                        _selectedSectionId != null &&
+                            availableSections.any(
+                              (s) => s.id == _selectedSectionId,
+                            )
                         ? _selectedSectionId
                         : null,
                     decoration: InputDecoration(
                       labelText: '$sectionLabel *',
-                      hintText: _selectedSemesterId == null ? 'Select $semesterLabel first' : 'Select $sectionLabel',
+                      hintText: _selectedSemesterId == null
+                          ? 'Select $semesterLabel first'
+                          : 'Select $sectionLabel',
                     ),
                     items: availableSections.map((s) {
                       return DropdownMenuItem(value: s.id, child: Text(s.name));
@@ -693,13 +812,19 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
+                color: isDark
+                    ? AcadexColors.warningDarkContainer
+                    : AcadexColors.warningLight,
                 borderRadius: AcadexRadius.borderRadiusSm,
                 border: Border.all(color: AcadexColors.warning),
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.alertTriangle, size: 20, color: AcadexColors.warningDark),
+                  const Icon(
+                    LucideIcons.alertTriangle,
+                    size: 20,
+                    color: AcadexColors.warningDark,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -707,12 +832,16 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                       children: [
                         Text(
                           'Draft Timetable Already Exists',
-                          style: AcadexTypography.bodySmall(color: AcadexColors.warningDark).copyWith(fontWeight: FontWeight.w700),
+                          style: AcadexTypography.bodySmall(
+                            color: AcadexColors.warningDark,
+                          ).copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'An active draft timetable "${_existingDraftContainer!.name}" already exists for this section.',
-                          style: AcadexTypography.caption(color: AcadexColors.warningDark),
+                          style: AcadexTypography.caption(
+                            color: AcadexColors.warningDark,
+                          ),
                         ),
                       ],
                     ),
@@ -721,11 +850,16 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                     onPressed: () {
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
-                          builder: (_) => TimetableDesignerScreen(timetableId: _existingDraftContainer!.id),
+                          builder: (_) => TimetableDesignerScreen(
+                            timetableId: _existingDraftContainer!.id,
+                          ),
                         ),
                       );
                     },
-                    child: const Text('Open Existing Draft', style: TextStyle(fontWeight: FontWeight.w700)),
+                    child: const Text(
+                      'Open Existing Draft',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
                   ),
                 ],
               ),
@@ -745,7 +879,9 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: AcadexRadius.borderRadiusLg,
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -755,10 +891,16 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                  color: isDark
+                      ? AcadexColors.primary.withValues(alpha: 0.2)
+                      : AcadexColors.primaryLight,
                   borderRadius: AcadexRadius.borderRadiusSm,
                 ),
-                child: const Icon(LucideIcons.calendar, size: 20, color: AcadexColors.primary),
+                child: const Icon(
+                  LucideIcons.calendar,
+                  size: 20,
+                  color: AcadexColors.primary,
+                ),
               ),
               const SizedBox(width: 12),
               Column(
@@ -766,11 +908,17 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                 children: [
                   Text(
                     'Step 2: Working Days & Timing Mode',
-                    style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                    style: AcadexTypography.heading3(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ),
                   ),
                   Text(
                     'Choose active academic days and schedule uniformity',
-                    style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                    style: AcadexTypography.caption(
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
+                    ),
                   ),
                 ],
               ),
@@ -781,7 +929,9 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
 
           Text(
             'Active Working Days *',
-            style: AcadexTypography.bodySmall(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+            style: AcadexTypography.bodySmall(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ).copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
 
@@ -813,7 +963,9 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
 
           Text(
             'Timing Mode *',
-            style: AcadexTypography.bodySmall(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+            style: AcadexTypography.bodySmall(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ).copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
 
@@ -823,7 +975,9 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
               children: [
                 RadioListTile<TimetableTimingMode>(
                   title: const Text('Same timing every day (Standard)'),
-                  subtitle: const Text('All active days follow the exact same period timings and break slots'),
+                  subtitle: const Text(
+                    'All active days follow the exact same period timings and break slots',
+                  ),
                   value: TimetableTimingMode.sameEveryDay,
                   groupValue: _timingMode,
                   onChanged: (val) {
@@ -831,8 +985,12 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                   },
                 ),
                 RadioListTile<TimetableTimingMode>(
-                  title: const Text('Different timing per day (Custom per day)'),
-                  subtitle: const Text('Individual days (e.g. Friday half-day) can have distinct period schedules'),
+                  title: const Text(
+                    'Different timing per day (Custom per day)',
+                  ),
+                  subtitle: const Text(
+                    'Individual days (e.g. Friday half-day) can have distinct period schedules',
+                  ),
                   value: TimetableTimingMode.differentPerDay,
                   groupValue: _timingMode,
                   onChanged: (val) {
@@ -856,7 +1014,9 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: AcadexRadius.borderRadiusLg,
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -869,10 +1029,16 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                      color: isDark
+                          ? AcadexColors.primary.withValues(alpha: 0.2)
+                          : AcadexColors.primaryLight,
                       borderRadius: AcadexRadius.borderRadiusSm,
                     ),
-                    child: const Icon(LucideIcons.clock, size: 20, color: AcadexColors.primary),
+                    child: const Icon(
+                      LucideIcons.clock,
+                      size: 20,
+                      color: AcadexColors.primary,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Column(
@@ -880,11 +1046,19 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                     children: [
                       Text(
                         'Step 3: Period Slots (${_periods.length})',
-                        style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                        style: AcadexTypography.heading3(
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
+                        ),
                       ),
                       Text(
                         'Configure teaching periods, timeslots, and order',
-                        style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                        style: AcadexTypography.caption(
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
+                        ),
                       ),
                     ],
                   ),
@@ -892,12 +1066,27 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
               ),
               ElevatedButton.icon(
                 onPressed: () => _showAddPeriodDialog(isDark),
-                icon: const Icon(LucideIcons.plus, size: 16, color: Colors.white),
-                label: const Text('Add Period', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                icon: const Icon(
+                  LucideIcons.plus,
+                  size: 16,
+                  color: Colors.white,
+                ),
+                label: const Text(
+                  'Add Period',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AcadexColors.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusSm),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AcadexRadius.borderRadiusSm,
+                  ),
                 ),
               ),
             ],
@@ -935,11 +1124,20 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
             itemBuilder: (ctx, index) {
               final period = _periods[index];
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                  color: isDark
+                      ? AcadexColors.darkSurfaceCard
+                      : AcadexColors.surface,
                   borderRadius: AcadexRadius.borderRadiusSm,
-                  border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                  border: Border.all(
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -948,12 +1146,16 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                       height: 32,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                        color: isDark
+                            ? AcadexColors.primary.withValues(alpha: 0.2)
+                            : AcadexColors.primaryLight,
                         borderRadius: AcadexRadius.borderRadiusSm,
                       ),
                       child: Text(
                         'P${period.index}',
-                        style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(fontWeight: FontWeight.w700),
+                        style: AcadexTypography.caption(
+                          color: AcadexColors.primary,
+                        ).copyWith(fontWeight: FontWeight.w700),
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -965,12 +1167,18 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                           Text(
                             period.name,
                             style: AcadexTypography.bodyMedium(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
                             ).copyWith(fontWeight: FontWeight.w600),
                           ),
                           Text(
                             '${period.startTime} – ${period.endTime} (${period.durationInMinutes} mins)',
-                            style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                            style: AcadexTypography.caption(
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
+                            ),
                           ),
                         ],
                       ),
@@ -1001,7 +1209,11 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                           : null,
                     ),
                     IconButton(
-                      icon: const Icon(LucideIcons.trash2, size: 16, color: AcadexColors.error),
+                      icon: const Icon(
+                        LucideIcons.trash2,
+                        size: 16,
+                        color: AcadexColors.error,
+                      ),
                       onPressed: _periods.length > 1
                           ? () {
                               setState(() {
@@ -1038,38 +1250,64 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+          backgroundColor: isDark
+              ? AcadexColors.darkSurface
+              : AcadexColors.surface,
           title: const Text('Add Period'),
           content: SizedBox(
             width: 320,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Period Name')),
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Period Name'),
+                ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(child: TextField(controller: startCtrl, decoration: const InputDecoration(labelText: 'Start Time'))),
+                    Expanded(
+                      child: TextField(
+                        controller: startCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Start Time',
+                        ),
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    Expanded(child: TextField(controller: endCtrl, decoration: const InputDecoration(labelText: 'End Time'))),
+                    Expanded(
+                      child: TextField(
+                        controller: endCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'End Time',
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
             ElevatedButton(
               onPressed: () {
-                if (nameCtrl.text.trim().isNotEmpty && startCtrl.text.trim().isNotEmpty && endCtrl.text.trim().isNotEmpty) {
+                if (nameCtrl.text.trim().isNotEmpty &&
+                    startCtrl.text.trim().isNotEmpty &&
+                    endCtrl.text.trim().isNotEmpty) {
                   setState(() {
-                    _periods.add(TimetablePeriodModel(
-                      id: const Uuid().v4(),
-                      index: nextIdx,
-                      name: nameCtrl.text.trim(),
-                      startTime: startCtrl.text.trim(),
-                      endTime: endCtrl.text.trim(),
-                    ));
+                    _periods.add(
+                      TimetablePeriodModel(
+                        id: const Uuid().v4(),
+                        index: nextIdx,
+                        name: nameCtrl.text.trim(),
+                        startTime: startCtrl.text.trim(),
+                        endTime: endCtrl.text.trim(),
+                      ),
+                    );
                   });
                   Navigator.of(ctx).pop();
                 }
@@ -1091,7 +1329,9 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: AcadexRadius.borderRadiusLg,
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1104,10 +1344,16 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                      color: isDark
+                          ? AcadexColors.primary.withValues(alpha: 0.2)
+                          : AcadexColors.primaryLight,
                       borderRadius: AcadexRadius.borderRadiusSm,
                     ),
-                    child: const Icon(LucideIcons.coffee, size: 20, color: AcadexColors.primary),
+                    child: const Icon(
+                      LucideIcons.coffee,
+                      size: 20,
+                      color: AcadexColors.primary,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Column(
@@ -1115,11 +1361,19 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                     children: [
                       Text(
                         'Step 4: Configure Breaks (${_breaks.length})',
-                        style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                        style: AcadexTypography.heading3(
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
+                        ),
                       ),
                       Text(
                         'Add lunch, tea, and custom breaks',
-                        style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                        style: AcadexTypography.caption(
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
+                        ),
                       ),
                     ],
                   ),
@@ -1127,12 +1381,27 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
               ),
               ElevatedButton.icon(
                 onPressed: () => _showAddBreakDialog(isDark),
-                icon: const Icon(LucideIcons.plus, size: 16, color: Colors.white),
-                label: const Text('Add Break', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                icon: const Icon(
+                  LucideIcons.plus,
+                  size: 16,
+                  color: Colors.white,
+                ),
+                label: const Text(
+                  'Add Break',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AcadexColors.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusSm),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AcadexRadius.borderRadiusSm,
+                  ),
                 ),
               ),
             ],
@@ -1144,7 +1413,14 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
             Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
-                child: Text('No breaks configured (Optional)', style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted)),
+                child: Text(
+                  'No breaks configured (Optional)',
+                  style: AcadexTypography.caption(
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
+                  ),
+                ),
               ),
             )
           else
@@ -1156,11 +1432,20 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
               itemBuilder: (ctx, index) {
                 final b = _breaks[index];
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                    color: isDark
+                        ? AcadexColors.darkSurfaceCard
+                        : AcadexColors.surface,
                     borderRadius: AcadexRadius.borderRadiusSm,
-                    border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                    border: Border.all(
+                      color: isDark
+                          ? AcadexColors.darkHairline
+                          : AcadexColors.hairline,
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -1169,10 +1454,16 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                         height: 36,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
+                          color: isDark
+                              ? AcadexColors.warningDarkContainer
+                              : AcadexColors.warningLight,
                           borderRadius: AcadexRadius.borderRadiusSm,
                         ),
-                        child: const Icon(LucideIcons.utensils, size: 18, color: AcadexColors.warningDark),
+                        child: const Icon(
+                          LucideIcons.utensils,
+                          size: 18,
+                          color: AcadexColors.warningDark,
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -1181,18 +1472,31 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                           children: [
                             Text(
                               b.name,
-                              style: AcadexTypography.bodyMedium(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+                              style: AcadexTypography.bodyMedium(
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
+                              ).copyWith(fontWeight: FontWeight.w600),
                             ),
                             Text(
                               '${b.startTime} – ${b.endTime} (${b.durationInMinutes} mins) • ${b.appliesToDays.map((d) => d.displayName.substring(0, 3)).join(', ')}',
-                              style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                              style: AcadexTypography.caption(
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
+                              ),
                             ),
                           ],
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(LucideIcons.trash2, size: 16, color: AcadexColors.error),
-                        onPressed: () => setState(() => _breaks.removeAt(index)),
+                        icon: const Icon(
+                          LucideIcons.trash2,
+                          size: 16,
+                          color: AcadexColors.error,
+                        ),
+                        onPressed: () =>
+                            setState(() => _breaks.removeAt(index)),
                       ),
                     ],
                   ),
@@ -1217,40 +1521,66 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
         return StatefulBuilder(
           builder: (dialogCtx, setDialogState) {
             return AlertDialog(
-              backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+              backgroundColor: isDark
+                  ? AcadexColors.darkSurface
+                  : AcadexColors.surface,
               title: const Text('Add Break'),
               content: SizedBox(
                 width: 360,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Break Name')),
+                    TextField(
+                      controller: nameCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Break Name',
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Expanded(child: TextField(controller: startCtrl, decoration: const InputDecoration(labelText: 'Start Time'))),
+                        Expanded(
+                          child: TextField(
+                            controller: startCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Start Time',
+                            ),
+                          ),
+                        ),
                         const SizedBox(width: 12),
-                        Expanded(child: TextField(controller: endCtrl, decoration: const InputDecoration(labelText: 'End Time'))),
+                        Expanded(
+                          child: TextField(
+                            controller: endCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'End Time',
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Cancel'),
+                ),
                 ElevatedButton(
                   onPressed: () {
                     if (nameCtrl.text.trim().isNotEmpty) {
                       setState(() {
-                        _breaks.add(TimetableBreakModel(
-                          id: const Uuid().v4(),
-                          name: nameCtrl.text.trim(),
-                          startTime: startCtrl.text.trim(),
-                          endTime: endCtrl.text.trim(),
-                          breakType: breakType,
-                          appliesToDays: selectedDays,
-                          isVerticalSpan: true,
-                        ));
+                        _breaks.add(
+                          TimetableBreakModel(
+                            id: const Uuid().v4(),
+                            name: nameCtrl.text.trim(),
+                            startTime: startCtrl.text.trim(),
+                            endTime: endCtrl.text.trim(),
+                            breakType: breakType,
+                            appliesToDays: selectedDays,
+                            isVerticalSpan: true,
+                          ),
+                        );
                       });
                       Navigator.of(ctx).pop();
                     }
@@ -1311,18 +1641,26 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
           decoration: BoxDecoration(
             color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
             borderRadius: AcadexRadius.borderRadiusLg,
-            border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+            border: Border.all(
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  const Icon(LucideIcons.sparkles, size: 20, color: AcadexColors.primary),
+                  const Icon(
+                    LucideIcons.sparkles,
+                    size: 20,
+                    color: AcadexColors.primary,
+                  ),
                   const SizedBox(width: 10),
                   Text(
                     'Timetable Configuration Summary',
-                    style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                    style: AcadexTypography.heading3(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ),
                   ),
                 ],
               ),
@@ -1331,14 +1669,50 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                 spacing: 16,
                 runSpacing: 10,
                 children: [
-                  _buildSummaryBadge('Department', deptMap[_selectedDepartmentId]?.name ?? _selectedDepartmentId ?? '-', isDark),
-                  _buildSummaryBadge(courseLabel, courseMap[_selectedCourseId]?.name ?? _selectedCourseId ?? '-', isDark),
-                  _buildSummaryBadge(semesterLabel, semesterMap[_selectedSemesterId] != null ? '$semesterLabel ${semesterMap[_selectedSemesterId]!.number}' : (_selectedSemesterId ?? '-'), isDark),
+                  _buildSummaryBadge(
+                    'Department',
+                    deptMap[_selectedDepartmentId]?.name ??
+                        _selectedDepartmentId ??
+                        '-',
+                    isDark,
+                  ),
+                  _buildSummaryBadge(
+                    courseLabel,
+                    courseMap[_selectedCourseId]?.name ??
+                        _selectedCourseId ??
+                        '-',
+                    isDark,
+                  ),
+                  _buildSummaryBadge(
+                    semesterLabel,
+                    semesterMap[_selectedSemesterId] != null
+                        ? '$semesterLabel ${semesterMap[_selectedSemesterId]!.number}'
+                        : (_selectedSemesterId ?? '-'),
+                    isDark,
+                  ),
                   if (termHelper.isSectionEnabled)
-                    _buildSummaryBadge(sectionLabel, sectionMap[_selectedSectionId]?.name ?? _selectedSectionId ?? '-', isDark),
-                  _buildSummaryBadge('Active Days', '${_activeDays.length} Days', isDark),
-                  _buildSummaryBadge('Periods', '${_periods.length} Slots', isDark),
-                  _buildSummaryBadge('Breaks', '${_breaks.length} Breaks', isDark),
+                    _buildSummaryBadge(
+                      sectionLabel,
+                      sectionMap[_selectedSectionId]?.name ??
+                          _selectedSectionId ??
+                          '-',
+                      isDark,
+                    ),
+                  _buildSummaryBadge(
+                    'Active Days',
+                    '${_activeDays.length} Days',
+                    isDark,
+                  ),
+                  _buildSummaryBadge(
+                    'Periods',
+                    '${_periods.length} Slots',
+                    isDark,
+                  ),
+                  _buildSummaryBadge(
+                    'Breaks',
+                    '${_breaks.length} Breaks',
+                    isDark,
+                  ),
                 ],
               ),
             ],
@@ -1353,7 +1727,9 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
           decoration: BoxDecoration(
             color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
             borderRadius: AcadexRadius.borderRadiusLg,
-            border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+            border: Border.all(
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+            ),
           ),
           child: ClipRRect(
             borderRadius: AcadexRadius.borderRadiusLg,
@@ -1377,8 +1753,18 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted).copyWith(fontSize: 10)),
-          Text(value, style: AcadexTypography.bodySmall(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: AcadexTypography.caption(
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            ).copyWith(fontSize: 10),
+          ),
+          Text(
+            value,
+            style: AcadexTypography.bodySmall(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ).copyWith(fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );
@@ -1391,10 +1777,17 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
     final canGoNext = _validateCurrentStep();
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 14),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 16 : 24,
+        vertical: 14,
+      ),
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
-        border: Border(top: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline)),
+        border: Border(
+          top: BorderSide(
+            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          ),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1410,24 +1803,55 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
 
           if (_currentStep < 4)
             ElevatedButton.icon(
-              onPressed: canGoNext ? () => setState(() => _currentStep++) : null,
-              icon: const Icon(LucideIcons.arrowRight, size: 16, color: Colors.white),
-              label: const Text('Next Step', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-              style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+              onPressed: canGoNext
+                  ? () => setState(() => _currentStep++)
+                  : null,
+              icon: const Icon(
+                LucideIcons.arrowRight,
+                size: 16,
+                color: Colors.white,
+              ),
+              label: const Text(
+                'Next Step',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AcadexColors.primary,
+              ),
             )
           else
             ElevatedButton.icon(
               onPressed: _isCreating ? null : _createAndOpenDesigner,
               icon: _isCreating
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(LucideIcons.sparkles, size: 16, color: Colors.white),
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(
+                      LucideIcons.sparkles,
+                      size: 16,
+                      color: Colors.white,
+                    ),
               label: Text(
                 _isCreating ? 'Creating...' : 'Create & Open Designer',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AcadexColors.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
               ),
             ),
         ],
@@ -1439,18 +1863,20 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
     switch (_currentStep) {
       case 0:
         final terminology = ref.read(terminologyProvider);
-        final prereqResult = AcademicPrerequisiteGuard.checkTimetablePrerequisites(
-          courses: ref.read(coursesProvider).valueOrNull ?? [],
-          academicYears: ref.read(academicYearsProvider).valueOrNull ?? [],
-          semesters: ref.read(semestersProvider).valueOrNull ?? [],
-          sections: ref.read(sectionsProvider).valueOrNull ?? [],
-          subjects: ref.read(subjectsProvider).valueOrNull ?? [],
-          facultyAssignments: ref.read(facultyAssignmentsProvider).valueOrNull ?? [],
-          rooms: ref.read(roomsProvider).valueOrNull ?? [],
-          isSectionEnabled: terminology.isSectionEnabled,
-          isRoomRequired: false,
-          termHelper: terminology,
-        );
+        final prereqResult =
+            AcademicPrerequisiteGuard.checkTimetablePrerequisites(
+              courses: ref.read(coursesProvider).valueOrNull ?? [],
+              academicYears: ref.read(academicYearsProvider).valueOrNull ?? [],
+              semesters: ref.read(semestersProvider).valueOrNull ?? [],
+              sections: ref.read(sectionsProvider).valueOrNull ?? [],
+              subjects: ref.read(subjectsProvider).valueOrNull ?? [],
+              facultyAssignments:
+                  ref.read(facultyAssignmentsProvider).valueOrNull ?? [],
+              rooms: ref.read(roomsProvider).valueOrNull ?? [],
+              isSectionEnabled: terminology.isSectionEnabled,
+              isRoomRequired: false,
+              termHelper: terminology,
+            );
         if (!prereqResult.isAllowed) return false;
 
         return _selectedDepartmentId != null &&
@@ -1518,7 +1944,8 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
         // Navigate to Designer using real server ID
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => TimetableDesignerScreen(timetableId: serverTimetableId),
+            builder: (_) =>
+                TimetableDesignerScreen(timetableId: serverTimetableId),
           ),
         );
       }

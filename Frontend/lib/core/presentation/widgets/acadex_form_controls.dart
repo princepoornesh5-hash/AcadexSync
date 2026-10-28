@@ -70,9 +70,7 @@ class _AcadexTextFieldState extends State<AcadexTextField> {
           onChanged: widget.onChanged,
           onFieldSubmitted: widget.onSubmitted,
           validator: widget.validator,
-          style: AcadexTypography.body(
-            color: AcadexColors.ink,
-          ),
+          style: AcadexTypography.body(color: AcadexColors.ink),
           decoration: InputDecoration(
             hintText: widget.hint,
             helperText: widget.helperText,
@@ -150,19 +148,13 @@ class AcadexDropdown<T> extends StatelessWidget {
             size: 16,
             color: AcadexColors.inkMuted,
           ),
-          style: AcadexTypography.body(
-            color: AcadexColors.ink,
-          ),
+          style: AcadexTypography.body(color: AcadexColors.ink),
           dropdownColor: AcadexColors.surface,
           decoration: InputDecoration(
             hintText: hint,
             errorText: errorText,
             prefixIcon: prefixIcon != null
-                ? Icon(
-                    prefixIcon,
-                    size: 18,
-                    color: AcadexColors.inkMuted,
-                  )
+                ? Icon(prefixIcon, size: 18, color: AcadexColors.inkMuted)
                 : null,
           ),
         ),
@@ -196,9 +188,7 @@ class AcadexSearchField extends StatelessWidget {
       autofocus: autofocus,
       onChanged: onChanged,
       onSubmitted: onSubmitted,
-      style: AcadexTypography.body(
-        color: AcadexColors.ink,
-      ),
+      style: AcadexTypography.body(color: AcadexColors.ink),
       decoration: InputDecoration(
         hintText: hint,
         prefixIcon: const Icon(
@@ -208,7 +198,11 @@ class AcadexSearchField extends StatelessWidget {
         ),
         suffixIcon: controller != null && controller!.text.isNotEmpty
             ? IconButton(
-                icon: const Icon(LucideIcons.x, size: 16, color: AcadexColors.inkMuted),
+                icon: const Icon(
+                  LucideIcons.x,
+                  size: 16,
+                  color: AcadexColors.inkMuted,
+                ),
                 onPressed: () {
                   controller?.clear();
                   onClear?.call();

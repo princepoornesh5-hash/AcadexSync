@@ -49,7 +49,8 @@ class EnrollStudentDialog extends ConsumerStatefulWidget {
   }
 
   @override
-  ConsumerState<EnrollStudentDialog> createState() => _EnrollStudentDialogState();
+  ConsumerState<EnrollStudentDialog> createState() =>
+      _EnrollStudentDialogState();
 }
 
 class _EnrollStudentDialogState extends ConsumerState<EnrollStudentDialog> {
@@ -63,19 +64,31 @@ class _EnrollStudentDialogState extends ConsumerState<EnrollStudentDialog> {
     final isDark = theme.brightness == Brightness.dark;
 
     final deptId = widget.section.departmentId;
-    final studentsState = ref.watch(studentsProvider((sectionId: null, departmentId: deptId.isNotEmpty ? deptId : null)));
-    final enrollmentsAsync = ref.watch(sectionEnrollmentsNotifierProvider(widget.section.id));
-    final enrolledStudentIds = (enrollmentsAsync.valueOrNull ?? []).map((e) => e.studentId).toSet();
+    final studentsState = ref.watch(
+      studentsProvider((
+        sectionId: null,
+        departmentId: deptId.isNotEmpty ? deptId : null,
+      )),
+    );
+    final enrollmentsAsync = ref.watch(
+      sectionEnrollmentsNotifierProvider(widget.section.id),
+    );
+    final enrolledStudentIds = (enrollmentsAsync.valueOrNull ?? [])
+        .map((e) => e.studentId)
+        .toSet();
 
     final authState = ref.watch(authProvider);
-    final canAddStudent = authState is AuthAuthenticated &&
+    final canAddStudent =
+        authState is AuthAuthenticated &&
         (authState.user.role == AppRole.collegeAdmin ||
-         authState.user.role == AppRole.superAdmin ||
-         authState.user.role == AppRole.hod);
+            authState.user.role == AppRole.superAdmin ||
+            authState.user.role == AppRole.hod);
 
     final allStudents = studentsState.items;
     final availableStudents = allStudents.where((s) {
-      if (!s.isActive || s.accountStatus != AccountStatus.active || s.lifecycleState != StudentLifecycleState.active) {
+      if (!s.isActive ||
+          s.accountStatus != AccountStatus.active ||
+          s.lifecycleState != StudentLifecycleState.active) {
         return false;
       }
       if (enrolledStudentIds.contains(s.id)) return false;
@@ -87,7 +100,8 @@ class _EnrollStudentDialogState extends ConsumerState<EnrollStudentDialog> {
       return nameMatches || rollMatches || emailMatches;
     }).toList();
 
-    final isSelectionValid = _selectedStudentId != null &&
+    final isSelectionValid =
+        _selectedStudentId != null &&
         availableStudents.any((s) => s.id == _selectedStudentId);
 
     Student? selectedStudent;
@@ -101,7 +115,9 @@ class _EnrollStudentDialogState extends ConsumerState<EnrollStudentDialog> {
     }
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.lg)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AcadexRadius.lg),
+      ),
       backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
       child: Container(
         width: 560,
@@ -120,7 +136,11 @@ class _EnrollStudentDialogState extends ConsumerState<EnrollStudentDialog> {
                     color: AcadexColors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(AcadexRadius.md),
                   ),
-                  child: const Icon(LucideIcons.userPlus, color: AcadexColors.primary, size: 20),
+                  child: const Icon(
+                    LucideIcons.userPlus,
+                    color: AcadexColors.primary,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -130,13 +150,17 @@ class _EnrollStudentDialogState extends ConsumerState<EnrollStudentDialog> {
                       Text(
                         'Enroll Student in Section',
                         style: AcadexTypography.heading2(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
                         ).copyWith(fontSize: 18),
                       ),
                       Text(
                         'Section ${widget.section.name} • Connect real student identity',
                         style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -181,8 +205,13 @@ class _EnrollStudentDialogState extends ConsumerState<EnrollStudentDialog> {
               decoration: InputDecoration(
                 hintText: 'Search student by name, roll number, or email...',
                 prefixIcon: const Icon(LucideIcons.search, size: 18),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AcadexRadius.md),
+                ),
               ),
               onChanged: (val) => setState(() => _searchQuery = val.trim()),
             ),
@@ -193,112 +222,161 @@ class _EnrollStudentDialogState extends ConsumerState<EnrollStudentDialog> {
               child: studentsState.isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : availableStudents.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              LucideIcons.userX,
+                              size: 32,
+                              color: AcadexColors.inkMuted,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _searchQuery.isNotEmpty
+                                  ? 'No matching eligible students found'
+                                  : 'No eligible students are available.',
+                              style: AcadexTypography.title(
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _searchQuery.isNotEmpty
+                                  ? 'No active unenrolled students match "$_searchQuery".'
+                                  : 'All active department students are already enrolled or none exist.',
+                              style: AcadexTypography.caption(
+                                color: AcadexColors.inkMuted,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            if (canAddStudent && _searchQuery.isEmpty) ...[
+                              const SizedBox(height: 12),
+                              OutlinedButton.icon(
+                                icon: const Icon(
+                                  LucideIcons.userPlus,
+                                  size: 14,
+                                ),
+                                label: const Text('Add Student'),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  final deptQuery =
+                                      widget.section.departmentId.isNotEmpty
+                                      ? '?departmentId=${widget.section.departmentId}'
+                                      : '';
+                                  context.push(
+                                    '/academics/students/new$deptQuery',
+                                  );
+                                },
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: availableStudents.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 6),
+                      itemBuilder: (context, index) {
+                        final student = availableStudents[index];
+                        final isSelected = student.id == _selectedStudentId;
+
+                        return InkWell(
+                          key: Key('student_item_${student.id}'),
+                          borderRadius: BorderRadius.circular(AcadexRadius.md),
+                          onTap: () =>
+                              setState(() => _selectedStudentId = student.id),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AcadexColors.primary.withValues(alpha: 0.1)
+                                  : (isDark
+                                        ? AcadexColors.darkSurfaceCard
+                                        : AcadexColors.canvasSoft),
+                              borderRadius: BorderRadius.circular(
+                                AcadexRadius.md,
+                              ),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AcadexColors.primary
+                                    : Colors.transparent,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Row(
                               children: [
-                                const Icon(LucideIcons.userX, size: 32, color: AcadexColors.inkMuted),
-                                const SizedBox(height: 8),
-                                Text(
-                                  _searchQuery.isNotEmpty
-                                      ? 'No matching eligible students found'
-                                      : 'No eligible students are available.',
-                                  style: AcadexTypography.title(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _searchQuery.isNotEmpty
-                                      ? 'No active unenrolled students match "$_searchQuery".'
-                                      : 'All active department students are already enrolled or none exist.',
-                                  style: AcadexTypography.caption(color: AcadexColors.inkMuted),
-                                  textAlign: TextAlign.center,
-                                ),
-                                if (canAddStudent && _searchQuery.isEmpty) ...[
-                                  const SizedBox(height: 12),
-                                  OutlinedButton.icon(
-                                    icon: const Icon(LucideIcons.userPlus, size: 14),
-                                    label: const Text('Add Student'),
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                      final deptQuery = widget.section.departmentId.isNotEmpty
-                                          ? '?departmentId=${widget.section.departmentId}'
-                                          : '';
-                                      context.push('/academics/students/new$deptQuery');
-                                    },
+                                CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: isSelected
+                                      ? AcadexColors.primary
+                                      : AcadexColors.inkMuted.withValues(
+                                          alpha: 0.2,
+                                        ),
+                                  child: Text(
+                                    student.name.isNotEmpty
+                                        ? student.name[0].toUpperCase()
+                                        : 'S',
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : (isDark
+                                                ? AcadexColors.darkInk
+                                                : AcadexColors.ink),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
                                   ),
-                                ],
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        student.name,
+                                        style:
+                                            AcadexTypography.body(
+                                              color: isDark
+                                                  ? AcadexColors.darkInk
+                                                  : AcadexColors.ink,
+                                            ).copyWith(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 13,
+                                            ),
+                                      ),
+                                      Text(
+                                        'Roll: ${student.rollNumber.isNotEmpty ? student.rollNumber : "N/A"} • ${student.email}',
+                                        style: AcadexTypography.caption(
+                                          color: isDark
+                                              ? AcadexColors.darkInkMuted
+                                              : AcadexColors.inkMuted,
+                                        ).copyWith(fontSize: 11),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (isSelected)
+                                  const Icon(
+                                    LucideIcons.checkCircle2,
+                                    size: 18,
+                                    color: AcadexColors.primary,
+                                  ),
                               ],
                             ),
                           ),
-                        )
-                      : ListView.separated(
-                          itemCount: availableStudents.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 6),
-                          itemBuilder: (context, index) {
-                            final student = availableStudents[index];
-                            final isSelected = student.id == _selectedStudentId;
-
-                            return InkWell(
-                              key: Key('student_item_${student.id}'),
-                              borderRadius: BorderRadius.circular(AcadexRadius.md),
-                              onTap: () => setState(() => _selectedStudentId = student.id),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? AcadexColors.primary.withValues(alpha: 0.1)
-                                      : (isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft),
-                                  borderRadius: BorderRadius.circular(AcadexRadius.md),
-                                  border: Border.all(
-                                    color: isSelected ? AcadexColors.primary : Colors.transparent,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 16,
-                                      backgroundColor: isSelected ? AcadexColors.primary : AcadexColors.inkMuted.withValues(alpha: 0.2),
-                                      child: Text(
-                                        student.name.isNotEmpty ? student.name[0].toUpperCase() : 'S',
-                                        style: TextStyle(
-                                          color: isSelected ? Colors.white : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            student.name,
-                                            style: AcadexTypography.body(
-                                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                                            ).copyWith(fontWeight: FontWeight.w600, fontSize: 13),
-                                          ),
-                                          Text(
-                                            'Roll: ${student.rollNumber.isNotEmpty ? student.rollNumber : "N/A"} • ${student.email}',
-                                            style: AcadexTypography.caption(
-                                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                                            ).copyWith(fontSize: 11),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    if (isSelected)
-                                      const Icon(LucideIcons.checkCircle2, size: 18, color: AcadexColors.primary),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+                        );
+                      },
+                    ),
             ),
             const SizedBox(height: 12),
 
@@ -310,30 +388,44 @@ class _EnrollStudentDialogState extends ConsumerState<EnrollStudentDialog> {
                 decoration: BoxDecoration(
                   color: AcadexColors.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(AcadexRadius.md),
-                  border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.25)),
+                  border: Border.all(
+                    color: AcadexColors.primary.withValues(alpha: 0.25),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        const Icon(LucideIcons.sparkles, size: 14, color: AcadexColors.primary),
+                        const Icon(
+                          LucideIcons.sparkles,
+                          size: 14,
+                          color: AcadexColors.primary,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           'Enrollment Summary',
-                          style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(fontWeight: FontWeight.w700),
+                          style: AcadexTypography.caption(
+                            color: AcadexColors.primary,
+                          ).copyWith(fontWeight: FontWeight.w700),
                         ),
                       ],
                     ),
                     const SizedBox(height: 6),
                     Text(
                       'Enrolling: ${selectedStudent.name} (${selectedStudent.rollNumber.isNotEmpty ? selectedStudent.rollNumber : selectedStudent.email})',
-                      style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
+                      style: AcadexTypography.body(
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       'Into: Section ${widget.section.name} • ${widget.course?.name ?? "Course"} • ${widget.semester?.name ?? "Semester"}',
-                      style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted).copyWith(fontSize: 11),
+                      style: AcadexTypography.caption(
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
+                      ).copyWith(fontSize: 11),
                     ),
                   ],
                 ),
@@ -346,7 +438,9 @@ class _EnrollStudentDialogState extends ConsumerState<EnrollStudentDialog> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
-                  onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
+                  onPressed: _isSubmitting
+                      ? null
+                      : () => Navigator.of(context).pop(),
                   child: const Text('Cancel'),
                 ),
                 const SizedBox(width: 8),
@@ -360,25 +454,38 @@ class _EnrollStudentDialogState extends ConsumerState<EnrollStudentDialog> {
                       : () async {
                           setState(() => _isSubmitting = true);
                           try {
-                            final effectiveCourseId = widget.course?.id.isNotEmpty == true
+                            final effectiveCourseId =
+                                widget.course?.id.isNotEmpty == true
                                 ? widget.course!.id
                                 : widget.section.courseId;
-                            final effectiveSemesterId = widget.semester?.id.isNotEmpty == true
+                            final effectiveSemesterId =
+                                widget.semester?.id.isNotEmpty == true
                                 ? widget.semester!.id
                                 : widget.section.semesterId;
-                            final effectiveAcademicYearId = widget.academicYear?.id.isNotEmpty == true
+                            final effectiveAcademicYearId =
+                                widget.academicYear?.id.isNotEmpty == true
                                 ? widget.academicYear!.id
                                 : widget.section.academicYearId;
 
-                            await ref.read(sectionEnrollmentsNotifierProvider(widget.section.id).notifier).enrollStudent(
-                              studentId: _selectedStudentId!,
-                              courseId: effectiveCourseId,
-                              academicYearId: effectiveAcademicYearId,
-                              semesterId: effectiveSemesterId,
-                              sectionId: widget.section.id,
-                            );
+                            await ref
+                                .read(
+                                  sectionEnrollmentsNotifierProvider(
+                                    widget.section.id,
+                                  ).notifier,
+                                )
+                                .enrollStudent(
+                                  studentId: _selectedStudentId!,
+                                  courseId: effectiveCourseId,
+                                  academicYearId: effectiveAcademicYearId,
+                                  semesterId: effectiveSemesterId,
+                                  sectionId: widget.section.id,
+                                );
                             if (widget.section.departmentId.isNotEmpty) {
-                              ref.invalidate(departmentSetupProvider(widget.section.departmentId));
+                              ref.invalidate(
+                                departmentSetupProvider(
+                                  widget.section.departmentId,
+                                ),
+                              );
                             }
                             if (context.mounted) {
                               AcadexSnackBar.showSuccess(
@@ -389,9 +496,11 @@ class _EnrollStudentDialogState extends ConsumerState<EnrollStudentDialog> {
                               SetupContinuationDialog.show(
                                 context,
                                 title: 'Student Enrolled Successfully',
-                                message: 'Student assigned to section cohort. Continue to timetable scheduling.',
+                                message:
+                                    'Student assigned to section cohort. Continue to timetable scheduling.',
                                 primaryActionLabel: 'Continue to Timetable',
-                                onContinue: () => context.push('/timetable/manage'),
+                                onContinue: () =>
+                                    context.push('/timetable/manage'),
                                 secondaryActionLabel: 'Done',
                               );
                             }
@@ -400,7 +509,8 @@ class _EnrollStudentDialogState extends ConsumerState<EnrollStudentDialog> {
                               AcadexSnackBar.showError(
                                 context,
                                 e,
-                                fallbackMessage: 'Student is already enrolled in this section.',
+                                fallbackMessage:
+                                    'Student is already enrolled in this section.',
                               );
                             }
                           } finally {

@@ -38,20 +38,34 @@ class StudentCertificateDashboard extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
                   child: AcadexPageHeader(
                     title: 'My Certificates',
-                    subtitle: 'Manage your portfolio of academic achievements, credentials, and institutional requests',
+                    subtitle:
+                        'Manage your portfolio of academic achievements, credentials, and institutional requests',
                     actions: [
                       OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          side: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          side: BorderSide(
+                            color: isDark
+                                ? AcadexColors.darkHairline
+                                : AcadexColors.hairline,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              AcadexRadius.md,
+                            ),
+                          ),
                         ),
                         icon: const Icon(LucideIcons.fileClock, size: 16),
                         label: Text(
                           'Official Requests',
                           style: GoogleFonts.inter(
                             fontWeight: FontWeight.w600,
-                            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                            color: isDark
+                                ? AcadexColors.darkInkSecondary
+                                : AcadexColors.inkSecondary,
                           ),
                         ),
                         onPressed: () => context.go('/certificates/requests'),
@@ -61,12 +75,22 @@ class StudentCertificateDashboard extends ConsumerWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AcadexColors.primary,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              AcadexRadius.md,
+                            ),
+                          ),
                           elevation: 0,
                         ),
                         icon: const Icon(LucideIcons.uploadCloud, size: 16),
-                        label: Text('Upload Certificate', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                        label: Text(
+                          'Upload Certificate',
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                        ),
                         onPressed: () => context.go('/certificates/upload'),
                       ),
                     ],
@@ -98,35 +122,77 @@ class StudentCertificateDashboard extends ConsumerWidget {
                           Expanded(
                             child: TextField(
                               decoration: InputDecoration(
-                                hintText: 'Search certificates by title, issuer, or category...',
+                                hintText:
+                                    'Search certificates by title, issuer, or category...',
                                 prefixIcon: Icon(
                                   LucideIcons.search,
                                   size: 18,
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  color: isDark
+                                      ? AcadexColors.darkInkMuted
+                                      : AcadexColors.inkMuted,
                                 ),
                                 filled: true,
-                                fillColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                                fillColor: isDark
+                                    ? AcadexColors.darkSurface
+                                    : AcadexColors.surface,
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AcadexRadius.md),
-                                  borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                                  borderRadius: BorderRadius.circular(
+                                    AcadexRadius.md,
+                                  ),
+                                  borderSide: BorderSide(
+                                    color: isDark
+                                        ? AcadexColors.darkHairline
+                                        : AcadexColors.hairline,
+                                  ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AcadexRadius.md),
-                                  borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                                  borderRadius: BorderRadius.circular(
+                                    AcadexRadius.md,
+                                  ),
+                                  borderSide: BorderSide(
+                                    color: isDark
+                                        ? AcadexColors.darkHairline
+                                        : AcadexColors.hairline,
+                                  ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AcadexRadius.md),
-                                  borderSide: const BorderSide(color: AcadexColors.primary, width: 1.5),
+                                  borderRadius: BorderRadius.circular(
+                                    AcadexRadius.md,
+                                  ),
+                                  borderSide: const BorderSide(
+                                    color: AcadexColors.primary,
+                                    width: 1.5,
+                                  ),
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
                                 suffixIcon: query.isNotEmpty
                                     ? IconButton(
-                                        icon: const Icon(LucideIcons.x, size: 16),
-                                        onPressed: () => ref.read(certificateSearchQueryProvider.notifier).state = '',
+                                        icon: const Icon(
+                                          LucideIcons.x,
+                                          size: 16,
+                                        ),
+                                        onPressed: () =>
+                                            ref
+                                                    .read(
+                                                      certificateSearchQueryProvider
+                                                          .notifier,
+                                                    )
+                                                    .state =
+                                                '',
                                       )
                                     : null,
                               ),
-                              onChanged: (v) => ref.read(certificateSearchQueryProvider.notifier).state = v,
+                              onChanged: (v) =>
+                                  ref
+                                          .read(
+                                            certificateSearchQueryProvider
+                                                .notifier,
+                                          )
+                                          .state =
+                                      v,
                             ),
                           ),
                         ],
@@ -134,7 +200,9 @@ class StudentCertificateDashboard extends ConsumerWidget {
                       const SizedBox(height: 12),
                       _FilterChipsBar(
                         filter: filter,
-                        onChanged: (f) => ref.read(certificateFilterProvider.notifier).state = f,
+                        onChanged: (f) =>
+                            ref.read(certificateFilterProvider.notifier).state =
+                                f,
                       ),
                     ],
                   ),
@@ -144,7 +212,9 @@ class StudentCertificateDashboard extends ConsumerWidget {
               // Content List / Empty / Loading / Error
               certsAsync.when(
                 loading: () => const SliverFillRemaining(
-                  child: AcadexLoadingState(message: 'Loading your certificate portfolio...'),
+                  child: AcadexLoadingState(
+                    message: 'Loading your certificate portfolio...',
+                  ),
                 ),
                 error: (e, _) => SliverFillRemaining(
                   child: AcadexErrorState(
@@ -158,16 +228,33 @@ class StudentCertificateDashboard extends ConsumerWidget {
                     final hasFilter = filter.isActive || query.isNotEmpty;
                     return SliverFillRemaining(
                       child: AcadexEmptyState(
-                        icon: hasFilter ? LucideIcons.filterX : LucideIcons.award,
-                        title: hasFilter ? 'No matching certificates' : 'No certificates uploaded yet',
+                        icon: hasFilter
+                            ? LucideIcons.filterX
+                            : LucideIcons.award,
+                        title: hasFilter
+                            ? 'No matching certificates'
+                            : 'No certificates uploaded yet',
                         subtitle: hasFilter
                             ? 'Try clearing your search query or adjusting your category filters.'
                             : 'Upload your external certifications, course achievements, and workshop credentials to build your verified portfolio.',
-                        actionLabel: hasFilter ? 'Reset Filters' : 'Upload First Certificate',
+                        actionLabel: hasFilter
+                            ? 'Reset Filters'
+                            : 'Upload First Certificate',
                         onActionTap: hasFilter
                             ? () {
-                                ref.read(certificateSearchQueryProvider.notifier).state = '';
-                                ref.read(certificateFilterProvider.notifier).state = const CertificateFilter();
+                                ref
+                                        .read(
+                                          certificateSearchQueryProvider
+                                              .notifier,
+                                        )
+                                        .state =
+                                    '';
+                                ref
+                                        .read(
+                                          certificateFilterProvider.notifier,
+                                        )
+                                        .state =
+                                    const CertificateFilter();
                               }
                             : () => context.go('/certificates/upload'),
                       ),
@@ -177,18 +264,19 @@ class StudentCertificateDashboard extends ConsumerWidget {
                   return SliverPadding(
                     padding: const EdgeInsets.fromLTRB(24, 0, 24, 80),
                     sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (ctx, i) {
-                          final c = certs[i];
-                          return CertificateCard(
-                            certificate: c,
-                            onTap: () => context.go('/certificates/detail/${c.id}'),
-                            onEdit: () => context.go('/certificates/edit/${c.id}', extra: c),
-                            onDelete: () => _confirmDelete(context, ref, c),
-                          );
-                        },
-                        childCount: certs.length,
-                      ),
+                      delegate: SliverChildBuilderDelegate((ctx, i) {
+                        final c = certs[i];
+                        return CertificateCard(
+                          certificate: c,
+                          onTap: () =>
+                              context.go('/certificates/detail/${c.id}'),
+                          onEdit: () => context.go(
+                            '/certificates/edit/${c.id}',
+                            extra: c,
+                          ),
+                          onDelete: () => _confirmDelete(context, ref, c),
+                        );
+                      }, childCount: certs.length),
                     ),
                   );
                 },
@@ -200,7 +288,11 @@ class StudentCertificateDashboard extends ConsumerWidget {
     );
   }
 
-  Future<void> _confirmDelete(BuildContext context, WidgetRef ref, Certificate cert) async {
+  Future<void> _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    Certificate cert,
+  ) async {
     final authState = ref.read(authProvider);
     if (authState is! AuthAuthenticated) return;
     final user = authState.user;
@@ -208,9 +300,16 @@ class StudentCertificateDashboard extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.lg)),
-        title: Text('Remove Certificate', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
-        content: Text('Are you sure you want to remove "${cert.title}"? This will permanently delete the certificate and its physical file.'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AcadexRadius.lg),
+        ),
+        title: Text(
+          'Remove Certificate',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'Are you sure you want to remove "${cert.title}"? This will permanently delete the certificate and its physical file.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -229,7 +328,9 @@ class StudentCertificateDashboard extends ConsumerWidget {
     );
 
     if (confirmed == true) {
-      await ref.read(certificateRepositoryProvider).deleteCertificate(cert.id, user.firebaseUid ?? user.id);
+      await ref
+          .read(certificateRepositoryProvider)
+          .deleteCertificate(cert.id, user.firebaseUid ?? user.id);
     }
   }
 }
@@ -241,9 +342,15 @@ class _SummaryCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final total = certs.length;
-    final verified = certs.where((c) => c.isVerified || c.status == CertificateStatus.verified).length;
-    final pending = certs.where((c) => !c.isVerified && c.status != CertificateStatus.archived).length;
-    final archived = certs.where((c) => c.status == CertificateStatus.archived).length;
+    final verified = certs
+        .where((c) => c.isVerified || c.status == CertificateStatus.verified)
+        .length;
+    final pending = certs
+        .where((c) => !c.isVerified && c.status != CertificateStatus.archived)
+        .length;
+    final archived = certs
+        .where((c) => c.status == CertificateStatus.archived)
+        .length;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -257,23 +364,71 @@ class _SummaryCards extends StatelessWidget {
             mainAxisSpacing: 12,
             childAspectRatio: 1.6,
             children: [
-              _MetricCard(label: 'Total', value: total.toString(), icon: LucideIcons.award, color: AcadexColors.primary),
-              _MetricCard(label: 'Verified', value: verified.toString(), icon: LucideIcons.badgeCheck, color: AcadexColors.success),
-              _MetricCard(label: 'Pending', value: pending.toString(), icon: LucideIcons.clock, color: AcadexColors.warning),
-              _MetricCard(label: 'Archived', value: archived.toString(), icon: LucideIcons.archive, color: AcadexColors.inkMuted),
+              _MetricCard(
+                label: 'Total',
+                value: total.toString(),
+                icon: LucideIcons.award,
+                color: AcadexColors.primary,
+              ),
+              _MetricCard(
+                label: 'Verified',
+                value: verified.toString(),
+                icon: LucideIcons.badgeCheck,
+                color: AcadexColors.success,
+              ),
+              _MetricCard(
+                label: 'Pending',
+                value: pending.toString(),
+                icon: LucideIcons.clock,
+                color: AcadexColors.warning,
+              ),
+              _MetricCard(
+                label: 'Archived',
+                value: archived.toString(),
+                icon: LucideIcons.archive,
+                color: AcadexColors.inkMuted,
+              ),
             ],
           );
         }
 
         return Row(
           children: [
-            Expanded(child: _MetricCard(label: 'Total Certificates', value: total.toString(), icon: LucideIcons.award, color: AcadexColors.primary)),
+            Expanded(
+              child: _MetricCard(
+                label: 'Total Certificates',
+                value: total.toString(),
+                icon: LucideIcons.award,
+                color: AcadexColors.primary,
+              ),
+            ),
             const SizedBox(width: 14),
-            Expanded(child: _MetricCard(label: 'Verified Credentials', value: verified.toString(), icon: LucideIcons.badgeCheck, color: AcadexColors.success)),
+            Expanded(
+              child: _MetricCard(
+                label: 'Verified Credentials',
+                value: verified.toString(),
+                icon: LucideIcons.badgeCheck,
+                color: AcadexColors.success,
+              ),
+            ),
             const SizedBox(width: 14),
-            Expanded(child: _MetricCard(label: 'Pending Verification', value: pending.toString(), icon: LucideIcons.clock, color: AcadexColors.warning)),
+            Expanded(
+              child: _MetricCard(
+                label: 'Pending Verification',
+                value: pending.toString(),
+                icon: LucideIcons.clock,
+                color: AcadexColors.warning,
+              ),
+            ),
             const SizedBox(width: 14),
-            Expanded(child: _MetricCard(label: 'Archived Records', value: archived.toString(), icon: LucideIcons.archive, color: AcadexColors.inkMuted)),
+            Expanded(
+              child: _MetricCard(
+                label: 'Archived Records',
+                value: archived.toString(),
+                icon: LucideIcons.archive,
+                color: AcadexColors.inkMuted,
+              ),
+            ),
           ],
         );
       },
@@ -303,10 +458,14 @@ class _MetricCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: BorderRadius.circular(AcadexRadius.lg),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.02),
+            color: isDark
+                ? Colors.black26
+                : Colors.black.withValues(alpha: 0.02),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -340,7 +499,9 @@ class _MetricCard extends StatelessWidget {
                   label,
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -374,23 +535,35 @@ class _FilterChipsBar extends StatelessWidget {
           _Chip(
             label: 'Verified ✓',
             isSelected: filter.isVerified == true,
-            onTap: () => onChanged(filter.copyWith(isVerified: filter.isVerified == true ? null : true)),
+            onTap: () => onChanged(
+              filter.copyWith(
+                isVerified: filter.isVerified == true ? null : true,
+              ),
+            ),
           ),
           const SizedBox(width: 8),
           _Chip(
             label: 'Pending',
             isSelected: filter.isVerified == false,
-            onTap: () => onChanged(filter.copyWith(isVerified: filter.isVerified == false ? null : false)),
+            onTap: () => onChanged(
+              filter.copyWith(
+                isVerified: filter.isVerified == false ? null : false,
+              ),
+            ),
           ),
           const SizedBox(width: 8),
-          ...CertificateType.values.map((t) => Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: _Chip(
-                  label: t.displayName,
-                  isSelected: filter.type == t,
-                  onTap: () => onChanged(filter.copyWith(type: filter.type == t ? null : t)),
+          ...CertificateType.values.map(
+            (t) => Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _Chip(
+                label: t.displayName,
+                isSelected: filter.type == t,
+                onTap: () => onChanged(
+                  filter.copyWith(type: filter.type == t ? null : t),
                 ),
-              )),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -436,7 +609,9 @@ class _Chip extends StatelessWidget {
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             color: isSelected
                 ? Colors.white
-                : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                : (isDark
+                      ? AcadexColors.darkInkSecondary
+                      : AcadexColors.inkSecondary),
           ),
         ),
       ),

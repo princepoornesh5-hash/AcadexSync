@@ -78,11 +78,17 @@ class CalendarOverride {
       timetableId: json['timetableId']?.toString(),
       timetableEntryId: json['timetableEntryId']?.toString(),
       date: (json['date'] ?? '').toString(),
-      type: CalendarOverrideType.fromString((json['type'] ?? 'HOLIDAY').toString()),
-      scope: CalendarOverrideScope.fromString((json['scope'] ?? 'COLLEGE').toString()),
+      type: CalendarOverrideType.fromString(
+        (json['type'] ?? 'HOLIDAY').toString(),
+      ),
+      scope: CalendarOverrideScope.fromString(
+        (json['scope'] ?? 'COLLEGE').toString(),
+      ),
       reason: (json['reason'] ?? '').toString(),
       createdBy: json['createdBy']?.toString(),
-      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : null,
     );
   }
 

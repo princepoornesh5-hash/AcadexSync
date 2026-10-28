@@ -17,16 +17,16 @@ import '../providers/student_portal_providers.dart';
 class StudentAttendancePortalScreen extends ConsumerStatefulWidget {
   final int initialTab;
 
-  const StudentAttendancePortalScreen({
-    super.key,
-    this.initialTab = 0,
-  });
+  const StudentAttendancePortalScreen({super.key, this.initialTab = 0});
 
   @override
-  ConsumerState<StudentAttendancePortalScreen> createState() => _StudentAttendancePortalScreenState();
+  ConsumerState<StudentAttendancePortalScreen> createState() =>
+      _StudentAttendancePortalScreenState();
 }
 
-class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendancePortalScreen> with SingleTickerProviderStateMixin {
+class _StudentAttendancePortalScreenState
+    extends ConsumerState<StudentAttendancePortalScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _subjectSearchQuery = '';
 
@@ -66,7 +66,8 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
           children: [
             AcadexPageHeader(
               title: 'Student Attendance Portal',
-              subtitle: 'Track your semester standing, subject metrics, attendance calendar, and recovery trajectories.',
+              subtitle:
+                  'Track your semester standing, subject metrics, attendance calendar, and recovery trajectories.',
               actions: [
                 AcadexButton(
                   label: 'Official Reports',
@@ -81,10 +82,18 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
             // Navigation Tabs
             Container(
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                color: isDark
+                    ? AcadexColors.darkSurfaceCard
+                    : AcadexColors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-                boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+                border: Border.all(
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
+                ),
+                boxShadow: isDark
+                    ? AcadexShadows.darkSm
+                    : AcadexShadows.lightSm,
               ),
               child: TabBar(
                 controller: _tabController,
@@ -94,13 +103,29 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                 indicatorWeight: 3,
                 labelColor: const Color(0xFF003366),
                 unselectedLabelColor: const Color(0xFF07111F),
-                labelStyle: AcadexTypography.bodySmall().copyWith(fontWeight: FontWeight.w700),
-                unselectedLabelStyle: AcadexTypography.bodySmall().copyWith(fontWeight: FontWeight.w500),
+                labelStyle: AcadexTypography.bodySmall().copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+                unselectedLabelStyle: AcadexTypography.bodySmall().copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
                 tabs: const [
-                  Tab(icon: Icon(LucideIcons.layoutDashboard, size: 16), text: 'Dashboard'),
-                  Tab(icon: Icon(LucideIcons.bookOpen, size: 16), text: 'Subject Attendance'),
-                  Tab(icon: Icon(LucideIcons.calendarDays, size: 16), text: 'Attendance Calendar'),
-                  Tab(icon: Icon(LucideIcons.sparkles, size: 16), text: 'Attendance Insights'),
+                  Tab(
+                    icon: Icon(LucideIcons.layoutDashboard, size: 16),
+                    text: 'Dashboard',
+                  ),
+                  Tab(
+                    icon: Icon(LucideIcons.bookOpen, size: 16),
+                    text: 'Subject Attendance',
+                  ),
+                  Tab(
+                    icon: Icon(LucideIcons.calendarDays, size: 16),
+                    text: 'Attendance Calendar',
+                  ),
+                  Tab(
+                    icon: Icon(LucideIcons.sparkles, size: 16),
+                    text: 'Attendance Insights',
+                  ),
                 ],
               ),
             ),
@@ -112,7 +137,13 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                 controller: _tabController,
                 children: [
                   // Tab 0: Dashboard
-                  _buildDashboardTab(context, summaryAsync, subjectsAsync, alertsAsync, isDark),
+                  _buildDashboardTab(
+                    context,
+                    summaryAsync,
+                    subjectsAsync,
+                    alertsAsync,
+                    isDark,
+                  ),
 
                   // Tab 1: Subject-Wise Attendance
                   _buildSubjectsTab(context, subjectsAsync, isDark),
@@ -144,7 +175,9 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
     return summaryAsync.when(
       loading: () => const Center(
         child: SingleChildScrollView(
-          child: AcadexLoadingState(message: 'Calculating attendance standing...'),
+          child: AcadexLoadingState(
+            message: 'Calculating attendance standing...',
+          ),
         ),
       ),
       error: (err, _) => Center(
@@ -167,11 +200,17 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                   decoration: BoxDecoration(
                     color: AcadexColors.error.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AcadexColors.error.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: AcadexColors.error.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(LucideIcons.alertTriangle, color: AcadexColors.error, size: 24),
+                      const Icon(
+                        LucideIcons.alertTriangle,
+                        color: AcadexColors.error,
+                        size: 24,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -179,12 +218,16 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                           children: [
                             Text(
                               'Low Attendance Notice (${summary.attendancePercentage.toStringAsFixed(1)}%)',
-                              style: AcadexTypography.body(color: AcadexColors.error).copyWith(fontWeight: FontWeight.w700),
+                              style: AcadexTypography.body(
+                                color: AcadexColors.error,
+                              ).copyWith(fontWeight: FontWeight.w700),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               'Your attendance is below the institutional 75% requirement. You must attend ${summary.recoverySessionsNeeded} consecutive classes to return to good standing.',
-                              style: AcadexTypography.bodySmall(color: AcadexColors.error),
+                              style: AcadexTypography.bodySmall(
+                                color: AcadexColors.error,
+                              ),
                             ),
                           ],
                         ),
@@ -210,8 +253,12 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                   _buildStatCard(
                     'Overall Attendance',
                     '${summary.attendancePercentage.toStringAsFixed(1)}%',
-                    summary.attendancePercentage >= 75 ? LucideIcons.checkCircle2 : LucideIcons.alertCircle,
-                    summary.attendancePercentage >= 75 ? AcadexColors.success : AcadexColors.error,
+                    summary.attendancePercentage >= 75
+                        ? LucideIcons.checkCircle2
+                        : LucideIcons.alertCircle,
+                    summary.attendancePercentage >= 75
+                        ? AcadexColors.success
+                        : AcadexColors.error,
                     isDark,
                   ),
                   _buildStatCard(
@@ -225,7 +272,9 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                     'Classes Absent',
                     '${summary.absentCount}',
                     LucideIcons.userX,
-                    summary.absentCount > 0 ? AcadexColors.error : AcadexColors.inkMuted,
+                    summary.absentCount > 0
+                        ? AcadexColors.error
+                        : AcadexColors.inkMuted,
                     isDark,
                   ),
                   _buildStatCard(
@@ -251,7 +300,9 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                 loading: () => const SizedBox.shrink(),
                 error: (_, _) => const SizedBox.shrink(),
                 data: (subjects) {
-                  final lowSubjects = subjects.where((s) => s.isBelowThreshold).toList();
+                  final lowSubjects = subjects
+                      .where((s) => s.isBelowThreshold)
+                      .toList();
                   if (lowSubjects.isEmpty) return const SizedBox.shrink();
 
                   return Column(
@@ -259,18 +310,28 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                     children: [
                       Row(
                         children: [
-                          const Icon(LucideIcons.alertCircle, size: 18, color: AcadexColors.error),
+                          const Icon(
+                            LucideIcons.alertCircle,
+                            size: 18,
+                            color: AcadexColors.error,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Subjects Requiring Attention (${lowSubjects.length})',
-                              style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                              style: AcadexTypography.heading3(
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
+                              ),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
-                      ...lowSubjects.map((s) => _buildSubjectCard(context, s, isDark)),
+                      ...lowSubjects.map(
+                        (s) => _buildSubjectCard(context, s, isDark),
+                      ),
                       const SizedBox(height: 28),
                     ],
                   );
@@ -280,12 +341,18 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
               // Recent Attendance Activity Header & Action
               Row(
                 children: [
-                  const Icon(LucideIcons.calendarCheck, size: 18, color: AcadexColors.primary),
+                  const Icon(
+                    LucideIcons.calendarCheck,
+                    size: 18,
+                    color: AcadexColors.primary,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Quick Subject Overview',
-                      style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                      style: AcadexTypography.heading3(
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ),
                     ),
                   ),
                   TextButton(
@@ -303,12 +370,16 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                   if (subjects.isEmpty) {
                     return const AcadexEmptyState(
                       title: 'No Subjects Enrolled',
-                      subtitle: 'No academic course subjects found for the active semester.',
+                      subtitle:
+                          'No academic course subjects found for the active semester.',
                     );
                   }
 
                   return Column(
-                    children: subjects.take(3).map((s) => _buildSubjectCard(context, s, isDark)).toList(),
+                    children: subjects
+                        .take(3)
+                        .map((s) => _buildSubjectCard(context, s, isDark))
+                        .toList(),
                   );
                 },
               ),
@@ -328,7 +399,9 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
     bool isDark,
   ) {
     return subjectsAsync.when(
-      loading: () => const AcadexLoadingState(message: 'Loading subject attendance breakdown...'),
+      loading: () => const AcadexLoadingState(
+        message: 'Loading subject attendance breakdown...',
+      ),
       error: (err, _) => AcadexErrorState(
         message: 'Failed to load subject attendance: $err',
         onRetry: () => ref.refresh(studentDetailedSubjectsProvider),
@@ -351,11 +424,20 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                 hintText: 'Search subjects by name, code, or faculty...',
                 prefixIcon: const Icon(LucideIcons.search, size: 16),
                 filled: true,
-                fillColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                fillColor: isDark
+                    ? AcadexColors.darkSurface
+                    : AcadexColors.surface,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                  borderSide: BorderSide(
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
+                  ),
                 ),
               ),
               onChanged: (val) {
@@ -402,7 +484,9 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
     final daySessions = ref.watch(studentSelectedDateSessionsProvider);
 
     return calendarAsync.when(
-      loading: () => const AcadexLoadingState(message: 'Loading attendance calendar history...'),
+      loading: () => const AcadexLoadingState(
+        message: 'Loading attendance calendar history...',
+      ),
       error: (err, _) => AcadexErrorState(
         message: 'Failed to load calendar: $err',
         onRetry: () => ref.refresh(studentAttendanceCalendarProvider),
@@ -414,12 +498,18 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
             children: [
               Text(
                 'Attendance History by Date',
-                style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                style: AcadexTypography.heading3(
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Select any recorded class date to view verified session records.',
-                style: AcadexTypography.bodySmall(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                style: AcadexTypography.bodySmall(
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -427,25 +517,33 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
               if (days.isEmpty)
                 const AcadexEmptyState(
                   title: 'No Calendar Records',
-                  subtitle: 'No attendance sessions have been conducted or verified yet.',
+                  subtitle:
+                      'No attendance sessions have been conducted or verified yet.',
                 )
               else
                 Wrap(
                   spacing: 10,
                   runSpacing: 10,
                   children: days.map((day) {
-                    final isSelected = selectedDate != null &&
+                    final isSelected =
+                        selectedDate != null &&
                         selectedDate.year == day.date.year &&
                         selectedDate.month == day.date.month &&
                         selectedDate.day == day.date.day;
 
                     final color = day.attendancePercentage >= 75
                         ? AcadexColors.success
-                        : (day.attendancePercentage >= 50 ? AcadexColors.warning : AcadexColors.error);
+                        : (day.attendancePercentage >= 50
+                              ? AcadexColors.warning
+                              : AcadexColors.error);
 
                     return InkWell(
                       onTap: () {
-                        ref.read(studentSelectedCalendarDateProvider.notifier).state = isSelected ? null : day.date;
+                        ref
+                            .read(studentSelectedCalendarDateProvider.notifier)
+                            .state = isSelected
+                            ? null
+                            : day.date;
                       },
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
@@ -454,12 +552,16 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                         decoration: BoxDecoration(
                           color: isSelected
                               ? AcadexColors.primary.withValues(alpha: 0.15)
-                              : (isDark ? AcadexColors.darkSurface : AcadexColors.surface),
+                              : (isDark
+                                    ? AcadexColors.darkSurface
+                                    : AcadexColors.surface),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isSelected
                                 ? AcadexColors.primary
-                                : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                                : (isDark
+                                      ? AcadexColors.darkHairline
+                                      : AcadexColors.hairline),
                             width: isSelected ? 2 : 1,
                           ),
                         ),
@@ -468,19 +570,25 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                             Text(
                               '${day.date.day}/${day.date.month}',
                               style: AcadexTypography.bodySmall(
-                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                color: isDark
+                                    ? AcadexColors.darkInk
+                                    : AcadexColors.ink,
                               ).copyWith(fontWeight: FontWeight.w700),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               '${day.attendancePercentage.toStringAsFixed(0)}%',
-                              style: AcadexTypography.caption(color: color).copyWith(fontWeight: FontWeight.w700),
+                              style: AcadexTypography.caption(
+                                color: color,
+                              ).copyWith(fontWeight: FontWeight.w700),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               '${day.presentCount}/${day.totalClasses} att.',
                               style: AcadexTypography.caption(
-                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
                               ),
                             ),
                           ],
@@ -496,19 +604,30 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
               // Selected Date Drill-Down Session List
               Row(
                 children: [
-                  const Icon(LucideIcons.listFilter, size: 18, color: AcadexColors.primary),
+                  const Icon(
+                    LucideIcons.listFilter,
+                    size: 18,
+                    color: AcadexColors.primary,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     selectedDate == null
                         ? 'Recent Recorded Sessions'
                         : 'Sessions on ${selectedDate.toIso8601String().split('T').first}',
-                    style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                    style: AcadexTypography.heading3(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ),
                   ),
                   if (selectedDate != null) ...[
                     const Spacer(),
                     TextButton(
                       onPressed: () {
-                        ref.read(studentSelectedCalendarDateProvider.notifier).state = null;
+                        ref
+                                .read(
+                                  studentSelectedCalendarDateProvider.notifier,
+                                )
+                                .state =
+                            null;
                       },
                       child: const Text('Show All'),
                     ),
@@ -523,7 +642,9 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                   subtitle: 'No attendance records match the selected date.',
                 )
               else
-                ...daySessions.map((session) => _buildSessionTile(context, session, isDark)),
+                ...daySessions.map(
+                  (session) => _buildSessionTile(context, session, isDark),
+                ),
             ],
           ),
         );
@@ -540,7 +661,9 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
     bool isDark,
   ) {
     return insightsAsync.when(
-      loading: () => const AcadexLoadingState(message: 'Generating personalized insights...'),
+      loading: () => const AcadexLoadingState(
+        message: 'Generating personalized insights...',
+      ),
       error: (err, _) => AcadexErrorState(
         message: 'Failed to compute insights: $err',
         onRetry: () => ref.refresh(studentAttendanceInsightsProvider),
@@ -548,11 +671,15 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
       data: (insights) {
         final trendIcon = insights.trendDirection == TrendDirection.up
             ? LucideIcons.trendingUp
-            : (insights.trendDirection == TrendDirection.down ? LucideIcons.trendingDown : LucideIcons.minus);
+            : (insights.trendDirection == TrendDirection.down
+                  ? LucideIcons.trendingDown
+                  : LucideIcons.minus);
 
         final trendColor = insights.trendDirection == TrendDirection.up
             ? AcadexColors.success
-            : (insights.trendDirection == TrendDirection.down ? AcadexColors.error : AcadexColors.warning);
+            : (insights.trendDirection == TrendDirection.down
+                  ? AcadexColors.error
+                  : AcadexColors.warning);
 
         return SingleChildScrollView(
           child: Column(
@@ -562,9 +689,15 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                  color: isDark
+                      ? AcadexColors.darkSurface
+                      : AcadexColors.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                  border: Border.all(
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -575,18 +708,25 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                         const SizedBox(width: 8),
                         Text(
                           'Overall Term Trajectory: ${insights.trendDirection.name.toUpperCase()}',
-                          style: AcadexTypography.title(color: trendColor).copyWith(fontWeight: FontWeight.w700),
+                          style: AcadexTypography.title(
+                            color: trendColor,
+                          ).copyWith(fontWeight: FontWeight.w700),
                         ),
                         const Spacer(),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: trendColor.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             insights.overallRiskLevel.name.toUpperCase(),
-                            style: AcadexTypography.caption(color: trendColor).copyWith(fontWeight: FontWeight.w700),
+                            style: AcadexTypography.caption(
+                              color: trendColor,
+                            ).copyWith(fontWeight: FontWeight.w700),
                           ),
                         ),
                       ],
@@ -596,7 +736,9 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                       insights.isLowAttendance
                           ? 'You are currently in shortage standing. You need to attend ${insights.totalRecoveryNeeded} consecutive classes across affected subjects to reach the 75% target.'
                           : 'Your semester attendance is in good standing. Maintain consistency to remain eligible for term examinations.',
-                      style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                      style: AcadexTypography.body(
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ),
                     ),
                   ],
                 ),
@@ -614,18 +756,26 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                       decoration: BoxDecoration(
                         color: AcadexColors.success.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AcadexColors.success.withValues(alpha: 0.2)),
+                        border: Border.all(
+                          color: AcadexColors.success.withValues(alpha: 0.2),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              const Icon(LucideIcons.award, size: 16, color: AcadexColors.success),
+                              const Icon(
+                                LucideIcons.award,
+                                size: 16,
+                                color: AcadexColors.success,
+                              ),
                               const SizedBox(width: 8),
                               Text(
                                 'Strongest Subjects (>=85%)',
-                                style: AcadexTypography.title(color: AcadexColors.success).copyWith(fontWeight: FontWeight.w700),
+                                style: AcadexTypography.title(
+                                  color: AcadexColors.success,
+                                ).copyWith(fontWeight: FontWeight.w700),
                               ),
                             ],
                           ),
@@ -633,26 +783,40 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                           if (insights.bestAttendanceSubjects.isEmpty)
                             Text(
                               'No subjects above 85% yet.',
-                              style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                              style: AcadexTypography.caption(
+                                color: isDark
+                                    ? AcadexColors.darkInkMuted
+                                    : AcadexColors.inkMuted,
+                              ),
                             )
                           else
-                            ...insights.bestAttendanceSubjects.map((s) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      s.subjectName,
-                                      style: AcadexTypography.bodySmall(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                            ...insights.bestAttendanceSubjects.map(
+                              (s) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 4,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        s.subjectName,
+                                        style: AcadexTypography.bodySmall(
+                                          color: isDark
+                                              ? AcadexColors.darkInk
+                                              : AcadexColors.ink,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    '${s.attendancePercentage.toStringAsFixed(1)}%',
-                                    style: AcadexTypography.bodySmall(color: AcadexColors.success).copyWith(fontWeight: FontWeight.w700),
-                                  ),
-                                ],
+                                    Text(
+                                      '${s.attendancePercentage.toStringAsFixed(1)}%',
+                                      style: AcadexTypography.bodySmall(
+                                        color: AcadexColors.success,
+                                      ).copyWith(fontWeight: FontWeight.w700),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            )),
+                            ),
                         ],
                       ),
                     ),
@@ -666,18 +830,26 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                       decoration: BoxDecoration(
                         color: AcadexColors.error.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AcadexColors.error.withValues(alpha: 0.2)),
+                        border: Border.all(
+                          color: AcadexColors.error.withValues(alpha: 0.2),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              const Icon(LucideIcons.alertOctagon, size: 16, color: AcadexColors.error),
+                              const Icon(
+                                LucideIcons.alertOctagon,
+                                size: 16,
+                                color: AcadexColors.error,
+                              ),
                               const SizedBox(width: 8),
                               Text(
                                 'Low Standing (<75%)',
-                                style: AcadexTypography.title(color: AcadexColors.error).copyWith(fontWeight: FontWeight.w700),
+                                style: AcadexTypography.title(
+                                  color: AcadexColors.error,
+                                ).copyWith(fontWeight: FontWeight.w700),
                               ),
                             ],
                           ),
@@ -685,26 +857,38 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                           if (insights.lowestAttendanceSubjects.isEmpty)
                             Text(
                               'All subjects meet institutional standards (>=75%).',
-                              style: AcadexTypography.caption(color: AcadexColors.success),
+                              style: AcadexTypography.caption(
+                                color: AcadexColors.success,
+                              ),
                             )
                           else
-                            ...insights.lowestAttendanceSubjects.map((s) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      s.subjectName,
-                                      style: AcadexTypography.bodySmall(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                            ...insights.lowestAttendanceSubjects.map(
+                              (s) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 4,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        s.subjectName,
+                                        style: AcadexTypography.bodySmall(
+                                          color: isDark
+                                              ? AcadexColors.darkInk
+                                              : AcadexColors.ink,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    '${s.attendancePercentage.toStringAsFixed(1)}% (+${s.recoveryClassesNeeded} needed)',
-                                    style: AcadexTypography.bodySmall(color: AcadexColors.error).copyWith(fontWeight: FontWeight.w700),
-                                  ),
-                                ],
+                                    Text(
+                                      '${s.attendancePercentage.toStringAsFixed(1)}% (+${s.recoveryClassesNeeded} needed)',
+                                      style: AcadexTypography.bodySmall(
+                                        color: AcadexColors.error,
+                                      ).copyWith(fontWeight: FontWeight.w700),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            )),
+                            ),
                         ],
                       ),
                     ),
@@ -717,20 +901,34 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                  color: isDark
+                      ? AcadexColors.darkSurface
+                      : AcadexColors.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                  border: Border.all(
+                    color: isDark
+                        ? AcadexColors.darkHairline
+                        : AcadexColors.hairline,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        const Icon(LucideIcons.calculator, size: 18, color: AcadexColors.primary),
+                        const Icon(
+                          LucideIcons.calculator,
+                          size: 18,
+                          color: AcadexColors.primary,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'Attendance Safety Margin & Recovery Simulator',
-                          style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                          style: AcadexTypography.heading3(
+                            color: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
+                          ),
                         ),
                       ],
                     ),
@@ -744,7 +942,11 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                               flex: 2,
                               child: Text(
                                 s.subjectName,
-                                style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                                style: AcadexTypography.body(
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
+                                ),
                               ),
                             ),
                             Expanded(
@@ -752,7 +954,9 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                               child: Text(
                                 '${s.attendancePercentage.toStringAsFixed(1)}%',
                                 style: AcadexTypography.body(
-                                  color: s.isBelowThreshold ? AcadexColors.error : AcadexColors.success,
+                                  color: s.isBelowThreshold
+                                      ? AcadexColors.error
+                                      : AcadexColors.success,
                                 ).copyWith(fontWeight: FontWeight.w700),
                               ),
                             ),
@@ -763,7 +967,9 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                                     ? 'Requires ${s.recoveryClassesNeeded} consecutive classes'
                                     : 'Can miss up to ${s.marginClassesCanMiss} classes safely',
                                 style: AcadexTypography.caption(
-                                  color: s.isBelowThreshold ? AcadexColors.error : AcadexColors.inkMuted,
+                                  color: s.isBelowThreshold
+                                      ? AcadexColors.error
+                                      : AcadexColors.inkMuted,
                                 ),
                               ),
                             ),
@@ -784,14 +990,22 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
   // ==========================================
   // SHARED WIDGETS
   // ==========================================
-  Widget _buildStatCard(String label, String value, IconData icon, Color color, bool isDark) {
+  Widget _buildStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+    bool isDark,
+  ) {
     return Container(
       width: 170,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -805,22 +1019,32 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
           const SizedBox(height: 12),
           Text(
             value,
-            style: AcadexTypography.heading2(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+            style: AcadexTypography.heading2(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             label,
-            style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+            style: AcadexTypography.caption(
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSubjectCard(BuildContext context, StudentDetailedSubjectAttendance s, bool isDark) {
+  Widget _buildSubjectCard(
+    BuildContext context,
+    StudentDetailedSubjectAttendance s,
+    bool isDark,
+  ) {
     final statusColor = s.isBelowThreshold
         ? AcadexColors.error
-        : (s.attendancePercentage < 85 ? AcadexColors.warning : AcadexColors.success);
+        : (s.attendancePercentage < 85
+              ? AcadexColors.warning
+              : AcadexColors.success);
 
     return InkWell(
       onTap: () => context.push('/attendance/student/subject/${s.subjectId}'),
@@ -831,7 +1055,9 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
         decoration: BoxDecoration(
           color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+          border: Border.all(
+            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -844,25 +1070,38 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                     children: [
                       Text(
                         s.subjectName,
-                        style: AcadexTypography.title(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                        style: AcadexTypography.title(
+                          color: isDark
+                              ? AcadexColors.darkInk
+                              : AcadexColors.ink,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '${s.subjectCode} • ${s.facultyName}',
-                        style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                        style: AcadexTypography.caption(
+                          color: isDark
+                              ? AcadexColors.darkInkMuted
+                              : AcadexColors.inkMuted,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     '${s.attendancePercentage.toStringAsFixed(1)}%',
-                    style: AcadexTypography.bodySmall(color: statusColor).copyWith(fontWeight: FontWeight.w700),
+                    style: AcadexTypography.bodySmall(
+                      color: statusColor,
+                    ).copyWith(fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
@@ -874,7 +1113,9 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: (s.attendancePercentage / 100.0).clamp(0.0, 1.0),
-                backgroundColor: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                backgroundColor: isDark
+                    ? AcadexColors.darkCanvasSoft
+                    : AcadexColors.canvasSoft,
                 valueColor: AlwaysStoppedAnimation<Color>(statusColor),
                 minHeight: 6,
               ),
@@ -888,23 +1129,35 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
               children: [
                 Text(
                   'Present: ${s.presentCount}',
-                  style: AcadexTypography.caption(color: AcadexColors.success).copyWith(fontWeight: FontWeight.w600),
+                  style: AcadexTypography.caption(
+                    color: AcadexColors.success,
+                  ).copyWith(fontWeight: FontWeight.w600),
                 ),
                 Text(
                   'Absent: ${s.absentCount}',
-                  style: AcadexTypography.caption(color: AcadexColors.error).copyWith(fontWeight: FontWeight.w600),
+                  style: AcadexTypography.caption(
+                    color: AcadexColors.error,
+                  ).copyWith(fontWeight: FontWeight.w600),
                 ),
                 Text(
                   'Late: ${s.lateCount}',
-                  style: AcadexTypography.caption(color: AcadexColors.warning).copyWith(fontWeight: FontWeight.w600),
+                  style: AcadexTypography.caption(
+                    color: AcadexColors.warning,
+                  ).copyWith(fontWeight: FontWeight.w600),
                 ),
                 Text(
                   'Excused: ${s.excusedCount}',
-                  style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(fontWeight: FontWeight.w600),
+                  style: AcadexTypography.caption(
+                    color: AcadexColors.primary,
+                  ).copyWith(fontWeight: FontWeight.w600),
                 ),
                 Text(
                   'Total: ${s.totalClasses}',
-                  style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                  style: AcadexTypography.caption(
+                    color: isDark
+                        ? AcadexColors.darkInkMuted
+                        : AcadexColors.inkMuted,
+                  ),
                 ),
               ],
             ),
@@ -921,7 +1174,9 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                       ? 'Need +${s.recoveryClassesNeeded} classes for 75%'
                       : 'Can miss up to ${s.marginClassesCanMiss} classes',
                   style: AcadexTypography.caption(
-                    color: s.isBelowThreshold ? AcadexColors.error : AcadexColors.success,
+                    color: s.isBelowThreshold
+                        ? AcadexColors.error
+                        : AcadexColors.success,
                   ).copyWith(fontWeight: FontWeight.w600),
                 ),
                 Row(
@@ -929,10 +1184,16 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                   children: [
                     Text(
                       'View History',
-                      style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(fontWeight: FontWeight.w600),
+                      style: AcadexTypography.caption(
+                        color: AcadexColors.primary,
+                      ).copyWith(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(width: 4),
-                    const Icon(LucideIcons.chevronRight, size: 14, color: AcadexColors.primary),
+                    const Icon(
+                      LucideIcons.chevronRight,
+                      size: 14,
+                      color: AcadexColors.primary,
+                    ),
                   ],
                 ),
               ],
@@ -943,13 +1204,20 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
     );
   }
 
-  Widget _buildSessionTile(BuildContext context, StudentAttendanceSessionSummary session, bool isDark) {
+  Widget _buildSessionTile(
+    BuildContext context,
+    StudentAttendanceSessionSummary session,
+    bool isDark,
+  ) {
     final statusColor = session.status == AttendanceStatus.present
         ? AcadexColors.success
-        : (session.status == AttendanceStatus.absent ? AcadexColors.error : AcadexColors.warning);
+        : (session.status == AttendanceStatus.absent
+              ? AcadexColors.error
+              : AcadexColors.warning);
 
     return InkWell(
-      onTap: () => context.push('/attendance/student/sessions/${session.sessionId}'),
+      onTap: () =>
+          context.push('/attendance/student/sessions/${session.sessionId}'),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
@@ -957,7 +1225,9 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
         decoration: BoxDecoration(
           color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+          border: Border.all(
+            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          ),
         ),
         child: Row(
           children: [
@@ -969,7 +1239,9 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
               ),
               child: Text(
                 session.status.name.toUpperCase(),
-                style: AcadexTypography.caption(color: statusColor).copyWith(fontWeight: FontWeight.w700),
+                style: AcadexTypography.caption(
+                  color: statusColor,
+                ).copyWith(fontWeight: FontWeight.w700),
               ),
             ),
             const SizedBox(width: 12),
@@ -979,11 +1251,17 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
                 children: [
                   Text(
                     session.subjectName,
-                    style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+                    style: AcadexTypography.body(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ).copyWith(fontWeight: FontWeight.w600),
                   ),
                   Text(
                     '${session.timeSlot} • ${session.date.toIso8601String().split('T').first}',
-                    style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                    style: AcadexTypography.caption(
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
+                    ),
                   ),
                 ],
               ),

@@ -18,7 +18,11 @@ class AcademicYearDetailScreen extends ConsumerWidget {
 
   const AcademicYearDetailScreen({super.key, required this.academicYearId});
 
-  void _confirmSetCurrent(BuildContext context, WidgetRef ref, String yearName) {
+  void _confirmSetCurrent(
+    BuildContext context,
+    WidgetRef ref,
+    String yearName,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -39,10 +43,15 @@ class AcademicYearDetailScreen extends ConsumerWidget {
             onPressed: () async {
               Navigator.of(ctx).pop();
               try {
-                await ref.read(academicYearsProvider.notifier).setAsCurrent(academicYearId);
+                await ref
+                    .read(academicYearsProvider.notifier)
+                    .setAsCurrent(academicYearId);
                 ref.invalidate(academicYearByIdProvider(academicYearId));
                 if (context.mounted) {
-                  AcadexSnackBar.showSuccess(context, '$yearName is now set as the current academic year.');
+                  AcadexSnackBar.showSuccess(
+                    context,
+                    '$yearName is now set as the current academic year.',
+                  );
                 }
               } catch (e) {
                 if (context.mounted) {
@@ -57,7 +66,12 @@ class AcademicYearDetailScreen extends ConsumerWidget {
     );
   }
 
-  void _confirmStatusToggle(BuildContext context, WidgetRef ref, String yearName, bool isCurrentlyActive) {
+  void _confirmStatusToggle(
+    BuildContext context,
+    WidgetRef ref,
+    String yearName,
+    bool isCurrentlyActive,
+  ) {
     final action = isCurrentlyActive ? 'Deactivate' : 'Activate';
     showDialog(
       context: context,
@@ -75,16 +89,23 @@ class AcademicYearDetailScreen extends ConsumerWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: isCurrentlyActive ? AcadexColors.error : AcadexColors.success,
+              backgroundColor: isCurrentlyActive
+                  ? AcadexColors.error
+                  : AcadexColors.success,
               foregroundColor: Colors.white,
             ),
             onPressed: () async {
               Navigator.of(ctx).pop();
               try {
-                await ref.read(academicYearsProvider.notifier).toggleStatus(academicYearId, !isCurrentlyActive);
+                await ref
+                    .read(academicYearsProvider.notifier)
+                    .toggleStatus(academicYearId, !isCurrentlyActive);
                 ref.invalidate(academicYearByIdProvider(academicYearId));
                 if (context.mounted) {
-                  AcadexSnackBar.showSuccess(context, 'Academic Year $action successful!');
+                  AcadexSnackBar.showSuccess(
+                    context,
+                    'Academic Year $action successful!',
+                  );
                 }
               } catch (e) {
                 if (context.mounted) {
@@ -113,9 +134,11 @@ class AcademicYearDetailScreen extends ConsumerWidget {
         child: AcadexErrorState.fromError(
           error: err,
           title: 'Unable to load academic year',
-          onRetry: () => ref.invalidate(academicYearByIdProvider(academicYearId)),
+          onRetry: () =>
+              ref.invalidate(academicYearByIdProvider(academicYearId)),
           actionLabel: 'Go Back',
-          onAction: () => context.safePop(fallbackRoute: '/academics/academic-years'),
+          onAction: () =>
+              context.safePop(fallbackRoute: '/academics/academic-years'),
         ),
       ),
       data: (year) {
@@ -133,7 +156,13 @@ class AcademicYearDetailScreen extends ConsumerWidget {
               const SizedBox(height: 20),
 
               // ── Session Timeline & Details ────────────────────────────
-              _buildTimelineCard(isDark, year, dateFormat, totalDays, totalMonths),
+              _buildTimelineCard(
+                isDark,
+                year,
+                dateFormat,
+                totalDays,
+                totalMonths,
+              ),
               const SizedBox(height: 32),
             ],
           ),
@@ -151,8 +180,12 @@ class AcademicYearDetailScreen extends ConsumerWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-          onPressed: () => context.safePop(fallbackRoute: '/academics/academic_years'),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
+          onPressed: () =>
+              context.safePop(fallbackRoute: '/academics/academic_years'),
         ),
         title: Text(
           'Academic Session Overview',
@@ -198,7 +231,11 @@ class AcademicYearDetailScreen extends ConsumerWidget {
                   color: AcadexColors.primary.withValues(alpha: 0.12),
                   borderRadius: AcadexRadius.borderRadiusMd,
                 ),
-                child: const Icon(LucideIcons.calendar, color: AcadexColors.primary, size: 24),
+                child: const Icon(
+                  LucideIcons.calendar,
+                  color: AcadexColors.primary,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -215,19 +252,29 @@ class AcademicYearDetailScreen extends ConsumerWidget {
                     Row(
                       children: [
                         if (year.isCurrent) ...[
-                          const AcadexBadge(label: 'CURRENT SESSION', variant: AcadexBadgeVariant.primary),
+                          const AcadexBadge(
+                            label: 'CURRENT SESSION',
+                            variant: AcadexBadgeVariant.primary,
+                          ),
                           const SizedBox(width: 8),
                         ],
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: year.isActive ? AcadexColors.successLight : AcadexColors.errorLight,
+                            color: year.isActive
+                                ? AcadexColors.successLight
+                                : AcadexColors.errorLight,
                             borderRadius: AcadexRadius.borderRadiusFull,
                           ),
                           child: Text(
                             year.isActive ? 'Active' : 'Archived',
                             style: TextStyle(
-                              color: year.isActive ? AcadexColors.success : AcadexColors.error,
+                              color: year.isActive
+                                  ? AcadexColors.success
+                                  : AcadexColors.error,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -252,7 +299,9 @@ class AcademicYearDetailScreen extends ConsumerWidget {
                 label: 'Edit Session',
                 icon: LucideIcons.edit,
                 variant: AcadexButtonVariant.primary,
-                onPressed: () => context.push('/academics/academic_years/edit/$academicYearId'),
+                onPressed: () => context.push(
+                  '/academics/academic_years/edit/$academicYearId',
+                ),
               ),
               if (!year.isCurrent)
                 AcadexButton(
@@ -265,7 +314,12 @@ class AcademicYearDetailScreen extends ConsumerWidget {
                 label: year.isActive ? 'Deactivate' : 'Activate',
                 icon: year.isActive ? LucideIcons.powerOff : LucideIcons.power,
                 variant: AcadexButtonVariant.secondary,
-                onPressed: () => _confirmStatusToggle(context, ref, year.name, year.isActive),
+                onPressed: () => _confirmStatusToggle(
+                  context,
+                  ref,
+                  year.name,
+                  year.isActive,
+                ),
               ),
             ],
           ),
@@ -288,7 +342,13 @@ class AcademicYearDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.clock, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              Icon(
+                LucideIcons.clock,
+                size: 16,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Session Schedule & Timeline',
@@ -301,21 +361,43 @@ class AcademicYearDetailScreen extends ConsumerWidget {
           const SizedBox(height: 14),
           _infoRow(isDark, LucideIcons.calendar, 'Session Name', year.name),
           const Divider(height: 16),
-          _infoRow(isDark, LucideIcons.calendarDays, 'Start Date', dateFormat.format(year.startDate)),
+          _infoRow(
+            isDark,
+            LucideIcons.calendarDays,
+            'Start Date',
+            dateFormat.format(year.startDate),
+          ),
           const Divider(height: 16),
-          _infoRow(isDark, LucideIcons.calendarCheck, 'End Date', dateFormat.format(year.endDate)),
+          _infoRow(
+            isDark,
+            LucideIcons.calendarCheck,
+            'End Date',
+            dateFormat.format(year.endDate),
+          ),
           const Divider(height: 16),
-          _infoRow(isDark, LucideIcons.hourglass, 'Span', '$totalMonths months (~$totalDays days)'),
+          _infoRow(
+            isDark,
+            LucideIcons.hourglass,
+            'Span',
+            '$totalMonths months (~$totalDays days)',
+          ),
           const Divider(height: 16),
           _infoRow(
             isDark,
             LucideIcons.activity,
             'Current State',
-            year.isCurrent ? 'Active Ongoing Academic Session' : 'Inactive / Non-Current Session',
+            year.isCurrent
+                ? 'Active Ongoing Academic Session'
+                : 'Inactive / Non-Current Session',
           ),
           if (year.createdAt != null) ...[
             const Divider(height: 16),
-            _infoRow(isDark, LucideIcons.fileText, 'Created On', dateFormat.format(year.createdAt!)),
+            _infoRow(
+              isDark,
+              LucideIcons.fileText,
+              'Created On',
+              dateFormat.format(year.createdAt!),
+            ),
           ],
         ],
       ),
@@ -326,7 +408,11 @@ class AcademicYearDetailScreen extends ConsumerWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 15, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+        Icon(
+          icon,
+          size: 15,
+          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+        ),
         const SizedBox(width: 10),
         SizedBox(
           width: 110,

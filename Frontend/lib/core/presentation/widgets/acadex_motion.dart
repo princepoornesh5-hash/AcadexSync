@@ -28,7 +28,8 @@ class AcadexPressable extends StatefulWidget {
   State<AcadexPressable> createState() => _AcadexPressableState();
 }
 
-class _AcadexPressableState extends State<AcadexPressable> with SingleTickerProviderStateMixin {
+class _AcadexPressableState extends State<AcadexPressable>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -40,9 +41,13 @@ class _AcadexPressableState extends State<AcadexPressable> with SingleTickerProv
       duration: AcadexMotion.micro,
       reverseDuration: AcadexMotion.micro,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: widget.pressedScale).animate(
-      CurvedAnimation(parent: _controller, curve: AcadexMotion.curveDecelerate),
-    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: widget.pressedScale)
+        .animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: AcadexMotion.curveDecelerate,
+          ),
+        );
   }
 
   @override
@@ -52,7 +57,10 @@ class _AcadexPressableState extends State<AcadexPressable> with SingleTickerProv
   }
 
   void _handlePointerDown(PointerDownEvent event) {
-    if (widget.onTap == null && widget.onLongPress == null && !widget.isInteractive) return;
+    if (widget.onTap == null &&
+        widget.onLongPress == null &&
+        !widget.isInteractive)
+      return;
     if (widget.enableHaptic) {
       HapticFeedback.lightImpact();
     }
@@ -69,7 +77,10 @@ class _AcadexPressableState extends State<AcadexPressable> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    final bool interactive = widget.onTap != null || widget.onLongPress != null || widget.isInteractive;
+    final bool interactive =
+        widget.onTap != null ||
+        widget.onLongPress != null ||
+        widget.isInteractive;
     if (AcadexMotion.isReducedMotion(context) || !interactive) {
       return InkWell(
         onTap: widget.onTap,
@@ -90,10 +101,8 @@ class _AcadexPressableState extends State<AcadexPressable> with SingleTickerProv
         behavior: HitTestBehavior.opaque,
         child: AnimatedBuilder(
           animation: _scaleAnimation,
-          builder: (context, child) => Transform.scale(
-            scale: _scaleAnimation.value,
-            child: child,
-          ),
+          builder: (context, child) =>
+              Transform.scale(scale: _scaleAnimation.value, child: child),
           child: widget.child,
         ),
       ),
@@ -121,7 +130,8 @@ class AcadexFadeSlide extends StatefulWidget {
   State<AcadexFadeSlide> createState() => _AcadexFadeSlideState();
 }
 
-class _AcadexFadeSlideState extends State<AcadexFadeSlide> with SingleTickerProviderStateMixin {
+class _AcadexFadeSlideState extends State<AcadexFadeSlide>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -129,25 +139,23 @@ class _AcadexFadeSlideState extends State<AcadexFadeSlide> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
+    _controller = AnimationController(vsync: this, duration: widget.duration);
 
     _fadeAnimation = CurvedAnimation(
       parent: _controller,
       curve: AcadexMotion.curveStandard,
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: Offset(0, widget.slideOffset / 100),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: AcadexMotion.curveStandard,
-      ),
-    );
+    _slideAnimation =
+        Tween<Offset>(
+          begin: Offset(0, widget.slideOffset / 100),
+          end: Offset.zero,
+        ).animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: AcadexMotion.curveStandard,
+          ),
+        );
 
     if (widget.delay == Duration.zero) {
       _controller.forward();
@@ -172,10 +180,7 @@ class _AcadexFadeSlideState extends State<AcadexFadeSlide> with SingleTickerProv
 
     return FadeTransition(
       opacity: _fadeAnimation,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: widget.child,
-      ),
+      child: SlideTransition(position: _slideAnimation, child: widget.child),
     );
   }
 }
@@ -200,7 +205,9 @@ class AcadexAnimatedCollapse extends StatelessWidget {
     return AnimatedCrossFade(
       firstChild: child,
       secondChild: const SizedBox.shrink(),
-      crossFadeState: isExpanded ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+      crossFadeState: isExpanded
+          ? CrossFadeState.showFirst
+          : CrossFadeState.showSecond,
       duration: effectiveDuration,
       firstCurve: AcadexMotion.curveStandard,
       secondCurve: AcadexMotion.curveDecelerate,

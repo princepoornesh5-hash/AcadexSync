@@ -22,7 +22,11 @@ import '../widgets/attendance_summary_card.dart';
 class FacultyAttendanceDetailScreen extends ConsumerWidget {
   const FacultyAttendanceDetailScreen({super.key});
 
-  void _confirmLockSession(BuildContext context, WidgetRef ref, String sessionId) {
+  void _confirmLockSession(
+    BuildContext context,
+    WidgetRef ref,
+    String sessionId,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -42,7 +46,9 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.warning),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.warning,
+            ),
             onPressed: () async {
               Navigator.of(ctx).pop();
               try {
@@ -68,20 +74,31 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
                 }
               }
             },
-            child: const Text('Lock Session', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Lock Session',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
     );
   }
 
-  void _confirmCloseSession(BuildContext context, WidgetRef ref, String sessionId) {
+  void _confirmCloseSession(
+    BuildContext context,
+    WidgetRef ref,
+    String sessionId,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Row(
           children: [
-            Icon(LucideIcons.checkCircle, size: 20, color: AcadexColors.success),
+            Icon(
+              LucideIcons.checkCircle,
+              size: 20,
+              color: AcadexColors.success,
+            ),
             SizedBox(width: 8),
             Text('Close Attendance Session'),
           ],
@@ -95,7 +112,9 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.success),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.success,
+            ),
             onPressed: () async {
               Navigator.of(ctx).pop();
               try {
@@ -121,14 +140,21 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
                 }
               }
             },
-            child: const Text('Close Session', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Close Session',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
     );
   }
 
-  void _confirmCancelSession(BuildContext context, WidgetRef ref, String sessionId) {
+  void _confirmCancelSession(
+    BuildContext context,
+    WidgetRef ref,
+    String sessionId,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -148,7 +174,9 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
             child: const Text('Go Back'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.error),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.error,
+            ),
             onPressed: () async {
               Navigator.of(ctx).pop();
               try {
@@ -174,7 +202,10 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
                 }
               }
             },
-            child: const Text('Cancel Session', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Cancel Session',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -192,14 +223,19 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
         backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
         appBar: AppBar(
           leading: IconButton(
-            icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-            onPressed: () => context.safePop(fallbackRoute: '/attendance/faculty_history'),
+            icon: Icon(
+              LucideIcons.arrowLeft,
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ),
+            onPressed: () =>
+                context.safePop(fallbackRoute: '/attendance/faculty_history'),
           ),
         ),
         body: const Center(
           child: AcadexEmptyState(
             title: "Session Not Found",
-            subtitle: "The requested attendance session record is not available.",
+            subtitle:
+                "The requested attendance session record is not available.",
             icon: LucideIcons.fileX,
           ),
         ),
@@ -213,7 +249,8 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
     final displayRecords = isEditMode ? editRecords : session.records;
     final isSaving = ref.watch(saveEditedSessionProvider).isLoading;
 
-    final isHodOrAdmin = currentUser != null &&
+    final isHodOrAdmin =
+        currentUser != null &&
         (currentUser.role == AppRole.hod ||
             currentUser.role == AppRole.collegeAdmin ||
             currentUser.role == AppRole.superAdmin);
@@ -250,7 +287,9 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
             Text(
               "${session.subjectName} • ${session.sectionName}",
               style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
               ),
             ),
           ],
@@ -258,7 +297,11 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
         actions: [
           if (!isEditMode && canFacultyEdit)
             IconButton(
-              icon: Icon(LucideIcons.pencil, color: AcadexColors.primary, size: 18),
+              icon: Icon(
+                LucideIcons.pencil,
+                color: AcadexColors.primary,
+                size: 18,
+              ),
               tooltip: "Edit Records",
               onPressed: () {
                 editNotifier.init(session.records);
@@ -267,7 +310,11 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
             ),
           if (!isEditMode && session.isOpen)
             IconButton(
-              icon: const Icon(LucideIcons.lock, color: AcadexColors.warning, size: 18),
+              icon: const Icon(
+                LucideIcons.lock,
+                color: AcadexColors.warning,
+                size: 18,
+              ),
               tooltip: "Lock Session",
               onPressed: () => _confirmLockSession(context, ref, session.id),
             ),
@@ -275,7 +322,9 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
             PopupMenuButton<String>(
               icon: Icon(
                 LucideIcons.moreVertical,
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                color: isDark
+                    ? AcadexColors.darkInkMuted
+                    : AcadexColors.inkMuted,
                 size: 18,
               ),
               onSelected: (action) {
@@ -293,7 +342,11 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
                     value: 'lock',
                     child: Row(
                       children: [
-                        Icon(LucideIcons.lock, size: 16, color: AcadexColors.warning),
+                        Icon(
+                          LucideIcons.lock,
+                          size: 16,
+                          color: AcadexColors.warning,
+                        ),
                         SizedBox(width: 8),
                         Text('Lock Session'),
                       ],
@@ -304,7 +357,11 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
                     value: 'close',
                     child: Row(
                       children: [
-                        Icon(LucideIcons.checkCircle, size: 16, color: AcadexColors.success),
+                        Icon(
+                          LucideIcons.checkCircle,
+                          size: 16,
+                          color: AcadexColors.success,
+                        ),
                         SizedBox(width: 8),
                         Text('Close Session'),
                       ],
@@ -315,7 +372,11 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
                     value: 'cancel',
                     child: Row(
                       children: [
-                        Icon(LucideIcons.ban, size: 16, color: AcadexColors.error),
+                        Icon(
+                          LucideIcons.ban,
+                          size: 16,
+                          color: AcadexColors.error,
+                        ),
                         SizedBox(width: 8),
                         Text('Cancel Session'),
                       ],
@@ -334,7 +395,9 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
               // Header / Audit Info
               if (!isEditMode)
                 Container(
-                  color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                  color: isDark
+                      ? AcadexColors.darkSurface
+                      : AcadexColors.surface,
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
@@ -345,30 +408,43 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                DateFormat('MMMM dd, yyyy').format(session.date),
+                                DateFormat(
+                                  'MMMM dd, yyyy',
+                                ).format(session.date),
                                 style: AcadexTypography.title(
-                                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                  color: isDark
+                                      ? AcadexColors.darkInk
+                                      : AcadexColors.ink,
                                 ),
                               ),
                               if (session.timeSlot.isNotEmpty)
                                 Text(
                                   session.timeSlot,
                                   style: AcadexTypography.caption(
-                                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
                                   ),
                                 ),
                             ],
                           ),
-                          AttendanceLockChip(isLocked: session.isLocked, status: session.status),
+                          AttendanceLockChip(
+                            isLocked: session.isLocked,
+                            status: session.status,
+                          ),
                         ],
                       ),
                       const SizedBox(height: 14),
                       AttendanceSummaryCard(
                         summary: {
                           for (final status in AttendanceStatus.values)
-                            status: session.records.where((r) => r.status == status).length
+                            status: session.records
+                                .where((r) => r.status == status)
+                                .length,
                         },
-                        remainingCount: session.records.where((r) => r.status == null).length,
+                        remainingCount: session.records
+                            .where((r) => r.status == null)
+                            .length,
                         totalStudents: session.records.length,
                         isVertical: false,
                       ),
@@ -377,12 +453,14 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-              
+
               // Edit Validation
               if (isEditMode)
                 Padding(
                   padding: const EdgeInsets.all(16),
-                  child: ValidationBanner(remainingCount: editNotifier.remainingCount),
+                  child: ValidationBanner(
+                    remainingCount: editNotifier.remainingCount,
+                  ),
                 ),
 
               // Student List
@@ -392,7 +470,8 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
                   itemCount: displayRecords.length,
                   itemBuilder: (context, index) {
                     final record = displayRecords[index];
-                    bool hasChanged = isEditMode && record.status != record.oldStatus;
+                    bool hasChanged =
+                        isEditMode && record.status != record.oldStatus;
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -402,7 +481,11 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
                             padding: const EdgeInsets.only(bottom: 6, left: 4),
                             child: Row(
                               children: [
-                                Icon(LucideIcons.info, size: 13, color: AcadexColors.warning),
+                                Icon(
+                                  LucideIcons.info,
+                                  size: 13,
+                                  color: AcadexColors.warning,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   "Modified from: ${record.oldStatus?.displayName ?? 'None'}",
@@ -418,7 +501,11 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
                             padding: const EdgeInsets.only(bottom: 4, left: 4),
                             child: Row(
                               children: [
-                                const Icon(LucideIcons.shieldCheck, size: 12, color: AcadexColors.primary),
+                                const Icon(
+                                  LucideIcons.shieldCheck,
+                                  size: 12,
+                                  color: AcadexColors.primary,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   "Audited correction from ${record.oldStatus?.displayName ?? '-'}${record.remarks != null ? ': ${record.remarks}' : ''}",
@@ -430,7 +517,10 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
                             ),
                           ),
                         InkWell(
-                          onTap: (isHodOrAdmin && !session.isCancelled && !isEditMode)
+                          onTap:
+                              (isHodOrAdmin &&
+                                  !session.isCancelled &&
+                                  !isEditMode)
                               ? () {
                                   AttendanceCorrectionDialog.show(
                                     context,
@@ -439,8 +529,12 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
                                     subjectName: session.subjectName,
                                     sectionName: session.sectionName,
                                     onCorrectionSuccess: () {
-                                      ref.invalidate(sessionDetailProvider(session.id));
-                                      ref.invalidate(facultyHistoryListProvider);
+                                      ref.invalidate(
+                                        sessionDetailProvider(session.id),
+                                      );
+                                      ref.invalidate(
+                                        facultyHistoryListProvider,
+                                      );
                                     },
                                   );
                                 }
@@ -452,7 +546,10 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
                               record: record,
                               onStatusChanged: (newStatus) {
                                 if (isEditMode) {
-                                  editNotifier.updateStatus(record.studentId, newStatus);
+                                  editNotifier.updateStatus(
+                                    record.studentId,
+                                    newStatus,
+                                  );
                                 }
                               },
                             ),
@@ -472,10 +569,14 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                  color: isDark
+                      ? AcadexColors.darkSurface
+                      : AcadexColors.surface,
                   border: Border(
                     top: BorderSide(
-                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                      color: isDark
+                          ? AcadexColors.darkHairline
+                          : AcadexColors.hairline,
                     ),
                   ),
                 ),
@@ -488,7 +589,9 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
                           child: AcadexButton(
                             label: "Cancel",
                             variant: AcadexButtonVariant.secondary,
-                            onPressed: () => ref.read(isEditModeProvider.notifier).state = false,
+                            onPressed: () =>
+                                ref.read(isEditModeProvider.notifier).state =
+                                    false,
                           ),
                         ),
                         const SizedBox(width: 14),
@@ -501,13 +604,19 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
                             onPressed: editNotifier.remainingCount > 0
                                 ? null
                                 : () async {
-                                    final success = await ref.read(saveEditedSessionProvider.future);
+                                    final success = await ref.read(
+                                      saveEditedSessionProvider.future,
+                                    );
                                     if (success && context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         SnackBar(
                                           content: Text(
                                             "Changes saved successfully!",
-                                            style: AcadexTypography.bodySmall(color: Colors.white),
+                                            style: AcadexTypography.bodySmall(
+                                              color: Colors.white,
+                                            ),
                                           ),
                                           backgroundColor: AcadexColors.success,
                                           behavior: SnackBarBehavior.floating,

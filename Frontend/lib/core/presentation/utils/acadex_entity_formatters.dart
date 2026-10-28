@@ -8,7 +8,9 @@ class AcadexEntityFormatters {
   AcadexEntityFormatters._();
 
   static final RegExp _hexObjectIdRegex = RegExp(r'^[a-fA-F0-9]{24}$');
-  static final RegExp _uuidRegex = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
+  static final RegExp _uuidRegex = RegExp(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+  );
 
   /// Detects whether [raw] represents an internal database/backend identifier.
   static bool isRawIdentifier(String? raw) {
@@ -27,7 +29,9 @@ class AcadexEntityFormatters {
       return true;
     }
     // Hexadecimal string of 16+ hex characters without spaces
-    if (trimmed.length >= 16 && !trimmed.contains(' ') && RegExp(r'^[a-fA-F0-9]+$').hasMatch(trimmed)) {
+    if (trimmed.length >= 16 &&
+        !trimmed.contains(' ') &&
+        RegExp(r'^[a-fA-F0-9]+$').hasMatch(trimmed)) {
       return true;
     }
     return false;
@@ -45,7 +49,9 @@ class AcadexEntityFormatters {
     bool compact = false,
   }) {
     final cleanName = name?.trim();
-    if (cleanName != null && cleanName.isNotEmpty && !isRawIdentifier(cleanName)) {
+    if (cleanName != null &&
+        cleanName.isNotEmpty &&
+        !isRawIdentifier(cleanName)) {
       final pfx = compact ? 'Sec ' : 'Section ';
       if (cleanName.toLowerCase().startsWith('sec')) {
         return cleanName;
@@ -73,11 +79,15 @@ class AcadexEntityFormatters {
     String fallback = 'Assigned Subject',
   }) {
     final cleanName = name?.trim();
-    if (cleanName != null && cleanName.isNotEmpty && !isRawIdentifier(cleanName)) {
+    if (cleanName != null &&
+        cleanName.isNotEmpty &&
+        !isRawIdentifier(cleanName)) {
       return cleanName;
     }
     final cleanCode = code?.trim();
-    if (cleanCode != null && cleanCode.isNotEmpty && !isRawIdentifier(cleanCode)) {
+    if (cleanCode != null &&
+        cleanCode.isNotEmpty &&
+        !isRawIdentifier(cleanCode)) {
       return cleanCode;
     }
     final cleanId = rawId?.trim();
@@ -95,11 +105,15 @@ class AcadexEntityFormatters {
     String fallback = 'Academic Program',
   }) {
     final cleanName = name?.trim();
-    if (cleanName != null && cleanName.isNotEmpty && !isRawIdentifier(cleanName)) {
+    if (cleanName != null &&
+        cleanName.isNotEmpty &&
+        !isRawIdentifier(cleanName)) {
       return cleanName;
     }
     final cleanCode = code?.trim();
-    if (cleanCode != null && cleanCode.isNotEmpty && !isRawIdentifier(cleanCode)) {
+    if (cleanCode != null &&
+        cleanCode.isNotEmpty &&
+        !isRawIdentifier(cleanCode)) {
       return cleanCode;
     }
     final cleanId = rawId?.trim();
@@ -118,7 +132,9 @@ class AcadexEntityFormatters {
     bool compact = false,
   }) {
     final cleanName = name?.trim();
-    if (cleanName != null && cleanName.isNotEmpty && !isRawIdentifier(cleanName)) {
+    if (cleanName != null &&
+        cleanName.isNotEmpty &&
+        !isRawIdentifier(cleanName)) {
       return cleanName;
     }
     if (semesterNumber != null && semesterNumber > 0) {
@@ -139,11 +155,15 @@ class AcadexEntityFormatters {
     String fallback = 'Academic Department',
   }) {
     final cleanName = name?.trim();
-    if (cleanName != null && cleanName.isNotEmpty && !isRawIdentifier(cleanName)) {
+    if (cleanName != null &&
+        cleanName.isNotEmpty &&
+        !isRawIdentifier(cleanName)) {
       return cleanName;
     }
     final cleanCode = code?.trim();
-    if (cleanCode != null && cleanCode.isNotEmpty && !isRawIdentifier(cleanCode)) {
+    if (cleanCode != null &&
+        cleanCode.isNotEmpty &&
+        !isRawIdentifier(cleanCode)) {
       return cleanCode;
     }
     final cleanId = rawId?.trim();
@@ -160,7 +180,9 @@ class AcadexEntityFormatters {
     String fallback = 'Faculty Member',
   }) {
     final cleanName = name?.trim();
-    if (cleanName != null && cleanName.isNotEmpty && !isRawIdentifier(cleanName)) {
+    if (cleanName != null &&
+        cleanName.isNotEmpty &&
+        !isRawIdentifier(cleanName)) {
       return cleanName;
     }
     final cleanId = rawId?.trim();
@@ -177,7 +199,9 @@ class AcadexEntityFormatters {
     String fallback = 'Current Academic Year',
   }) {
     final cleanName = name?.trim();
-    if (cleanName != null && cleanName.isNotEmpty && !isRawIdentifier(cleanName)) {
+    if (cleanName != null &&
+        cleanName.isNotEmpty &&
+        !isRawIdentifier(cleanName)) {
       return cleanName;
     }
     final cleanId = rawId?.trim();
@@ -205,7 +229,9 @@ class AcadexEntityFormatters {
       segments.add(semester);
     }
     if (section != null && section.isNotEmpty && !isRawIdentifier(section)) {
-      segments.add(section.toLowerCase().startsWith('sec') ? section : 'Sec $section');
+      segments.add(
+        section.toLowerCase().startsWith('sec') ? section : 'Sec $section',
+      );
     }
     if (year != null && year.isNotEmpty && !isRawIdentifier(year)) {
       segments.add(year);

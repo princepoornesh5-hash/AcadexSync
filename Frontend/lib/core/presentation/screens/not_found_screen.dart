@@ -16,11 +16,7 @@ class AcadexNotFoundScreen extends ConsumerWidget {
   final String? location;
   final Exception? error;
 
-  const AcadexNotFoundScreen({
-    super.key,
-    this.location,
-    this.error,
-  });
+  const AcadexNotFoundScreen({super.key, this.location, this.error});
 
   static String getHomeRouteForRole(AppRole role) {
     switch (role) {
@@ -68,12 +64,18 @@ class AcadexNotFoundScreen extends ConsumerWidget {
             child: Container(
               padding: const EdgeInsets.all(36),
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                color: isDark
+                    ? AcadexColors.darkSurfaceCard
+                    : AcadexColors.surface,
                 borderRadius: AcadexRadius.borderRadiusXl,
                 border: Border.all(
-                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                  color: isDark
+                      ? AcadexColors.darkHairline
+                      : AcadexColors.hairline,
                 ),
-                boxShadow: isDark ? AcadexShadows.darkMd : AcadexShadows.lightMd,
+                boxShadow: isDark
+                    ? AcadexShadows.darkMd
+                    : AcadexShadows.lightMd,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -94,7 +96,10 @@ class AcadexNotFoundScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 24),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AcadexColors.primary.withValues(alpha: 0.1),
                       borderRadius: AcadexRadius.borderRadiusSm,
@@ -121,7 +126,9 @@ class AcadexNotFoundScreen extends ConsumerWidget {
                   Text(
                     'This page could not be opened. It may have been moved, removed, or is currently unavailable.',
                     style: AcadexTypography.body(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkSecondary,
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -132,12 +139,19 @@ class AcadexNotFoundScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.black26 : const Color(0xFFF1F5F9),
+                        color: isDark
+                            ? Colors.black26
+                            : const Color(0xFFF1F5F9),
                         borderRadius: AcadexRadius.borderRadiusSm,
                         border: Border.all(
-                          color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                          color: isDark
+                              ? Colors.white10
+                              : const Color(0xFFE2E8F0),
                         ),
                       ),
                       child: Text(
@@ -168,9 +182,13 @@ class AcadexNotFoundScreen extends ConsumerWidget {
                           icon: const Icon(LucideIcons.arrowLeft, size: 16),
                           label: const Text('Go Back'),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            foregroundColor: isDark
+                                ? AcadexColors.darkInk
+                                : AcadexColors.ink,
                             side: BorderSide(
-                              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                              color: isDark
+                                  ? AcadexColors.darkHairline
+                                  : AcadexColors.hairline,
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(

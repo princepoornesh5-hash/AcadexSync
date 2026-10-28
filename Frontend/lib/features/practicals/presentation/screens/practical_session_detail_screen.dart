@@ -16,24 +16,28 @@ import '../widgets/practical_participation_card.dart';
 class PracticalSessionDetailScreen extends ConsumerStatefulWidget {
   final String sessionId;
 
-  const PracticalSessionDetailScreen({
-    super.key,
-    required this.sessionId,
-  });
+  const PracticalSessionDetailScreen({super.key, required this.sessionId});
 
   @override
-  ConsumerState<PracticalSessionDetailScreen> createState() => _PracticalSessionDetailScreenState();
+  ConsumerState<PracticalSessionDetailScreen> createState() =>
+      _PracticalSessionDetailScreenState();
 }
 
-class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionDetailScreen> {
+class _PracticalSessionDetailScreenState
+    extends ConsumerState<PracticalSessionDetailScreen> {
   bool _isProcessingAction = false;
 
   Future<void> _handleOpenSession() async {
     setState(() => _isProcessingAction = true);
     try {
-      await ref.read(practicalActionProvider.notifier).openSession(widget.sessionId);
+      await ref
+          .read(practicalActionProvider.notifier)
+          .openSession(widget.sessionId);
       if (mounted) {
-        AcadexSnackBar.showSuccess(context, 'Practical session is now OPEN for execution!');
+        AcadexSnackBar.showSuccess(
+          context,
+          'Practical session is now OPEN for execution!',
+        );
       }
     } catch (e) {
       if (mounted) AcadexSnackBar.showError(context, e.toString());
@@ -51,11 +55,19 @@ class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionD
           'Finalizing this session will complete student practical records for today. Historical participation will be archived.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
-            child: const Text('Complete Session', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.primary,
+            ),
+            child: const Text(
+              'Complete Session',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -65,9 +77,14 @@ class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionD
 
     setState(() => _isProcessingAction = true);
     try {
-      await ref.read(practicalActionProvider.notifier).completeSession(widget.sessionId);
+      await ref
+          .read(practicalActionProvider.notifier)
+          .completeSession(widget.sessionId);
       if (mounted) {
-        AcadexSnackBar.showSuccess(context, 'Practical session marked COMPLETED!');
+        AcadexSnackBar.showSuccess(
+          context,
+          'Practical session marked COMPLETED!',
+        );
       }
     } catch (e) {
       if (mounted) AcadexSnackBar.showError(context, e.toString());
@@ -85,7 +102,9 @@ class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionD
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Are you sure you want to cancel this practical session?'),
+            const Text(
+              'Are you sure you want to cancel this practical session?',
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: reasonController,
@@ -97,11 +116,17 @@ class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionD
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Back')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Back'),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Cancel Session', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Cancel Session',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -111,10 +136,14 @@ class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionD
 
     setState(() => _isProcessingAction = true);
     try {
-      await ref.read(practicalActionProvider.notifier).cancelSession(
-        widget.sessionId,
-        reason: reasonController.text.trim().isNotEmpty ? reasonController.text.trim() : null,
-      );
+      await ref
+          .read(practicalActionProvider.notifier)
+          .cancelSession(
+            widget.sessionId,
+            reason: reasonController.text.trim().isNotEmpty
+                ? reasonController.text.trim()
+                : null,
+          );
       if (mounted) {
         AcadexSnackBar.showSuccess(context, 'Practical session cancelled.');
       }
@@ -131,17 +160,23 @@ class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionD
   ) async {
     setState(() => _isProcessingAction = true);
     try {
-      final updates = participations.map((p) => {
-        'studentId': p.studentId,
-        'status': newStatus.backendValue,
-      }).toList();
+      final updates = participations
+          .map(
+            (p) => {'studentId': p.studentId, 'status': newStatus.backendValue},
+          )
+          .toList();
 
-      await ref.read(practicalActionProvider.notifier).bulkUpdateParticipation(
-        sessionId: widget.sessionId,
-        updates: updates,
-      );
+      await ref
+          .read(practicalActionProvider.notifier)
+          .bulkUpdateParticipation(
+            sessionId: widget.sessionId,
+            updates: updates,
+          );
       if (mounted) {
-        AcadexSnackBar.showSuccess(context, 'Updated all students to ${newStatus.displayName}!');
+        AcadexSnackBar.showSuccess(
+          context,
+          'Updated all students to ${newStatus.displayName}!',
+        );
       }
     } catch (e) {
       if (mounted) AcadexSnackBar.showError(context, e.toString());
@@ -196,12 +231,14 @@ class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionD
                   icon: LucideIcons.check,
                   onPressed: () async {
                     Navigator.of(sheetContext).pop();
-                    await ref.read(practicalActionProvider.notifier).updateParticipation(
-                      sessionId: widget.sessionId,
-                      studentId: p.studentId,
-                      status: p.status,
-                      notes: controller.text.trim(),
-                    );
+                    await ref
+                        .read(practicalActionProvider.notifier)
+                        .updateParticipation(
+                          sessionId: widget.sessionId,
+                          studentId: p.studentId,
+                          status: p.status,
+                          notes: controller.text.trim(),
+                        );
                   },
                 ),
               ),
@@ -219,14 +256,21 @@ class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionD
     final user = authState is AuthAuthenticated ? authState.user : null;
     final isStudent = user?.role == AppRole.student;
 
-    final detailAsync = ref.watch(practicalSessionDetailProvider(widget.sessionId));
+    final detailAsync = ref.watch(
+      practicalSessionDetailProvider(widget.sessionId),
+    );
 
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isDark
+            ? AcadexColors.darkSurface
+            : AcadexColors.surface,
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.safePop(fallbackRoute: '/practicals'),
         ),
         title: Text(
@@ -237,12 +281,15 @@ class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionD
         ),
       ),
       body: detailAsync.when(
-        loading: () => const AcadexLoadingState(message: 'Loading practical session details...'),
+        loading: () => const AcadexLoadingState(
+          message: 'Loading practical session details...',
+        ),
         error: (err, stack) => Center(
           child: AcadexErrorState(
             message: "Couldn't load practical session.",
             retryLabel: 'Retry',
-            onRetry: () => ref.refresh(practicalSessionDetailProvider(widget.sessionId)),
+            onRetry: () =>
+                ref.refresh(practicalSessionDetailProvider(widget.sessionId)),
           ),
         ),
         data: (data) {
@@ -256,12 +303,19 @@ class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionD
               // Header Summary Card
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                  color: isDark
+                      ? AcadexColors.darkSurface
+                      : AcadexColors.surface,
                   border: Border(
                     bottom: BorderSide(
-                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                      color: isDark
+                          ? AcadexColors.darkHairline
+                          : AcadexColors.hairline,
                     ),
                   ),
                 ),
@@ -273,22 +327,32 @@ class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionD
                       children: [
                         Expanded(
                           child: Text(
-                            session.subjectName ?? session.subjectCode ?? 'Practical Subject',
+                            session.subjectName ??
+                                session.subjectCode ??
+                                'Practical Subject',
                             style: AcadexTypography.caption(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              color: isDark
+                                  ? AcadexColors.darkInkMuted
+                                  : AcadexColors.inkMuted,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2.5,
+                          ),
                           decoration: BoxDecoration(
                             color: isOpen
                                 ? const Color(0xFFDCFCE7)
-                                : (session.status == PracticalSessionStatus.completed
-                                    ? AcadexColors.primaryTint
-                                    : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft)),
+                                : (session.status ==
+                                          PracticalSessionStatus.completed
+                                      ? AcadexColors.primaryTint
+                                      : (isDark
+                                            ? AcadexColors.darkCanvasSoft
+                                            : AcadexColors.canvasSoft)),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -298,9 +362,12 @@ class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionD
                               fontWeight: FontWeight.w700,
                               color: isOpen
                                   ? const Color(0xFF15803D)
-                                  : (session.status == PracticalSessionStatus.completed
-                                      ? AcadexColors.primary
-                                      : (isDark ? AcadexColors.darkInk : AcadexColors.ink)),
+                                  : (session.status ==
+                                            PracticalSessionStatus.completed
+                                        ? AcadexColors.primary
+                                        : (isDark
+                                              ? AcadexColors.darkInk
+                                              : AcadexColors.ink)),
                             ),
                           ),
                         ),
@@ -324,7 +391,8 @@ class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionD
                       child: Row(
                         children: [
                           _buildMetricChip(
-                            label: '${session.completedCount} / ${session.totalEnrolled} Completed',
+                            label:
+                                '${session.completedCount} / ${session.totalEnrolled} Completed',
                             color: const Color(0xFF15803D),
                             bg: const Color(0xFFDCFCE7),
                           ),
@@ -346,8 +414,12 @@ class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionD
                             const SizedBox(width: 8),
                             _buildMetricChip(
                               label: 'Room: ${session.roomNumber}',
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                              bg: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                              color: isDark
+                                  ? AcadexColors.darkInk
+                                  : AcadexColors.ink,
+                              bg: isDark
+                                  ? AcadexColors.darkCanvasSoft
+                                  : AcadexColors.canvasSoft,
                             ),
                           ],
                         ],
@@ -360,12 +432,19 @@ class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionD
               // Faculty Actions Bar (Open, Complete, Cancel, Bulk Mark)
               if (!isStudent) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                    color: isDark
+                        ? AcadexColors.darkCanvasSoft
+                        : AcadexColors.canvasSoft,
                     border: Border(
                       bottom: BorderSide(
-                        color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                        color: isDark
+                            ? AcadexColors.darkHairline
+                            : AcadexColors.hairline,
                       ),
                     ),
                   ),
@@ -375,36 +454,81 @@ class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionD
                       children: [
                         if (isPlanned)
                           ElevatedButton.icon(
-                            onPressed: _isProcessingAction ? null : _handleOpenSession,
-                            icon: const Icon(LucideIcons.play, size: 14, color: Colors.white),
-                            label: const Text('Open Session', style: TextStyle(color: Colors.white, fontSize: 12)),
-                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF15803D)),
+                            onPressed: _isProcessingAction
+                                ? null
+                                : _handleOpenSession,
+                            icon: const Icon(
+                              LucideIcons.play,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                            label: const Text(
+                              'Open Session',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF15803D),
+                            ),
                           ),
                         if (isOpen) ...[
                           ElevatedButton.icon(
-                            onPressed: _isProcessingAction ? null : _handleCompleteSession,
-                            icon: const Icon(LucideIcons.checkCheck, size: 14, color: Colors.white),
-                            label: const Text('Complete Session', style: TextStyle(color: Colors.white, fontSize: 12)),
-                            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+                            onPressed: _isProcessingAction
+                                ? null
+                                : _handleCompleteSession,
+                            icon: const Icon(
+                              LucideIcons.checkCheck,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                            label: const Text(
+                              'Complete Session',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AcadexColors.primary,
+                            ),
                           ),
                           const SizedBox(width: 8),
                           OutlinedButton(
                             onPressed: _isProcessingAction
                                 ? null
-                                : () => _handleBulkMarkAll(participations, PracticalParticipationStatus.completed),
-                            child: const Text('Mark All Completed', style: TextStyle(fontSize: 11)),
+                                : () => _handleBulkMarkAll(
+                                    participations,
+                                    PracticalParticipationStatus.completed,
+                                  ),
+                            child: const Text(
+                              'Mark All Completed',
+                              style: TextStyle(fontSize: 11),
+                            ),
                           ),
                           const SizedBox(width: 8),
                           OutlinedButton(
                             onPressed: _isProcessingAction
                                 ? null
-                                : () => _handleBulkMarkAll(participations, PracticalParticipationStatus.inProgress),
-                            child: const Text('Mark All Present', style: TextStyle(fontSize: 11)),
+                                : () => _handleBulkMarkAll(
+                                    participations,
+                                    PracticalParticipationStatus.inProgress,
+                                  ),
+                            child: const Text(
+                              'Mark All Present',
+                              style: TextStyle(fontSize: 11),
+                            ),
                           ),
                           const SizedBox(width: 8),
                           TextButton(
-                            onPressed: _isProcessingAction ? null : _handleCancelSession,
-                            child: const Text('Cancel', style: TextStyle(color: Colors.red, fontSize: 11)),
+                            onPressed: _isProcessingAction
+                                ? null
+                                : _handleCancelSession,
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(color: Colors.red, fontSize: 11),
+                            ),
                           ),
                         ],
                       ],
@@ -420,7 +544,8 @@ class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionD
                         child: AcadexEmptyState(
                           icon: LucideIcons.users,
                           title: 'No Enrolled Students',
-                          subtitle: 'No active student enrollments found for this practical class context.',
+                          subtitle:
+                              'No active student enrollments found for this practical class context.',
                         ),
                       )
                     : ListView.builder(
@@ -432,13 +557,17 @@ class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionD
                             participation: p,
                             isSessionOpen: isOpen && !isStudent,
                             onStatusChanged: (newStatus) {
-                              ref.read(practicalActionProvider.notifier).updateParticipation(
-                                sessionId: session.id,
-                                studentId: p.studentId,
-                                status: newStatus,
-                              );
+                              ref
+                                  .read(practicalActionProvider.notifier)
+                                  .updateParticipation(
+                                    sessionId: session.id,
+                                    studentId: p.studentId,
+                                    status: newStatus,
+                                  );
                             },
-                            onEditNotes: !isStudent ? () => _showEditNotesSheet(p) : null,
+                            onEditNotes: !isStudent
+                                ? () => _showEditNotesSheet(p)
+                                : null,
                           );
                         },
                       ),
@@ -463,7 +592,11 @@ class _PracticalSessionDetailScreenState extends ConsumerState<PracticalSessionD
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
       ),
     );
   }

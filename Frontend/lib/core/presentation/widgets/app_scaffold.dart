@@ -44,7 +44,8 @@ class AppScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMobile = AcadexBreakpoints.isMobile(context);
-    final hasNavigation = navDestinations != null && navDestinations!.isNotEmpty;
+    final hasNavigation =
+        navDestinations != null && navDestinations!.isNotEmpty;
     final hasEnclosingScaffold = Scaffold.maybeOf(context) != null;
 
     if (hasEnclosingScaffold) {
@@ -118,7 +119,10 @@ class AppScaffold extends StatelessWidget {
               destinations: navDestinations!.map((dest) {
                 return NavigationDestination(
                   icon: Icon(dest.icon),
-                  selectedIcon: Icon(dest.selectedIcon, color: AcadexColors.primary),
+                  selectedIcon: Icon(
+                    dest.selectedIcon,
+                    color: AcadexColors.primary,
+                  ),
                   label: dest.label,
                 );
               }).toList(),

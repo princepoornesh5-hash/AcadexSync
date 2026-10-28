@@ -55,35 +55,51 @@ final practicalFilterProvider = StateProvider<PracticalFilter>((ref) {
   return const PracticalFilter();
 });
 
-final practicalSessionsListProvider = FutureProvider.family<List<PracticalSessionModel>, PracticalFilter>((ref, filter) async {
-  final repo = ref.watch(practicalsRepositoryProvider);
-  return repo.getSessions(
-    facultyAssignmentId: filter.facultyAssignmentId,
-    subjectId: filter.subjectId,
-    sectionId: filter.sectionId,
-    status: filter.status,
-  );
-});
+final practicalSessionsListProvider =
+    FutureProvider.family<List<PracticalSessionModel>, PracticalFilter>((
+      ref,
+      filter,
+    ) async {
+      final repo = ref.watch(practicalsRepositoryProvider);
+      return repo.getSessions(
+        facultyAssignmentId: filter.facultyAssignmentId,
+        subjectId: filter.subjectId,
+        sectionId: filter.sectionId,
+        status: filter.status,
+      );
+    });
 
-final practicalSessionDetailProvider = FutureProvider.family<
-    ({PracticalSessionModel session, List<PracticalParticipationModel> participations}),
-    String>((ref, sessionId) async {
-  final repo = ref.watch(practicalsRepositoryProvider);
-  return repo.getSessionById(sessionId);
-});
+final practicalSessionDetailProvider =
+    FutureProvider.family<
+      ({
+        PracticalSessionModel session,
+        List<PracticalParticipationModel> participations,
+      }),
+      String
+    >((ref, sessionId) async {
+      final repo = ref.watch(practicalsRepositoryProvider);
+      return repo.getSessionById(sessionId);
+    });
 
-final studentPracticalHistoryProvider = FutureProvider.family<List<StudentPracticalHistoryModel>, String?>((ref, subjectId) async {
-  final repo = ref.watch(practicalsRepositoryProvider);
-  return repo.getStudentHistory(subjectId: subjectId);
-});
+final studentPracticalHistoryProvider =
+    FutureProvider.family<List<StudentPracticalHistoryModel>, String?>((
+      ref,
+      subjectId,
+    ) async {
+      final repo = ref.watch(practicalsRepositoryProvider);
+      return repo.getStudentHistory(subjectId: subjectId);
+    });
 
 class PracticalActionNotifier extends StateNotifier<AsyncValue<void>> {
   final PracticalsRepository _repo;
   final Ref _ref;
 
-  PracticalActionNotifier(this._repo, this._ref) : super(const AsyncValue.data(null));
+  PracticalActionNotifier(this._repo, this._ref)
+    : super(const AsyncValue.data(null));
 
-  Future<PracticalSessionModel?> createSession(Map<String, dynamic> payload) async {
+  Future<PracticalSessionModel?> createSession(
+    Map<String, dynamic> payload,
+  ) async {
     state = const AsyncValue.loading();
     try {
       final session = await _repo.createSession(payload);
@@ -124,7 +140,10 @@ class PracticalActionNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  Future<PracticalSessionModel?> cancelSession(String sessionId, {String? reason}) async {
+  Future<PracticalSessionModel?> cancelSession(
+    String sessionId, {
+    String? reason,
+  }) async {
     state = const AsyncValue.loading();
     try {
       final session = await _repo.cancelSession(sessionId, reason: reason);
@@ -180,7 +199,8 @@ class PracticalActionNotifier extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final practicalActionProvider = StateNotifierProvider<PracticalActionNotifier, AsyncValue<void>>((ref) {
-  final repo = ref.watch(practicalsRepositoryProvider);
-  return PracticalActionNotifier(repo, ref);
-});
+final practicalActionProvider =
+    StateNotifierProvider<PracticalActionNotifier, AsyncValue<void>>((ref) {
+      final repo = ref.watch(practicalsRepositoryProvider);
+      return PracticalActionNotifier(repo, ref);
+    });

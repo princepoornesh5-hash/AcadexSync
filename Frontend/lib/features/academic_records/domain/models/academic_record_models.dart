@@ -135,13 +135,13 @@ class AttendanceAggregationSummary {
   }
 
   Map<String, dynamic> toJson() => {
-        'totalClasses': totalClasses,
-        'presentCount': presentCount,
-        'absentCount': absentCount,
-        'lateCount': lateCount,
-        'excusedCount': excusedCount,
-        'percentage': percentage,
-      };
+    'totalClasses': totalClasses,
+    'presentCount': presentCount,
+    'absentCount': absentCount,
+    'lateCount': lateCount,
+    'excusedCount': excusedCount,
+    'percentage': percentage,
+  };
 }
 
 @immutable
@@ -175,13 +175,13 @@ class PracticalAggregationSummary {
   }
 
   Map<String, dynamic> toJson() => {
-        'totalSessions': totalSessions,
-        'completedCount': completedCount,
-        'inProgressCount': inProgressCount,
-        'absentCount': absentCount,
-        'excusedCount': excusedCount,
-        'completionRate': completionRate,
-      };
+    'totalSessions': totalSessions,
+    'completedCount': completedCount,
+    'inProgressCount': inProgressCount,
+    'absentCount': absentCount,
+    'excusedCount': excusedCount,
+    'completionRate': completionRate,
+  };
 }
 
 @immutable
@@ -212,12 +212,12 @@ class AssignmentAggregationSummary {
   }
 
   Map<String, dynamic> toJson() => {
-        'totalAssignments': totalAssignments,
-        'submittedCount': submittedCount,
-        'completedCount': completedCount,
-        'lateCount': lateCount,
-        'completionRate': completionRate,
-      };
+    'totalAssignments': totalAssignments,
+    'submittedCount': submittedCount,
+    'completedCount': completedCount,
+    'lateCount': lateCount,
+    'completionRate': completionRate,
+  };
 }
 
 @immutable
@@ -242,10 +242,10 @@ class AssessmentSummaryEntry {
   }
 
   Map<String, dynamic> toJson() => {
-        'title': title,
-        if (totalMarks != null) 'totalMarks': totalMarks,
-        'isPublished': isPublished,
-      };
+    'title': title,
+    if (totalMarks != null) 'totalMarks': totalMarks,
+    'isPublished': isPublished,
+  };
 }
 
 @immutable
@@ -289,16 +289,24 @@ class SubjectRecordSummary {
       status: SubjectAcademicStatus.fromString(json['status'] as String?),
       facultyName: json['facultyName'] as String?,
       attendance: json['attendance'] != null
-          ? AttendanceAggregationSummary.fromJson(json['attendance'] as Map<String, dynamic>)
+          ? AttendanceAggregationSummary.fromJson(
+              json['attendance'] as Map<String, dynamic>,
+            )
           : null,
       practical: json['practical'] != null
-          ? PracticalAggregationSummary.fromJson(json['practical'] as Map<String, dynamic>)
+          ? PracticalAggregationSummary.fromJson(
+              json['practical'] as Map<String, dynamic>,
+            )
           : null,
       assignment: json['assignment'] != null
-          ? AssignmentAggregationSummary.fromJson(json['assignment'] as Map<String, dynamic>)
+          ? AssignmentAggregationSummary.fromJson(
+              json['assignment'] as Map<String, dynamic>,
+            )
           : null,
       assessment: json['assessment'] != null
-          ? AssessmentSummaryEntry.fromJson(json['assessment'] as Map<String, dynamic>)
+          ? AssessmentSummaryEntry.fromJson(
+              json['assessment'] as Map<String, dynamic>,
+            )
           : null,
     );
   }
@@ -378,15 +386,27 @@ class AcademicRecordModel {
       departmentId: resolveId(json['departmentId']),
       academicYearId: resolveId(json['academicYearId']),
       semesterId: resolveId(json['semesterId']),
-      sectionId: json['sectionId'] != null ? resolveId(json['sectionId']) : null,
+      sectionId: json['sectionId'] != null
+          ? resolveId(json['sectionId'])
+          : null,
       academicStage: json['academicStage'] as String? ?? '',
       cohort: json['cohort'] as String? ?? '',
-      progressionStatus: AcademicProgressionStatus.fromString(json['progressionStatus'] as String?),
+      progressionStatus: AcademicProgressionStatus.fromString(
+        json['progressionStatus'] as String?,
+      ),
       remarks: json['remarks'] as String?,
-      promotedAt: json['promotedAt'] != null ? DateTime.tryParse(json['promotedAt'] as String) : null,
-      completedAt: json['completedAt'] != null ? DateTime.tryParse(json['completedAt'] as String) : null,
-      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'] as String) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'] as String) : null,
+      promotedAt: json['promotedAt'] != null
+          ? DateTime.tryParse(json['promotedAt'] as String)
+          : null,
+      completedAt: json['completedAt'] != null
+          ? DateTime.tryParse(json['completedAt'] as String)
+          : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'] as String)
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'] as String)
+          : null,
     );
   }
 }
@@ -419,16 +439,24 @@ class AcademicHistoryItemModel {
 
   factory AcademicHistoryItemModel.fromJson(Map<String, dynamic> json) {
     return AcademicHistoryItemModel(
-      record: AcademicRecordModel.fromJson(json['record'] as Map<String, dynamic>),
+      record: AcademicRecordModel.fromJson(
+        json['record'] as Map<String, dynamic>,
+      ),
       courseName: json['courseName'] as String? ?? 'Course',
       departmentName: json['departmentName'] as String? ?? 'Department',
       academicYearName: json['academicYearName'] as String? ?? 'Academic Year',
       semesterNumber: (json['semesterNumber'] as num?)?.toInt() ?? 1,
       sectionName: json['sectionName'] as String?,
       subjectCount: (json['subjectCount'] as num?)?.toInt() ?? 0,
-      attendance: AttendanceAggregationSummary.fromJson(json['attendance'] as Map<String, dynamic>?),
-      practical: PracticalAggregationSummary.fromJson(json['practical'] as Map<String, dynamic>?),
-      assignment: AssignmentAggregationSummary.fromJson(json['assignment'] as Map<String, dynamic>?),
+      attendance: AttendanceAggregationSummary.fromJson(
+        json['attendance'] as Map<String, dynamic>?,
+      ),
+      practical: PracticalAggregationSummary.fromJson(
+        json['practical'] as Map<String, dynamic>?,
+      ),
+      assignment: AssignmentAggregationSummary.fromJson(
+        json['assignment'] as Map<String, dynamic>?,
+      ),
     );
   }
 }
@@ -464,7 +492,9 @@ class AcademicRecordDetailModel {
     final subsRaw = json['subjects'] as List<dynamic>? ?? [];
 
     return AcademicRecordDetailModel(
-      record: AcademicRecordModel.fromJson(json['record'] as Map<String, dynamic>),
+      record: AcademicRecordModel.fromJson(
+        json['record'] as Map<String, dynamic>,
+      ),
       courseName: ctx['courseName'] as String? ?? 'Course',
       departmentName: ctx['departmentName'] as String? ?? 'Department',
       academicYearName: ctx['academicYearName'] as String? ?? 'Academic Year',
