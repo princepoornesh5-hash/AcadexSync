@@ -538,7 +538,9 @@ export class AuthService {
     password: string,
     confirmPassword: string,
     name?: string,
-    metadata: ClientMetadata = {}
+    metadata: ClientMetadata = {},
+    termsAccepted?: boolean,
+    termsVersion?: string
   ): Promise<LoginResult> {
     if (!registrationToken || typeof registrationToken !== 'string') {
       throw ApiError.badRequest('registrationToken is required');
@@ -560,6 +562,10 @@ export class AuthService {
       throw ApiError.badRequest(policy.message || 'Password does not meet security requirements.');
     }
 
+    if (termsAccepted !== true) {
+      throw ApiError.badRequest('You must accept the Terms & Conditions and Privacy Policy to complete registration.');
+    }
+
     // Validate registration token
     const { email: verifiedEmail } = verifyRegistrationToken(registrationToken);
     const normalizedEmail = normalizeEmail(verifiedEmail);
@@ -572,6 +578,8 @@ export class AuthService {
 
     const passwordHash = await PasswordService.hashPassword(password);
     const userName = name?.trim() || normalizedEmail.split('@')[0];
+    const acceptedVersion = termsVersion || '2026.1-draft';
+    const acceptedAt = new Date();
 
     // Create user with base role and NO institutional college access
     const newUser = await User.create({
@@ -583,6 +591,9 @@ export class AuthService {
       departmentId: null,
       accountStatus: AccountStatus.ACTIVE,
       activationStatus: 'activated',
+      termsAccepted: true,
+      termsAcceptedVersion: acceptedVersion,
+      termsAcceptedAt: acceptedAt,
     });
 
     await AuditService.log({
@@ -592,7 +603,11 @@ export class AuthService {
       action: 'USER_REGISTERED',
       entityType: 'User',
       entityId: newUser.id,
-      metadata: { registrationMethod: 'EMAIL_OTP' },
+      metadata: {
+        registrationMethod: 'EMAIL_OTP',
+        termsAcceptedVersion: acceptedVersion,
+        termsAcceptedAt: acceptedAt.toISOString(),
+      },
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,
     });
@@ -1173,6 +1188,63 @@ export class AuthService {
       refreshToken,
       workspaceId: activeWorkspaceId,
       user: user.toJSON(),
+    };
+  }
+
+  /**
+   * Record terms acceptance for an authenticated user.
+   */
+  static async acceptTerms(
+    userId: string,
+    termsVersion: string = '2026.1-draft',
+    metadata: ClientMetadata = {}
+  ): Promise<{ termsAccepted: boolean; termsAcceptedVersion: string; termsAcceptedAt: Date }> {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw ApiError.notFound('User not found');
+    }
+
+    const acceptedAt = new Date();
+    user.termsAccepted = true;
+    user.termsAcceptedVersion = termsVersion;
+    user.termsAcceptedAt = acceptedAt;
+    await user.save();
+
+    await AuditService.log({
+      actorUserId: user.id,
+      actorEmail: user.email,
+      actorRole: user.role,
+      action: 'TERMS_ACCEPTED',
+      entityType: 'User',
+      entityId: user.id,
+      metadata: { termsVersion },
+      ipAddress: metadata.ipAddress,
+      userAgent: metadata.userAgent,
+    });
+
+    return {
+      termsAccepted: true,
+      termsAcceptedVersion: termsVersion,
+      termsAcceptedAt: acceptedAt,
+    };
+  }
+
+  /**
+   * Retrieve current terms acceptance status for authenticated user.
+   */
+  static async getTermsStatus(
+    userId: string
+  ): Promise<{ termsAccepted: boolean; termsAcceptedVersion: string | null; termsAcceptedAt: Date | null; latestVersion: string }> {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw ApiError.notFound('User not found');
+    }
+
+    return {
+      termsAccepted: Boolean(user.termsAccepted),
+      termsAcceptedVersion: user.termsAcceptedVersion || null,
+      termsAcceptedAt: user.termsAcceptedAt || null,
+      latestVersion: '2026.1-draft',
     };
   }
 }

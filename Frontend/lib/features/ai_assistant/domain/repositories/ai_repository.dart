@@ -27,4 +27,9 @@ abstract class AiRepository {
   Future<Map<String, dynamic>> cancelAction({required String actionId});
 
   Future<Map<String, dynamic>> getActionStatus({required String actionId});
+
+  Future<AiResponse> sendPublicSupportQuery({
+    required String query,
+    List<Map<String, String>>? history,
+  });
 }

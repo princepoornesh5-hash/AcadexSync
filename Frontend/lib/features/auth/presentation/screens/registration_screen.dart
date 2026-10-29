@@ -10,6 +10,7 @@ import '../../../../core/presentation/widgets/animated_particle_sphere.dart';
 import '../../domain/models/auth_state.dart';
 import '../../domain/models/role_enum.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/terms_acceptance_checkbox.dart';
 
 enum RegistrationStep {
   enterDetails, // Step 1: Full name and email address
@@ -40,6 +41,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _isSubmitting = false;
+  bool _acceptedTerms = false;
   String? _registrationToken;
   String? _stepError;
 
@@ -175,6 +177,13 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   Future<void> _handleCompleteRegistration() async {
     setState(() => _stepError = null);
     if (!_step3FormKey.currentState!.validate()) return;
+    if (!_acceptedTerms) {
+      setState(() {
+        _stepError =
+            'Please review and accept the Terms & Conditions and Privacy Policy to proceed.';
+      });
+      return;
+    }
     if (_registrationToken == null) {
       setState(() {
         _stepError = 'Verification expired. Please restart the process.';
@@ -196,6 +205,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             password: password,
             confirmPassword: confirmPassword,
             name: name.isNotEmpty ? name : null,
+            termsAccepted: true,
+            termsVersion: '2026.1-draft',
           );
       // Auth state listener handles navigation
     } catch (e) {
@@ -911,7 +922,14 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
               return null;
             },
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+
+          TermsAcceptanceCheckbox(
+            value: _acceptedTerms,
+            enabled: !_isSubmitting,
+            onChanged: (val) => setState(() => _acceptedTerms = val ?? false),
+          ),
+          const SizedBox(height: 20),
 
           AcadexButton(
             key: const Key('reg_complete_button'),
@@ -922,7 +940,9 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             isLoading: _isSubmitting,
             isFullWidth: true,
             size: AcadexButtonSize.lg,
-            onPressed: _isSubmitting ? null : _handleCompleteRegistration,
+            onPressed: (_isSubmitting || !_acceptedTerms)
+                ? null
+                : _handleCompleteRegistration,
           ),
         ],
       ),

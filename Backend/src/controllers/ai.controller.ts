@@ -13,6 +13,30 @@ import {
 
 export class AiController {
   /**
+   * Process unauthenticated public support query through restricted Gemini AI
+   */
+  static publicChat = asyncHandler(async (req: Request, res: Response) => {
+    const validatedInput = chatRequestSchema.parse(req.body);
+    const correlationId =
+      (req.headers['x-correlation-id'] as string) ||
+      `pub_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+    res.setHeader('X-Correlation-ID', correlationId);
+
+    const result = await AiService.generatePublicSupportResponse({
+      message: validatedInput.message,
+      history: validatedInput.history,
+      correlationId,
+    });
+
+    Logger.info('AI public support query processed successfully', {
+      model: result.model,
+      correlationId,
+    });
+
+    return ApiResponse.success(res, result, 'Support response generated successfully');
+  });
+
+  /**
    * Process authenticated conversational query through Gemini AI with tool calling
    */
   static chat = asyncHandler(async (req: Request, res: Response) => {

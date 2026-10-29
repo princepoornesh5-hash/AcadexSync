@@ -129,4 +129,15 @@ class FirebaseAiRepository implements AiRepository {
       throw Exception('Failed to check action status via Firebase functions.');
     }
   }
+
+  @override
+  Future<AiResponse> sendPublicSupportQuery({
+    required String query,
+    List<Map<String, String>>? history,
+  }) async {
+    return const AiResponse(
+      answer:
+          'ACADEXSYNC AI Support is available on our dedicated backend services.',
+    );
+  }
 }

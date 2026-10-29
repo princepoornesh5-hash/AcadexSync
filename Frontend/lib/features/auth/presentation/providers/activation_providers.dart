@@ -331,6 +331,8 @@ class ActivationNotifier extends StateNotifier<ActivationState> {
   Future<bool> completeActivation({
     String? password,
     String? confirmPassword,
+    bool? termsAccepted,
+    String? termsVersion,
   }) async {
     final token = state.activationToken;
     if (token == null || token.isEmpty) {
@@ -378,6 +380,8 @@ class ActivationNotifier extends StateNotifier<ActivationState> {
         activationToken: token,
         password: state.isExistingUser ? null : password,
         confirmPassword: state.isExistingUser ? null : confirmPassword,
+        termsAccepted: termsAccepted,
+        termsVersion: termsVersion,
       );
 
       state = state.copyWith(

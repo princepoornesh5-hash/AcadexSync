@@ -74,6 +74,17 @@ class ControllableMockAiRepository implements AiRepository {
     };
   }
 
+  @override
+  Future<AiResponse> sendPublicSupportQuery({
+    required String query,
+    List<Map<String, String>>? history,
+  }) async {
+    return const AiResponse(
+      answer: 'Controllable mock public response',
+      model: 'mock',
+    );
+  }
+
   void dispose() {
     _controller.close();
   }
@@ -348,7 +359,7 @@ void main() {
         ),
       );
 
-      expect(find.text('ACADEX is thinking...'), findsOneWidget);
+      expect(find.text('ACADEXSYNC is thinking...'), findsOneWidget);
     });
 
     testWidgets('AiMarkdownView renders incomplete code blocks progressively with copy button and proper indentation', (tester) async {

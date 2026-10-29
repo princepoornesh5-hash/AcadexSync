@@ -162,41 +162,28 @@ void main() {
         );
         expect(find.text('Terms & Conditions'), findsWidgets);
 
-        // Verify honest status badge and pending documentation disclosure
-        expect(find.text('STATUS: UNDER INSTITUTIONAL REVIEW'), findsOneWidget);
+        // Verify draft status badge and pending documentation disclosure
+        expect(find.text('DRAFT VERSION: 2026.1-draft'), findsOneWidget);
         expect(
-          find.text('Legal Disclosure & Pending Documentation'),
+          find.text('Subject to Formal Owner & Legal Counsel Review'),
           findsOneWidget,
         );
 
-        // Verify reused approved text from settings
+        // Verify Indian law citations
         expect(
-          find.textContaining(
-            'ACADEXSYNC Campus Management System is licensed for accredited institutional operations',
-          ),
+          find.textContaining('Digital Personal Data Protection Act, 2023'),
           findsOneWidget,
         );
         expect(
-          find.textContaining(
-            'ACADEXSYNC enforces strict multi-tenant isolation and role-based access control',
-          ),
-          findsOneWidget,
+          find.textContaining('Consumer Protection Act, 2019'),
+          findsWidgets,
         );
 
-        // Verify structured checklist of pending owner specifications
-        expect(find.text('Master Service Agreement (MSA)'), findsOneWidget);
-        expect(find.text('Campus Acceptable Use Policy (AUP)'), findsOneWidget);
-        expect(find.text('Academic Data Retention Schedule'), findsOneWidget);
+        // Verify 15 sections header and key sections
+        expect(find.text('15 Agreement Sections'), findsOneWidget);
+        expect(find.text('1. Purpose & Scope of ACADEXSYNC'), findsOneWidget);
         expect(
-          find.text('Dispute Resolution & Legal Jurisdiction'),
-          findsOneWidget,
-        );
-
-        // Verify explicit notice that viewing page does NOT grant consent or active privileges
-        expect(
-          find.textContaining(
-            'Navigating to or reading this page does not constitute institutional consent',
-          ),
+          find.text('2. Account Registration, Activation & Security'),
           findsOneWidget,
         );
       },
@@ -234,7 +221,7 @@ void main() {
     );
 
     testWidgets(
-      '5. Contact Us link navigates to dedicated in-app page disclosing unconfigured support channels honestly',
+      '5. Contact Us link navigates to dedicated in-app support hub with owner details',
       (tester) async {
         final router = _createMockRouter();
         await tester.pumpWidget(_buildTestableApp(router: router));
@@ -248,41 +235,26 @@ void main() {
         expect(find.byKey(const Key('contact_us_screen')), findsOneWidget);
         expect(find.text('Contact Us'), findsWidgets);
 
-        // Verify honest unconfigured status
+        // Verify owner-provided contact details rendered
+        expect(find.text('+91 8686633340'), findsOneWidget);
+        expect(find.text('ragoorupoornesh@gmail.com'), findsOneWidget);
         expect(
-          find.text('STATUS: SUPPORT CHANNELS UNCONFIGURED'),
-          findsOneWidget,
+          find.text('Nehru Nagar, Tirupati, Andhra Pradesh, India'),
+          findsWidgets,
         );
+
+        // Verify College Onboarding CTA banner
+        expect(find.text('Bring ACADEXSYNC to Your College'), findsOneWidget);
         expect(
-          find.text('Support Contact Information Pending Configuration'),
-          findsOneWidget,
-        );
-        expect(
-          find.textContaining(
-            'Official direct support channels, campus helpdesk hotlines, and operational email endpoints have not yet been configured',
-          ),
+          find.byKey(const Key('register_college_cta_button')),
           findsOneWidget,
         );
 
-        // Verify on-campus guidance for students, faculty, and administrators
-        expect(find.text('Enrolled Students'), findsOneWidget);
-        expect(find.text('Faculty & Academic Staff'), findsOneWidget);
-        expect(find.text('College Administrators'), findsOneWidget);
+        // Verify Ask AI support section
+        expect(find.text('Ask ACADEXSYNC AI Support'), findsOneWidget);
 
-        // Verify required configuration items for project owner
-        expect(find.text('Institutional Support Email'), findsOneWidget);
-        expect(
-          find.text('Campus IT Helpdesk Phone & Working Hours'),
-          findsOneWidget,
-        );
-        expect(find.text('Physical Helpdesk Location'), findsOneWidget);
-        expect(
-          find.text('Support Portal & Ticket Management URL'),
-          findsOneWidget,
-        );
-
-        // Verify disclosure regarding default repository mock settings
-        expect(find.textContaining('support@acadex.edu'), findsOneWidget);
+        // Verify FAQ section
+        expect(find.text('Frequently Asked Questions'), findsOneWidget);
       },
     );
 

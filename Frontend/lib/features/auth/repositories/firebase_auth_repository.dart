@@ -227,6 +227,8 @@ class FirebaseAuthRepository implements AuthRepository {
     required String password,
     required String confirmPassword,
     String? name,
+    bool? termsAccepted,
+    String? termsVersion,
   }) async {
     throw UnimplementedError('Use ApiAuthRepository for registration');
   }
@@ -254,6 +256,8 @@ class FirebaseAuthRepository implements AuthRepository {
     required String activationCode,
     String? password,
     String? confirmPassword,
+    bool? termsAccepted,
+    String? termsVersion,
   }) async {
     throw UnimplementedError(
       'Use ApiAuthRepository for institutional activation',

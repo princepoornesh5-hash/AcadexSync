@@ -409,6 +409,8 @@ extension AuthOtpActions on AuthNotifier {
     required String password,
     required String confirmPassword,
     String? name,
+    bool? termsAccepted,
+    String? termsVersion,
   }) async {
     if (runtimeType != AuthNotifier) {
       final dynamic dyn = this;
@@ -417,6 +419,8 @@ extension AuthOtpActions on AuthNotifier {
         password: password,
         confirmPassword: confirmPassword,
         name: name,
+        termsAccepted: termsAccepted,
+        termsVersion: termsVersion,
       );
     }
     _setAuthState(const AuthLoading());
@@ -426,6 +430,8 @@ extension AuthOtpActions on AuthNotifier {
         password: password,
         confirmPassword: confirmPassword,
         name: name,
+        termsAccepted: termsAccepted,
+        termsVersion: termsVersion,
       );
       final token =
           await _sessionManager.getAccessToken() ??
@@ -480,6 +486,8 @@ extension AuthOtpActions on AuthNotifier {
     required String activationCode,
     String? password,
     String? confirmPassword,
+    bool? termsAccepted,
+    String? termsVersion,
   }) async {
     if (runtimeType != AuthNotifier) {
       final dynamic dyn = this;
@@ -488,6 +496,8 @@ extension AuthOtpActions on AuthNotifier {
         activationCode: activationCode,
         password: password,
         confirmPassword: confirmPassword,
+        termsAccepted: termsAccepted,
+        termsVersion: termsVersion,
       );
     }
     try {
@@ -496,6 +506,8 @@ extension AuthOtpActions on AuthNotifier {
         activationCode: activationCode,
         password: password,
         confirmPassword: confirmPassword,
+        termsAccepted: termsAccepted,
+        termsVersion: termsVersion,
       );
     } catch (e) {
       final cleanMsg = e.toString().replaceFirst('Exception: ', '');

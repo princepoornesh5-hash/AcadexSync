@@ -249,4 +249,39 @@ class MockAiRepository implements AiRepository {
       'summary': 'Mock pending action proposal',
     };
   }
+
+  @override
+  Future<AiResponse> sendPublicSupportQuery({
+    required String query,
+    List<Map<String, String>>? history,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    final lower = query.toLowerCase();
+    if (lower.contains('activate')) {
+      return const AiResponse(
+        answer:
+            'To activate your account, click Activate Account on the login screen, enter your institutional email or activation code, and verify your email OTP.',
+        model: 'mock-gemini-support',
+      );
+    }
+    if (lower.contains('otp')) {
+      return const AiResponse(
+        answer:
+            'To sign in with Email OTP, select Sign in with Email OTP on login, enter your email, and input the 6-digit code.',
+        model: 'mock-gemini-support',
+      );
+    }
+    if (lower.contains('college') || lower.contains('register')) {
+      return const AiResponse(
+        answer:
+            'To register your college, click Register Your College on the Contact Us screen to send an onboarding request to ragoorupoornesh@gmail.com.',
+        model: 'mock-gemini-support',
+      );
+    }
+    return const AiResponse(
+      answer:
+          'ACADEXSYNC AI Support is available for public questions about account activation, email OTP sign-in, and onboarding.',
+      model: 'mock-gemini-support',
+    );
+  }
 }

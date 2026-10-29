@@ -12,6 +12,7 @@ import '../../../../core/presentation/widgets/acadex_form_controls.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
 import '../../../../core/presentation/widgets/animated_particle_sphere.dart';
 import '../../domain/models/activation_model.dart';
+import '../widgets/terms_acceptance_checkbox.dart';
 
 enum ActivationFlowMode { codeFirst, emailFirst }
 
@@ -58,6 +59,8 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
 
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
+  bool _acceptedTermsCodeFirst = false;
+  bool _acceptedTermsEmailFirst = false;
   bool _isInstPasswordVisible = false;
   bool _isInstConfirmPasswordVisible = false;
   bool _isEmailFirstLoading = false;
@@ -118,8 +121,15 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
     final notifier = ref.read(activationNotifierProvider.notifier);
     final state = ref.read(activationNotifierProvider);
 
+    if (!_acceptedTermsCodeFirst) {
+      return;
+    }
+
     if (state.isExistingUser) {
-      notifier.completeActivation();
+      notifier.completeActivation(
+        termsAccepted: true,
+        termsVersion: '2026.1-draft',
+      );
       return;
     }
 
@@ -127,6 +137,8 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
     notifier.completeActivation(
       password: _passwordController.text,
       confirmPassword: _confirmPasswordController.text,
+      termsAccepted: true,
+      termsVersion: '2026.1-draft',
     );
   }
 
@@ -241,6 +253,13 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
   Future<void> _handleCompleteInstitutionalActivation() async {
     setState(() => _emailFirstError = null);
     if (!_emailFirstStep3Key.currentState!.validate()) return;
+    if (!_acceptedTermsEmailFirst) {
+      setState(() {
+        _emailFirstError =
+            'Please review and accept the Terms & Conditions and Privacy Policy.';
+      });
+      return;
+    }
     if (_institutionalVerificationToken == null) {
       setState(() {
         _emailFirstError =
@@ -264,6 +283,8 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
             activationCode: code,
             password: pwd.isNotEmpty ? pwd : null,
             confirmPassword: confirm.isNotEmpty ? confirm : null,
+            termsAccepted: true,
+            termsVersion: '2026.1-draft',
           );
       if (!mounted) return;
       setState(() {
@@ -1426,9 +1447,19 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
             hasLetterAndNumber: hasLetter && hasDigit,
             isDark: isDark,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+
+          TermsAcceptanceCheckbox(
+            key: const Key('activation_code_terms_checkbox'),
+            value: _acceptedTermsCodeFirst,
+            enabled: !state.isLoading,
+            onChanged: (val) =>
+                setState(() => _acceptedTermsCodeFirst = val ?? false),
+          ),
+          const SizedBox(height: 20),
 
           AcadexButton(
+            key: const Key('activation_complete_button'),
             label: state.isLoading
                 ? 'Activating Account...'
                 : 'Activate Account',
@@ -1436,7 +1467,9 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
             isLoading: state.isLoading,
             isFullWidth: true,
             size: AcadexButtonSize.lg,
-            onPressed: state.isLoading ? null : _submitPassword,
+            onPressed: (state.isLoading || !_acceptedTermsCodeFirst)
+                ? null
+                : _submitPassword,
           ),
         ],
       ),
@@ -2101,7 +2134,16 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
               return null;
             },
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+
+          TermsAcceptanceCheckbox(
+            key: const Key('institutional_activation_terms_checkbox'),
+            value: _acceptedTermsEmailFirst,
+            enabled: !_isEmailFirstLoading,
+            onChanged: (val) =>
+                setState(() => _acceptedTermsEmailFirst = val ?? false),
+          ),
+          const SizedBox(height: 20),
 
           AcadexButton(
             key: const Key('inst_complete_button'),
@@ -2112,7 +2154,7 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
             isLoading: _isEmailFirstLoading,
             isFullWidth: true,
             size: AcadexButtonSize.lg,
-            onPressed: _isEmailFirstLoading
+            onPressed: (_isEmailFirstLoading || !_acceptedTermsEmailFirst)
                 ? null
                 : _handleCompleteInstitutionalActivation,
           ),

@@ -63,6 +63,8 @@ abstract class AuthRepository {
     required String password,
     required String confirmPassword,
     String? name,
+    bool? termsAccepted,
+    String? termsVersion,
   });
 
   /// Request email OTP for institutional account activation
@@ -80,6 +82,8 @@ abstract class AuthRepository {
     required String activationCode,
     String? password,
     String? confirmPassword,
+    bool? termsAccepted,
+    String? termsVersion,
   });
 }
 
@@ -270,6 +274,8 @@ class MockAuthRepository implements AuthRepository {
     required String password,
     required String confirmPassword,
     String? name,
+    bool? termsAccepted,
+    String? termsVersion,
   }) async {
     await Future.delayed(const Duration(milliseconds: 500));
     return UserModel(
@@ -301,6 +307,8 @@ class MockAuthRepository implements AuthRepository {
     required String activationCode,
     String? password,
     String? confirmPassword,
+    bool? termsAccepted,
+    String? termsVersion,
   }) async {
     await Future.delayed(const Duration(milliseconds: 500));
     return {

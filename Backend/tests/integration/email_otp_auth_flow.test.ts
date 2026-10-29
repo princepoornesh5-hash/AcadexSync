@@ -515,6 +515,7 @@ describe('ACADEXSYNC Phase 2: Email OTP, Registration and Institutional Activati
           password: 'SecureStudentPass123!',
           confirmPassword: 'SecureStudentPass123!',
           name: 'New Registered Student',
+          termsAccepted: true,
         });
 
       expect(completeRes.status).toBe(200);
@@ -574,6 +575,7 @@ describe('ACADEXSYNC Phase 2: Email OTP, Registration and Institutional Activati
           registrationToken,
           password: 'Password123!',
           confirmPassword: 'DifferentPassword123!',
+          termsAccepted: true,
         });
 
       expect(completeRes.status).toBe(400);
@@ -647,6 +649,7 @@ describe('ACADEXSYNC Phase 2: Email OTP, Registration and Institutional Activati
           activationCode: invitationCodeRaw,
           password: 'FacultyPassword123!',
           confirmPassword: 'FacultyPassword123!',
+          termsAccepted: true,
         });
 
       expect(completeRes.status).toBe(200);
@@ -699,6 +702,7 @@ describe('ACADEXSYNC Phase 2: Email OTP, Registration and Institutional Activati
           activationCode: invitationCodeRaw,
           password: 'PassWord123!',
           confirmPassword: 'PassWord123!',
+          termsAccepted: true,
         });
 
       expect(completeRes.status).toBe(403);
@@ -728,6 +732,7 @@ describe('ACADEXSYNC Phase 2: Email OTP, Registration and Institutional Activati
           activationCode: 'XXXX-9999-0000',
           password: 'Password123!',
           confirmPassword: 'Password123!',
+          termsAccepted: true,
         });
 
       expect(completeRes.status).toBe(400);
@@ -806,6 +811,7 @@ describe('ACADEXSYNC Phase 2: Email OTP, Registration and Institutional Activati
         .send({
           emailVerificationToken,
           activationCode: carlosCodeRaw,
+          termsAccepted: true,
         });
 
       expect(completeRes.status).toBe(200);

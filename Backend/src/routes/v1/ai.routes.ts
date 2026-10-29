@@ -13,6 +13,25 @@ import {
 
 const router = Router();
 
+// AI-specific rate limiter for unauthenticated public support inquiries (strictly per IP)
+const publicSupportRateLimiter = createRateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  maxRequests: 20,
+  code: 'AI_PUBLIC_RATE_LIMIT_EXCEEDED',
+  message: "You've sent several support questions. Please wait a moment before asking again.",
+  keyGenerator: (req) => {
+    return `ai:public:ip:${(req.headers['x-forwarded-for'] as string) || req.ip || 'unknown-client'}`;
+  },
+});
+
+// Unauthenticated public AI support endpoint (restricted to platform support & onboarding)
+router.post(
+  '/public-chat',
+  publicSupportRateLimiter,
+  validateBody(chatRequestSchema),
+  AiController.publicChat
+);
+
 // Multi-tenant and authentication boundaries
 router.use(authenticateRequest);
 router.use(requireCollegeScope);

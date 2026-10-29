@@ -300,7 +300,7 @@ export class AuthController {
    * Complete registration with registrationToken and password.
    */
   static registerComplete = asyncHandler(async (req: Request, res: Response) => {
-    const { registrationToken, password, confirmPassword, name } = req.body;
+    const { registrationToken, password, confirmPassword, name, termsAccepted, termsVersion } = req.body;
 
     if (!registrationToken || typeof registrationToken !== 'string') {
       throw ApiError.badRequest('registrationToken is required');
@@ -324,10 +324,50 @@ export class AuthController {
       password,
       confirmPassword,
       name,
-      metadata
+      metadata,
+      termsAccepted,
+      termsVersion
     );
 
     return ApiResponse.success(res, result, 'Account created successfully');
+  });
+
+  /**
+   * POST /api/v1/auth/terms/accept
+   * Record terms acceptance for authenticated user.
+   */
+  static acceptTerms = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user?.id) {
+      throw ApiError.unauthorized('Authentication required to accept terms');
+    }
+
+    const { termsVersion } = req.body;
+    const metadata = {
+      userAgent: req.headers['user-agent'],
+      ipAddress: req.ip || req.socket.remoteAddress,
+    };
+
+    const result = await AuthService.acceptTerms(
+      req.user.id,
+      termsVersion || '2026.1-draft',
+      metadata
+    );
+
+    return ApiResponse.success(res, result, 'Terms & Conditions accepted successfully');
+  });
+
+  /**
+   * GET /api/v1/auth/terms/status
+   * Get terms acceptance status for authenticated user.
+   */
+  static getTermsStatus = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user?.id) {
+      throw ApiError.unauthorized('Authentication required to view terms status');
+    }
+
+    const result = await AuthService.getTermsStatus(req.user.id);
+
+    return ApiResponse.success(res, result, 'Terms status retrieved successfully');
   });
 }
 

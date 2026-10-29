@@ -281,12 +281,16 @@ class ApiAuthRepository implements AuthRepository {
     required String password,
     required String confirmPassword,
     String? name,
+    bool? termsAccepted,
+    String? termsVersion,
   }) async {
     try {
       final payload = <String, dynamic>{
         'registrationToken': registrationToken.trim(),
         'password': password,
         'confirmPassword': confirmPassword,
+        'termsAccepted': termsAccepted ?? true,
+        'termsVersion': termsVersion ?? '2026.1-draft',
       };
       if (name != null && name.trim().isNotEmpty) {
         payload['name'] = name.trim();
@@ -353,11 +357,15 @@ class ApiAuthRepository implements AuthRepository {
     required String activationCode,
     String? password,
     String? confirmPassword,
+    bool? termsAccepted,
+    String? termsVersion,
   }) async {
     try {
       final payload = <String, dynamic>{
         'emailVerificationToken': emailVerificationToken.trim(),
         'activationCode': activationCode.trim(),
+        'termsAccepted': termsAccepted ?? true,
+        'termsVersion': termsVersion ?? '2026.1-draft',
       };
       if (password != null && password.isNotEmpty) {
         payload['password'] = password;

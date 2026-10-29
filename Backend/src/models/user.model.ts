@@ -28,6 +28,9 @@ export interface IUser extends Document {
   bio?: string;
   accountStatus: AccountStatus;
   activationStatus: string;
+  termsAccepted?: boolean;
+  termsAcceptedVersion?: string;
+  termsAcceptedAt?: Date;
   lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -81,6 +84,9 @@ const UserSchema = new Schema<IUser>(
       enum: ['pending', 'activated', 'deactivated'],
       default: 'activated',
     },
+    termsAccepted: { type: Boolean, default: false },
+    termsAcceptedVersion: { type: String, default: null },
+    termsAcceptedAt: { type: Date, default: null },
     lastLoginAt: { type: Date, default: null },
   },
   {

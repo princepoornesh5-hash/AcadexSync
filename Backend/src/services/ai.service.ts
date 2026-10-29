@@ -27,6 +27,18 @@ export interface ChatResponseResult {
   providerCallsCount?: number;
 }
 
+export interface PublicSupportResponseParams {
+  message: string;
+  history?: ChatMessage[];
+  correlationId?: string;
+}
+
+export interface PublicSupportResult {
+  answer: string;
+  model: string;
+  correlationId?: string;
+}
+
 export interface StreamCallbacks {
   onStart?: (data: { model: string; correlationId: string }) => void;
   onDelta?: (text: string) => void;
@@ -83,6 +95,106 @@ export class AiService {
     }
 
     return new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+  }
+
+  /**
+   * Generates response for public, unauthenticated support queries.
+   * Strictly isolates tenant data and private student/faculty records.
+   */
+  static async generatePublicSupportResponse(
+    params: PublicSupportResponseParams
+  ): Promise<PublicSupportResult> {
+    const { message, history = [], correlationId } = params;
+
+    // 1. Strict Privacy Filter: Public visitors must NEVER receive student/faculty PII or records
+    const lowerMessage = message.toLowerCase();
+    const sensitivePatterns = [
+      'my marks', 'my attendance', 'student list', 'faculty list', 
+      'password of', 'student record', 'marksheet', 'salary',
+      'grade report', 'gpa of', 'roll number', 'student detail',
+      'faculty detail', 'admin password', 'database query'
+    ];
+    if (sensitivePatterns.some((pattern) => lowerMessage.includes(pattern))) {
+      return {
+        answer: 'For privacy, data protection, and institutional security, individual student records, attendance, grades, and faculty information are strictly confidential and require an authenticated institutional account. Please log in to your ACADEXSYNC portal to access academic information.',
+        model: 'security-privacy-guard',
+        correlationId,
+      };
+    }
+
+    // 2. Attempt live Gemini API call without tools (restricted system prompt)
+    try {
+      const client = AiService.getClient();
+      const modelName = env.GEMINI_MODEL || 'gemini-1.5-flash';
+      const systemInstruction = 
+        `You are the official ACADEXSYNC AI Support Assistant. ACADEXSYNC is a modern, integrated Campus Operating System.\n` +
+        `You assist prospective institutions, students, faculty, and administrators with public support topics: account activation, email OTP sign-in, password reset, college onboarding, and platform features.\n` +
+        `STRICT RESTRICTION: You do NOT have access to private institutional databases, grades, marks, attendance, or personal contact records. If a user asks for personal student/faculty data, politely direct them to sign in to their institution's portal.\n` +
+        `Keep answers concise, professional, clear, and easy to read.`;
+
+      const contents: any[] = [];
+      for (const turn of history) {
+        contents.push({
+          role: turn.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: turn.content }],
+        });
+      }
+      contents.push({
+        role: 'user',
+        parts: [{ text: message }],
+      });
+
+      const response = await client.models.generateContent({
+        model: modelName,
+        contents,
+        config: {
+          systemInstruction,
+          temperature: 0.2,
+          maxOutputTokens: 600,
+        },
+      });
+
+      const answer = response.text || AiService.getCuratedSupportAnswer(message);
+      return {
+        answer,
+        model: modelName,
+        correlationId,
+      };
+    } catch (err: any) {
+      Logger.warn('Gemini public support invocation bypassed or unavailable, using curated guidance', {
+        error: err?.message,
+        correlationId,
+      });
+
+      return {
+        answer: AiService.getCuratedSupportAnswer(message),
+        model: 'curated-support-fallback',
+        correlationId,
+      };
+    }
+  }
+
+  static getCuratedSupportAnswer(message: string): string {
+    const lower = message.toLowerCase();
+    if (lower.includes('activate') || lower.includes('invitation code')) {
+      return 'To activate your ACADEXSYNC account:\n1. Click "Activate Account" on the login screen.\n2. Enter your institutional email address or activation code issued by your campus administrator.\n3. Verify the 6-digit OTP sent to your email.\n4. Set a strong password (minimum 8 characters) and accept the Terms & Conditions.\nYour workspace access will be activated immediately.';
+    }
+    if (lower.includes('otp') || lower.includes('sign in')) {
+      return 'To sign in using Email OTP:\n1. Select "Sign in with Email OTP" on the login screen.\n2. Enter your registered institutional or personal email address.\n3. Enter the 6-digit one-time password delivered to your inbox.\n4. You will be authenticated securely without entering your password.';
+    }
+    if (lower.includes('college register') || lower.includes('onboard') || lower.includes('bring acadexsync')) {
+      return 'To bring ACADEXSYNC to your college:\n1. Click "Register Your College" on the Contact Us screen.\n2. Complete the institutional details (college name, location, administrator contact, student/faculty count, and requested modules).\n3. Submit the inquiry to ragoorupoornesh@gmail.com.\nOur onboarding team will contact you to schedule a demonstration and configure your dedicated multi-tenant campus environment.';
+    }
+    if (lower.includes('password') || lower.includes('reset')) {
+      return 'To reset your password:\n1. Click "Forgot Password" on the login screen.\n2. Enter your registered email address.\n3. Enter the verification code sent to your email.\n4. Set and confirm your new password.';
+    }
+    if (lower.includes('institution') || lower.includes('what can acadexsync do')) {
+      return 'ACADEXSYNC is a comprehensive Campus Operating System offering:\n• Role-Based Access Control for Super Admins, College Admins, HODs, Faculty, and Students\n• Academic Structure Management (Courses, Departments, Semesters, Sections)\n• Authoritative Attendance Tracking & Marksheet Records\n• Interactive AI Support Assistant\n• High-performance multi-tenant security and student data protection.';
+    }
+    if (lower.includes('problem') || lower.includes('technical') || lower.includes('bug') || lower.includes('report')) {
+      return 'To report a technical problem:\n• Email technical support at ragoorupoornesh@gmail.com with relevant error messages and screenshots.\n• Call +91 8686633340 for urgent campus operational issues.\nOur engineering team will investigate and assist promptly.';
+    }
+    return 'ACADEXSYNC AI Support is here to help with account activation, Email OTP login, college onboarding, password recovery, and platform navigation.';
   }
 
   /**

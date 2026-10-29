@@ -75,9 +75,15 @@ class ApiActivationRepository implements ActivationRepository {
     required String activationToken,
     String? password,
     String? confirmPassword,
+    bool? termsAccepted,
+    String? termsVersion,
   }) async {
     try {
-      final payload = <String, dynamic>{'activationToken': activationToken};
+      final payload = <String, dynamic>{
+        'activationToken': activationToken,
+        'termsAccepted': termsAccepted ?? true,
+        'termsVersion': termsVersion ?? '2026.1-draft',
+      };
       if (password != null) {
         payload['password'] = password;
       }

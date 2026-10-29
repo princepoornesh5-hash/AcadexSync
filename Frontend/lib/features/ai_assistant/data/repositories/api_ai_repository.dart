@@ -64,6 +64,43 @@ class ApiAiRepository implements AiRepository {
   }
 
   @override
+  Future<AiResponse> sendPublicSupportQuery({
+    required String query,
+    List<Map<String, String>>? history,
+  }) async {
+    try {
+      final response = await _client.dio.post(
+        '/ai/public-chat',
+        data: {
+          'message': query.trim(),
+          if (history != null && history.isNotEmpty) 'history': history,
+        },
+      );
+
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        final innerData = data['data'];
+        if (innerData is Map<String, dynamic>) {
+          final answer =
+              innerData['answer'] as String? ??
+              'I have processed your request.';
+          final model = innerData['model'] as String?;
+          return AiResponse(answer: answer, model: model);
+        }
+      }
+
+      return const AiResponse(
+        answer:
+            'I am here to assist with ACADEXSYNC onboarding and account setup.',
+      );
+    } on DioException catch (dioError) {
+      throw _mapDioError(dioError);
+    } catch (_) {
+      throw Exception('ACADEXSYNC AI Support is temporarily unavailable.');
+    }
+  }
+
+  @override
   Stream<AiStreamEvent> streamChatMessage({
     required String query,
     required Map<String, dynamic> context,

@@ -382,7 +382,9 @@ export class ActivationService {
   static async completeActivation(
     activationToken: string,
     password?: string,
-    confirmPassword?: string
+    confirmPassword?: string,
+    termsAccepted?: boolean,
+    termsVersion?: string
   ): Promise<CompleteActivationResult> {
     if (!activationToken || typeof activationToken !== 'string') {
       throw ApiError.badRequest('activationToken is required');
@@ -390,6 +392,10 @@ export class ActivationService {
 
     // Validate activation token
     const payload = verifyActivationCompletionToken(activationToken);
+
+    if (termsAccepted !== true) {
+      throw ApiError.badRequest('You must accept the Terms & Conditions and Privacy Policy to activate your account.');
+    }
 
     // Recheck invitation status: PENDING and not expired
     const invitation = await Invitation.findOne({
@@ -466,6 +472,8 @@ export class ActivationService {
           'metadata.activeActivationTokenId': null,
           'metadata.consumedActivationTokenId': payload.tokenId,
           'metadata.activationCompletedAt': new Date(),
+          'metadata.termsAcceptedVersion': termsVersion || '2026.1-draft',
+          'metadata.termsAcceptedAt': new Date(),
         },
       },
       { new: true }
@@ -476,6 +484,14 @@ export class ActivationService {
     }
 
     try {
+      const acceptedVersion = termsVersion || '2026.1-draft';
+      const acceptedAt = new Date();
+      user.termsAccepted = true;
+      user.termsAcceptedVersion = acceptedVersion;
+      if (!user.termsAcceptedAt) {
+        user.termsAcceptedAt = acceptedAt;
+      }
+
       if (!isExistingUser && newPasswordHash) {
         user.passwordHash = newPasswordHash;
         user.accountStatus = AccountStatus.ACTIVE;
@@ -486,8 +502,8 @@ export class ActivationService {
           user.role = invitation.role;
           user.departmentId = invitation.departmentId;
         }
-        await user.save();
       }
+      await user.save();
       // Note: If isExistingUser, user.passwordHash is PRESERVED UNCHANGED!
 
       // Establish WorkspaceMembership for this college idempotently
@@ -678,7 +694,9 @@ export class ActivationService {
     emailVerificationToken: string,
     rawCode: string,
     password?: string,
-    confirmPassword?: string
+    confirmPassword?: string,
+    termsAccepted?: boolean,
+    termsVersion?: string
   ): Promise<CompleteActivationResult> {
     if (!emailVerificationToken || typeof emailVerificationToken !== 'string') {
       throw ApiError.badRequest('emailVerificationToken is required');
@@ -690,6 +708,10 @@ export class ActivationService {
     // Cryptographically verify token
     const payload = verifyEmailVerificationToken(emailVerificationToken);
     const verifiedEmail = normalizeEmail(payload.email);
+
+    if (termsAccepted !== true) {
+      throw ApiError.badRequest('You must accept the Terms & Conditions and Privacy Policy to activate your account.');
+    }
 
     // Validate activation code format
     const normalizedCode = normalizeActivationCode(rawCode);
@@ -774,6 +796,8 @@ export class ActivationService {
           usedAt: new Date(),
           'metadata.activationCompletedAt': new Date(),
           'metadata.verifiedEmail': verifiedEmail,
+          'metadata.termsAcceptedVersion': termsVersion || '2026.1-draft',
+          'metadata.termsAcceptedAt': new Date(),
         },
       },
       { new: true }
@@ -784,6 +808,14 @@ export class ActivationService {
     }
 
     try {
+      const acceptedVersion = termsVersion || '2026.1-draft';
+      const acceptedAt = new Date();
+      user.termsAccepted = true;
+      user.termsAcceptedVersion = acceptedVersion;
+      if (!user.termsAcceptedAt) {
+        user.termsAcceptedAt = acceptedAt;
+      }
+
       if (!isExistingUser && newPasswordHash) {
         user.passwordHash = newPasswordHash;
         user.accountStatus = AccountStatus.ACTIVE;
@@ -793,8 +825,8 @@ export class ActivationService {
           user.role = invitation.role;
           user.departmentId = invitation.departmentId;
         }
-        await user.save();
       }
+      await user.save();
 
       // Activate only the intended membership for this college
       const membership = await WorkspaceMembership.findOneAndUpdate(

@@ -52,6 +52,8 @@ router.get('/me', authenticateRequest, AuthController.getMe);
 router.post('/logout', authenticateRequest, AuthController.logout);
 router.post('/logout-all', authenticateRequest, AuthController.logoutAll);
 router.post('/change-password', authenticateRequest, changePasswordRateLimiter, AuthController.changePassword);
+router.post('/terms/accept', authenticateRequest, AuthController.acceptTerms);
+router.get('/terms/status', authenticateRequest, AuthController.getTermsStatus);
 
 // Authenticated Invitation Management Endpoints
 router.post('/invitations', authenticateRequest, invitationCreationRateLimiter, InvitationController.create);

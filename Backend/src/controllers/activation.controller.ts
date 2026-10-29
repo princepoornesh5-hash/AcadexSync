@@ -79,7 +79,7 @@ export class ActivationController {
    * Sets password (for new user) and completes account/workspace activation atomically.
    */
   static complete = asyncHandler(async (req: Request, res: Response) => {
-    const { activationToken, password, confirmPassword } = req.body;
+    const { activationToken, password, confirmPassword, termsAccepted, termsVersion } = req.body;
 
     if (!activationToken || typeof activationToken !== 'string') {
       throw ApiError.badRequest('activationToken must be a valid token string');
@@ -96,7 +96,9 @@ export class ActivationController {
     const result = await ActivationService.completeActivation(
       activationToken,
       password,
-      confirmPassword
+      confirmPassword,
+      termsAccepted,
+      termsVersion
     );
 
     return ApiResponse.success(res, result.data, result.message);
@@ -155,7 +157,7 @@ export class ActivationController {
    * Validates activation code, enforces email match, and activates institutional membership.
    */
   static completeInstitutionalActivation = asyncHandler(async (req: Request, res: Response) => {
-    const { emailVerificationToken, activationCode, password, confirmPassword } = req.body;
+    const { emailVerificationToken, activationCode, password, confirmPassword, termsAccepted, termsVersion } = req.body;
 
     if (!emailVerificationToken || typeof emailVerificationToken !== 'string') {
       throw ApiError.badRequest('emailVerificationToken is required');
@@ -169,7 +171,9 @@ export class ActivationController {
       emailVerificationToken.trim(),
       activationCode.trim(),
       password,
-      confirmPassword
+      confirmPassword,
+      termsAccepted,
+      termsVersion
     );
 
     return ApiResponse.success(res, result.data, result.message);
