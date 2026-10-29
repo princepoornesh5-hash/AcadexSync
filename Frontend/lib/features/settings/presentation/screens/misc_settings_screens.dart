@@ -12,6 +12,7 @@ import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_form_controls.dart';
+import '../../../../core/presentation/widgets/acadex_logo.dart';
 import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 
 class LanguageScreen extends StatelessWidget {
@@ -313,18 +314,7 @@ class AboutScreen extends StatelessWidget {
             onBack: () => context.safePop(fallbackRoute: '/settings'),
           ),
           const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              LucideIcons.graduationCap,
-              size: 64,
-              color: Theme.of(context).primaryColor,
-            ),
-          ),
+          const AcadexLogo(size: 80),
           const SizedBox(height: 16),
           Text(
             "ACADEXSYNC",

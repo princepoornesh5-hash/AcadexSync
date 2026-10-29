@@ -10,6 +10,7 @@ import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_form_controls.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
+import '../../../../core/presentation/widgets/acadex_logo.dart';
 import '../../../../core/presentation/widgets/animated_particle_sphere.dart';
 import '../../domain/models/activation_model.dart';
 import '../widgets/terms_acceptance_checkbox.dart';
@@ -390,24 +391,7 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [
-                                  AcadexColors.primary,
-                                  Color(0xFF6366F1),
-                                ],
-                              ),
-                              borderRadius: AcadexRadius.borderRadiusSm,
-                            ),
-                            child: const Icon(
-                              LucideIcons.graduationCap,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                          ),
+                          const AcadexLogo(size: 32),
                           const SizedBox(width: 10),
                           Text(
                             'ACADEXSYNC',

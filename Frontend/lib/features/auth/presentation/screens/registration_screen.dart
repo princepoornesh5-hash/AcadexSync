@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
+import '../../../../core/presentation/widgets/acadex_logo.dart';
 import '../../../../core/presentation/widgets/animated_particle_sphere.dart';
 import '../../domain/models/auth_state.dart';
 import '../../domain/models/role_enum.dart';
@@ -261,35 +262,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [
-                                  AcadexColors.primary,
-                                  Color(0xFF6366F1),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: AcadexRadius.borderRadiusMd,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AcadexColors.primary.withValues(
-                                    alpha: 0.35,
-                                  ),
-                                  blurRadius: 14,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              LucideIcons.graduationCap,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
+                          const AcadexLogo(size: 44),
                           const SizedBox(width: 14),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,

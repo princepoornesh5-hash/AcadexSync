@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/navigation/acadex_nav_item.dart';
+import '../../../../core/presentation/widgets/acadex_logo.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -68,19 +69,9 @@ class AcadexNavRail extends ConsumerWidget {
       unselectedLabelTextStyle: AcadexTypography.eyebrow(
         color: unselectedColor,
       ).copyWith(fontWeight: FontWeight.w500, fontSize: 10),
-      leading: Padding(
-        padding: const EdgeInsets.only(top: 16.0, bottom: 20.0),
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: logoBg,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Center(
-            child: Icon(LucideIcons.graduationCap, color: logoColor, size: 22),
-          ),
-        ),
+      leading: const Padding(
+        padding: EdgeInsets.only(top: 16.0, bottom: 20.0),
+        child: AcadexLogo(size: 40, hasShadow: false),
       ),
       destinations: destinations,
     );

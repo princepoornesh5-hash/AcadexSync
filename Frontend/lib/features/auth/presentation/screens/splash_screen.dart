@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_logo.dart';
 import '../providers/auth_provider.dart';
 import '../../domain/models/auth_state.dart';
 import '../../domain/models/role_enum.dart';
@@ -79,30 +80,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Animated Brand Cap Container
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AcadexColors.primary, Color(0xFF818CF8)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: AcadexRadius.borderRadiusXl,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AcadexColors.primary.withValues(alpha: 0.4),
-                      blurRadius: 24,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  LucideIcons.graduationCap,
-                  color: Colors.white,
-                  size: 44,
-                ),
-              ),
+              const AcadexLogo(size: 80),
               const SizedBox(height: 28),
               const Text(
                 "ACADEXSYNC",

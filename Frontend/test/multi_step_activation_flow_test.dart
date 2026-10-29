@@ -96,6 +96,8 @@ class _FakeActivationRepository implements ActivationRepository {
     required String activationToken,
     String? password,
     String? confirmPassword,
+    bool? termsAccepted,
+    String? termsVersion,
   }) async {
     completeActivationCalled = true;
     lastActivationToken = activationToken;

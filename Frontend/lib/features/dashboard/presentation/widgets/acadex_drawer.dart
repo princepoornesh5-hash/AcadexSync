@@ -15,6 +15,7 @@ import '../../../auth/presentation/widgets/workspace_selector_dialog.dart';
 import '../../../../core/presentation/widgets/acadex_avatar.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
 import '../../../../core/presentation/widgets/acadex_dialogs.dart';
+import '../../../../core/presentation/widgets/acadex_logo.dart';
 
 final sidebarCollapsedProvider = StateProvider<bool>((ref) => false);
 
@@ -75,21 +76,7 @@ class AcadexDrawer extends ConsumerWidget {
                             false;
                       },
                       borderRadius: AcadexRadius.borderRadiusMd,
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: AcadexColors.primary,
-                          borderRadius: AcadexRadius.borderRadiusMd,
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            LucideIcons.graduationCap,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                      ),
+                      child: const AcadexLogo(size: 36, hasShadow: false),
                     ),
                   )
                 : Column(
@@ -98,21 +85,7 @@ class AcadexDrawer extends ConsumerWidget {
                       // Brand Row
                       Row(
                         children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: AcadexColors.primary,
-                              borderRadius: AcadexRadius.borderRadiusSm,
-                            ),
-                            child: const Center(
-                              child: Icon(
-                                LucideIcons.graduationCap,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                            ),
-                          ),
+                          const AcadexLogo(size: 32, hasShadow: false),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(

@@ -10,6 +10,7 @@ import '../../../../core/presentation/widgets/acadex_badge.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_form_controls.dart';
+import '../../../../core/presentation/widgets/acadex_logo.dart';
 import '../../../../core/presentation/widgets/animated_particle_sphere.dart';
 import '../../domain/models/auth_state.dart';
 import '../../domain/models/role_enum.dart';
@@ -331,35 +332,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     // Brand Header
                                     Row(
                                       children: [
-                                        Container(
-                                          width: 44,
-                                          height: 44,
-                                          decoration: BoxDecoration(
-                                            gradient: const LinearGradient(
-                                              colors: [
-                                                AcadexColors.primary,
-                                                Color(0xFF6366F1),
-                                              ],
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
-                                            ),
-                                            borderRadius:
-                                                AcadexRadius.borderRadiusMd,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: AcadexColors.primary
-                                                    .withValues(alpha: 0.35),
-                                                blurRadius: 14,
-                                                offset: const Offset(0, 4),
-                                              ),
-                                            ],
-                                          ),
-                                          child: const Icon(
-                                            LucideIcons.graduationCap,
-                                            color: Colors.white,
-                                            size: 24,
-                                          ),
-                                        ),
+                                        const AcadexLogo(size: 44),
                                         const SizedBox(width: 14),
                                         Text(
                                           'ACADEXSYNC',
@@ -500,35 +473,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           // Mobile Header
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [
-                                  AcadexColors.primary,
-                                  Color(0xFF6366F1),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: AcadexRadius.borderRadiusMd,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AcadexColors.primary.withValues(
-                                    alpha: 0.35,
-                                  ),
-                                  blurRadius: 14,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              LucideIcons.graduationCap,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
+                          const AcadexLogo(size: 48),
                           const SizedBox(height: 12),
                           Text(
                             'ACADEXSYNC',
