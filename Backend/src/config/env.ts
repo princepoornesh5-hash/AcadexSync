@@ -31,20 +31,20 @@ export function createEnvSchema(isProduction: boolean) {
     // In development/test mode, fall back to dev secrets for local developer onboarding.
     // In production mode, NO silent fallback is permitted; values must be provided via runtime environment.
     JWT_SECRET: isProduction
-      ? z.string().optional()
-      : z.string().default('acadex_development_jwt_secret_min_32_chars!'),
+      ? z.string().trim().optional()
+      : z.string().trim().default('acadex_development_jwt_secret_min_32_chars!'),
     JWT_ACCESS_SECRET: isProduction
-      ? z.string().optional()
-      : z.string().default('acadex_development_access_token_secret_min_32_chars!'),
+      ? z.string().trim().optional()
+      : z.string().trim().default('acadex_development_access_token_secret_min_32_chars!'),
     JWT_REFRESH_SECRET: isProduction
-      ? z.string().optional()
-      : z.string().default('acadex_development_refresh_token_secret_min_32_chars!'),
+      ? z.string().trim().optional()
+      : z.string().trim().default('acadex_development_refresh_token_secret_min_32_chars!'),
     JWT_RESET_SECRET: isProduction
-      ? z.string().optional()
-      : z.string().default('acadex_development_reset_token_secret_min_32_chars!'),
+      ? z.string().trim().optional()
+      : z.string().trim().default('acadex_development_reset_token_secret_min_32_chars!'),
     ACTIVATION_CODE_SECRET: isProduction
-      ? z.string().optional()
-      : z.string().default('acadex_development_activation_secret_32_chars!'),
+      ? z.string().trim().optional()
+      : z.string().trim().default('acadex_development_activation_secret_32_chars!'),
 
     ACCESS_TOKEN_EXPIRES_IN: z
       .string()
@@ -98,8 +98,8 @@ export function createEnvSchema(isProduction: boolean) {
 
     // In development/test mode, default to '*' for local tools; in production mode, require explicit origin.
     CORS_ORIGIN: isProduction
-      ? z.string().optional()
-      : z.string().default('*'),
+      ? z.string().trim().optional()
+      : z.string().trim().default('*'),
 
     // Rate Limiting Configuration
     RATE_LIMIT_WINDOW_MS: z
@@ -263,7 +263,8 @@ export function validateProductionConfig(config: Partial<EnvConfig>): void {
 
 export function loadEnv(customEnv?: NodeJS.ProcessEnv): EnvConfig {
   const envSource = customEnv || process.env;
-  const isProduction = envSource.NODE_ENV === 'production';
+  const rawNodeEnv = (envSource.NODE_ENV || '').trim().toLowerCase();
+  const isProduction = rawNodeEnv === 'production';
   const schema = createEnvSchema(isProduction);
   const result = schema.safeParse(envSource);
   if (!result.success) {

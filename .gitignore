@@ -5,9 +5,12 @@
 backend/.env
 backend/.env.*
 !backend/.env.example
+# Android Keystore & Build Artifacts
 key.properties
 *.keystore
 *.jks
+*.aab
+*.apk
 
 # Node
 node_modules/

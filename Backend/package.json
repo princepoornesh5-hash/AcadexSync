@@ -16,7 +16,10 @@
     "seed:svgp:reset": "ts-node src/scripts/seed-svgp-demo.ts --reset",
     "test:gemini-smoke": "ts-node src/scripts/gemini-smoke-test.ts",
     "test:gemini-stream-smoke": "ts-node src/scripts/gemini-stream-smoke-test.ts",
-    "test:email": "ts-node src/scripts/send-test-email.ts"
+    "test:email": "ts-node src/scripts/send-test-email.ts",
+    "seed:demo": "ts-node src/scripts/seed-demo-polytechnic.ts",
+    "seed:demo:reset": "ts-node src/scripts/seed-demo-polytechnic.ts --reset",
+    "test:activation:user": "ts-node src/scripts/test-activation-flow.ts"
   },
   "keywords": [
     "acadex",

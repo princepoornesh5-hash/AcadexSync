@@ -1,23 +1,16 @@
-# Flutter Wrapper
--keep class io.flutter.app.** { *; }
--keep class io.flutter.plugin.**  { *; }
--keep class io.flutter.util.**  { *; }
--keep class io.flutter.view.**  { *; }
--keep class io.flutter.**  { *; }
--keep class io.flutter.plugins.**  { *; }
-
-# Firebase / Google Services
--dontwarn com.google.firebase.**
--keep class com.google.firebase.** { *; }
--dontwarn com.google.android.gms.**
--keep class com.google.android.gms.** { *; }
+# Flutter Engine & Plugins
+-keep class io.flutter.facade.** { *; }
+-keep class io.flutter.plugin.editing.** { *; }
+-keep class io.flutter.plugins.** { *; }
 
 # Plugins
 -keep class com.it_nomads.fluttersecurestorage.** { *; }
 -keep class com.mr.flutter.plugin.filepicker.** { *; }
--keep class dev.fluttercommunity.plus.share.** { *; }
 
-# Suppress harmless warnings
+# Firebase & Google Play Services: Use embedded AAR consumer rules
+# Suppress harmless warnings from optional dependencies
+-dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**
 -dontwarn okhttp3.**
 -dontwarn okio.**
 -dontwarn com.google.android.play.core.**

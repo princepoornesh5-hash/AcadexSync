@@ -147,6 +147,27 @@ android {
     }
 }
 
+// Optimization: Strip unused variable font assets from third-party icon packages
+// that are not referenced in the application and that Flutter does not tree-shake automatically.
+val pruneUnusedFonts = {
+    listOf(
+        file("${project.buildDir}/intermediates/flutter/release/flutter_assets/packages/lucide_icons_flutter/assets/build_font"),
+        file("${project.buildDir}/intermediates/assets/release/mergeReleaseAssets/flutter_assets/packages/lucide_icons_flutter/assets/build_font")
+    ).forEach { dir ->
+        if (dir.exists()) {
+            dir.deleteRecursively()
+        }
+    }
+}
+
+tasks.matching { it.name.startsWith("copyFlutterAssets") || it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
+    doLast { pruneUnusedFonts() }
+}
+
+tasks.matching { it.name.startsWith("compress") && it.name.endsWith("Assets") || it.name.startsWith("package") || it.name.startsWith("bundle") }.configureEach {
+    doFirst { pruneUnusedFonts() }
+}
+
 kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
