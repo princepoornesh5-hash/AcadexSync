@@ -205,6 +205,13 @@ export function validateProductionConfig(config: EnvConfig): void {
     }
   }
 
+  // Ensure all five production secrets are distinct high-entropy values
+  const secretValues = secretsToCheck.map((s) => s.value);
+  const uniqueValues = new Set(secretValues);
+  if (uniqueValues.size < secretsToCheck.length) {
+    violations.push('The five production secrets (JWT_SECRET, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, JWT_RESET_SECRET, ACTIVATION_CODE_SECRET) must each be unique values');
+  }
+
   // 3. CORS Configuration: Unrestricted wildcard (*) is strictly prohibited in production when credentials are enabled
   if (config.CORS_ORIGIN === '*' || config.CORS_ORIGIN.split(',').map((s) => s.trim()).includes('*')) {
     violations.push('CORS_ORIGIN cannot be "*" (wildcard) in production when credentialed access is enabled; specify explicit allowed origins');

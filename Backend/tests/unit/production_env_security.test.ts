@@ -229,4 +229,18 @@ describe('ACADEX Production Environment Security & Configuration Validation', ()
     };
     expect(() => validateProductionConfig(allDifferentConfig)).not.toThrow();
   });
+
+  test('20. Fails fast if production secrets are duplicated across tokens', () => {
+    const duplicateConfig: EnvConfig = {
+      ...validProductionBase,
+      JWT_SECRET:             'k8F9xL2mP5vQ7zR4wT1yU3aB6cDk8F9xL2mP5',
+      JWT_ACCESS_SECRET:      'k8F9xL2mP5vQ7zR4wT1yU3aB6cDk8F9xL2mP5', // duplicate!
+      JWT_REFRESH_SECRET:     'w7T2yU5aB0cD4eF8gH1jK6mPw7T2yU5aB0cD4',
+      JWT_RESET_SECRET:       'a4B9cD3eF7gH0jK5mP8vQa4B9cD3eF7gH0jK5',
+      ACTIVATION_CODE_SECRET: 'd0cD4eF8gH1jK6mP3vQd0cD4eF8gH1jK6mP3v',
+    };
+    expect(() => validateProductionConfig(duplicateConfig)).toThrow(
+      /must each be unique values/
+    );
+  });
 });

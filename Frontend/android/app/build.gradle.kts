@@ -26,6 +26,13 @@ if (hasKeystoreFile) {
     }
 }
 
+val hasValidKeystoreProps = hasKeystoreFile &&
+    !keystoreProperties.getProperty("storeFile").isNullOrBlank() &&
+    !keystoreProperties.getProperty("storePassword").isNullOrBlank() &&
+    !keystoreProperties.getProperty("keyAlias").isNullOrBlank() &&
+    !keystoreProperties.getProperty("keyPassword").isNullOrBlank() &&
+    !keystoreProperties.getProperty("storePassword").contains("YOUR_KEYSTORE_PASSWORD")
+
 // Optional CI / Environment Variable fallback:
 val ciStoreFile = System.getenv("KEYSTORE_PATH")
 val ciStorePassword = System.getenv("KEYSTORE_PASSWORD")
@@ -33,7 +40,7 @@ val ciKeyAlias = System.getenv("KEY_ALIAS")
 val ciKeyPassword = System.getenv("KEY_PASSWORD")
 val hasCiSigning = !ciStoreFile.isNullOrEmpty() && !ciStorePassword.isNullOrEmpty() && !ciKeyAlias.isNullOrEmpty() && !ciKeyPassword.isNullOrEmpty()
 
-val hasProductionSigning = hasKeystoreFile || hasCiSigning
+val hasProductionSigning = hasValidKeystoreProps || hasCiSigning
 
 android {
     namespace = "com.campusmanagement.campus_management"
@@ -54,17 +61,21 @@ android {
     }
 
     signingConfigs {
-        if (hasKeystoreFile) {
+        if (hasValidKeystoreProps) {
             create("release") {
                 val storePath = keystoreProperties.getProperty("storeFile")
-                storeFile = if (storePath != null) rootProject.file(storePath) else null
+                storeFile = if (storePath != null) {
+                    val rootResolved = rootProject.file(storePath)
+                    if (rootResolved.exists()) rootResolved else file(storePath)
+                } else null
                 storePassword = keystoreProperties.getProperty("storePassword")
                 keyAlias = keystoreProperties.getProperty("keyAlias")
                 keyPassword = keystoreProperties.getProperty("keyPassword")
             }
         } else if (hasCiSigning) {
             create("release") {
-                storeFile = file(ciStoreFile!!)
+                val rootResolved = rootProject.file(ciStoreFile!!)
+                storeFile = if (rootResolved.exists()) rootResolved else file(ciStoreFile)
                 storePassword = ciStorePassword
                 keyAlias = ciKeyAlias
                 keyPassword = ciKeyPassword
@@ -79,7 +90,7 @@ android {
             } else {
                 // SECURITY GUARD:
                 // When production release signing credentials are not present, signingConfig is set to null.
-                // This guarantees the release build will NOT silently produce a debug-signed production artifact.
+                // We also register a taskGraph check below to fail fast rather than silently producing an unsigned APK.
                 signingConfig = null
             }
             isMinifyEnabled = true
@@ -92,6 +103,41 @@ android {
         debug {
             // Debug builds explicitly use the default Android debug keystore
             signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+
+    gradle.taskGraph.whenReady {
+        val requestedRelease = allTasks.any { task ->
+            val name = task.name
+            name.contains("Release", ignoreCase = true) && 
+            (name.contains("assemble", ignoreCase = true) || 
+             name.contains("package", ignoreCase = true) || 
+             name.contains("bundle", ignoreCase = true))
+        }
+        if (requestedRelease && !hasProductionSigning) {
+            throw GradleException(
+                """
+                |================================================================================
+                |BUILD FAILED: Missing Android Release Signing Configuration
+                |================================================================================
+                |Android OS rejects unsigned APKs. A release APK must be signed with a valid
+                |keystore before it can be installed on any physical Android device.
+                |
+                |To produce a signed release APK:
+                |1. Generate a keystore if you haven't already:
+                |   keytool -genkey -v -keystore acadex-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias acadex_key_alias
+                |
+                |2. Create 'Frontend/android/key.properties' (see 'key.properties.example'):
+                |   storeFile=app/acadex-release.jks
+                |   storePassword=<your-keystore-password>
+                |   keyAlias=acadex_key_alias
+                |   keyPassword=<your-key-password>
+                |
+                |Alternatively, inject CI environment variables:
+                |   KEYSTORE_PATH, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD
+                |================================================================================
+                """.trimMargin()
+            )
         }
     }
 
