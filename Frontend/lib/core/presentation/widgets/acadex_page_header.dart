@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme/app_theme.dart';
+import 'acadex_back_button.dart';
 
 class AcadexPageHeader extends StatelessWidget {
   final String title;
@@ -9,6 +10,8 @@ class AcadexPageHeader extends StatelessWidget {
   final VoidCallback? onBack;
   final List<String>? breadcrumbs;
   final Widget? leading;
+  final bool? showBackButton;
+  final String? fallbackRoute;
 
   const AcadexPageHeader({
     super.key,
@@ -18,6 +21,8 @@ class AcadexPageHeader extends StatelessWidget {
     this.onBack,
     this.breadcrumbs,
     this.leading,
+    this.showBackButton,
+    this.fallbackRoute,
   });
 
   @override
@@ -29,6 +34,7 @@ class AcadexPageHeader extends StatelessWidget {
     final standardSubtitleColor = isDark
         ? AcadexColors.darkInkMuted
         : AcadexColors.inkMuted;
+    final effectiveShowBackButton = showBackButton ?? (leading == null);
 
     final headerContent = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,23 +88,19 @@ class AcadexPageHeader extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    if (onBack != null) ...[
-                      IconButton(
-                        icon: Icon(
-                          LucideIcons.arrowLeft,
-                          size: 20,
-                          color: standardTitleColor,
-                        ),
+                    if (leading != null) ...[
+                      leading!,
+                      const SizedBox(width: 8),
+                    ] else if (effectiveShowBackButton) ...[
+                      AcadexBackButton(
                         onPressed: onBack,
-                        padding: EdgeInsets.zero,
+                        fallbackRoute: fallbackRoute,
+                        color: standardTitleColor,
                         constraints: const BoxConstraints(
                           minWidth: 36,
                           minHeight: 36,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                    ] else if (leading != null) ...[
-                      leading!,
                       const SizedBox(width: 8),
                     ],
                     Expanded(
@@ -150,23 +152,19 @@ class AcadexPageHeader extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    if (onBack != null) ...[
-                      IconButton(
-                        icon: Icon(
-                          LucideIcons.arrowLeft,
-                          size: 20,
-                          color: standardTitleColor,
-                        ),
+                    if (leading != null) ...[
+                      leading!,
+                      const SizedBox(width: 10),
+                    ] else if (effectiveShowBackButton) ...[
+                      AcadexBackButton(
                         onPressed: onBack,
-                        padding: EdgeInsets.zero,
+                        fallbackRoute: fallbackRoute,
+                        color: standardTitleColor,
                         constraints: const BoxConstraints(
                           minWidth: 36,
                           minHeight: 36,
                         ),
                       ),
-                      const SizedBox(width: 10),
-                    ] else if (leading != null) ...[
-                      leading!,
                       const SizedBox(width: 10),
                     ],
                     Expanded(

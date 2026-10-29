@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/utils/navigation_extensions.dart';
+import '../../../../core/presentation/widgets/acadex_back_button.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
@@ -110,6 +111,7 @@ class _NoteFormScreenState extends ConsumerState<NoteFormScreen> {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
+          leading: const AcadexBackButton(fallbackRoute: '/notes'),
           title: const Text("Notes Management"),
           backgroundColor: Theme.of(context).colorScheme.surface,
           iconTheme: IconThemeData(

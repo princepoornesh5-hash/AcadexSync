@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/presentation/widgets/acadex_back_button.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/academic_record_models.dart';
@@ -183,6 +184,7 @@ class _AcademicRecordDetailScreenState
 
     return Scaffold(
       appBar: AppBar(
+        leading: const AcadexBackButton(fallbackRoute: '/academic-records'),
         title: const Text('Academic Record Detail'),
         elevation: 0,
         actions: [

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_back_button.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
@@ -125,6 +126,7 @@ class _AttendanceReportCenterScreenState
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
+        leading: const AcadexBackButton(fallbackRoute: '/attendance'),
         title: Text(
           'Attendance Report Center',
           style: AcadexTypography.heading3(

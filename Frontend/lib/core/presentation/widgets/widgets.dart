@@ -1,5 +1,6 @@
 export 'acadex_avatar.dart';
 export 'acadex_ambient_background.dart';
+export 'acadex_back_button.dart';
 export 'acadex_badge.dart';
 export 'acadex_button.dart';
 export 'acadex_card.dart';

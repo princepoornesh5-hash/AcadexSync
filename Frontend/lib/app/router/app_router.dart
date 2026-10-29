@@ -2046,12 +2046,49 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
+      // Certificates Module (Unavailable / Coming Soon)
+      GoRoute(
+        path: '/certificates',
+        pageBuilder: (context, state) => fadeTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(
+            activeRoute: '/certificates',
+            child: ComingSoonScreen(
+              moduleName: 'Certificates',
+              fallbackRoute: '/dashboard',
+            ),
+          ),
+        ),
+      ),
+
+      // Achievements Module (Unavailable / Coming Soon)
+      GoRoute(
+        path: '/achievements',
+        pageBuilder: (context, state) => fadeTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(
+            activeRoute: '/achievements',
+            child: ComingSoonScreen(
+              moduleName: 'Achievements',
+              fallbackRoute: '/dashboard',
+            ),
+          ),
+        ),
+      ),
+
       // Placeholder route for all future modules
       GoRoute(
         path: '/module/:moduleName',
         builder: (context, state) {
           final moduleName = state.pathParameters['moduleName'] ?? 'Module';
-          return ComingSoonScreen(moduleName: moduleName);
+          final desc = state.uri.queryParameters['description'];
+          return ComingSoonScreen(
+            moduleName: moduleName,
+            description: desc,
+            fallbackRoute: '/dashboard',
+          );
         },
       ),
     ],

@@ -55,7 +55,7 @@ android {
     defaultConfig {
         applicationId = "com.campusmanagement.campus_management"
         minSdk = flutter.minSdkVersion
-        targetSdk = 36
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -71,6 +71,8 @@ android {
                 storePassword = keystoreProperties.getProperty("storePassword")
                 keyAlias = keystoreProperties.getProperty("keyAlias")
                 keyPassword = keystoreProperties.getProperty("keyPassword")
+                enableV1Signing = true
+                enableV2Signing = true
             }
         } else if (hasCiSigning) {
             create("release") {
@@ -79,6 +81,8 @@ android {
                 storePassword = ciStorePassword
                 keyAlias = ciKeyAlias
                 keyPassword = ciKeyPassword
+                enableV1Signing = true
+                enableV2Signing = true
             }
         }
     }

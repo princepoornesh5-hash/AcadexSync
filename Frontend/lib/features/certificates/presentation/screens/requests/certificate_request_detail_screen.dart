@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:intl/intl.dart';
 import 'package:campus_management/app/theme/app_theme.dart';
+import 'package:campus_management/core/presentation/widgets/acadex_back_button.dart';
 import 'package:campus_management/core/presentation/utils/navigation_extensions.dart';
 import 'package:campus_management/core/presentation/widgets/acadex_feedback.dart';
 import 'package:campus_management/features/auth/domain/models/auth_state.dart';
@@ -69,6 +70,9 @@ class _CertificateRequestDetailScreenState
       return Scaffold(
         backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
         appBar: AppBar(
+          leading: const AcadexBackButton(
+            fallbackRoute: '/certificates/requests',
+          ),
           title: const Text('Request Details'),
           backgroundColor: isDark
               ? AcadexColors.darkSurface

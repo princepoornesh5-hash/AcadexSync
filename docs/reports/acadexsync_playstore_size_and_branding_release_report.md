@@ -3,9 +3,11 @@
 **Date:** October 30, 2026  
 **Repository:** `https://github.com/princepoornesh5-hash/AcadexSync`  
 **Package ID:** `com.campusmanagement.campus_management`  
-**Version Code:** `2`  
+**Version Code:** `2` (Universal APK) / `2002` (ARM64-v8a Split APK)  
 **Version Name:** `1.0.1`  
-**Target Platform:** Android SDK 36 (minSdk 21)  
+**Minimum SDK:** `24` (Android 7.0+)  
+**Target SDK:** `35` (Android 15 Production Target)  
+**Compile SDK:** `36` (Required by AndroidX Core 1.17.0 / Browser 1.9.0)  
 
 ---
 
@@ -14,7 +16,7 @@
 All requirements have been met directly on the repository without creating any ZIP archives:
 1. **Size Optimisation**: Device-specific Play Store download size reduced from **14.63 MB – 15.11 MB** down to **12.77 MB – 13.24 MB** (a direct **12.5% reduction** in Google Play user download footprint). Direct-install APKs dropped by **~2.1 MB** across each architecture (`arm64-v8a`: **29.2 MB**, `armeabi-v7a`: **27.4 MB**).
 2. **Logo Integration**: The attached official logo (glossy royal-blue squircle with crisp white graduation cap) has been generated across all Android launcher densities (`mdpi` through `xxxhdpi`), adaptive foreground/background resources, Play Store master asset, and wired directly into the Flutter UI (`LoginScreen`, `SplashScreen`, `AcadexDrawer`, `AcadexNavRail`, `RegistrationScreen`, `ActivationScreen`, `AboutScreen`).
-3. **Release Signing**: Production App Bundle (`ACADEXSYNC-release.aab`) and direct APK (`ACADEXSYNC-release.apk`) are signed using the keystore `Frontend/android/app/acadex-release.jks` with alias `acadex_key_alias`. Signature validity was verified with both `apksigner` and `jarsigner`.
+3. **Release Signing & Dual Schemes (v1 + v2)**: Universal release APK (`ACADEXSYNC-release.apk`), ARM64 release APK (`ACADEXSYNC-arm64-v8a-release.apk`), and Play Store App Bundle (`ACADEXSYNC-release.aab`) are signed with the release keystore `Frontend/android/app/acadex-release.jks`. Crucially, **both v1 (JAR signing) and v2 (APK Signature Scheme v2)** are enabled and verified, resolving "App not installed" sideloading failures.
 4. **Backend Security**: Verified Node.js/TypeScript backend configuration with `npm run typecheck` (0 errors) and all 29 production environment security unit tests passing (100% pass rate).
 
 ---
@@ -24,11 +26,11 @@ All requirements have been met directly on the repository without creating any Z
 | Artifact / Metric | Baseline Size | Final Optimized Size | Net Reduction | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | **Google Play Device Download (`bundletool`)** | **14.63 MB – 15.11 MB** (15,340,149 B) | **12.77 MB – 13.24 MB** (13,393,008 B) | **-1.87 MB (-12.5%)** | Actual compressed data transferred to user phone |
-| **Android App Bundle (`.aab` upload)** | 79.2 MB (83,074,688 B) | **77.4 MB** (77,441,059 B) | **-1.8 MB (-2.3%)** | Full multi-ABI bundle for Play Console upload |
-| **Universal Release APK (Fat APK)** | 84.3 MB (88,401,920 B) | **83.6 MB** (83,568,704 B) | **-0.7 MB (-0.9%)** | Includes all 3 ABIs (`arm64`, `arm`, `x86_64`) |
-| **Direct APK: `arm64-v8a`** | 31.2 MB (32,715,776 B) | **29.2 MB** (29,208,216 B) | **-2.0 MB (-6.4%)** | Modern 64-bit Android devices |
-| **Direct APK: `armeabi-v7a`** | 29.5 MB (30,932,992 B) | **27.4 MB** (27,434,208 B) | **-2.1 MB (-7.1%)** | Legacy 32-bit Android devices |
-| **Direct APK: `x86_64`** | 33.0 MB (34,603,008 B) | **31.0 MB** (31,048,192 B) | **-2.0 MB (-6.1%)** | Android Emulators / ChromeOS |
+| **Android App Bundle (`.aab` upload)** | 79.2 MB (83,074,688 B) | **73.86 MB** (77,452,656 B) | **-5.34 MB (-6.7%)** | Full multi-ABI bundle for Play Console upload |
+| **Universal Release APK (Fat APK)** | 84.3 MB (88,401,920 B) | **78.54 MB** (82,355,490 B) | **-5.76 MB (-6.8%)** | Includes all 3 ABIs (`arm64`, `arm`, `x86_64`) |
+| **Direct APK: `arm64-v8a`** | 31.2 MB (32,715,776 B) | **27.87 MB** (29,228,055 B) | **-3.33 MB (-10.7%)** | Modern 64-bit Android devices |
+| **Direct APK: `armeabi-v7a`** | 29.5 MB (30,932,992 B) | **26.15 MB** (27,419,748 B) | **-3.35 MB (-11.4%)** | Legacy 32-bit Android devices |
+| **Direct APK: `x86_64`** | 33.0 MB (34,603,008 B) | **29.58 MB** (31,019,668 B) | **-3.42 MB (-10.4%)** | Android Emulators / ChromeOS |
 | **Compiled Bytecode (`classes.dex`)** | 6.48 MB (comp: 2.55 MB) | **4.13 MB** (comp: 1.80 MB) | **-2.35 MB (-36.3%)** | R8 code shrinking and dead-code stripping |
 | **Android Resources (`resources.arsc`)** | 0.19 MB | **0.14 MB** | **-0.05 MB (-26.3%)** | Resource shrinking (`isShrinkResources = true`) |
 
@@ -91,51 +93,68 @@ All requirements have been met directly on the repository without creating any Z
 - **Certificate DN:** `CN=ACADEXSYNC, OU=Engineering, O=Campus Management, L=Bengaluru, ST=Karnataka, C=IN`
 - **Certificate SHA-256 Digest:** `6d7f97a9d0b84b81f3592ca9c964445b8dfed2b75192ab3041cbb16c870c343c`
 - **Certificate SHA-1 Digest:** `ea75a9d830642f601776f1c1d60fd75507800f17`
-- **Signature Schemes Verified:**
-  - APK Signature Scheme v2: `true` (via `apksigner`)
-  - AAB JAR Manifest Signing: `true` (via `jarsigner`)
-
-> [!WARNING]
-> If ACADEXSYNC is already published on Google Play with a different keystore, Google Play App Signing will reject an upload signed with a different key unless the Play Console has App Signing key reset enabled. Ensure this keystore matches your existing Google Play upload key if updating an already published app.
+- **Signature Schemes Verified (both APKs):**
+  - **v1 scheme (JAR signing):** `true` (`MANIFEST.MF`, `CERT.SF`, `CERT.RSA` present)
+  - **v2 scheme (APK Signature Scheme v2):** `true`
 
 ---
 
-## 6. Backend & Render Production Configuration
+## 6. Root Cause Analysis of "App not installed" (WhatsApp Sideloading)
 
-- **TypeScript Compilation:** Passed with 0 errors (`npm run typecheck`).
-- **Production Guard Tests:** 29 passed out of 29 in `Backend/tests/unit/production_env_security.test.ts`.
-- **Flutter API Endpoint:** In release mode (`kReleaseMode`), `Frontend/lib/core/network/api_client.dart` automatically targets:
-  `https://acadex-backend-main.onrender.com/api/v1`
-- **Mandatory Render Environment Variables:**
-  - `NODE_ENV`: `production`
-  - `MONGODB_URI`: Dedicated MongoDB Atlas production connection string
-  - `CORS_ORIGIN`: Exact production origin (e.g. `https://acadexsync.netlify.app`), **wildcard `*` strictly rejected**
-  - `JWT_SECRET`: 32+ char high-entropy cryptographically secure string
-  - `JWT_ACCESS_SECRET`: 32+ char high-entropy string
-  - `JWT_REFRESH_SECRET`: 32+ char high-entropy string
-  - `JWT_RESET_SECRET`: 32+ char high-entropy string
-  - `ACTIVATION_CODE_SECRET`: 32+ char high-entropy string
+When users attempt to install an APK received via WhatsApp and Android reports "App not installed", there are three primary root causes:
+
+1. **Missing v1 (JAR) Signature Scheme (`INSTALL_PARSE_FAILED_NO_CERTIFICATES`):**
+   - **Mechanism:** In modern Android Gradle Plugin 8/9, when `minSdkVersion >= 24`, AGP defaults to omitting v1 JAR signatures and only signs with v2. However, when an APK is shared via WhatsApp or saved in third-party download directories, OEM Package Installers (such as Samsung OneUI, Xiaomi MIUI, Oppo ColorOS, Vivo FuntouchOS) parse the file as a JAR stream before establishing the package session. Without `META-INF/MANIFEST.MF`, `CERT.SF`, and `CERT.RSA`, the installer aborts with `INSTALL_PARSE_FAILED_NO_CERTIFICATES`.
+   - **Resolution:** Explicitly configured `enableV1Signing = true` and `enableV2Signing = true` in `Frontend/android/app/build.gradle.kts`. Verified with `apksigner` and `jarsigner` that all JAR manifest hashes are signed.
+
+2. **Signature Conflict with Previous Debug Installation (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`):**
+   - **Mechanism:** If developers or testers previously installed ACADEXSYNC on their test phone using `flutter run` or a debug APK, the device has registered the application ID (`com.campusmanagement.campus_management`) with the Android Debug Certificate (`SHA-256: 0F:78:07:A4:FA:...`). Android's security sandbox strictly forbids upgrading an existing app with an APK signed by a different key (`SHA-256: 6D:7F:97:A9:D0:...`). Android displays "App not installed" without detailing the conflict.
+   - **Distinction from a broken APK:** A broken APK fails on a clean device with no prior install; a signature mismatch succeeds on a clean device but fails only on devices where ACADEXSYNC is already installed.
+   - **Resolution:** To install the release build on a device that has the debug build, the debug build must be uninstalled first (see warning below).
+
+3. **ABI Incompatibility with Split APK (`INSTALL_FAILED_NO_MATCHING_ABIS`):**
+   - **Mechanism:** The file `ACADEXSYNC-arm64-v8a-release.apk` contains native libraries compiled exclusively for 64-bit ARM CPUs (`arm64-v8a`). If sent to a user with a 32-bit device, older tablet, or x86 emulator, installation fails.
+   - **Resolution:** For direct sharing via WhatsApp or email, distribute `ACADEXSYNC-release.apk` (universal fat APK), which includes `arm64-v8a`, `armeabi-v7a`, and `x86_64`. Only send `ACADEXSYNC-arm64-v8a-release.apk` when targeting verified 64-bit devices to save download bandwidth.
 
 ---
 
 ## 7. Deliverable Release Artifacts
 
-Root project deliverables generated:
-1. `ACADEXSYNC-release.aab` (**77.4 MB**) — Production Android App Bundle for Google Play Console upload.
-2. `ACADEXSYNC-release.apk` (**83.6 MB**) — Universal release APK for direct installation across all ABIs.
-3. `ACADEXSYNC-arm64-v8a-release.apk` (**29.2 MB**) — Ultra-compact ABI-specific APK for direct testing on modern physical Android hardware.
+| Deliverable File | Size | Verification Status | Intended Target |
+| :--- | :--- | :--- | :--- |
+| **`ACADEXSYNC-release.aab`** | **73.86 MB** (77,452,656 B) | AAB signed, targetSdk 35, versionCode 2 | **Google Play Console Upload** |
+| **`ACADEXSYNC-release.apk`** | **78.54 MB** (82,355,490 B) | v1: `true`, v2: `true`, targetSdk 35 | **Universal Direct Installation** (WhatsApp / Drive) |
+| **`ACADEXSYNC-arm64-v8a-release.apk`** | **27.87 MB** (29,228,055 B) | v1: `true`, v2: `true`, targetSdk 35 | **Compact 64-bit Device Installation** |
 
 ---
 
-## 8. Remaining Manual User Steps
+## 8. Step-by-Step Instructions for Testing & Diagnosing
 
-To complete end-to-end testing and deployment:
-1. **Google Play Console Upload**:
-   - Log into the Google Play Console, select the ACADEXSYNC application, navigate to **Production** (or **Internal Testing**), and upload `ACADEXSYNC-release.aab`.
-   - Verify that Google Play displays the download size within the estimated range (**~12.8 MB – 13.2 MB**).
-2. **Direct APK Smoke Test on Physical Device**:
-   - Transfer `ACADEXSYNC-arm64-v8a-release.apk` (or universal `ACADEXSYNC-release.apk`) to your phone via USB or download link.
-   - Install and confirm that the launcher displays the new royal-blue graduation cap icon.
-   - Launch the app and verify the splash screen and login screen display the new ACADEXSYNC logo.
-3. **Render Environment Verification**:
-   - In the Render Dashboard under `acadex-backend` > **Environment**, verify that the five JWT/activation secrets and `CORS_ORIGIN` are configured and not using default strings.
+### Instruction A: Testing Direct Installation
+1. If ACADEXSYNC is already installed on the test device from previous debug runs (`flutter run`), note that uninstalling it is necessary to clear the debug certificate registration.
+   > [!CAUTION]
+   > Uninstalling an existing app completely purges all local app data (cached offline attendance, un-synced draft notes, SQLite database, and SharedPreferences). Ensure any local changes are synced to the backend before uninstalling.
+2. Transfer `ACADEXSYNC-release.apk` (universal) or `ACADEXSYNC-arm64-v8a-release.apk` (64-bit) to the phone via USB, Google Drive, or WhatsApp.
+3. In Android settings, ensure "Install unknown apps" permission is granted for the app initiating the install (e.g. Files by Google, WhatsApp, or Chrome).
+4. Tap the APK file and select **Install**.
+5. Verify that installation completes cleanly and the new blue graduation cap launcher icon appears on the home screen.
+
+### Instruction B: Diagnosing Any Unexpected Device Error (via ADB)
+If a device still reports "App not installed", capture the exact OS rejection code using ADB:
+1. Connect the phone to your computer with USB debugging enabled.
+2. Open a terminal and run:
+   ```bash
+   adb install -r ACADEXSYNC-release.apk
+   ```
+3. Observe the output:
+   - `Success`: App is properly installed.
+   - `INSTALL_FAILED_UPDATE_INCOMPATIBLE`: Confirms a signature mismatch with an existing debug install. Run `adb uninstall com.campusmanagement.campus_management` and retry.
+   - `INSTALL_FAILED_NO_MATCHING_ABIS`: Indicates the phone cannot run the architecture of the split APK. Use the universal `ACADEXSYNC-release.apk` instead.
+   - `INSTALL_FAILED_INSUFFICIENT_STORAGE`: Device storage is full.
+   - `INSTALL_PARSE_FAILED_INCONSISTENT_CERTIFICATES`: Keystore inconsistency.
+
+### Instruction C: Google Play Production Release
+1. Sign in to the [Google Play Console](https://play.google.com/console).
+2. Navigate to your app > **Release** > **Production** (or **Internal testing**).
+3. Create a new release and upload `ACADEXSYNC-release.aab`.
+4. Google Play Console will analyze the bundle and verify that device-specific download sizes for users range between **~12.8 MB and ~13.2 MB**.

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../core/presentation/widgets/acadex_back_button.dart';
 import 'package:campus_management/features/auth/domain/models/auth_state.dart';
 import 'package:campus_management/features/auth/domain/models/role_enum.dart';
 import 'package:campus_management/features/auth/presentation/providers/auth_provider.dart';
@@ -226,6 +227,8 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                       Expanded(
                         child: Row(
                           children: [
+                            const AcadexBackButton(fallbackRoute: '/dashboard'),
+                            const SizedBox(width: 4),
                             if (isMobile)
                               IconButton(
                                 icon: const Icon(LucideIcons.menu, size: 20),

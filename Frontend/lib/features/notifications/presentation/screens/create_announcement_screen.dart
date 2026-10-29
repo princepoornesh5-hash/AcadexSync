@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/utils/navigation_extensions.dart';
+import '../../../../core/presentation/widgets/acadex_back_button.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
@@ -292,6 +293,7 @@ class _CreateAnnouncementScreenState
       return Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
+          leading: const AcadexBackButton(fallbackRoute: '/notifications'),
           title: Text(
             'Create Announcement',
             style: AcadexTypography.heading3(color: AcadexColors.ink),

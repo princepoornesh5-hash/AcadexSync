@@ -431,6 +431,12 @@ void main() {
         await tester.enterText(textFields.at(1), 'ValidActivationPass123!');
         await tester.pumpAndSettle();
 
+        final termsCheckbox = find.byKey(const Key('activation_code_terms_checkbox'));
+        if (termsCheckbox.evaluate().isNotEmpty) {
+          await tester.tap(termsCheckbox);
+          await tester.pumpAndSettle();
+        }
+
         await tester.tap(find.text('Activate Account'));
         await tester.pumpAndSettle();
 
@@ -498,6 +504,12 @@ void main() {
         expect(find.text('Activate Workspace Access'), findsAtLeastNWidgets(1));
         expect(find.text('Create Your Password'), findsNothing);
         expect(find.byType(TextFormField), findsNothing);
+
+        final termsCheckbox = find.byKey(const Key('activation_code_terms_checkbox'));
+        if (termsCheckbox.evaluate().isNotEmpty) {
+          await tester.tap(termsCheckbox);
+          await tester.pumpAndSettle();
+        }
 
         await tester.tap(find.text('Activate Workspace Access').last);
         await tester.pumpAndSettle();

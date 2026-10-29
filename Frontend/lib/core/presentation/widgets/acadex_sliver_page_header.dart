@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme/app_theme.dart';
+import 'acadex_back_button.dart';
 
 /// Canonical ACADEX scroll-driven transforming header widget.
 ///
@@ -20,6 +20,8 @@ class AcadexSliverPageHeader extends StatelessWidget {
   final PreferredSizeWidget? bottom;
   final Widget? contextualWidget;
   final Color? backgroundColor;
+  final bool? showBackButton;
+  final String? fallbackRoute;
 
   const AcadexSliverPageHeader({
     super.key,
@@ -32,6 +34,8 @@ class AcadexSliverPageHeader extends StatelessWidget {
     this.bottom,
     this.contextualWidget,
     this.backgroundColor,
+    this.showBackButton,
+    this.fallbackRoute,
   });
 
   @override
@@ -53,6 +57,8 @@ class AcadexSliverPageHeader extends StatelessWidget {
         backgroundColor: backgroundColor,
         topPadding: topPadding,
         isDark: isDark,
+        showBackButton: showBackButton,
+        fallbackRoute: fallbackRoute,
       ),
     );
   }
@@ -70,6 +76,8 @@ class _AcadexTransformingHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Color? backgroundColor;
   final double topPadding;
   final bool isDark;
+  final bool? showBackButton;
+  final String? fallbackRoute;
 
   _AcadexTransformingHeaderDelegate({
     required this.title,
@@ -83,6 +91,8 @@ class _AcadexTransformingHeaderDelegate extends SliverPersistentHeaderDelegate {
     this.backgroundColor,
     required this.topPadding,
     required this.isDark,
+    this.showBackButton,
+    this.fallbackRoute,
   });
 
   double get _bottomHeight => bottom?.preferredSize.height ?? 0.0;
@@ -158,17 +168,17 @@ class _AcadexTransformingHeaderDelegate extends SliverPersistentHeaderDelegate {
     final double currentLetterSpacing = lerpDouble(-0.4, -0.2, curvedProgress)!;
 
     // Leading Widget configuration
+    final effectiveShowBackButton = showBackButton ?? (leading == null);
     Widget? leadingWidget;
-    if (onBack != null) {
-      leadingWidget = IconButton(
-        icon: Icon(LucideIcons.arrowLeft, size: 20, color: standardTitleColor),
+    if (leading != null) {
+      leadingWidget = leading;
+    } else if (effectiveShowBackButton) {
+      leadingWidget = AcadexBackButton(
         onPressed: onBack,
-        tooltip: 'Back',
-        padding: EdgeInsets.zero,
+        fallbackRoute: fallbackRoute,
+        color: standardTitleColor,
         constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
       );
-    } else if (leading != null) {
-      leadingWidget = leading;
     }
 
     // Trailing actions bounds

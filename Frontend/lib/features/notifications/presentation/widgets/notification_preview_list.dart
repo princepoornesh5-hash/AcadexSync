@@ -108,7 +108,7 @@ class NotificationPreviewList extends ConsumerWidget {
                       ],
                     ),
                     TextButton(
-                      onPressed: () => context.go('/module/Notifications'),
+                      onPressed: () => context.go('/notifications'),
                       style: TextButton.styleFrom(
                         foregroundColor: Theme.of(context).primaryColor,
                         padding: const EdgeInsets.symmetric(

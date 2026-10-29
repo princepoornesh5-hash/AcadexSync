@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_back_button.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
@@ -40,6 +41,7 @@ class AttendanceAdminDashboardScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
+        leading: const AcadexBackButton(fallbackRoute: '/attendance'),
         title: Text(
           user?.role == AppRole.hod
               ? 'Department Attendance Administration'

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_back_button.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_motion.dart';
@@ -60,6 +61,7 @@ class _RequestCenterScreenState extends ConsumerState<RequestCenterScreen>
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : Colors.white,
       appBar: AppBar(
+        leading: const AcadexBackButton(fallbackRoute: '/dashboard'),
         backgroundColor: isDark ? AcadexColors.darkCanvas : Colors.white,
         elevation: 0,
         surfaceTintColor: Colors.transparent,

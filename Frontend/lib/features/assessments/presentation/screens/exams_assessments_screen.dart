@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_back_button.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
 import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
@@ -166,29 +167,40 @@ class _ExamsAssessmentsScreenState extends ConsumerState<ExamsAssessmentsScreen>
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Exams & Assessments Hub',
-              style: GoogleFonts.inter(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+        Expanded(
+          child: Row(
+            children: [
+              const AcadexBackButton(fallbackRoute: '/dashboard'),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Exams & Assessments Hub',
+                      style: GoogleFonts.inter(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Scheduling, multi-department common exams, marks entry workflows & official results',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: isDark
+                            ? AcadexColors.darkInkMuted
+                            : AcadexColors.inkMuted,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Scheduling, multi-department common exams, marks entry workflows & official results',
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: isDark
-                    ? AcadexColors.darkInkMuted
-                    : AcadexColors.inkMuted,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
+        const SizedBox(width: 16),
         ElevatedButton.icon(
           onPressed: _openCreateWizard,
           icon: const Icon(LucideIcons.plus, size: 18),

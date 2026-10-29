@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/presentation/widgets/acadex_back_button.dart';
 import '../providers/academic_records_providers.dart';
 import '../widgets/academic_period_card.dart';
 
@@ -18,6 +19,7 @@ class StudentAcademicHistoryScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: const AcadexBackButton(fallbackRoute: '/dashboard'),
         title: const Text('Academic History'),
         elevation: 0,
         actions: [
